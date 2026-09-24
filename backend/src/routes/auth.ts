@@ -1,3 +1,4 @@
+import { randomBytes } from 'node:crypto';
 import { Router, type Request } from 'express';
 import { z } from 'zod';
 import { env, isProd } from '../config/env.js';
@@ -12,7 +13,13 @@ import { SESSION_COOKIE } from '../middleware/session.js';
 import { findOrCreateUser, LoginFailureError } from '../services/users.js';
 import { recordAudit } from '../services/audit.js';
 
-export type TokenVerifier = (credential: string) => Promise<GoogleIdentity>;
+export type TokenVerifier = (
+    credential: string,
+    expectedNonce: string,
+) => Promise<GoogleIdentity>;
+
+// Vida de la sesión anónima que solo existe para completar el login.
+const NONCE_TTL_MS = 10 * 60 * 1000;
 
 const loginSchema = z.strictObject({
     credential: z.string().min(20).max(4096),
@@ -35,6 +42,23 @@ export const createAuthRouter = (
 ) => {
     const authRouter = Router();
 
+    // Emite un nonce de un solo uso, atado a la sesión del navegador que lo pide.
+    // Google lo incluye firmado en el id_token; el login exige que coincida.
+    authRouter.get('/nonce', async (req, res) => {
+        const nonce = randomBytes(32).toString('base64url');
+
+        req.session.loginNonce = nonce;
+
+        // Si aún no hay usuario, es una sesión anónima de vida corta.
+        if (!req.session.userId) {
+            req.session.cookie.maxAge = NONCE_TTL_MS;
+        }
+
+        await saveSession(req);
+
+        res.json({ nonce });
+    });
+
     authRouter.post('/google', loginLimiter, async (req, res) => {
         const parsed = loginSchema.safeParse(req.body);
 
@@ -43,8 +67,14 @@ export const createAuthRouter = (
             return;
         }
 
+        // Se lee antes de regenerar la sesión. Sin nonce, la verificación falla.
+        const expectedNonce = req.session.loginNonce ?? '';
+
         try {
-            const identity = await verifyToken(parsed.data.credential);
+            const identity = await verifyToken(
+                parsed.data.credential,
+                expectedNonce,
+            );
             const user = await findOrCreateUser(identity);
 
             // Nueva sesión en cada login: evita fijación de sesión.

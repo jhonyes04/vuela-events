@@ -1,10 +1,6 @@
 import { after, before, beforeEach, describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import type { TokenPayload } from 'google-auth-library';
-import { env } from '../config/env.js';
 import { prisma } from '../lib/prisma.js';
-import { identityFromPayload, LoginRejectedError } from '../lib/google.js';
-import type { TokenVerifier } from '../routes/auth.js';
 import {
     api,
     closeDb,
@@ -13,48 +9,20 @@ import {
     sessionCookieFor,
     startServer,
 } from './helpers.js';
+import {
+    cookieFrom,
+    D,
+    getNonce,
+    loginWith,
+    me,
+    payload,
+    postLogin,
+    resetTokens,
+    tokenFor,
+    verifyToken,
+} from './fakeGoogle.js';
 
-const D = env.ALLOWED_EMAIL_DOMAIN;
-
-const payload = (n: string, over: Partial<TokenPayload> = {}): TokenPayload => ({
-    iss: 'https://accounts.google.com',
-    aud: 'test',
-    sub: `sub-${n}`,
-    iat: 0,
-    exp: 0,
-    email: `${n}@${D}`,
-    email_verified: true,
-    hd: D,
-    name: `Usuario ${n}`,
-    ...over,
-});
-
-// Verificador falso: en lugar de llamar a Google, busca la carga en una tabla,
-// pero aplica las MISMAS reglas de dominio que producción (identityFromPayload).
-const tokens = new Map<string, TokenPayload>();
-
-const tokenFor = (p: TokenPayload): string => {
-    const token = `tok-${p.sub}-`.padEnd(24, 'x');
-
-    tokens.set(token, p);
-
-    return token;
-};
-
-const verifyToken: TokenVerifier = async (credential) => {
-    const p = tokens.get(credential);
-
-    if (!p) {
-        throw new LoginRejectedError('invalid_token');
-    }
-
-    return identityFromPayload(p);
-};
-
-const cookieFrom = (res: { setCookie: string[] }): string =>
-    res.setCookie.map((c) => c.split(';')[0]).join('; ');
-
-describe('login por HTTP (ruta real, verificador de Google simulado)', () => {
+describe('login por HTTP (ruta real, Google simulado)', () => {
     let server: Awaited<ReturnType<typeof startServer>>;
 
     before(async () => {
@@ -62,7 +30,7 @@ describe('login por HTTP (ruta real, verificador de Google simulado)', () => {
     });
 
     beforeEach(async () => {
-        tokens.clear();
+        resetTokens();
         await resetDb();
     });
 
@@ -71,17 +39,13 @@ describe('login por HTTP (ruta real, verificador de Google simulado)', () => {
         await closeDb();
     });
 
-    const login = (credential: string, extra: object = {}, origin?: string | null) =>
-        api(server.baseUrl, 'POST', '/api/auth/google', {
-            body: { credential, ...extra },
-            origin,
-        });
-
-    const me = (cookie: string) =>
-        api(server.baseUrl, 'GET', '/api/auth/me', { cookie });
+    const login = (
+        p: ReturnType<typeof payload>,
+        extra: object = {},
+    ) => loginWith(server.baseUrl, p, extra);
 
     it('login válido: crea el usuario con rol ail, emite cookie segura y deja auditoría', async () => {
-        const res = await login(tokenFor(payload('ana')));
+        const res = await login(payload('ana'));
 
         assert.equal(res.status, 200);
         assert.equal(res.body.user.role, 'ail');
@@ -93,7 +57,7 @@ describe('login por HTTP (ruta real, verificador de Google simulado)', () => {
         assert.match(raw, /HttpOnly/i);
         assert.match(raw, /SameSite=Lax/i);
 
-        const check = await me(cookieFrom(res));
+        const check = await me(server.baseUrl, cookieFrom(res));
 
         assert.equal(check.status, 200);
         assert.equal(check.body.user.id, res.body.user.id);
@@ -106,7 +70,7 @@ describe('login por HTTP (ruta real, verificador de Google simulado)', () => {
 
     it('dominio ajeno (gmail.com): 403 con mensaje claro, sin cookie, sin usuario y con auditoría', async () => {
         const res = await login(
-            tokenFor(payload('intruso', { email: 'intruso@gmail.com', hd: undefined })),
+            payload('intruso', { email: 'intruso@gmail.com', hd: undefined }),
         );
 
         assert.equal(res.status, 403);
@@ -121,7 +85,7 @@ describe('login por HTTP (ruta real, verificador de Google simulado)', () => {
     });
 
     it('correo del dominio pero sin claim hd (cuenta no administrada): 403', async () => {
-        const res = await login(tokenFor(payload('sinhd', { hd: undefined })));
+        const res = await login(payload('sinhd', { hd: undefined }));
 
         assert.equal(res.status, 403);
         assert.equal(res.body.error, `Solo se permiten cuentas @${D}`);
@@ -129,9 +93,7 @@ describe('login por HTTP (ruta real, verificador de Google simulado)', () => {
     });
 
     it('correo sin verificar: 403 con su propio mensaje', async () => {
-        const res = await login(
-            tokenFor(payload('sinverificar', { email_verified: false })),
-        );
+        const res = await login(payload('sinverificar', { email_verified: false }));
 
         assert.equal(res.status, 403);
         assert.equal(res.body.error, 'Tu correo de Google no está verificado');
@@ -139,7 +101,8 @@ describe('login por HTTP (ruta real, verificador de Google simulado)', () => {
     });
 
     it('token que Google no valida: 401 y sin cookie', async () => {
-        const res = await login('x'.repeat(30));
+        const { cookie } = await getNonce(server.baseUrl);
+        const res = await postLogin(server.baseUrl, 'x'.repeat(30), cookie);
 
         assert.equal(res.status, 401);
         assert.equal(res.setCookie.length, 0);
@@ -155,7 +118,7 @@ describe('login por HTTP (ruta real, verificador de Google simulado)', () => {
             },
         });
 
-        const res = await login(tokenFor(payload('baja')));
+        const res = await login(payload('baja'));
 
         assert.equal(res.status, 403);
         assert.match(res.body.error, /desactivada/);
@@ -169,30 +132,39 @@ describe('login por HTTP (ruta real, verificador de Google simulado)', () => {
     it('el login descarta la sesión previa (anti fijación de sesión)', async () => {
         const victim = await createUser('ail');
         const oldCookie = await sessionCookieFor(victim.id);
+        const { nonce } = await getNonce(server.baseUrl, oldCookie);
 
-        const res = await api(server.baseUrl, 'POST', '/api/auth/google', {
-            cookie: oldCookie,
-            body: { credential: tokenFor(payload('nuevo')) },
-        });
+        const res = await postLogin(
+            server.baseUrl,
+            tokenFor({ ...payload('nuevo'), nonce }),
+            oldCookie,
+        );
 
         assert.equal(res.status, 200);
 
         const newCookie = cookieFrom(res);
 
         assert.notEqual(newCookie, oldCookie);
-        assert.equal((await me(oldCookie)).status, 401);
-        assert.equal((await me(newCookie)).status, 200);
+        assert.equal((await me(server.baseUrl, oldCookie)).status, 401);
+        assert.equal((await me(server.baseUrl, newCookie)).status, 200);
     });
 
     it('campos extra en el cuerpo (p. ej. role) se rechazan con 400', async () => {
-        const res = await login(tokenFor(payload('listo')), { role: 'admin' });
+        const res = await login(payload('listo'), { role: 'admin' });
 
         assert.equal(res.status, 400);
         assert.equal(await prisma.user.count(), 0);
     });
 
     it('sin cabecera Origin: 403 y no se crea ni usuario ni sesión', async () => {
-        const res = await login(tokenFor(payload('sinorigin')), {}, null);
+        const { nonce, cookie } = await getNonce(server.baseUrl);
+        const res = await postLogin(
+            server.baseUrl,
+            tokenFor({ ...payload('sinorigin'), nonce }),
+            cookie,
+            {},
+            null,
+        );
 
         assert.equal(res.status, 403);
         assert.equal(res.setCookie.length, 0);
@@ -203,11 +175,13 @@ describe('login por HTTP (ruta real, verificador de Google simulado)', () => {
         const user = await createUser('ail');
         const cookie = await sessionCookieFor(user.id);
 
-        const res = await api(server.baseUrl, 'POST', '/api/auth/logout', { cookie });
+        const res = await api(server.baseUrl, 'POST', '/api/auth/logout', {
+            cookie,
+        });
 
         assert.equal(res.status, 204);
         assert.match(res.setCookie.join('\n'), /vuela\.sid=;/);
-        assert.equal((await me(cookie)).status, 401);
+        assert.equal((await me(server.baseUrl, cookie)).status, 401);
     });
 
     // Debe ir el último: el limitador de login es global al proceso y ya
@@ -216,7 +190,9 @@ describe('login por HTTP (ruta real, verificador de Google simulado)', () => {
         const statuses: number[] = [];
 
         for (let i = 0; i < 5; i++) {
-            statuses.push((await login('x'.repeat(30))).status);
+            statuses.push(
+                (await postLogin(server.baseUrl, 'x'.repeat(30))).status,
+            );
         }
 
         assert.equal(statuses.at(-1), 429);

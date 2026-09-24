@@ -25,8 +25,14 @@ export interface GoogleIdentity {
 
 export function identityFromPayload(
     payload: TokenPayload | undefined,
+    expectedNonce: string,
 ): GoogleIdentity {
     if (!payload?.sub || !payload.email) {
+        throw new LoginRejectedError('invalid_token');
+    }
+
+    // El token debe haberse emitido para ESTA sesión del navegador (anti replay).
+    if (!expectedNonce || payload.nonce !== expectedNonce) {
         throw new LoginRejectedError('invalid_token');
     }
 
@@ -54,6 +60,7 @@ const client = new OAuth2Client();
 
 export async function verifyGoogleIdToken(
     idToken: string,
+    expectedNonce: string,
 ): Promise<GoogleIdentity> {
     let payload: TokenPayload | undefined;
 
@@ -68,5 +75,5 @@ export async function verifyGoogleIdToken(
         throw new LoginRejectedError('invalid_token');
     }
 
-    return identityFromPayload(payload);
+    return identityFromPayload(payload, expectedNonce);
 }

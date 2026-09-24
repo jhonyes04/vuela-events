@@ -2,9 +2,16 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import type { TokenPayload } from 'google-auth-library';
 import { env } from '../config/env.js';
-import { identityFromPayload, LoginRejectedError } from './google.js';
+import {
+    identityFromPayload as identityFrom,
+    LoginRejectedError,
+} from './google.js';
 
 const D = env.ALLOWED_EMAIL_DOMAIN;
+const NONCE = 'nonce-de-prueba';
+
+const identityFromPayload = (p: TokenPayload | undefined) =>
+    identityFrom(p, NONCE);
 
 const payload = (overrides: Partial<TokenPayload> = {}): TokenPayload => {
     return {
@@ -17,6 +24,7 @@ const payload = (overrides: Partial<TokenPayload> = {}): TokenPayload => {
         email_verified: true,
         hd: D,
         name: 'Ana',
+        nonce: NONCE,
         ...overrides,
     };
 };
@@ -108,5 +116,21 @@ describe('identityFromPayload', () => {
         assertRejected(undefined, 'invalid_token');
         assertRejected(payload({ email: undefined }), 'invalid_token');
         assertRejected(payload({ sub: '' }), 'invalid_token');
+    });
+
+    it('rechaza un token emitido para otro nonce (replay)', () => {
+        assertRejected(payload({ nonce: 'otro-nonce' }), 'invalid_token');
+    });
+
+    it('rechaza un token sin nonce', () => {
+        assertRejected(payload({ nonce: undefined }), 'invalid_token');
+    });
+
+    it('rechaza si el servidor no tiene nonce esperado', () => {
+        assert.throws(
+            () => identityFrom(payload(), ''),
+            (e) =>
+                e instanceof LoginRejectedError && e.reason === 'invalid_token',
+        );
     });
 });

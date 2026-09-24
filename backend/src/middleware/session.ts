@@ -6,6 +6,8 @@ import { env, isProd } from '../config/env.js';
 declare module 'express-session' {
     interface SessionData {
         userId: string;
+        // Valor de un solo uso que ata el id_token de Google a esta sesión.
+        loginNonce: string;
     }
 }
 
