@@ -23,7 +23,7 @@ describe('infraestructura de tests', () => {
         await closeDb();
     });
 
-    it('con "sessión" simulada, /api/auth/me devuelve el usuario y su rol', async () => {
+    it('con sesión simulada, /api/auth/me devuelve el usuario y su rol', async () => {
         const user = await createUser('dt');
         const cookie = await sessionCookieFor(user.id);
 

@@ -18,6 +18,7 @@ const envSchema = z
             .regex(/^[a-z0-9-]+(\.[a-z0-9-]+)+$/)
             .default('puntosvuela.es'),
         FRONTEND_ORIGIN: z.url(),
+        TRUST_PROXY_HOPS: z.coerce.number().int().min(0).max(5).default(0),
         INITIAL_ADMIN_EMAIL: z.email().toLowerCase().optional(),
     })
     .refine(

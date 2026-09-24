@@ -2,7 +2,7 @@ import { createHmac, randomBytes } from 'node:crypto';
 import { env } from '../config/env.js';
 import { prisma } from '../lib/prisma.js';
 import { SESSION_COOKIE, sessionPool } from '../middleware/session.js';
-import { createApp } from '../app.js';
+import { createApp, type AppOptions } from '../app.js';
 import type { AddressInfo } from 'node:net';
 import type { Role } from '../generated/prisma/client.js';
 
@@ -67,8 +67,8 @@ export const sessionCookieFor = async (userId: string): Promise<string> => {
     return `${SESSION_COOKIE}=${encodeURIComponent(`s:${sid}.${signature}`)}`;
 };
 
-export const startServer = async () => {
-    const server = createApp().listen(0);
+export const startServer = async (options: AppOptions = {}) => {
+    const server = createApp(options).listen(0);
 
     await new Promise<void>((resolve) => server.once('listening', resolve));
 
@@ -94,7 +94,7 @@ export const api = async (
     method: string,
     path: string,
     { cookie, body, origin = env.FRONTEND_ORIGIN }: ApiOptions = {},
-): Promise<{ status: number; body: any }> => {
+): Promise<{ status: number; body: any; setCookie: string[] }> => {
     const headers: Record<string, string> = {};
 
     if (origin) headers['Origin'] = origin;
@@ -109,5 +109,9 @@ export const api = async (
 
     const text = await res.text();
 
-    return { status: res.status, body: text ? JSON.parse(text) : null };
+    return {
+        status: res.status,
+        body: text ? JSON.parse(text) : null,
+        setCookie: res.headers.getSetCookie(),
+    };
 };

@@ -8,13 +8,22 @@ import cors from 'cors';
 import { env } from './config/env.js';
 import { sessionMiddleware } from './middleware/session.js';
 import { requireSameOrigin } from './middleware/csrf.js';
-import { authRouter } from './routes/auth.js';
+import { createAuthRouter, type TokenVerifier } from './routes/auth.js';
 import { usersRouter } from './routes/users.js';
 import { eventsRouter } from './routes/events.js';
 import { apiLimiter } from './middleware/rateLimit.js';
 
-export function createApp() {
+export interface AppOptions {
+    // Solo para tests: sustituye la verificación real del token de Google.
+    verifyToken?: TokenVerifier;
+}
+
+export function createApp(options: AppOptions = {}) {
     const app = express();
+
+    if (env.TRUST_PROXY_HOPS > 0) {
+        app.set('trust proxy', env.TRUST_PROXY_HOPS);
+    }
 
     app.use(helmet());
     app.use(
@@ -37,7 +46,7 @@ export function createApp() {
         res.set('Cache-Control', 'no-store');
         next();
     });
-    app.use('/api/auth', authRouter);
+    app.use('/api/auth', createAuthRouter(options.verifyToken));
     app.use('/api/users', usersRouter);
     app.use('/api/events', eventsRouter);
 

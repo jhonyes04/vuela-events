@@ -16,7 +16,9 @@ export const sessionPool = new pg.Pool({
     max: 3,
 });
 
-export const SESSION_COOKIE = 'vuela.sid';
+// En producción el prefijo __Host- exige Secure, Path=/ y ausencia de Domain
+export const SESSION_COOKIE = isProd ? '__Host-vuela.sid' : 'vuela.sid';
+
 const SESSION_TTL_MS = 8 * 60 * 60 * 1000;
 
 export const sessionMiddleware = session({

@@ -52,7 +52,7 @@ describe('identityFromPayload', () => {
         );
     });
 
-    it('limita el nobmre a 200 caracteres', () => {
+    it('limita el nombre a 200 caracteres', () => {
         const id = identityFromPayload(payload({ name: 'a'.repeat(500) }));
         assert.equal(id.name.length, 200);
     });

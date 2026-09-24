@@ -9,6 +9,9 @@ const server = app.listen(env.PORT, () => {
     console.log(`API escuchando en http://localhost:${env.PORT}`);
 });
 
+server.headersTimeout = 15_000;
+server.requestTimeout = 30_000;
+
 function shutdown(signal: string) {
     console.log(`${signal} recibido, cerrando...`);
 
