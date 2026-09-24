@@ -1,0 +1,254 @@
+import { after, before, beforeEach, describe, it } from 'node:test';
+import assert from 'node:assert/strict';
+import { prisma } from '../lib/prisma.js';
+import { Prisma } from '../generated/prisma/client.js';
+import {
+    api,
+    closeDb,
+    createUser,
+    resetDb,
+    sessionCookieFor,
+    startServer,
+} from './helpers.js';
+
+const HOUR = 60 * 60 * 1000;
+const DAY = 24 * HOUR;
+
+const makeEvent = (
+    createdById: string,
+    opts: { capacity?: number; past?: boolean } = {},
+) => {
+    const start = opts.past ? Date.now() - 2 * DAY : Date.now() + DAY;
+
+    return prisma.event.create({
+        data: {
+            title: 'Evento de prueba',
+            startsAt: new Date(start),
+            endsAt: new Date(start + HOUR),
+            capacity: opts.capacity,
+            createdById,
+        },
+    });
+};
+
+describe('inscripciones a eventos', () => {
+    let server: Awaited<ReturnType<typeof startServer>>;
+
+    before(async () => {
+        server = await startServer();
+    });
+
+    beforeEach(resetDb);
+
+    after(async () => {
+        await server.close();
+        await closeDb();
+    });
+
+    const register = async (userId: string, eventId: string) =>
+        api(server.baseUrl, 'POST', `/api/events/${eventId}/registrations`, {
+            cookie: await sessionCookieFor(userId),
+        });
+
+    const unregister = async (userId: string, eventId: string) =>
+        api(server.baseUrl, 'DELETE', `/api/events/${eventId}/registrations`, {
+            cookie: await sessionCookieFor(userId),
+        });
+
+    const setup = async (opts: { capacity?: number; past?: boolean } = {}) => {
+        const admin = await createUser('admin');
+        const event = await makeEvent(admin.id, opts);
+
+        return { admin, event };
+    };
+
+    it('un usuario se inscribe una vez: 201', async () => {
+        const { event } = await setup();
+        const ail = await createUser('ail');
+
+        const res = await register(ail.id, event.id);
+
+        assert.equal(res.status, 201);
+        assert.equal(await prisma.registration.count(), 1);
+    });
+
+    it('inscribirse dos veces al mismo evento da 409 con mensaje claro', async () => {
+        const { event } = await setup();
+        const ail = await createUser('ail');
+
+        await register(ail.id, event.id);
+        const res = await register(ail.id, event.id);
+
+        assert.equal(res.status, 409);
+        assert.equal(res.body.error, 'Ya estás inscrito en este evento');
+        assert.equal(await prisma.registration.count(), 1);
+    });
+
+    it('usuarios distintos pueden inscribirse al mismo evento', async () => {
+        const { event } = await setup();
+        const a = await createUser('ail');
+        const b = await createUser('dt');
+
+        assert.equal((await register(a.id, event.id)).status, 201);
+        assert.equal((await register(b.id, event.id)).status, 201);
+        assert.equal(await prisma.registration.count(), 2);
+    });
+
+    it('el mismo usuario puede inscribirse a eventos distintos', async () => {
+        const { admin, event } = await setup();
+        const other = await makeEvent(admin.id);
+        const ail = await createUser('ail');
+
+        assert.equal((await register(ail.id, event.id)).status, 201);
+        assert.equal((await register(ail.id, other.id)).status, 201);
+    });
+
+    it('doble clic simultáneo: una inscripción y un 409', async () => {
+        const { event } = await setup();
+        const ail = await createUser('ail');
+
+        const results = await Promise.all([
+            register(ail.id, event.id),
+            register(ail.id, event.id),
+        ]);
+        const statuses = results.map((r) => r.status).sort((a, b) => a - b);
+
+        assert.deepEqual(statuses, [201, 409]);
+        assert.equal(await prisma.registration.count(), 1);
+    });
+
+    it('la base de datos rechaza el duplicado aunque se salte la aplicación', async () => {
+        const { event } = await setup();
+        const ail = await createUser('ail');
+        const data = { eventId: event.id, userId: ail.id };
+
+        await prisma.registration.create({ data });
+
+        await assert.rejects(
+            prisma.registration.create({ data }),
+            (e) =>
+                e instanceof Prisma.PrismaClientKnownRequestError &&
+                e.code === 'P2002',
+        );
+        assert.equal(await prisma.registration.count(), 1);
+    });
+
+    it('aforo completo: el siguiente recibe 409', async () => {
+        const { event } = await setup({ capacity: 1 });
+        const a = await createUser('ail');
+        const b = await createUser('ail');
+
+        assert.equal((await register(a.id, event.id)).status, 201);
+
+        const res = await register(b.id, event.id);
+
+        assert.equal(res.status, 409);
+        assert.equal(res.body.error, 'El evento está completo');
+        assert.equal(await prisma.registration.count(), 1);
+    });
+
+    it('carrera por el último cupo: 5 usuarios a la vez, solo 1 entra', async () => {
+        const { event } = await setup({ capacity: 1 });
+        const users = await Promise.all(
+            Array.from({ length: 5 }, () => createUser('ail')),
+        );
+
+        const results = await Promise.all(
+            users.map((u) => register(u.id, event.id)),
+        );
+        const statuses = results.map((r) => r.status).sort((a, b) => a - b);
+
+        assert.deepEqual(statuses, [201, 409, 409, 409, 409]);
+        assert.equal(await prisma.registration.count(), 1);
+    });
+
+    it('evento ya finalizado: 409', async () => {
+        const { event } = await setup({ past: true });
+        const ail = await createUser('ail');
+
+        const res = await register(ail.id, event.id);
+
+        assert.equal(res.status, 409);
+        assert.equal(await prisma.registration.count(), 0);
+    });
+
+    it('evento inexistente: 404; id mal formado: 400', async () => {
+        const ail = await createUser('ail');
+
+        const missing = await register(
+            ail.id,
+            '11111111-1111-4111-8111-111111111111',
+        );
+        const malformed = await register(ail.id, 'no-es-un-uuid');
+
+        assert.equal(missing.status, 404);
+        assert.equal(malformed.status, 400);
+    });
+
+    it('sin sesión: 401; sin Origin: 403; en ambos casos no se inscribe a nadie', async () => {
+        const { event } = await setup();
+        const ail = await createUser('ail');
+
+        const anon = await api(
+            server.baseUrl,
+            'POST',
+            `/api/events/${event.id}/registrations`,
+        );
+        const noOrigin = await api(
+            server.baseUrl,
+            'POST',
+            `/api/events/${event.id}/registrations`,
+            { cookie: await sessionCookieFor(ail.id), origin: null },
+        );
+
+        assert.equal(anon.status, 401);
+        assert.equal(noOrigin.status, 403);
+        assert.equal(await prisma.registration.count(), 0);
+    });
+
+    it('cancelar la propia inscripción: 204; repetir da 404; se puede volver a inscribir', async () => {
+        const { event } = await setup();
+        const ail = await createUser('ail');
+
+        await register(ail.id, event.id);
+
+        assert.equal((await unregister(ail.id, event.id)).status, 204);
+        assert.equal(await prisma.registration.count(), 0);
+        assert.equal((await unregister(ail.id, event.id)).status, 404);
+        assert.equal((await register(ail.id, event.id)).status, 201);
+    });
+
+    it('un usuario no puede cancelar la inscripción de otro', async () => {
+        const { event } = await setup();
+        const a = await createUser('ail');
+        const b = await createUser('ail');
+
+        await register(a.id, event.id);
+
+        const res = await unregister(b.id, event.id);
+
+        assert.equal(res.status, 404);
+        assert.equal(await prisma.registration.count(), 1);
+    });
+
+    it('el listado indica si el usuario está inscrito y cuántos hay', async () => {
+        const { event } = await setup();
+        const a = await createUser('ail');
+        const b = await createUser('ail');
+
+        await register(a.id, event.id);
+
+        const listFor = async (userId: string) =>
+            api(server.baseUrl, 'GET', '/api/events', {
+                cookie: await sessionCookieFor(userId),
+            });
+
+        const forA = (await listFor(a.id)).body.events[0];
+        const forB = (await listFor(b.id)).body.events[0];
+
+        assert.equal(forA.registered, true);
+        assert.equal(forB.registered, false);
+        assert.equal(forA._count.registrations, 1);
+        assert.equal(forB._count.registrations, 1);
+    });
+});
