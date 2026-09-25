@@ -3,30 +3,31 @@ import { ApiError } from '@/lib/api';
 import { listMonthEvents, monthKey, type EventItem } from '@/lib/events';
 
 interface Result {
-    key: string;
+    // Mes al que pertenecen los datos ('YYYY-MM').
+    month: string;
     events: EventItem[];
     error: string | null;
 }
 
 export const useMonthEvents = (year: number, month: number) => {
     const [result, setResult] = useState<Result | null>(null);
-    // Al subir la versión se vuelve a pedir el mismo mes.
+    // Al subir la versión se vuelve a pedir el mismo mes, sin vaciar la pantalla.
     const [version, setVersion] = useState(0);
 
-    const key = `${monthKey(year, month)}#${version}`;
+    const current = monthKey(year, month);
 
     useEffect(() => {
         let cancelled = false;
 
         listMonthEvents(year, month)
             .then((events) => {
-                if (!cancelled) setResult({ key, events, error: null });
+                if (!cancelled) setResult({ month: current, events, error: null });
             })
             .catch((e: unknown) => {
                 if (cancelled) return;
 
                 setResult({
-                    key,
+                    month: current,
                     events: [],
                     error:
                         e instanceof ApiError
@@ -38,12 +39,12 @@ export const useMonthEvents = (year: number, month: number) => {
         return () => {
             cancelled = true;
         };
-    }, [year, month, key]);
+    }, [year, month, current, version]);
 
     const reload = useCallback(() => setVersion((v) => v + 1), []);
 
-    // Mientras el resultado guardado no sea el de la clave actual, se está cargando.
-    const loading = result?.key !== key;
+    // Solo se "carga" al cambiar de mes; una recarga del mismo mes conserva lo que hay.
+    const loading = result?.month !== current;
 
     return {
         events: loading ? [] : result.events,

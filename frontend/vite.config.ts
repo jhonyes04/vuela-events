@@ -1,7 +1,7 @@
 import { fileURLToPath, URL } from 'node:url';
 import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
-import { defineConfig } from 'vite';
+import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
     plugins: [react(), tailwindcss()],
@@ -22,5 +22,10 @@ export default defineConfig({
     preview: {
         port: 3000,
         strictPort: true,
+    },
+    test: {
+        // Solo lógica pura (fechas, calendario): no hace falta un DOM simulado.
+        environment: 'node',
+        include: ['src/**/*.test.ts'],
     },
 });

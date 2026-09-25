@@ -7,44 +7,56 @@ import {
     CardHeader,
     CardTitle,
 } from '@/components/ui/card';
-import { formatTime, type EventItem } from '@/lib/events';
+import {
+    attendanceLabel,
+    formatTime,
+    isFull,
+    type EventItem,
+} from '@/lib/events';
 
-const attendance = (taken: number, capacity: number | null): string => {
-    if (capacity === null) {
-        return `${taken} ${taken === 1 ? 'inscrito' : 'inscritos'}`;
-    }
-
-    return `${taken} de ${capacity} plazas`;
-};
-
-export function EventCard({ event }: { event: EventItem }) {
-    const taken = event._count.registrations;
-    const full = event.capacity !== null && taken >= event.capacity;
-
+// Resumen de una sesión para la lista del día. Todo el cuadro es pulsable
+// (el título es un botón "estirado" sobre la tarjeta), sin anidar botones.
+export function EventCard({
+    event,
+    onOpen,
+}: {
+    event: EventItem;
+    onOpen: (event: EventItem) => void;
+}) {
     return (
-        <Card size="sm">
+        <Card size="sm" className="relative hover:bg-muted/50">
             <CardHeader>
-                <CardTitle>{event.title}</CardTitle>
+                <CardTitle>
+                    <button
+                        type="button"
+                        onClick={() => onOpen(event)}
+                        className="text-left outline-none after:absolute after:inset-0 focus-visible:after:ring-3 focus-visible:after:ring-ring/50"
+                    >
+                        {event.title}
+                    </button>
+                </CardTitle>
+                {event.subtitle && (
+                    <p className="text-sm text-muted-foreground">
+                        {event.subtitle}
+                    </p>
+                )}
                 <CardDescription>
                     {formatTime(event.startsAt)} – {formatTime(event.endsAt)}
                     {event.location ? ` · ${event.location}` : ''}
                 </CardDescription>
-                {event.registered && (
-                    <CardAction>
+                <CardAction className="flex items-center gap-1.5">
+                    {event.seriesId && <Badge variant="outline">Serie</Badge>}
+                    {event.registered && (
                         <Badge className="bg-brand-green text-white">
                             Inscrito
                         </Badge>
-                    </CardAction>
-                )}
+                    )}
+                </CardAction>
             </CardHeader>
-            <CardContent className="space-y-2">
-                {event.description && (
-                    <p className="whitespace-pre-line">{event.description}</p>
-                )}
+            <CardContent>
                 <p className="text-muted-foreground">
-                    {attendance(taken, event.capacity)}
-                    {full ? ' · Completo' : ''} · Organiza{' '}
-                    {event.createdBy.name}
+                    {attendanceLabel(event)}
+                    {isFull(event) ? ' · Completo' : ''}
                 </p>
             </CardContent>
         </Card>
