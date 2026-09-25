@@ -12,6 +12,7 @@ import {
 
 const newEvent = {
     title: 'Evento',
+    location: 'Sala de pruebas',
     startsAt: '2030-01-10T10:00:00.000Z',
     endsAt: '2030-01-10T12:00:00.000Z',
 };

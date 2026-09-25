@@ -11,8 +11,9 @@ import {
 const createEventSchema = z
     .strictObject({
         title: z.string().trim().min(1).max(120),
+        subtitle: z.string().trim().min(1).max(200).optional(),
         description: z.string().trim().max(2000).optional(),
-        location: z.string().trim().max(200).optional(),
+        location: z.string().trim().min(1).max(200),
         startsAt: z.iso.datetime(),
         endsAt: z.iso.datetime(),
         capacity: z.number().int().positive().max(100_000).optional(),
@@ -30,6 +31,7 @@ const listQuerySchema = z.object({
 const eventSelect = {
     id: true,
     title: true,
+    subtitle: true,
     description: true,
     location: true,
     startsAt: true,
@@ -111,12 +113,20 @@ eventsRouter.post('/', requireRole('admin', 'dt'), async (req, res) => {
         return;
     }
 
-    const { title, description, location, startsAt, endsAt, capacity } =
-        body.data;
+    const {
+        title,
+        subtitle,
+        description,
+        location,
+        startsAt,
+        endsAt,
+        capacity,
+    } = body.data;
 
     const event = await prisma.event.create({
         data: {
             title,
+            subtitle,
             description,
             location,
             startsAt: new Date(startsAt),

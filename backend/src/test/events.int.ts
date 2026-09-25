@@ -12,6 +12,7 @@ import {
 
 const validEvent = {
     title: 'Jornada de prueba',
+    location: 'Sala de pruebas',
     startsAt: '2030-01-10T10:00:00.000Z',
     endsAt: '2030-01-10T12:00:00.000Z',
 };
@@ -158,5 +159,27 @@ describe('eventos: permisos y validación', () => {
 
         assert.equal(res.status, 401);
         assert.equal(await prisma.event.count(), 0);
+    });
+
+    it('el lugar es obligatorio: sin él, 400 y no se crea nada', async () => {
+        const dt = await createUser('dt');
+
+        // undefined desaparece al serializar a JSON: equivale a omitir el campo.
+        const res = await post(dt.id, { ...validEvent, location: undefined });
+
+        assert.equal(res.status, 400);
+        assert.equal(await prisma.event.count(), 0);
+    });
+
+    it('guarda y devuelve el subtítulo', async () => {
+        const dt = await createUser('dt');
+
+        const res = await post(dt.id, {
+            ...validEvent,
+            subtitle: 'Taller de robótica',
+        });
+
+        assert.equal(res.status, 201);
+        assert.equal(res.body.event.subtitle, 'Taller de robótica');
     });
 });
