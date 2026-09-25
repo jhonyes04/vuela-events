@@ -1,18 +1,11 @@
+import { Route, Routes } from 'react-router';
 import { useAuth } from '@/auth/context';
-import { GoogleSignIn } from '@/components/GoogleSignIn';
+import { RequireRole } from '@/auth/RequireRole';
 import { Header } from '@/components/Header';
-
-function LoginCard() {
-    return (
-        <section className="mx-auto max-w-md rounded-xl border bg-brand-cream-soft p-8 text-center">
-            <h1 className="mb-2 text-2xl font-semibold">Inicia sesión</h1>
-            <p className="mb-6 text-muted-foreground">
-                Solo pueden acceder cuentas de @puntosvuela.es.
-            </p>
-            <GoogleSignIn />
-        </section>
-    );
-}
+import { EventsPage } from '@/pages/EventsPage';
+import { LoginPage } from '@/pages/LoginPage';
+import { NotFoundPage } from '@/pages/NotFoundPage';
+import { UsersPage } from '@/pages/UsersPage';
 
 export default function App() {
     const { user, loading } = useAuth();
@@ -25,11 +18,21 @@ export default function App() {
                     <p role="status" className="text-muted-foreground">
                         Cargando…
                     </p>
-                ) : user ? (
-                    // Marcador: aquí irá el calendario de eventos.
-                    <p>Sesión iniciada como {user.email}.</p>
+                ) : !user ? (
+                    <LoginPage />
                 ) : (
-                    <LoginCard />
+                    <Routes>
+                        <Route path="/" element={<EventsPage />} />
+                        <Route
+                            path="/admin/usuarios"
+                            element={
+                                <RequireRole roles={['admin']}>
+                                    <UsersPage />
+                                </RequireRole>
+                            }
+                        />
+                        <Route path="*" element={<NotFoundPage />} />
+                    </Routes>
                 )}
             </main>
         </div>

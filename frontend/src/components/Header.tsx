@@ -1,6 +1,8 @@
+import { NavLink } from 'react-router';
 import { useAuth } from '@/auth/context';
 import { Button } from '@/components/ui/button';
 import type { Role } from '@/lib/api';
+import { cn } from '@/lib/utils';
 
 const ROLE_LABEL: Record<Role, string> = {
     admin: 'Administrador',
@@ -8,15 +10,38 @@ const ROLE_LABEL: Record<Role, string> = {
     ail: 'AIL',
 };
 
+const navClass = ({ isActive }: { isActive: boolean }) =>
+    cn(
+        'rounded-md px-3 py-2 text-sm font-medium',
+        isActive ? 'bg-brand-ink text-white' : 'hover:bg-black/10',
+    );
+
 export const Header = () => {
     const { user, logout } = useAuth();
 
     return (
         <header className="bg-brand-yellow text-brand-ink">
             <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4">
-                <span className="text-xl font-semibold tracking-tight">
-                    Vuela Events
-                </span>
+                <div className="flex items-center gap-6">
+                    <span className="text-xl font-semibold tracking-tight">
+                        Vuela Events
+                    </span>
+                    {user && (
+                        <nav aria-label="Principal" className="flex gap-1">
+                            <NavLink to="/" end className={navClass}>
+                                Eventos
+                            </NavLink>
+                            {user.role === 'admin' && (
+                                <NavLink
+                                    to="/admin/usuarios"
+                                    className={navClass}
+                                >
+                                    Usuarios
+                                </NavLink>
+                            )}
+                        </nav>
+                    )}
+                </div>
                 {user && (
                     <div className="flex items-center gap-3">
                         <div className="hidden text-right text-sm leading-tight sm:block">
