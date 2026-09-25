@@ -3,6 +3,7 @@ import { useAuth } from '@/auth/context';
 import { Button } from '@/components/ui/button';
 import type { Role } from '@/lib/api';
 import { cn } from '@/lib/utils';
+import { appRoutes, canAccess } from '@/routes/routes';
 
 const ROLE_LABEL: Record<Role, string> = {
     admin: 'Administrador',
@@ -28,17 +29,18 @@ export const Header = () => {
                     </span>
                     {user && (
                         <nav aria-label="Principal" className="flex gap-1">
-                            <NavLink to="/" end className={navClass}>
-                                Eventos
-                            </NavLink>
-                            {user.role === 'admin' && (
-                                <NavLink
-                                    to="/admin/usuarios"
-                                    className={navClass}
-                                >
-                                    Usuarios
-                                </NavLink>
-                            )}
+                            {appRoutes
+                                .filter((route) => canAccess(route, user.role))
+                                .map((route) => (
+                                    <NavLink
+                                        key={route.path}
+                                        to={route.path}
+                                        end={route.path === '/'}
+                                        className={navClass}
+                                    >
+                                        {route.label}
+                                    </NavLink>
+                                ))}
                         </nav>
                     )}
                 </div>

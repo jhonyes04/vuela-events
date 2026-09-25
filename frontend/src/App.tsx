@@ -1,11 +1,7 @@
-import { Route, Routes } from 'react-router';
 import { useAuth } from '@/auth/context';
-import { RequireRole } from '@/auth/RequireRole';
 import { Header } from '@/components/Header';
-import { EventsPage } from '@/pages/EventsPage';
 import { LoginPage } from '@/pages/LoginPage';
-import { NotFoundPage } from '@/pages/NotFoundPage';
-import { UsersPage } from '@/pages/UsersPage';
+import { AppRoutes } from '@/routes/AppRoutes';
 
 export default function App() {
     const { user, loading } = useAuth();
@@ -21,18 +17,7 @@ export default function App() {
                 ) : !user ? (
                     <LoginPage />
                 ) : (
-                    <Routes>
-                        <Route path="/" element={<EventsPage />} />
-                        <Route
-                            path="/admin/usuarios"
-                            element={
-                                <RequireRole roles={['admin']}>
-                                    <UsersPage />
-                                </RequireRole>
-                            }
-                        />
-                        <Route path="*" element={<NotFoundPage />} />
-                    </Routes>
+                    <AppRoutes />
                 )}
             </main>
         </div>
