@@ -17,7 +17,6 @@ export const Header = () => {
                 <span className="text-xl font-semibold tracking-tight">
                     Vuela Events
                 </span>
-
                 {user && (
                     <div className="flex items-center gap-3">
                         <div className="hidden text-right text-sm leading-tight sm:block">
