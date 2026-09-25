@@ -41,6 +41,8 @@ model Event {
   endsAt      DateTime
   capacity    Int?
   createdById String   @db.Uuid
+  // Sesiones creadas juntas comparten seriesId; null en eventos sueltos.
+  seriesId    String?  @db.Uuid
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -48,6 +50,7 @@ model Event {
   registrations Registration[]
 
   @@index([startsAt])
+  @@index([seriesId])
   @@map("events")
 }
 

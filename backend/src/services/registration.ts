@@ -45,9 +45,15 @@ export const registerForEvent = async (userId: string, eventId: string) => {
                 throw new RegistrationError('already_registered');
             }
 
-            if (event.capacity !== null) {
+            // Un DT nunca cuenta como inscrito ni ocupa plaza.
+            const registrant = await tx.user.findUnique({
+                where: { id: userId },
+                select: { role: true },
+            });
+
+            if (event.capacity !== null && registrant?.role !== 'dt') {
                 const taken = await tx.registration.count({
-                    where: { eventId },
+                    where: { eventId, user: { role: { not: 'dt' } } },
                 });
 
                 if (taken >= event.capacity) {

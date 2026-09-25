@@ -55,6 +55,11 @@ describe('inscripciones a eventos', () => {
             cookie: await sessionCookieFor(userId),
         });
 
+    const listFor = async (userId: string) =>
+        api(server.baseUrl, 'GET', '/api/events', {
+            cookie: await sessionCookieFor(userId),
+        });
+
     const setup = async (opts: { capacity?: number; past?: boolean } = {}) => {
         const admin = await createUser('admin');
         const event = await makeEvent(admin.id, opts);
@@ -238,11 +243,6 @@ describe('inscripciones a eventos', () => {
 
         await register(a.id, event.id);
 
-        const listFor = async (userId: string) =>
-            api(server.baseUrl, 'GET', '/api/events', {
-                cookie: await sessionCookieFor(userId),
-            });
-
         const forA = (await listFor(a.id)).body.events[0];
         const forB = (await listFor(b.id)).body.events[0];
 
@@ -250,5 +250,92 @@ describe('inscripciones a eventos', () => {
         assert.equal(forB.registered, false);
         assert.equal(forA._count.registrations, 1);
         assert.equal(forB._count.registrations, 1);
+    });
+
+    it('quien crea el evento también puede inscribirse (dt y admin), pero solo una vez', async () => {
+        const dt = await createUser('dt');
+        const admin = await createUser('admin');
+        const ownedByDt = await makeEvent(dt.id);
+        const ownedByAdmin = await makeEvent(admin.id);
+
+        assert.equal((await register(dt.id, ownedByDt.id)).status, 201);
+        assert.equal((await register(admin.id, ownedByAdmin.id)).status, 201);
+        assert.equal(await prisma.registration.count(), 2);
+
+        // La unicidad se mantiene también para el creador.
+        const again = await register(dt.id, ownedByDt.id);
+
+        assert.equal(again.status, 409);
+        assert.equal(again.body.error, 'Ya estás inscrito en este evento');
+        assert.equal(await prisma.registration.count(), 2);
+    });
+
+    it('un DT puede pulsar Inscribirme, pero nunca cuenta ni ocupa plaza', async () => {
+        const { event } = await setup({ capacity: 1 });
+        const dt = await createUser('dt');
+        const ail = await createUser('ail');
+
+        assert.equal((await register(dt.id, event.id)).status, 201);
+
+        // El DT ve su propia inscripción, pero no suma para nadie.
+        const forDt = (await listFor(dt.id)).body.events[0];
+
+        assert.equal(forDt.registered, true);
+        assert.equal(forDt._count.registrations, 0);
+
+        // No ocupa la única plaza: un AIL todavía puede inscribirse.
+        assert.equal((await register(ail.id, event.id)).status, 201);
+
+        const forAil = (await listFor(ail.id)).body.events[0];
+
+        assert.equal(forAil._count.registrations, 1);
+        assert.equal(await prisma.registration.count(), 2);
+    });
+
+    it('si un inscrito pasa a ser DT, deja de contarse; el admin sí cuenta', async () => {
+        const { admin, event } = await setup();
+        const user = await createUser('ail');
+
+        await register(user.id, event.id);
+        await register(admin.id, event.id);
+
+        assert.equal(
+            (await listFor(user.id)).body.events[0]._count.registrations,
+            2,
+        );
+
+        await prisma.user.update({
+            where: { id: user.id },
+            data: { role: 'dt' },
+        });
+
+        // Solo queda el admin: el ex-AIL ya es DT y se oculta.
+        assert.equal(
+            (await listFor(admin.id)).body.events[0]._count.registrations,
+            1,
+        );
+    });
+
+    it('eliminar un evento cuenta en la auditoría solo las inscripciones visibles', async () => {
+        const { admin, event } = await setup();
+        const dt = await createUser('dt');
+        const ail = await createUser('ail');
+
+        await register(dt.id, event.id);
+        await register(ail.id, event.id);
+
+        const res = await api(server.baseUrl, 'DELETE', `/api/events/${event.id}`, {
+            cookie: await sessionCookieFor(admin.id),
+        });
+
+        assert.equal(res.status, 204);
+        // Las dos filas se borran en cascada; la auditoría cuenta solo la visible.
+        assert.equal(await prisma.registration.count(), 0);
+
+        const log = await prisma.auditLog.findFirstOrThrow({
+            where: { action: 'event_deleted' },
+        });
+
+        assert.equal(log.newValue, '1 inscripción');
     });
 });
