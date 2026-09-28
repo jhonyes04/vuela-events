@@ -39,7 +39,7 @@ export function ProfileForm({
     const [saved, setSaved] = useState(false);
     const [submitting, setSubmitting] = useState(false);
 
-    const hints = puntoVueloHints(user.role);
+    const hints = puntoVueloHints(user.roleId);
 
     const handleSubmit = async (e: FormEvent) => {
         e.preventDefault();
@@ -55,7 +55,9 @@ export function ProfileForm({
             values.name.length < MIN_LENGTH ||
             values.puntoVuela.length < MIN_LENGTH
         ) {
-            setError(`Escribe al menos ${MIN_LENGTH} caracteres en cada campo.`);
+            setError(
+                `Escribe al menos ${MIN_LENGTH} caracteres en cada campo.`,
+            );
             return;
         }
 
@@ -103,7 +105,9 @@ export function ProfileForm({
                     minLength={MIN_LENGTH}
                     maxLength={PUNTO_VUELA_MAX}
                     placeholder={hints.placeholder}
-                    aria-describedby={hints.help ? 'profile-punto-help' : undefined}
+                    aria-describedby={
+                        hints.help ? 'profile-punto-help' : undefined
+                    }
                     value={puntoVuela}
                     onChange={(e) => setPuntoVuela(e.target.value)}
                 />

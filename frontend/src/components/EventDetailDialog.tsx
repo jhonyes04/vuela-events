@@ -64,14 +64,14 @@ function EventDetailBody({
     );
 
     const ended = hasEnded(event);
-    const isDt = user?.role === 'dt';
+    const isDt = user?.roleId === 'dt';
     // Un DT puede inscribirse aunque esté completo: no ocupa plaza.
     const blockedByCapacity = isFull(event) && !isDt && !event.registered;
 
     // Solo oculta el botón: el servidor comprueba de nuevo quién puede eliminar.
     const canDelete =
-        user?.role === 'admin' ||
-        (user?.role === 'dt' && event.createdBy.id === user.id);
+        (user?.permissions.includes('events:delete') ?? false) &&
+        (user?.roleId === 'admin' || event.createdBy.id === user?.id);
 
     const run = async (action: () => Promise<void>, success: string) => {
         setBusy(true);
@@ -147,7 +147,10 @@ function EventDetailBody({
                         )}
                     </dl>
 
-                    <section aria-labelledby="attendees-title" className="grid gap-2">
+                    <section
+                        aria-labelledby="attendees-title"
+                        className="grid gap-2"
+                    >
                         <h3
                             id="attendees-title"
                             className="text-sm font-medium"
@@ -155,7 +158,10 @@ function EventDetailBody({
                             Inscritos ({event._count.registrations})
                         </h3>
                         {loading ? (
-                            <p role="status" className="text-sm text-muted-foreground">
+                            <p
+                                role="status"
+                                className="text-sm text-muted-foreground"
+                            >
                                 Cargando inscritos…
                             </p>
                         ) : failed ? (

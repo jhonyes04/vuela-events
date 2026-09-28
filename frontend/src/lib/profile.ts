@@ -1,4 +1,4 @@
-import { api, type Role, type User } from '@/lib/api';
+import { api, type User } from '@/lib/api';
 
 // Deben coincidir con los límites del servidor (que es quien manda).
 export const NAME_MAX = 200;
@@ -12,17 +12,17 @@ export interface PuntoVueloHints {
 }
 
 // El DT no pertenece a un Punto Vuela concreto: indica su zona.
-export const puntoVueloHints = (role: Role): PuntoVueloHints =>
-    role === 'dt'
+export const puntoVueloHints = (roleId: string): PuntoVueloHints =>
+    roleId === 'ail'
         ? {
-              label: 'Punto Vuela o zona',
-              placeholder: 'DT Axarquía y Sierra de las Nieves',
-              help: 'Indica tu zona de trabajo; no hace falta un Punto Vuela concreto.',
-          }
-        : {
               label: 'Punto Vuela',
               placeholder: 'Localidad de Punto Vuela',
               help: null,
+          }
+        : {
+              label: 'Rol y zona',
+              placeholder: 'Zona o ámbito de trabajo',
+              help: 'Indica tu rol y zona de trabajo; no hace falta un Punto Vuela concreto',
           };
 
 export interface ProfileValues {

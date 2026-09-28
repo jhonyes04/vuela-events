@@ -1,15 +1,8 @@
 import { NavLink } from 'react-router';
 import { useAuth } from '@/auth/context';
 import { Button } from '@/components/ui/button';
-import type { Role } from '@/lib/api';
 import { cn } from '@/lib/utils';
 import { appRoutes, canAccess } from '@/routes/routes';
-
-const ROLE_LABEL: Record<Role, string> = {
-    admin: 'Administrador',
-    dt: 'DT',
-    ail: 'AIL',
-};
 
 const navClass = ({ isActive }: { isActive: boolean }) =>
     cn(
@@ -37,7 +30,9 @@ export const Header = () => {
                         className="order-3 -mx-1 flex w-full gap-1 overflow-x-auto sm:order-2 sm:mx-0 sm:w-auto sm:flex-1"
                     >
                         {appRoutes
-                            .filter((route) => canAccess(route, user.role))
+                            .filter((route) =>
+                                canAccess(route, user.permissions),
+                            )
                             .map((route) => (
                                 <NavLink
                                     key={route.path}
@@ -56,7 +51,7 @@ export const Header = () => {
                         <div className="hidden max-w-56 text-right text-sm leading-tight sm:block">
                             <p className="truncate font-medium">{user.name}</p>
                             <p className="truncate text-brand-ink/80">
-                                {ROLE_LABEL[user.role]}
+                                {user.roleName}
                             </p>
                         </div>
                         <Button size="lg" onClick={() => void logout()}>

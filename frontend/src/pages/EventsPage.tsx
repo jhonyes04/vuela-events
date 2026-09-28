@@ -37,7 +37,7 @@ const currentMonth = () => {
 
 export function EventsPage() {
     const { user } = useAuth();
-    const canCreate = user?.role === 'admin' || user?.role === 'dt';
+    const canCreate = user?.permissions.includes('events:create') ?? false;
     const [cursor, setCursor] = useState(currentMonth);
     const { events, loading, error, reload } = useMonthEvents(
         cursor.year,

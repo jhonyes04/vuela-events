@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useNavigate } from 'react-router';
 import { useAuth } from '@/auth/context';
 import { config } from '@/config';
 import { api, ApiError, type User } from '@/lib/api';
@@ -10,9 +11,12 @@ const DOMAIN_HINT = 'puntosvuela.es';
 
 export function GoogleSignIn() {
     const { setUser } = useAuth();
+    const navigate = useNavigate();
     const buttonRef = useRef<HTMLDivElement>(null);
     const [error, setError] = useState<string | null>(null);
     const [attempt, setAttempt] = useState(0);
+    // El superadmin entra con una cuenta fuera del dominio: sin la pista de dominio.
+    const [otherAccount, setOtherAccount] = useState(false);
 
     const handleCredential = useCallback(
         async (credential: string) => {
@@ -24,17 +28,17 @@ export function GoogleSignIn() {
 
                 setError(null);
                 setUser(user);
+                navigate('/');
             } catch (e) {
                 setError(
                     e instanceof ApiError
                         ? e.message
                         : 'No se pudo iniciar sesión',
                 );
-                // El nonce pudo caducar o gastarse: se pide uno nuevo.
                 setAttempt((n) => n + 1);
             }
         },
-        [setUser],
+        [setUser, navigate],
     );
 
     useEffect(() => {
@@ -55,7 +59,7 @@ export function GoogleSignIn() {
                 google.accounts.id.initialize({
                     client_id: config.googleClientId,
                     nonce,
-                    hd: DOMAIN_HINT,
+                    ...(otherAccount ? {} : { hd: DOMAIN_HINT }),
                     auto_select: false,
                     callback: (response) => {
                         void handleCredential(response.credential);
@@ -87,11 +91,20 @@ export function GoogleSignIn() {
         return () => {
             cancelled = true;
         };
-    }, [attempt, handleCredential]);
+    }, [attempt, otherAccount, handleCredential]);
 
     return (
         <div className="flex flex-col items-center gap-3">
             <div ref={buttonRef} />
+            {!otherAccount && (
+                <button
+                    type="button"
+                    onClick={() => setOtherAccount(true)}
+                    className="text-sm text-muted-foreground underline-offset-4 hover:underline"
+                >
+                    ¿Entras con una cuenta fuera de @{DOMAIN_HINT}?
+                </button>
+            )}
             {error && (
                 <Alert variant="destructive" className="max-w-sm">
                     <CircleAlert />

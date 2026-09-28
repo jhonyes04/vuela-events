@@ -1,14 +1,14 @@
 import type { ReactNode } from 'react';
-import type { Role } from '@/lib/api';
 import { EventsPage } from '@/pages/EventsPage';
 import { ProfilePage } from '@/pages/ProfilePage';
+import { RolesPage } from '@/pages/RolesPage';
 import { UsersPage } from '@/pages/UsersPage';
 
 export interface AppRoute {
     path: string;
     label: string;
     element: ReactNode;
-    roles?: Role[];
+    permissions?: string[];
 }
 
 export const appRoutes: AppRoute[] = [
@@ -18,9 +18,16 @@ export const appRoutes: AppRoute[] = [
         path: '/admin/usuarios',
         label: 'Usuarios',
         element: <UsersPage />,
-        roles: ['admin'],
+        permissions: ['users:manage'],
+    },
+    {
+        path: '/admin/roles',
+        label: 'Roles',
+        element: <RolesPage />,
+        permissions: ['roles:manage'],
     },
 ];
 
-export const canAccess = (route: AppRoute, role: Role): boolean =>
-    !route.roles || route.roles.includes(role);
+export const canAccess = (route: AppRoute, permissions: string[]): boolean =>
+    !route.permissions ||
+    route.permissions.some((permission) => permissions.includes(permission));

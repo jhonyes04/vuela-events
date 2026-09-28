@@ -5,20 +5,25 @@ import {
     useState,
     type ReactNode,
 } from 'react';
+import { useNavigate } from 'react-router';
 import { api, setUnauthorizedHandler, type User } from '@/lib/api';
 import { AuthContext } from './context';
 
 export function AuthProvider({ children }: { children: ReactNode }) {
     const [user, setUser] = useState<User | null>(null);
     const [loading, setLoading] = useState(true);
+    const navigate = useNavigate();
 
     // Cualquier 401 del servidor (sesión caducada, usuario desactivado)
     // cierra la sesión en pantalla.
     useEffect(() => {
-        setUnauthorizedHandler(() => setUser(null));
+        setUnauthorizedHandler(() => {
+            setUser(null);
+            navigate('/');
+        });
 
         return () => setUnauthorizedHandler(null);
-    }, []);
+    }, [navigate]);
 
     // Al arrancar, pregunta al servidor si ya hay una sesión válida.
     useEffect(() => {
@@ -45,8 +50,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             await api.post('/auth/logout');
         } finally {
             setUser(null);
+            navigate('/');
         }
-    }, []);
+    }, [navigate]);
 
     const value = useMemo(
         () => ({ user, loading, setUser, logout }),

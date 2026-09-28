@@ -1,12 +1,5 @@
 import { useAuth } from '@/auth/context';
 import { ProfileForm } from '@/components/ProfileForm';
-import type { Role } from '@/lib/api';
-
-const ROLE_LABEL: Record<Role, string> = {
-    admin: 'Administrador',
-    dt: 'DT',
-    ail: 'AIL',
-};
 
 export function ProfilePage() {
     const { user, setUser } = useAuth();
@@ -28,7 +21,7 @@ export function ProfilePage() {
                     <dt className="text-xs font-medium text-muted-foreground">
                         Rol
                     </dt>
-                    <dd>{ROLE_LABEL[user.role]}</dd>
+                    <dd>{user.roleName}</dd>
                 </div>
             </dl>
 

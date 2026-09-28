@@ -2,25 +2,26 @@ import type { ReactNode } from 'react';
 import { CircleAlert } from 'lucide-react';
 import { useAuth } from '@/auth/context';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import type { Role } from '@/lib/api';
 
-// Solo oculta pantallas: el backend es quien impide realmente el acceso a los datos.
-export function RequireRole({
-    roles,
+export function RequirePermission({
+    permissions,
     children,
 }: {
-    roles: Role[];
+    permissions: string[];
     children: ReactNode;
 }) {
     const { user } = useAuth();
 
-    if (!user || !roles.includes(user.role)) {
+    if (
+        !user ||
+        !permissions.some((permission) => user.permissions.includes(permission))
+    ) {
         return (
             <Alert variant="destructive" className="mx-auto max-w-md">
                 <CircleAlert />
                 <AlertTitle>Sin permisos</AlertTitle>
                 <AlertDescription>
-                    No tienes permisos para ver esta sección.
+                    No tienes permisos para ver esta sección
                 </AlertDescription>
             </Alert>
         );

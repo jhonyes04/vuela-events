@@ -1,5 +1,5 @@
 import { Route, Routes } from 'react-router';
-import { RequireRole } from '@/auth/RequireRole';
+import { RequirePermission } from '@/auth/RequirePermission';
 import { NotFoundPage } from '@/pages/NotFoundPage';
 import { appRoutes } from './routes';
 
@@ -11,10 +11,10 @@ export function AppRoutes() {
                     key={route.path}
                     path={route.path}
                     element={
-                        route.roles ? (
-                            <RequireRole roles={route.roles}>
+                        route.permissions ? (
+                            <RequirePermission permissions={route.permissions}>
                                 {route.element}
-                            </RequireRole>
+                            </RequirePermission>
                         ) : (
                             route.element
                         )

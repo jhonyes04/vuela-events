@@ -1,0 +1,21 @@
+{
+    "version": "0.0.1",
+    "configurations": [
+        {
+            "name": "backend-preview",
+            "runtimeExecutable": "node",
+            "runtimeArgs": [
+                "C:\\Users\\jhony\\AppData\\Local\\Temp\\claude\\D--00-PROGRAMACION-00-MIOS-MIS-PROYECTOS-vuela-events\\24e6c26c-889c-4c16-ba2a-d23bfa305dfc\\scratchpad\\preview-backend.mjs"
+            ],
+            "port": 3011
+        },
+        {
+            "name": "frontend-preview",
+            "runtimeExecutable": "node",
+            "runtimeArgs": [
+                "C:\\Users\\jhony\\AppData\\Local\\Temp\\claude\\D--00-PROGRAMACION-00-MIOS-MIS-PROYECTOS-vuela-events\\24e6c26c-889c-4c16-ba2a-d23bfa305dfc\\scratchpad\\preview-frontend.mjs"
+            ],
+            "port": 3010
+        }
+    ]
+}
