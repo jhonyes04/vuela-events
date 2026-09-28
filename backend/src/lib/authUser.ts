@@ -6,6 +6,7 @@ export interface AuthUser {
     puntoVuela: string | null;
     profileCompleted: boolean;
     roleId: string;
+    roleName: string;
     permissions: string[];
 }
 
@@ -20,6 +21,7 @@ export const authUserSelect = {
     role: {
         select: {
             id: true,
+            name: true,
             permissions: { select: { permissionId: true } },
         },
     },
@@ -31,7 +33,7 @@ export const toAuthUser = (row: {
     name: string;
     puntoVuela: string | null;
     profileCompletedAt: Date | null;
-    role: { id: string; permissions: { permissionId: string }[] };
+    role: { id: string; name: string; permissions: { permissionId: string }[] };
 }): AuthUser => ({
     id: row.id,
     email: row.email,
@@ -39,6 +41,7 @@ export const toAuthUser = (row: {
     puntoVuela: row.puntoVuela,
     profileCompleted: row.profileCompletedAt !== null,
     roleId: row.role.id,
+    roleName: row.role.name,
     permissions: row.role.permissions.map(
         (permission) => permission.permissionId,
     ),

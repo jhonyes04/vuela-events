@@ -64,20 +64,27 @@ const handleRoleManageError = (e: unknown, res: Response) => {
 
 export const rolesRouter = Router();
 
-// Todo lo que cuelga de este router exige el permiso de gestionar roles.
-rolesRouter.use(requireAuth, requirePermission('roles:manage'));
+rolesRouter.use(requireAuth);
 
-rolesRouter.get('/', async (_req, res) => {
-    const roles = await listRoles();
-    res.json({ roles });
-});
+rolesRouter.get(
+    '/',
+    requirePermission('roles:manage', 'users:manage'),
+    async (_req, res) => {
+        const roles = await listRoles();
+        res.json({ roles });
+    },
+);
 
-rolesRouter.get('/permissions', async (_req, res) => {
-    const permissions = await listPermissions();
-    res.json({ permissions });
-});
+rolesRouter.get(
+    '/permissions',
+    requirePermission('roles:manage', 'users:manage'),
+    async (_req, res) => {
+        const permissions = await listPermissions();
+        res.json({ permissions });
+    },
+);
 
-rolesRouter.post('/', async (req, res) => {
+rolesRouter.post('/', requirePermission('roles:manage'), async (req, res) => {
     const body = createRoleSchema.safeParse(req.body);
 
     if (!body.success) {
@@ -100,43 +107,51 @@ rolesRouter.post('/', async (req, res) => {
     }
 });
 
-rolesRouter.patch('/:id/permissions', async (req, res) => {
-    const params = idParamSchema.safeParse(req.params);
-    const body = permissionsBodySchema.safeParse(req.body);
+rolesRouter.patch(
+    '/:id/permissions',
+    requirePermission('roles:manage'),
+    async (req, res) => {
+        const params = idParamSchema.safeParse(req.params);
+        const body = permissionsBodySchema.safeParse(req.body);
 
-    if (!params.success || !body.success) {
-        res.status(400).json({ error: 'Solicitud no válida' });
-        return;
-    }
+        if (!params.success || !body.success) {
+            res.status(400).json({ error: 'Solicitud no válida' });
+            return;
+        }
 
-    try {
-        const role = await setRolePermissions(
-            params.data.id,
-            body.data.permissionIds,
-        );
+        try {
+            const role = await setRolePermissions(
+                params.data.id,
+                body.data.permissionIds,
+            );
 
-        res.json({ role });
-    } catch (e) {
-        if (handleRoleManageError(e, res)) return;
+            res.json({ role });
+        } catch (e) {
+            if (handleRoleManageError(e, res)) return;
 
-        throw e;
-    }
-});
+            throw e;
+        }
+    },
+);
 
-rolesRouter.delete('/:id', async (req, res) => {
-    const params = idParamSchema.safeParse(req.params);
+rolesRouter.delete(
+    '/:id',
+    requirePermission('roles:manage'),
+    async (req, res) => {
+        const params = idParamSchema.safeParse(req.params);
 
-    if (!params.success) {
-        res.status(400).json({ error: 'Solicitud no válida' });
-        return;
-    }
+        if (!params.success) {
+            res.status(400).json({ error: 'Solicitud no válida' });
+            return;
+        }
 
-    try {
-        await deleteRole(params.data.id);
-        res.status(204).end();
-    } catch (e) {
-        if (handleRoleManageError(e, res)) return;
+        try {
+            await deleteRole(params.data.id);
+            res.status(204).end();
+        } catch (e) {
+            if (handleRoleManageError(e, res)) return;
 
-        throw e;
-    }
-});
+            throw e;
+        }
+    },
+);
