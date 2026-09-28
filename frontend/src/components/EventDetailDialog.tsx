@@ -1,5 +1,6 @@
 import { useState, type ReactNode } from 'react';
 import { CircleAlert, CircleCheck } from 'lucide-react';
+import { OverlayScrollbarsComponent } from 'overlayscrollbars-react';
 import { useAuth } from '@/auth/context';
 import { DeleteEventDialog } from '@/components/DeleteEventDialog';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -15,6 +16,7 @@ import {
 } from '@/components/ui/dialog';
 import { useAttendees } from '@/hooks/useAttendees';
 import { ApiError } from '@/lib/api';
+import { scrollbarOptions } from '@/lib/overlayScrollbarsOptions';
 import {
     attendanceLabel,
     dayKey,
@@ -65,6 +67,7 @@ function EventDetailBody({
 
     const ended = hasEnded(event);
     const isDt = user?.roleId === 'dt';
+    const isAdmin = user?.roleId === 'admin';
     // Un DT puede inscribirse aunque esté completo: no ocupa plaza.
     const blockedByCapacity = isFull(event) && !isDt && !event.registered;
 
@@ -104,7 +107,7 @@ function EventDetailBody({
                     if (!open) onClose();
                 }}
             >
-                <DialogContent className="max-h-[90svh] overflow-y-auto sm:max-w-lg">
+                <DialogContent className="sm:max-w-lg">
                     <DialogHeader>
                         <DialogTitle>{event.title}</DialogTitle>
                         <DialogDescription>
@@ -173,13 +176,22 @@ function EventDetailBody({
                                 Todavía no hay inscritos.
                             </p>
                         ) : (
-                            <ul className="grid max-h-48 gap-1 overflow-y-auto rounded-lg border p-2 text-sm">
-                                {attendees.map((person) => (
-                                    <li key={person.id} className="break-words">
-                                        {personLabel(person)}
-                                    </li>
-                                ))}
-                            </ul>
+                            <OverlayScrollbarsComponent
+                                className="max-h-48 rounded-lg border"
+                                options={scrollbarOptions}
+                                defer
+                            >
+                                <ul className="grid gap-1 p-2 text-sm">
+                                    {attendees.map((person) => (
+                                        <li
+                                            key={person.id}
+                                            className="break-words"
+                                        >
+                                            {personLabel(person)}
+                                        </li>
+                                    ))}
+                                </ul>
+                            </OverlayScrollbarsComponent>
                         )}
                     </section>
 
@@ -224,6 +236,10 @@ function EventDetailBody({
                         {ended ? (
                             <p className="self-center text-sm text-muted-foreground">
                                 Este evento ya ha finalizado.
+                            </p>
+                        ) : isAdmin ? (
+                            <p className="self-center text-sm text-muted-foreground">
+                                Los administradores no pueden inscribirse.
                             </p>
                         ) : event.registered ? (
                             <Button

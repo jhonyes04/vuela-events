@@ -196,7 +196,7 @@ export function CreateEventDialog({
             <Button onClick={() => handleOpenChange(true)}>Crear evento</Button>
 
             <Dialog open={open} onOpenChange={handleOpenChange}>
-                <DialogContent className="max-h-[90svh] overflow-y-auto sm:max-w-lg">
+                <DialogContent className="sm:max-w-lg">
                     <DialogHeader>
                         <DialogTitle>Crear evento</DialogTitle>
                         <DialogDescription>

@@ -40,11 +40,19 @@ export function MonthCalendar({
 
     return (
         <div className="overflow-hidden rounded-xl border bg-card">
-            <div className="grid grid-cols-7 border-b bg-muted/60 text-center text-xs font-medium text-muted-foreground">
+            <div className="grid grid-cols-7 border-b bg-muted/60 text-center text-xs font-bold text-muted-foreground">
                 {WEEKDAY_HEADERS.map((d) => (
                     <div key={d.short} className="py-2">
-                        <span aria-hidden="true">{d.short}</span>
                         <span className="sr-only">{d.long}</span>
+                        <span className="sm:hidden" aria-hidden="true">
+                            {d.short}
+                        </span>
+                        <span
+                            className="hidden sm:inline"
+                            aria-hidden="true"
+                        >
+                            {d.long}
+                        </span>
                     </div>
                 ))}
             </div>

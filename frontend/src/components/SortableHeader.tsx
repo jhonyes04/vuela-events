@@ -16,7 +16,7 @@ export function SortableHeader<K extends string>({
 
     return (
         <th
-            className="p-3 font-medium"
+            className="p-3 font-bold"
             aria-sort={
                 active
                     ? sort.dir === 'asc'

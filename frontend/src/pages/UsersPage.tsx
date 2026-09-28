@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { CircleAlert } from 'lucide-react';
+import { OverlayScrollbarsComponent } from 'overlayscrollbars-react';
 import { useAuth } from '@/auth/context';
 import {
     Alert,
@@ -8,8 +9,11 @@ import {
     AlertTitle,
 } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
+import { PaginationControls } from '@/components/PaginationControls';
 import { SortableHeader } from '@/components/SortableHeader';
+import { usePagination } from '@/hooks/usePagination';
 import { useSort } from '@/hooks/useSort';
+import { scrollbarOptions } from '@/lib/overlayScrollbarsOptions';
 import { api, ApiError } from '@/lib/api';
 
 interface AdminUser {
@@ -51,6 +55,9 @@ export function UsersPage() {
         },
         { key: 'name', dir: 'asc' },
     );
+
+    const { paged, page, pageCount, pageSize, total, setPage, setPageSize } =
+        usePagination(sortedUsers, 25);
 
     const load = async () => {
         setLoading(true);
@@ -147,7 +154,11 @@ export function UsersPage() {
                     Cargando usuarios…
                 </p>
             ) : (
-                <div className="overflow-x-auto rounded-xl border bg-card">
+                <OverlayScrollbarsComponent
+                    className="rounded-xl border bg-card"
+                    options={scrollbarOptions}
+                    defer
+                >
                     <table className="w-full text-sm">
                         <thead>
                             <tr className="border-b bg-muted/50 text-left">
@@ -155,13 +166,13 @@ export function UsersPage() {
                                 <SortableHeader label="Correo" sortKey="email" sort={sort} onSort={toggleSort} />
                                 <SortableHeader label="Rol" sortKey="role" sort={sort} onSort={toggleSort} />
                                 <SortableHeader label="Estado" sortKey="active" sort={sort} onSort={toggleSort} />
-                                <th className="p-3 font-medium">
+                                <th className="p-3 font-bold">
                                     <span className="sr-only">Acciones</span>
                                 </th>
                             </tr>
                         </thead>
                         <tbody>
-                            {sortedUsers.map((u) => {
+                            {paged.map((u) => {
                                 const isSelf = u.id === me?.id;
                                 const busy = busyId === u.id;
 
@@ -223,6 +234,19 @@ export function UsersPage() {
                             })}
                         </tbody>
                     </table>
+                </OverlayScrollbarsComponent>
+            )}
+
+            {!loading && (
+                <div className="mt-4">
+                    <PaginationControls
+                        page={page}
+                        pageCount={pageCount}
+                        pageSize={pageSize}
+                        total={total}
+                        onPageChange={setPage}
+                        onPageSizeChange={setPageSize}
+                    />
                 </div>
             )}
         </section>

@@ -75,7 +75,7 @@ export function CreateRoleDialog({
             <Button onClick={() => handleOpenChange(true)}>Crear rol</Button>
 
             <Dialog open={open} onOpenChange={handleOpenChange}>
-                <DialogContent className="max-h-[90svh] overflow-y-auto sm:max-w-md">
+                <DialogContent className="sm:max-w-md">
                     <DialogHeader>
                         <DialogTitle>Crear rol</DialogTitle>
                         <DialogDescription>
