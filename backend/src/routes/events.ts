@@ -95,6 +95,10 @@ const registrationErrors = {
     already_registered: [409, 'Ya estás inscrito en este evento'],
     event_full: [409, 'El evento está completo'],
     event_ended: [409, 'El evento ya ha finalizado'],
+    admin_not_allowed: [
+        403,
+        'Los administradores no pueden inscribirse en eventos',
+    ],
 } as const;
 
 export const eventsRouter = Router();

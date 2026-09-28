@@ -5,7 +5,8 @@ export type RegistrationFailure =
     | 'not_found'
     | 'already_registered'
     | 'event_full'
-    | 'event_ended';
+    | 'event_ended'
+    | 'admin_not_allowed';
 
 export class RegistrationError extends Error {
     readonly reason: RegistrationFailure;
@@ -36,6 +37,16 @@ export const registerForEvent = async (userId: string, eventId: string) => {
                 throw new RegistrationError('event_ended');
             }
 
+            // Un admin nunca se inscribe: solo organiza.
+            const registrant = await tx.user.findUnique({
+                where: { id: userId },
+                select: { roleId: true },
+            });
+
+            if (registrant?.roleId === 'admin') {
+                throw new RegistrationError('admin_not_allowed');
+            }
+
             const already = await tx.registration.findUnique({
                 where: { eventId_userId: { eventId, userId } },
                 select: { id: true },
@@ -46,11 +57,6 @@ export const registerForEvent = async (userId: string, eventId: string) => {
             }
 
             // Un DT nunca cuenta como inscrito ni ocupa plaza.
-            const registrant = await tx.user.findUnique({
-                where: { id: userId },
-                select: { roleId: true },
-            });
-
             if (event.capacity !== null && registrant?.roleId !== 'dt') {
                 const taken = await tx.registration.count({
                     where: { eventId, user: { roleId: { not: 'dt' } } },

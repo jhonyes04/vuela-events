@@ -252,22 +252,33 @@ describe('inscripciones a eventos', () => {
         assert.equal(forB._count.registrations, 1);
     });
 
-    it('quien crea el evento también puede inscribirse (dt y admin), pero solo una vez', async () => {
+    it('un dt que crea el evento también puede inscribirse, pero solo una vez', async () => {
         const dt = await createUser('dt');
-        const admin = await createUser('admin');
         const ownedByDt = await makeEvent(dt.id);
-        const ownedByAdmin = await makeEvent(admin.id);
 
         assert.equal((await register(dt.id, ownedByDt.id)).status, 201);
-        assert.equal((await register(admin.id, ownedByAdmin.id)).status, 201);
-        assert.equal(await prisma.registration.count(), 2);
+        assert.equal(await prisma.registration.count(), 1);
 
         // La unicidad se mantiene también para el creador.
         const again = await register(dt.id, ownedByDt.id);
 
         assert.equal(again.status, 409);
         assert.equal(again.body.error, 'Ya estás inscrito en este evento');
-        assert.equal(await prisma.registration.count(), 2);
+        assert.equal(await prisma.registration.count(), 1);
+    });
+
+    it('un admin nunca puede inscribirse, ni siquiera en su propio evento', async () => {
+        const admin = await createUser('admin');
+        const ownedByAdmin = await makeEvent(admin.id);
+
+        const res = await register(admin.id, ownedByAdmin.id);
+
+        assert.equal(res.status, 403);
+        assert.equal(
+            res.body.error,
+            'Los administradores no pueden inscribirse en eventos',
+        );
+        assert.equal(await prisma.registration.count(), 0);
     });
 
     it('un DT puede pulsar Inscribirme, pero nunca cuenta ni ocupa plaza', async () => {
@@ -292,15 +303,16 @@ describe('inscripciones a eventos', () => {
         assert.equal(await prisma.registration.count(), 2);
     });
 
-    it('si un inscrito pasa a ser DT, deja de contarse; el admin sí cuenta', async () => {
-        const { admin, event } = await setup();
+    it('si un inscrito pasa a ser DT, deja de contarse; otro inscrito sí cuenta', async () => {
+        const { event } = await setup();
         const user = await createUser('ail');
+        const other = await createUser('ail');
 
         await register(user.id, event.id);
-        await register(admin.id, event.id);
+        await register(other.id, event.id);
 
         assert.equal(
-            (await listFor(user.id)).body.events[0]._count.registrations,
+            (await listFor(other.id)).body.events[0]._count.registrations,
             2,
         );
 
@@ -309,9 +321,9 @@ describe('inscripciones a eventos', () => {
             data: { roleId: 'dt' },
         });
 
-        // Solo queda el admin: el ex-AIL ya es DT y se oculta.
+        // Solo queda "other": el ex-AIL ya es DT y se oculta.
         assert.equal(
-            (await listFor(admin.id)).body.events[0]._count.registrations,
+            (await listFor(other.id)).body.events[0]._count.registrations,
             1,
         );
     });
@@ -408,21 +420,21 @@ describe('inscripciones a eventos', () => {
             );
         });
 
-        it('los DT nunca aparecen en la lista; el admin sí', async () => {
-            const { admin, event } = await setup();
+        it('los DT nunca aparecen en la lista; otros roles sí', async () => {
+            const { event } = await setup();
             const dt = await createUser('dt');
             const ail = await createUser('ail');
 
-            for (const u of [dt, admin, ail]) await register(u.id, event.id);
+            for (const u of [dt, ail]) await register(u.id, event.id);
 
             const res = await attendeesOf(ail.id, event.id);
             const names = res.body.registrations.map(
                 (r: { name: string }) => r.name,
             );
 
-            assert.equal(res.body.registrations.length, 2);
+            assert.equal(res.body.registrations.length, 1);
             assert.ok(!names.includes(dt.name));
-            assert.ok(names.includes(admin.name));
+            assert.ok(names.includes(ail.name));
         });
 
         it('un evento sin inscritos devuelve una lista vacía', async () => {
