@@ -101,6 +101,57 @@ describe('identityFromPayload', () => {
         assertRejected(payload({ hd: 'evil.com' }), 'domain_not_allowed');
     });
 
+    it('SUPERADMIN_EMAIL entra aunque el dominio/hd no coincidan', () => {
+        const superadminEmail = env.SUPERADMIN_EMAIL;
+
+        assert.ok(
+            superadminEmail,
+            'SUPERADMIN_EMAIL debe estar definido en .env',
+        );
+
+        const id = identityFromPayload(
+            payload({ email: superadminEmail, hd: undefined }),
+        );
+
+        assert.equal(id.email, superadminEmail);
+    });
+
+    it('SUPERADMIN_EMAIL sigue exigiendo email verificado', () => {
+        const superadminEmail = env.SUPERADMIN_EMAIL;
+
+        assert.ok(
+            superadminEmail,
+            'SUPERADMIN_EMAIL debe estar definido en .env',
+        );
+
+        assertRejected(
+            payload({
+                email: superadminEmail,
+                hd: undefined,
+                email_verified: false,
+            }),
+            'unverified_email',
+        );
+    });
+
+    it('SUPERADMIN_EMAIL sigue exigiendo el nonce', () => {
+        const superadminEmail = env.SUPERADMIN_EMAIL;
+
+        assert.ok(
+            superadminEmail,
+            'SUPERADMIN_EMAIL debe estar definido en .env',
+        );
+
+        assertRejected(
+            payload({
+                email: superadminEmail,
+                hd: undefined,
+                nonce: 'otro-nonce',
+            }),
+            'invalid_token',
+        );
+    });
+
     it('rechaza email no verificado', () => {
         assertRejected(payload({ email_verified: false }), 'unverified_email');
     });

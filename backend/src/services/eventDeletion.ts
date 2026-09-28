@@ -1,5 +1,4 @@
 import { prisma } from '../lib/prisma.js';
-import type { Role } from '../generated/prisma/client.js';
 
 export type EventDeleteFailure = 'not_found' | 'forbidden';
 
@@ -17,7 +16,7 @@ export class EventDeleteError extends Error {
 // Elimina UNA sesión. Solo un admin o quien creó el evento. Las inscripciones
 // se borran en cascada; la auditoría conserva qué se eliminó y cuántas había.
 export const deleteEvent = async (
-    actor: { id: string; role: Role },
+    actor: { id: string; roleId: string },
     eventId: string,
 ): Promise<void> => {
     await prisma.$transaction(async (tx) => {
@@ -31,7 +30,7 @@ export const deleteEvent = async (
                 _count: {
                     select: {
                         registrations: {
-                            where: { user: { role: { not: 'dt' } } },
+                            where: { user: { roleId: { not: 'dt' } } },
                         },
                     },
                 },
@@ -42,7 +41,7 @@ export const deleteEvent = async (
             throw new EventDeleteError('not_found');
         }
 
-        if (actor.role !== 'admin' && event.createdById !== actor.id) {
+        if (actor.roleId !== 'admin' && event.createdById !== actor.id) {
             throw new EventDeleteError('forbidden');
         }
 

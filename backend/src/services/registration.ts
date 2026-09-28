@@ -48,12 +48,12 @@ export const registerForEvent = async (userId: string, eventId: string) => {
             // Un DT nunca cuenta como inscrito ni ocupa plaza.
             const registrant = await tx.user.findUnique({
                 where: { id: userId },
-                select: { role: true },
+                select: { roleId: true },
             });
 
-            if (event.capacity !== null && registrant?.role !== 'dt') {
+            if (event.capacity !== null && registrant?.roleId !== 'dt') {
                 const taken = await tx.registration.count({
-                    where: { eventId, user: { role: { not: 'dt' } } },
+                    where: { eventId, user: { roleId: { not: 'dt' } } },
                 });
 
                 if (taken >= event.capacity) {
@@ -111,7 +111,7 @@ export const listAttendees = async (eventId: string): Promise<Attendee[]> => {
     }
 
     const rows = await prisma.registration.findMany({
-        where: { eventId, user: { role: { not: 'dt' } } },
+        where: { eventId, user: { roleId: { not: 'dt' } } },
         select: {
             id: true,
             user: { select: { name: true, puntoVuela: true } },

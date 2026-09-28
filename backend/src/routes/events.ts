@@ -4,7 +4,7 @@ import { prisma } from '../lib/prisma.js';
 import {
     requireAuth,
     requireCompleteProfile,
-    requireRole,
+    requirePermission,
 } from '../middleware/auth.js';
 import {
     isRealDate,
@@ -81,10 +81,9 @@ const eventSelect = {
     seriesId: true,
     createdAt: true,
     createdBy: { select: { id: true, name: true, puntoVuela: true } },
-    // Los DT nunca cuentan como inscritos, aunque puedan pulsar "Inscribirme".
     _count: {
         select: {
-            registrations: { where: { user: { role: { not: 'dt' } } } },
+            registrations: { where: { user: { roleId: { not: 'dt' } } } },
         },
     },
 } as const;
@@ -145,117 +144,131 @@ eventsRouter.get('/', async (req, res) => {
 });
 
 // Crear eventos: solo admin y dt.
-eventsRouter.post('/', requireRole('admin', 'dt'), requireCompleteProfile, async (req, res) => {
-    const actor = req.user;
+eventsRouter.post(
+    '/',
+    requirePermission('events:create'),
+    requireCompleteProfile,
+    async (req, res) => {
+        const actor = req.user;
 
-    if (!actor) {
-        res.status(401).json({ error: 'Autenticación requerida' });
-        return;
-    }
+        if (!actor) {
+            res.status(401).json({ error: 'Autenticación requerida' });
+            return;
+        }
 
-    const body = createEventSchema.safeParse(req.body);
+        const body = createEventSchema.safeParse(req.body);
 
-    if (!body.success) {
-        res.status(400).json({ error: 'Solicitud no válida' });
-        return;
-    }
+        if (!body.success) {
+            res.status(400).json({ error: 'Solicitud no válida' });
+            return;
+        }
 
-    const {
-        title,
-        subtitle,
-        description,
-        location,
-        startsAt,
-        endsAt,
-        capacity,
-    } = body.data;
-
-    const event = await prisma.event.create({
-        data: {
+        const {
             title,
             subtitle,
             description,
             location,
-            startsAt: new Date(startsAt),
-            endsAt: new Date(endsAt),
+            startsAt,
+            endsAt,
             capacity,
-            createdById: actor.id,
-        },
-        select: eventSelect,
-    });
+        } = body.data;
 
-    res.status(201).json({ event });
-});
+        const event = await prisma.event.create({
+            data: {
+                title,
+                subtitle,
+                description,
+                location,
+                startsAt: new Date(startsAt),
+                endsAt: new Date(endsAt),
+                capacity,
+                createdById: actor.id,
+            },
+            select: eventSelect,
+        });
+
+        res.status(201).json({ event });
+    },
+);
 
 // Crear una serie recurrente (mismos días de la semana entre dos fechas): admin y dt.
 // El servidor calcula las fechas; nunca se confía en una lista enviada por el cliente.
-eventsRouter.post('/recurring', requireRole('admin', 'dt'), requireCompleteProfile, async (req, res) => {
-    const actor = req.user;
+eventsRouter.post(
+    '/recurring',
+    requirePermission('events:create'),
+    requireCompleteProfile,
+    async (req, res) => {
+        const actor = req.user;
 
-    if (!actor) {
-        res.status(401).json({ error: 'Autenticación requerida' });
-        return;
-    }
-
-    const body = createSeriesSchema.safeParse(req.body);
-
-    if (!body.success) {
-        res.status(400).json({ error: 'Solicitud no válida' });
-        return;
-    }
-
-    const { from, to, weekdays, startTime, endTime, ...fields } = body.data;
-
-    try {
-        const series = await createEventSeries(actor.id, {
-            ...fields,
-            rule: { from, to, weekdays, startTime, endTime },
-        });
-
-        res.status(201).json(series);
-    } catch (e) {
-        if (e instanceof RecurrenceError) {
-            res.status(400).json({ error: seriesErrors[e.reason] });
+        if (!actor) {
+            res.status(401).json({ error: 'Autenticación requerida' });
             return;
         }
 
-        throw e;
-    }
-});
+        const body = createSeriesSchema.safeParse(req.body);
+
+        if (!body.success) {
+            res.status(400).json({ error: 'Solicitud no válida' });
+            return;
+        }
+
+        const { from, to, weekdays, startTime, endTime, ...fields } = body.data;
+
+        try {
+            const series = await createEventSeries(actor.id, {
+                ...fields,
+                rule: { from, to, weekdays, startTime, endTime },
+            });
+
+            res.status(201).json(series);
+        } catch (e) {
+            if (e instanceof RecurrenceError) {
+                res.status(400).json({ error: seriesErrors[e.reason] });
+                return;
+            }
+
+            throw e;
+        }
+    },
+);
 
 // Eliminar UNA sesión: admin o quien la creó.
-eventsRouter.delete('/:id', requireRole('admin', 'dt'), async (req, res) => {
-    const actor = req.user;
-    const params = idParamsSchema.safeParse(req.params);
+eventsRouter.delete(
+    '/:id',
+    requirePermission('events:delete'),
+    async (req, res) => {
+        const actor = req.user;
+        const params = idParamsSchema.safeParse(req.params);
 
-    if (!actor) {
-        res.status(401).json({ error: 'Autenticación requerida' });
-        return;
-    }
-
-    if (!params.success) {
-        res.status(400).json({ error: 'Solicitud no válida' });
-        return;
-    }
-
-    try {
-        await deleteEvent(actor, params.data.id);
-
-        res.status(204).end();
-    } catch (e) {
-        if (e instanceof EventDeleteError) {
-            res.status(e.reason === 'not_found' ? 404 : 403).json({
-                error:
-                    e.reason === 'not_found'
-                        ? 'Evento no encontrado'
-                        : 'Solo un administrador o quien creó el evento puede eliminarlo',
-            });
+        if (!actor) {
+            res.status(401).json({ error: 'Autenticación requerida' });
             return;
         }
 
-        throw e;
-    }
-});
+        if (!params.success) {
+            res.status(400).json({ error: 'Solicitud no válida' });
+            return;
+        }
+
+        try {
+            await deleteEvent(actor, params.data.id);
+
+            res.status(204).end();
+        } catch (e) {
+            if (e instanceof EventDeleteError) {
+                res.status(e.reason === 'not_found' ? 404 : 403).json({
+                    error:
+                        e.reason === 'not_found'
+                            ? 'Evento no encontrado'
+                            : 'Solo un administrador o quien creó el evento puede eliminarlo',
+                });
+                return;
+            }
+
+            throw e;
+        }
+    },
+);
 
 // Personas inscritas en un evento (Punto Vuela y nombre; sin los DT).
 eventsRouter.get('/:id/registrations', async (req, res) => {
@@ -281,35 +294,42 @@ eventsRouter.get('/:id/registrations', async (req, res) => {
 });
 
 // Inscribirse: cualquier usuario autenticado, una vez por evento.
-eventsRouter.post('/:id/registrations', requireCompleteProfile, async (req, res) => {
-    const actor = req.user;
-    const params = idParamsSchema.safeParse(req.params);
+eventsRouter.post(
+    '/:id/registrations',
+    requireCompleteProfile,
+    async (req, res) => {
+        const actor = req.user;
+        const params = idParamsSchema.safeParse(req.params);
 
-    if (!actor) {
-        res.status(401).json({ error: 'Autenticación requerida' });
-        return;
-    }
-
-    if (!params.success) {
-        res.status(400).json({ error: 'Solicitud no válida' });
-        return;
-    }
-
-    try {
-        const registration = await registerForEvent(actor.id, params.data.id);
-
-        res.status(201).json({ registration });
-    } catch (e) {
-        if (e instanceof RegistrationError) {
-            const [status, error] = registrationErrors[e.reason];
-
-            res.status(status).json({ error });
+        if (!actor) {
+            res.status(401).json({ error: 'Autenticación requerida' });
             return;
         }
 
-        throw e;
-    }
-});
+        if (!params.success) {
+            res.status(400).json({ error: 'Solicitud no válida' });
+            return;
+        }
+
+        try {
+            const registration = await registerForEvent(
+                actor.id,
+                params.data.id,
+            );
+
+            res.status(201).json({ registration });
+        } catch (e) {
+            if (e instanceof RegistrationError) {
+                const [status, error] = registrationErrors[e.reason];
+
+                res.status(status).json({ error });
+                return;
+            }
+
+            throw e;
+        }
+    },
+);
 
 // Cancelar la propia inscripción
 eventsRouter.delete('/:id/registrations', async (req, res) => {

@@ -1,7 +1,6 @@
 import type { NextFunction, Request, Response } from 'express';
 import { prisma } from '../lib/prisma.js';
 import { authUserSelect, toAuthUser, type AuthUser } from '../lib/authUser.js';
-import type { Role } from '../generated/prisma/client.js';
 
 export type { AuthUser };
 
@@ -71,16 +70,16 @@ export const requireCompleteProfile = (
     next();
 };
 
-export const requireRole = (...allowed: Role[]) => {
-    const allowedRoles = new Set<Role>(allowed);
-
+export const requirePermission = (...required: string[]) => {
     return (req: Request, res: Response, next: NextFunction): void => {
-        if (!req.user) {
+        const { user } = req;
+
+        if (!user) {
             res.status(401).json({ error: 'Autenticación requerida' });
             return;
         }
 
-        if (!allowedRoles.has(req.user.role)) {
+        if (!required.some((code) => user.permissions.includes(code))) {
             res.status(403).json({
                 error: 'No tienes permisos para esta acción',
             });

@@ -48,7 +48,7 @@ describe('login por HTTP (ruta real, Google simulado)', () => {
         const res = await login(payload('ana'));
 
         assert.equal(res.status, 200);
-        assert.equal(res.body.user.role, 'ail');
+        assert.equal(res.body.user.roleId, 'ail');
         assert.equal(res.body.user.email, `ana@${D}`);
 
         const raw = res.setCookie.find((c) => c.startsWith('vuela.sid='));

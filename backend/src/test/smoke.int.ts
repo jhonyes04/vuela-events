@@ -33,7 +33,7 @@ describe('infraestructura de tests', () => {
 
         assert.equal(res.status, 200);
         assert.equal(res.body.user.id, user.id);
-        assert.equal(res.body.user.role, 'dt');
+        assert.equal(res.body.user.roleId, 'dt');
     });
 
     it('sin cookie, /api/auth/me da 401', async () => {

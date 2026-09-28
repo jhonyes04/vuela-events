@@ -43,14 +43,14 @@ describe('administración de usuarios', () => {
             origin,
         });
 
-    const setRole = (actorId: string, targetId: string, role: string) =>
-        patch(actorId, `/api/users/${targetId}/role`, { role });
+    const setRole = (actorId: string, targetId: string, roleId: string) =>
+        patch(actorId, `/api/users/${targetId}/role`, { roleId });
 
     const setActive = (actorId: string, targetId: string, active: boolean) =>
         patch(actorId, `/api/users/${targetId}/active`, { active });
 
     const roleOf = async (id: string) =>
-        (await prisma.user.findUniqueOrThrow({ where: { id } })).role;
+        (await prisma.user.findUniqueOrThrow({ where: { id } })).roleId;
 
     describe('cambio de roles', () => {
         it('ail NO puede cambiar roles ni elevarse a sí mismo', async () => {
@@ -137,17 +137,17 @@ describe('administración de usuarios', () => {
             assert.equal(await roleOf(admin.id), 'admin');
         });
 
-        it('rol inválido o campos extra: 400 y no cambia nada', async () => {
+        it('rol inexistente: 404; campos extra: 400 y no cambia nada', async () => {
             const admin = await createUser('admin');
             const ail = await createUser('ail');
             const path = `/api/users/${ail.id}/role`;
 
             assert.equal(
                 (await setRole(admin.id, ail.id, 'superadmin')).status,
-                400,
+                404,
             );
             assert.equal(
-                (await patch(admin.id, path, { role: 'dt', active: false }))
+                (await patch(admin.id, path, { roleId: 'dt', active: false }))
                     .status,
                 400,
             );
@@ -207,7 +207,7 @@ describe('administración de usuarios', () => {
                 setRole(b.id, a.id, 'ail'),
             ]);
             const admins = await prisma.user.count({
-                where: { role: 'admin', active: true },
+                where: { roleId: 'admin', active: true },
             });
 
             assert.ok(admins >= 1, `admins activos: ${admins}`);
@@ -306,7 +306,7 @@ describe('administración de usuarios', () => {
                 server.baseUrl,
                 'PATCH',
                 `/api/users/${target.id}/role`,
-                { cookie: cookieB, body: { role: 'dt' } },
+                { cookie: cookieB, body: { roleId: 'dt' } },
             );
 
             assert.equal(res.status, 401);
@@ -339,7 +339,7 @@ describe('administración de usuarios', () => {
                 setActive(b.id, a.id, false),
             ]);
             const admins = await prisma.user.count({
-                where: { role: 'admin', active: true },
+                where: { roleId: 'admin', active: true },
             });
 
             assert.ok(admins >= 1, `admins activos: ${admins}`);

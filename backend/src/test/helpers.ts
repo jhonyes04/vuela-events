@@ -4,7 +4,6 @@ import { prisma } from '../lib/prisma.js';
 import { SESSION_COOKIE, sessionPool } from '../middleware/session.js';
 import { createApp, type AppOptions } from '../app.js';
 import type { AddressInfo } from 'node:net';
-import type { Role } from '../generated/prisma/client.js';
 
 // Estos helpers BORRAN datos: sólo pueden ejecutarse contra una base "_test"
 if (
@@ -27,7 +26,7 @@ export const closeDb = async (): Promise<void> => {
 // Por defecto crea usuarios con el perfil COMPLETO (así pueden inscribirse y crear
 // eventos); con profileCompleted: false se simula el primer acceso.
 export const createUser = (
-    role: Role,
+    roleId: string,
     opts: { active?: boolean; email?: string; profileCompleted?: boolean } = {},
 ) => {
     const n = randomBytes(4).toString('hex');
@@ -35,12 +34,12 @@ export const createUser = (
 
     return prisma.user.create({
         data: {
-            email: opts.email ?? `${role}-${n}@${env.ALLOWED_EMAIL_DOMAIN}`,
+            email: opts.email ?? `${roleId}-${n}@${env.ALLOWED_EMAIL_DOMAIN}`,
             googleSub: `sub-${n}`,
-            name: `${role} ${n}`,
+            name: `${roleId} ${n}`,
             puntoVuela: completed ? `Punto ${n}` : null,
             profileCompletedAt: completed ? new Date() : null,
-            role,
+            roleId,
             active: opts.active ?? true,
         },
     });

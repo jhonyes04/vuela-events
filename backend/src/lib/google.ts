@@ -41,14 +41,19 @@ export function identityFromPayload(
     }
 
     const email = payload.email.trim().toLowerCase();
-    const emailDomain = email.slice(email.lastIndexOf('@') + 1);
-    const workspaceDomain = payload.hd?.trim().toLowerCase();
+    const isSuperadmin =
+        env.SUPERADMIN_EMAIL !== undefined && email === env.SUPERADMIN_EMAIL;
 
-    if (
-        emailDomain !== env.ALLOWED_EMAIL_DOMAIN ||
-        workspaceDomain !== env.ALLOWED_EMAIL_DOMAIN
-    ) {
-        throw new LoginRejectedError('domain_not_allowed');
+    if (!isSuperadmin) {
+        const emailDomain = email.slice(email.lastIndexOf('@') + 1);
+        const workspaceDomain = payload.hd?.trim().toLowerCase();
+
+        if (
+            emailDomain !== env.ALLOWED_EMAIL_DOMAIN ||
+            workspaceDomain !== env.ALLOWED_EMAIL_DOMAIN
+        ) {
+            throw new LoginRejectedError('domain_not_allowed');
+        }
     }
 
     const name = (payload.name?.trim() || email.split('@')[0]) ?? email;

@@ -18,18 +18,9 @@ const envSchema = z
             .regex(/^[a-z0-9-]+(\.[a-z0-9-]+)+$/)
             .default('puntosvuela.es'),
         FRONTEND_ORIGIN: z.url(),
+        SUPERADMIN_EMAIL: z.email().toLowerCase().optional(),
         TRUST_PROXY_HOPS: z.coerce.number().int().min(0).max(5).default(0),
-        INITIAL_ADMIN_EMAIL: z.email().toLowerCase().optional(),
-    })
-    .refine(
-        (e) =>
-            !e.INITIAL_ADMIN_EMAIL ||
-            e.INITIAL_ADMIN_EMAIL.endsWith(`@${e.ALLOWED_EMAIL_DOMAIN}`),
-        {
-            path: ['INITIAL_ADMIN_EMAIL'],
-            message: 'Debe pertenecer al dominio permitido',
-        },
-    );
+    });
 
 const parsed = envSchema.safeParse(process.env);
 

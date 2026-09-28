@@ -306,7 +306,7 @@ describe('inscripciones a eventos', () => {
 
         await prisma.user.update({
             where: { id: user.id },
-            data: { role: 'dt' },
+            data: { roleId: 'dt' },
         });
 
         // Solo queda el admin: el ex-AIL ya es DT y se oculta.
@@ -324,9 +324,14 @@ describe('inscripciones a eventos', () => {
         await register(dt.id, event.id);
         await register(ail.id, event.id);
 
-        const res = await api(server.baseUrl, 'DELETE', `/api/events/${event.id}`, {
-            cookie: await sessionCookieFor(admin.id),
-        });
+        const res = await api(
+            server.baseUrl,
+            'DELETE',
+            `/api/events/${event.id}`,
+            {
+                cookie: await sessionCookieFor(admin.id),
+            },
+        );
 
         assert.equal(res.status, 204);
         // Las dos filas se borran en cascada; la auditoría cuenta solo la visible.
@@ -350,9 +355,18 @@ describe('inscripciones a eventos', () => {
             const a1 = await createUser('ail');
             const a2 = await createUser('ail');
 
-            await prisma.user.update({ where: { id: b.id }, data: { name: 'Zoe', puntoVuela: 'Benamargosa' } });
-            await prisma.user.update({ where: { id: a1.id }, data: { name: 'Marta', puntoVuela: 'Almáchar' } });
-            await prisma.user.update({ where: { id: a2.id }, data: { name: 'Alba', puntoVuela: 'Almáchar' } });
+            await prisma.user.update({
+                where: { id: b.id },
+                data: { name: 'Zoe', puntoVuela: 'Benamargosa' },
+            });
+            await prisma.user.update({
+                where: { id: a1.id },
+                data: { name: 'Marta', puntoVuela: 'Almáchar' },
+            });
+            await prisma.user.update({
+                where: { id: a2.id },
+                data: { name: 'Alba', puntoVuela: 'Almáchar' },
+            });
 
             for (const u of [b, a1, a2]) await register(u.id, event.id);
 
@@ -360,7 +374,10 @@ describe('inscripciones a eventos', () => {
 
             assert.equal(res.status, 200);
             assert.deepEqual(
-                res.body.registrations.map((r: { puntoVuela: string; name: string }) => `${r.puntoVuela} (${r.name})`),
+                res.body.registrations.map(
+                    (r: { puntoVuela: string; name: string }) =>
+                        `${r.puntoVuela} (${r.name})`,
+                ),
                 ['Almáchar (Alba)', 'Almáchar (Marta)', 'Benamargosa (Zoe)'],
             );
         });
@@ -376,12 +393,19 @@ describe('inscripciones a eventos', () => {
 
             assert.equal(res.status, 200);
             assert.equal(res.body.registrations.length, 1);
-            assert.deepEqual(
-                Object.keys(res.body.registrations[0]).sort(),
-                ['id', 'name', 'puntoVuela'],
+            assert.deepEqual(Object.keys(res.body.registrations[0]).sort(), [
+                'id',
+                'name',
+                'puntoVuela',
+            ]);
+            assert.ok(
+                !JSON.stringify(res.body).includes('@'),
+                'no debe haber correos',
             );
-            assert.ok(!JSON.stringify(res.body).includes('@'), 'no debe haber correos');
-            assert.ok(!JSON.stringify(res.body).includes(ail.id), 'no debe haber ids de usuario');
+            assert.ok(
+                !JSON.stringify(res.body).includes(ail.id),
+                'no debe haber ids de usuario',
+            );
         });
 
         it('los DT nunca aparecen en la lista; el admin sí', async () => {
@@ -392,7 +416,9 @@ describe('inscripciones a eventos', () => {
             for (const u of [dt, admin, ail]) await register(u.id, event.id);
 
             const res = await attendeesOf(ail.id, event.id);
-            const names = res.body.registrations.map((r: { name: string }) => r.name);
+            const names = res.body.registrations.map(
+                (r: { name: string }) => r.name,
+            );
 
             assert.equal(res.body.registrations.length, 2);
             assert.ok(!names.includes(dt.name));
@@ -412,7 +438,12 @@ describe('inscripciones a eventos', () => {
             const admin = await createUser('admin');
 
             assert.equal(
-                (await attendeesOf(admin.id, '11111111-1111-4111-8111-111111111111')).status,
+                (
+                    await attendeesOf(
+                        admin.id,
+                        '11111111-1111-4111-8111-111111111111',
+                    )
+                ).status,
                 404,
             );
             assert.equal((await attendeesOf(admin.id, 'no-uuid')).status, 400);
@@ -436,7 +467,8 @@ describe('inscripciones a eventos', () => {
             for (const u of [dt, ail]) await register(u.id, event.id);
 
             const list = (await listFor(admin.id)).body.events[0];
-            const attendees = (await attendeesOf(admin.id, event.id)).body.registrations;
+            const attendees = (await attendeesOf(admin.id, event.id)).body
+                .registrations;
 
             assert.equal(list._count.registrations, attendees.length);
         });

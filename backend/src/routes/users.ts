@@ -2,7 +2,7 @@ import { Router, type Response } from 'express';
 import { z } from 'zod';
 import { prisma } from '../lib/prisma.js';
 import { Prisma } from '../generated/prisma/client.js';
-import { requireAuth, requireRole } from '../middleware/auth.js';
+import { requireAuth, requirePermission } from '../middleware/auth.js';
 import {
     changeUserRole,
     RoleChangeError,
@@ -11,7 +11,7 @@ import {
 
 const paramsSchema = z.object({ id: z.uuid() });
 const roleBodySchema = z.strictObject({
-    role: z.enum(['admin', 'dt', 'ail']),
+    roleId: z.string().trim().toLowerCase().min(1).max(40),
 });
 
 const activeBodySchema = z.strictObject({ active: z.boolean() });
@@ -20,7 +20,10 @@ const adminErrors = {
     forbidden: [403, 'No tienes permisos para esta acción'],
     not_found: [404, 'Usuario no encontrado'],
     self_change: [400, 'No puedes modificar tu propia cuenta'],
-    last_admin: [409, 'No puedes dejar el sistema sin administradores'],
+    last_manager: [
+        409,
+        'No puedes dejar el sistema sin nadie que pueda gestionar usuarios',
+    ],
 } as const;
 
 const handleAdminError = (e: unknown, res: Response) => {
@@ -47,8 +50,8 @@ const handleAdminError = (e: unknown, res: Response) => {
 
 export const usersRouter = Router();
 
-// Todo lo que cuelga de este router es solo para administradores
-usersRouter.use(requireAuth, requireRole('admin'));
+// Todo lo que cuelga de este router exige el permiso de gestionar usuarios.
+usersRouter.use(requireAuth, requirePermission('users:manage'));
 
 usersRouter.get('/', async (_req, res) => {
     const users = await prisma.user.findMany({
@@ -56,9 +59,9 @@ usersRouter.get('/', async (_req, res) => {
             id: true,
             email: true,
             name: true,
-            role: true,
             active: true,
             createdAt: true,
+            role: { select: { id: true, name: true } },
         },
         orderBy: { createdAt: 'asc' },
         take: 500,
@@ -87,7 +90,7 @@ usersRouter.patch('/:id/role', async (req, res) => {
         const user = await changeUserRole(
             actor.id,
             params.data.id,
-            body.data.role,
+            body.data.roleId,
         );
 
         res.json({ user });

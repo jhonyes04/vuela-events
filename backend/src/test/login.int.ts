@@ -30,7 +30,7 @@ describe('login: alta y acceso de usuarios', () => {
     it('un usuario nuevo entra con el rol mínimo (ail) y activo', async () => {
         const user = await findOrCreateUser(identity('nuevo'));
 
-        assert.equal(user.role, 'ail');
+        assert.equal(user.roleId, 'ail');
         assert.equal(await prisma.user.count(), 1);
 
         const row = await prisma.user.findUniqueOrThrow({
@@ -53,12 +53,12 @@ describe('login: alta y acceso de usuarios', () => {
 
         await prisma.user.update({
             where: { id: first.id },
-            data: { role: 'dt' },
+            data: { roleId: 'dt' },
         });
 
         const again = await findOrCreateUser(identity('promo'));
 
-        assert.equal(again.role, 'dt');
+        assert.equal(again.roleId, 'dt');
     });
 
     it('sincroniza nombre y correo si cambian en Google', async () => {
@@ -144,43 +144,46 @@ describe('login: alta y acceso de usuarios', () => {
         assert.equal(await prisma.user.count(), 1);
     });
 
-    it('el admin inicial recibe rol admin solo si no existe ningún admin', async () => {
-        const adminEmail = env.INITIAL_ADMIN_EMAIL;
+    it('SUPERADMIN_EMAIL siempre recibe rol admin al crearse', async () => {
+        const superadminEmail = env.SUPERADMIN_EMAIL;
 
         assert.ok(
-            adminEmail,
-            'INITIAL_ADMIN_EMAIL debe estar definido en .env',
+            superadminEmail,
+            'SUPERADMIN_EMAIL debe estar definido en .env',
         );
 
         const user = await findOrCreateUser(
-            identity('inicial', { email: adminEmail }),
+            identity('super', { email: superadminEmail }),
         );
 
-        assert.equal(user.role, 'admin');
+        assert.equal(user.roleId, 'admin');
     });
 
-    it('con un admin ya existente, INITIAL_ADMIN_EMAIL no concede admin', async () => {
-        const adminEmail = env.INITIAL_ADMIN_EMAIL;
+    it('SUPERADMIN_EMAIL recibe admin auqnue ya exista otro admin', async () => {
+        const superadminEmail = env.SUPERADMIN_EMAIL;
 
         assert.ok(
-            adminEmail,
-            'INITIAL_ADMIN_EMAIL debe estar definido en .env',
+            superadminEmail,
+            'SUPERADMIN_EMAIL debe estar definido en .evn',
         );
 
         await createUser('admin');
 
         const user = await findOrCreateUser(
-            identity('inicial2', { email: adminEmail }),
+            identity('super2', { email: superadminEmail }),
         );
 
-        assert.equal(user.role, 'ail');
+        assert.equal(user.roleId, 'admin');
     });
 
     it('otro correo no obtiene admin aunque no haya ningún admin', async () => {
         const user = await findOrCreateUser(identity('cualquiera'));
 
-        assert.equal(user.role, 'ail');
-        assert.equal(await prisma.user.count({ where: { role: 'admin' } }), 0);
+        assert.equal(user.roleId, 'ail');
+        assert.equal(
+            await prisma.user.count({ where: { roleId: 'admin' } }),
+            0,
+        );
     });
 
     it('doble primer login simultáneo (doble clic): ambos entran y hay una sola fila', async () => {

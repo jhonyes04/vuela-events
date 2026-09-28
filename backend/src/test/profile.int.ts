@@ -69,7 +69,9 @@ describe('perfil: primer acceso y edición', () => {
             assert.equal(res.body.user.puntoVuela, validProfile.puntoVuela);
             assert.equal(res.body.user.profileCompleted, true);
 
-            const row = await prisma.user.findUniqueOrThrow({ where: { id: user.id } });
+            const row = await prisma.user.findUniqueOrThrow({
+                where: { id: user.id },
+            });
 
             assert.ok(row.profileCompletedAt);
             assert.equal((await me(user.id)).profileCompleted, true);
@@ -84,7 +86,10 @@ describe('perfil: primer acceso y edición', () => {
             });
 
             assert.equal(res.status, 200);
-            assert.equal(res.body.user.puntoVuela, 'DT Axarquía y Sierra de las Nieves');
+            assert.equal(
+                res.body.user.puntoVuela,
+                'DT Axarquía y Sierra de las Nieves',
+            );
         });
 
         it('sin el perfil completo NO se puede inscribir ni crear eventos: 403 y no se escribe nada', async () => {
@@ -110,18 +115,23 @@ describe('perfil: primer acceso y edición', () => {
                 cookie: await sessionCookieFor(dt.id),
                 body: newEvent,
             });
-            const series = await api(server.baseUrl, 'POST', '/api/events/recurring', {
-                cookie: await sessionCookieFor(dt.id),
-                body: {
-                    title: 'Serie',
-                    location: 'Sala',
-                    from: '2027-01-01',
-                    to: '2027-01-31',
-                    weekdays: [3],
-                    startTime: '09:00',
-                    endTime: '13:00',
+            const series = await api(
+                server.baseUrl,
+                'POST',
+                '/api/events/recurring',
+                {
+                    cookie: await sessionCookieFor(dt.id),
+                    body: {
+                        title: 'Serie',
+                        location: 'Sala',
+                        from: '2027-01-01',
+                        to: '2027-01-31',
+                        weekdays: [3],
+                        startTime: '09:00',
+                        endTime: '13:00',
+                    },
                 },
-            });
+            );
 
             assert.equal(register.status, 403);
             assert.equal(create.status, 403);
@@ -196,15 +206,23 @@ describe('perfil: primer acceso y edición', () => {
 
             assert.equal(multiline.status, 200);
             assert.equal(multiline.body.user.name, 'Ana García López');
-            assert.equal(multiline.body.user.puntoVuela, 'Sierra de las Nieves');
+            assert.equal(
+                multiline.body.user.puntoVuela,
+                'Sierra de las Nieves',
+            );
         });
 
         it('admite acentos, apóstrofos, guiones y otros alfabetos en los nombres', async () => {
             const user = await createUser('ail');
 
-            for (const name of ["María-José O'Brien", 'Zoë Łukasiewicz', 'Ñandú Pérez']) {
+            for (const name of [
+                "María-José O'Brien",
+                'Zoë Łukasiewicz',
+                'Ñandú Pérez',
+            ]) {
                 assert.equal(
-                    (await patch(user.id, { name, puntoVuela: 'Lugar' })).status,
+                    (await patch(user.id, { name, puntoVuela: 'Lugar' }))
+                        .status,
                     200,
                     name,
                 );
@@ -214,7 +232,10 @@ describe('perfil: primer acceso y edición', () => {
         it('deja auditoría con los NOMBRES de los campos cambiados, no con sus valores', async () => {
             const user = await createUser('ail');
 
-            await patch(user.id, { name: 'Nombre Distinto', puntoVuela: 'Lugar Distinto' });
+            await patch(user.id, {
+                name: 'Nombre Distinto',
+                puntoVuela: 'Lugar Distinto',
+            });
 
             const log = await prisma.auditLog.findFirstOrThrow({
                 where: { action: 'profile_updated' },
@@ -227,7 +248,9 @@ describe('perfil: primer acceso y edición', () => {
 
         it('guardar sin cambios no genera auditoría ni altera la fecha de completado', async () => {
             const user = await createUser('ail');
-            const before = await prisma.user.findUniqueOrThrow({ where: { id: user.id } });
+            const before = await prisma.user.findUniqueOrThrow({
+                where: { id: user.id },
+            });
 
             const res = await patch(user.id, {
                 name: before.name,
@@ -237,7 +260,9 @@ describe('perfil: primer acceso y edición', () => {
             assert.equal(res.status, 200);
             assert.equal(await prisma.auditLog.count(), 0);
 
-            const after = await prisma.user.findUniqueOrThrow({ where: { id: user.id } });
+            const after = await prisma.user.findUniqueOrThrow({
+                where: { id: user.id },
+            });
 
             assert.equal(
                 after.profileCompletedAt?.getTime(),
@@ -263,11 +288,16 @@ describe('perfil: primer acceso y edición', () => {
             const anon = await api(server.baseUrl, 'PATCH', '/api/profile', {
                 body: validProfile,
             });
-            const noOrigin = await api(server.baseUrl, 'PATCH', '/api/profile', {
-                cookie: await sessionCookieFor(user.id),
-                body: validProfile,
-                origin: null,
-            });
+            const noOrigin = await api(
+                server.baseUrl,
+                'PATCH',
+                '/api/profile',
+                {
+                    cookie: await sessionCookieFor(user.id),
+                    body: validProfile,
+                    origin: null,
+                },
+            );
 
             assert.equal(anon.status, 401);
             assert.equal(noOrigin.status, 403);
@@ -279,7 +309,7 @@ describe('perfil: primer acceso y edición', () => {
             const other = await createUser('ail');
 
             for (const extra of [
-                { role: 'admin' },
+                { roleId: 'admin' },
                 { active: false },
                 { email: 'otro@puntosvuela.es' },
                 { googleSub: 'x' },
@@ -291,9 +321,11 @@ describe('perfil: primer acceso y edición', () => {
                 assert.equal(res.status, 400, JSON.stringify(extra));
             }
 
-            const row = await prisma.user.findUniqueOrThrow({ where: { id: user.id } });
+            const row = await prisma.user.findUniqueOrThrow({
+                where: { id: user.id },
+            });
 
-            assert.equal(row.role, 'ail');
+            assert.equal(row.roleId, 'ail');
             assert.equal(row.active, true);
             assert.notEqual(row.name, validProfile.name);
         });
@@ -301,11 +333,15 @@ describe('perfil: primer acceso y edición', () => {
         it('cada persona edita SOLO su perfil: el de otra no cambia', async () => {
             const user = await createUser('ail');
             const other = await createUser('ail');
-            const otherBefore = await prisma.user.findUniqueOrThrow({ where: { id: other.id } });
+            const otherBefore = await prisma.user.findUniqueOrThrow({
+                where: { id: other.id },
+            });
 
             await patch(user.id, validProfile);
 
-            const otherAfter = await prisma.user.findUniqueOrThrow({ where: { id: other.id } });
+            const otherAfter = await prisma.user.findUniqueOrThrow({
+                where: { id: other.id },
+            });
 
             assert.equal(otherAfter.name, otherBefore.name);
             assert.equal(otherAfter.puntoVuela, otherBefore.puntoVuela);
@@ -316,12 +352,30 @@ describe('perfil: primer acceso y edición', () => {
             const cases: [string, unknown][] = [
                 ['nombre de 1 carácter', { ...validProfile, name: 'A' }],
                 ['nombre vacío', { ...validProfile, name: '   ' }],
-                ['nombre demasiado largo', { ...validProfile, name: 'a'.repeat(201) }],
-                ['Punto Vuela de 1 carácter', { ...validProfile, puntoVuela: 'A' }],
-                ['Punto Vuela demasiado largo', { ...validProfile, puntoVuela: 'a'.repeat(121) }],
-                ['etiquetas HTML en el nombre', { ...validProfile, name: 'Ana <b>García</b>' }],
-                ['etiquetas HTML en el Punto Vuela', { ...validProfile, puntoVuela: '<script>x</script>' }],
-                ['carácter de control', { ...validProfile, name: 'Ana\u0000García' }],
+                [
+                    'nombre demasiado largo',
+                    { ...validProfile, name: 'a'.repeat(201) },
+                ],
+                [
+                    'Punto Vuela de 1 carácter',
+                    { ...validProfile, puntoVuela: 'A' },
+                ],
+                [
+                    'Punto Vuela demasiado largo',
+                    { ...validProfile, puntoVuela: 'a'.repeat(121) },
+                ],
+                [
+                    'etiquetas HTML en el nombre',
+                    { ...validProfile, name: 'Ana <b>García</b>' },
+                ],
+                [
+                    'etiquetas HTML en el Punto Vuela',
+                    { ...validProfile, puntoVuela: '<script>x</script>' },
+                ],
+                [
+                    'carácter de control',
+                    { ...validProfile, name: 'Ana\u0000García' },
+                ],
                 ['solo símbolos', { ...validProfile, name: '..--..' }],
                 ['falta el Punto Vuela', { name: validProfile.name }],
                 ['falta el nombre', { puntoVuela: validProfile.puntoVuela }],

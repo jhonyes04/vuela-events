@@ -1,6 +1,6 @@
 import { prisma } from '../lib/prisma.js';
 import { env } from '../config/env.js';
-import { Prisma, type Role } from '../generated/prisma/client.js';
+import { Prisma } from '../generated/prisma/client.js';
 import { authUserSelect, toAuthUser, type AuthUser } from '../lib/authUser.js';
 import type { GoogleIdentity } from '../lib/google.js';
 
@@ -23,15 +23,8 @@ const isUniqueViolation = (e: unknown): boolean => {
     );
 };
 
-const initialRoleFor = async (email: string): Promise<Role> => {
-    if (!env.INITIAL_ADMIN_EMAIL || email !== env.INITIAL_ADMIN_EMAIL) {
-        return 'ail';
-    }
-
-    const admins = await prisma.user.count({ where: { role: 'admin' } });
-
-    return admins === 0 ? 'admin' : 'ail';
-};
+const initialRoleFor = (email: string): string =>
+    env.SUPERADMIN_EMAIL && email === env.SUPERADMIN_EMAIL ? 'admin' : 'ail';
 
 export const findOrCreateUser = async (
     identity: GoogleIdentity,
@@ -86,7 +79,7 @@ export const findOrCreateUser = async (
                     email: identity.email,
                     googleSub: identity.sub,
                     name: identity.name,
-                    role: await initialRoleFor(identity.email),
+                    roleId: initialRoleFor(identity.email),
                 },
                 select: authUserSelect,
             }),

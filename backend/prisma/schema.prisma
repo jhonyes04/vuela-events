@@ -7,51 +7,73 @@ datasource db {
   provider = "postgresql"
 }
 
-enum Role {
-  admin
-  dt
-  ail
+model Role {
+  id                  String    @id @db.VarChar(40)
+  name                String    @db.VarChar(80)
+  protected           Boolean   @default(false)
+  createdAt           DateTime  @default(now())
+  users               User[]
+  permissions         RolePermission[]
+
+  @@map("roles")
+}
+
+model Permission {
+  id                  String  @id @db.VarChar(60)
+  description         String  @db.VarChar(200)
+  roles               RolePermission[]
+
+  @@map("permissions")
+}
+
+model RolePermission {
+  roleId              String      @db.VarChar(40)
+  permissionId        String      @db.VarChar(60)
+  
+  role                Role        @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission          Permission  @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([roleId, permissionId])
+  @@map("role_permissions")
 }
 
 model User {
-  id                 String    @id @default(uuid()) @db.Uuid
-  email              String    @unique @db.VarChar(254)
-  googleSub          String    @unique @db.VarChar(255)
-  name               String    @db.VarChar(200)
-  // Texto libre: Punto Vuela del AIL, o zona del DT (p. ej. "DT Axarquía y Sierra de las Nieves").
-  puntoVuela         String?   @db.VarChar(120)
-  // Nulo hasta que la persona completa su perfil en el primer acceso.
-  profileCompletedAt DateTime?
-  role               Role      @default(ail)
-  active             Boolean   @default(true)
-  createdAt          DateTime  @default(now())
-  updatedAt          DateTime  @updatedAt
+  id                  String          @id @default(uuid()) @db.Uuid
+  email               String          @unique @db.VarChar(254)
+  googleSub           String          @unique @db.VarChar(255)
+  name                String          @db.VarChar(200)
+  puntoVuela          String?         @db.VarChar(120)
+  profileCompletedAt  DateTime?   
+  roleId              String          @default("ail") @db.VarChar(40)             
+  active              Boolean         @default(true)
+  createdAt           DateTime        @default(now())
+  updatedAt           DateTime        @updatedAt
 
-  createdEvents Event[]        @relation("EventCreator")
-  registrations Registration[]
-  auditAsActor  AuditLog[]     @relation("AuditActor")
-  auditAsTarget AuditLog[]     @relation("AuditTarget")
+  role                Role            @relation(fields: [roleId], references: [id], onDelete: Restrict)
+  createdEvents       Event[]         @relation("EventCreator")
+  registrations       Registration[]
+  auditAsActor        AuditLog[]      @relation("AuditActor")
+  auditAsTarget       AuditLog[]      @relation("AuditTarget")
 
   @@map("users")
 }
 
 model Event {
-  id          String   @id @default(uuid()) @db.Uuid
-  title       String   @db.VarChar(120)
-  subtitle    String?  @db.VarChar(200)
-  description String?  @db.VarChar(2000)
-  location    String?  @db.VarChar(200)
-  startsAt    DateTime
-  endsAt      DateTime
-  capacity    Int?
-  createdById String   @db.Uuid
-  // Sesiones creadas juntas comparten seriesId; null en eventos sueltos.
-  seriesId    String?  @db.Uuid
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id                  String          @id @default(uuid()) @db.Uuid
+  title               String          @db.VarChar(120)
+  subtitle            String?         @db.VarChar(200)
+  description         String?         @db.VarChar(2000)
+  location            String?         @db.VarChar(200)
+  startsAt            DateTime        
+  endsAt              DateTime        
+  capacity            Int?        
+  createdById         String          @db.Uuid
+  seriesId            String?         @db.Uuid
+  createdAt           DateTime        @default(now())
+  updatedAt           DateTime        @updatedAt
 
-  createdBy     User           @relation("EventCreator", fields: [createdById], references: [id], onDelete: Restrict)
-  registrations Registration[]
+  createdBy           User            @relation("EventCreator", fields: [createdById], references: [id], onDelete: Restrict)
+  registrations       Registration[]
 
   @@index([startsAt])
   @@index([seriesId])
@@ -59,41 +81,39 @@ model Event {
 }
 
 model Registration {
-  id        String   @id @default(uuid()) @db.Uuid
-  eventId   String   @db.Uuid
-  userId    String   @db.Uuid
-  createdAt DateTime @default(now())
+  id                  String      @id @default(uuid()) @db.Uuid
+  eventId             String      @db.Uuid
+  userId              String      @db.Uuid
+  createdAt           DateTime    @default(now())
 
-  event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
-  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  event               Event       @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user                User        @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  // Defensa real contra inscripciones duplicadas: la garantiza la DB, no el código.
   @@unique([eventId, userId])
   @@index([userId])
   @@map("registrations")
 }
 
 model AuditLog {
-  id        String   @id @default(uuid()) @db.Uuid
-  actorId   String?  @db.Uuid
-  targetId  String?  @db.Uuid
-  action    String   @db.VarChar(50)
-  oldValue  String?  @db.VarChar(100)
-  newValue  String?  @db.VarChar(100)
-  createdAt DateTime @default(now())
+  id                  String      @id @default(uuid()) @db.Uuid
+  actorId             String?     @db.Uuid
+  targetId            String?     @db.Uuid
+  action              String      @db.VarChar(50)
+  oldValue            String?     @db.VarChar(100)
+  newValue            String?     @db.VarChar(100)
+  createdAt           DateTime    @default(now())
 
-  actor  User? @relation("AuditActor", fields: [actorId], references: [id], onDelete: SetNull)
-  target User? @relation("AuditTarget", fields: [targetId], references: [id], onDelete: SetNull)
+  actor               User?       @relation("AuditActor", fields: [actorId], references: [id], onDelete: SetNull)
+  target              User?       @relation("AuditTarget", fields: [targetId], references: [id], onDelete: SetNull)
 
   @@index([createdAt])
   @@map("audit_logs")
 }
 
-// Tabla que espera connect-pg-simple (nombre y columnas fijos).
 model Session {
-  sid    String   @id @db.VarChar
-  sess   Json     @db.Json
-  expire DateTime @db.Timestamp(6)
+  sid                 String      @id @db.VarChar
+  sess                Json        @db.Json
+  expire              DateTime    @db.Timestamp(6)
 
   @@index([expire])
   @@map("session")
