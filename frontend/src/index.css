@@ -1,7 +1,7 @@
 @import 'tailwindcss';
-@import "tw-animate-css";
-@import "shadcn/tailwind.css";
-@import "@fontsource-variable/geist";
+@import 'tw-animate-css';
+@import 'shadcn/tailwind.css';
+@import '@fontsource-variable/geist';
 
 @custom-variant dark (&:is(.dark *));
 
@@ -71,7 +71,7 @@
     --destructive: #b3261e;
     --border: #e9dfc7;
     --input: #8a8574;
-    --ring: #017d3a;
+    --ring: #f4d64e;
     --chart-1: #f4d64e;
     --chart-2: #017d3a;
     --chart-3: #af7c80;
@@ -85,7 +85,7 @@
     --sidebar-accent: #e9dfc7;
     --sidebar-accent-foreground: #242529;
     --sidebar-border: #e9dfc7;
-    --sidebar-ring: #017d3a;
+    --sidebar-ring: #f4d64e;
 
     --brand-yellow: #f4d64e;
     --brand-cream: #e9dfc7;
@@ -129,13 +129,32 @@
 }
 
 @layer base {
-  * {
-    @apply border-border outline-ring/50;
+    * {
+        @apply border-border outline-ring/50;
     }
-  body {
-    @apply bg-background text-foreground;
+    body {
+        @apply bg-background text-foreground;
     }
-  html {
-    @apply font-sans;
+    html {
+        @apply font-sans;
+    }
+
+    /* Fondo fijo detrás de todo, con una capa clara que garantiza la legibilidad
+       (texto oscuro sobre la parte más oscura de la foto: 12,3:1). */
+    body::before {
+        content: '';
+        position: fixed;
+        inset: 0;
+        z-index: -1;
+        background:
+            linear-gradient(rgb(255 255 255 / 0.9), rgb(255 255 255 / 0.9)),
+            url('./assets/fondo.webp') center / cover no-repeat;
+    }
+
+    /* Pantallas de acceso (login y primer acceso): la foto se ve más. */
+    body:has([data-hero])::before {
+        background:
+            linear-gradient(rgb(255 255 255 / 0.45), rgb(255 255 255 / 0.45)),
+            url('./assets/fondo.webp') center / cover no-repeat;
     }
 }

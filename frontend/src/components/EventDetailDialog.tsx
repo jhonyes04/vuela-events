@@ -13,6 +13,7 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
+import { useAttendees } from '@/hooks/useAttendees';
 import { ApiError } from '@/lib/api';
 import {
     attendanceLabel,
@@ -21,6 +22,7 @@ import {
     formatTime,
     hasEnded,
     isFull,
+    personLabel,
     registerForEventById,
     unregisterFromEventById,
     type EventItem,
@@ -55,6 +57,11 @@ function EventDetailBody({
     const [feedback, setFeedback] = useState<Feedback | null>(null);
     const [busy, setBusy] = useState(false);
     const [confirmOpen, setConfirmOpen] = useState(false);
+    // Se refresca cuando cambia el número de inscritos o la inscripción propia.
+    const { attendees, failed, loading } = useAttendees(
+        event.id,
+        `${event._count.registrations}|${event.registered}`,
+    );
 
     const ended = hasEnded(event);
     const isDt = user?.role === 'dt';
@@ -106,7 +113,6 @@ function EventDetailBody({
                     </DialogHeader>
 
                     <div className="flex flex-wrap gap-1.5">
-                        {event.seriesId && <Badge variant="outline">Serie</Badge>}
                         {event.registered && (
                             <Badge className="bg-brand-green text-white">
                                 Inscrito
@@ -128,7 +134,9 @@ function EventDetailBody({
                         {event.location && (
                             <Detail label="Lugar">{event.location}</Detail>
                         )}
-                        <Detail label="Organiza">{event.createdBy.name}</Detail>
+                        <Detail label="Organiza">
+                            {personLabel(event.createdBy)}
+                        </Detail>
                         <Detail label="Plazas">{attendanceLabel(event)}</Detail>
                         {event.description && (
                             <Detail label="Descripción">
@@ -138,6 +146,36 @@ function EventDetailBody({
                             </Detail>
                         )}
                     </dl>
+
+                    <section aria-labelledby="attendees-title" className="grid gap-2">
+                        <h3
+                            id="attendees-title"
+                            className="text-sm font-medium"
+                        >
+                            Inscritos ({event._count.registrations})
+                        </h3>
+                        {loading ? (
+                            <p role="status" className="text-sm text-muted-foreground">
+                                Cargando inscritos…
+                            </p>
+                        ) : failed ? (
+                            <p className="text-sm text-destructive">
+                                No se pudo cargar la lista de inscritos.
+                            </p>
+                        ) : attendees.length === 0 ? (
+                            <p className="text-sm text-muted-foreground">
+                                Todavía no hay inscritos.
+                            </p>
+                        ) : (
+                            <ul className="grid max-h-48 gap-1 overflow-y-auto rounded-lg border p-2 text-sm">
+                                {attendees.map((person) => (
+                                    <li key={person.id} className="break-words">
+                                        {personLabel(person)}
+                                    </li>
+                                ))}
+                            </ul>
+                        )}
+                    </section>
 
                     {feedback && (
                         <Alert

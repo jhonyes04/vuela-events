@@ -11,11 +11,54 @@ import {
     attendanceLabel,
     formatTime,
     isFull,
+    personLabel,
     type EventItem,
 } from '@/lib/events';
 
-// Resumen de una sesión para la lista del día. Todo el cuadro es pulsable
-// (el título es un botón "estirado" sobre la tarjeta), sin anidar botones.
+import { useAttendees } from '@/hooks/useAttendees';
+
+// Inscritos del evento como "Punto Vuela (Nombre)". Va por encima del botón
+// estirado de la tarjeta (z-10) para poder desplazarla y seleccionar el texto.
+function AttendeeList({ event }: { event: EventItem }) {
+    const { attendees, failed, loading } = useAttendees(
+        event.id,
+        `${event._count.registrations}|${event.registered}`,
+    );
+
+    if (loading) {
+        return (
+            <p role="status" className="text-sm text-muted-foreground">
+                Cargando inscritos…
+            </p>
+        );
+    }
+
+    if (failed) {
+        return (
+            <p className="text-sm text-destructive">
+                No se pudo cargar la lista de inscritos.
+            </p>
+        );
+    }
+
+    if (attendees.length === 0) return null;
+
+    return (
+        <div className="relative z-10 grid gap-1">
+            <p className="text-xs font-medium text-muted-foreground">
+                Inscritos
+            </p>
+            <ul className="grid max-h-40 gap-1 overflow-y-auto rounded-lg border p-2 text-sm">
+                {attendees.map((person) => (
+                    <li key={person.id} className="break-words">
+                        {personLabel(person)}
+                    </li>
+                ))}
+            </ul>
+        </div>
+    );
+}
+
 export function EventCard({
     event,
     onOpen,
@@ -45,7 +88,6 @@ export function EventCard({
                     {event.location ? ` · ${event.location}` : ''}
                 </CardDescription>
                 <CardAction className="flex items-center gap-1.5">
-                    {event.seriesId && <Badge variant="outline">Serie</Badge>}
                     {event.registered && (
                         <Badge className="bg-brand-green text-white">
                             Inscrito
@@ -53,11 +95,12 @@ export function EventCard({
                     )}
                 </CardAction>
             </CardHeader>
-            <CardContent>
+            <CardContent className="grid gap-2">
                 <p className="text-muted-foreground">
                     {attendanceLabel(event)}
                     {isFull(event) ? ' · Completo' : ''}
                 </p>
+                <AttendeeList event={event} />
             </CardContent>
         </Card>
     );

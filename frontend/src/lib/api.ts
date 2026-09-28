@@ -4,6 +4,10 @@ export interface User {
     id: string;
     email: string;
     name: string;
+    // Punto Vuela del AIL o zona del DT; null hasta completar el perfil.
+    puntoVuela: string | null;
+    // false hasta que la persona completa su perfil en el primer acceso.
+    profileCompleted: boolean;
     role: Role;
 }
 

@@ -133,7 +133,9 @@ export function CreateEventDialog({
         try {
             if (values.recurring) {
                 if (values.endTime <= values.startTime) {
-                    setError('La hora de fin debe ser posterior a la de inicio');
+                    setError(
+                        'La hora de fin debe ser posterior a la de inicio',
+                    );
                     return;
                 }
 
@@ -296,7 +298,7 @@ export function CreateEventDialog({
                                                 />
                                                 <span
                                                     aria-hidden="true"
-                                                    className="flex size-9 items-center justify-center rounded-lg border border-input text-sm font-medium peer-checked:border-primary peer-checked:bg-primary peer-checked:text-primary-foreground peer-focus-visible:ring-3 peer-focus-visible:ring-ring/50"
+                                                    className="flex size-9 items-center justify-center rounded-lg border border-input text-sm font-medium peer-checked:border-primary peer-checked:bg-primary peer-checked:text-primary-foreground peer-focus-visible:border-ring peer-focus-visible:ring-3 peer-focus-visible:ring-ring/50"
                                                 >
                                                     {day.short}
                                                 </span>
@@ -306,7 +308,10 @@ export function CreateEventDialog({
                                 </fieldset>
 
                                 <div className="grid gap-4 sm:grid-cols-2">
-                                    <Field id="ev-start-time" label="Hora de inicio *">
+                                    <Field
+                                        id="ev-start-time"
+                                        label="Hora de inicio *"
+                                    >
                                         <Input
                                             id="ev-start-time"
                                             type="time"
@@ -315,7 +320,10 @@ export function CreateEventDialog({
                                             onChange={set('startTime')}
                                         />
                                     </Field>
-                                    <Field id="ev-end-time" label="Hora de fin *">
+                                    <Field
+                                        id="ev-end-time"
+                                        label="Hora de fin *"
+                                    >
                                         <Input
                                             id="ev-end-time"
                                             type="time"

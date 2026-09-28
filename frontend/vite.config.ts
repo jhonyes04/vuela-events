@@ -16,7 +16,8 @@ export default defineConfig({
         // otro puerto rompería el origen permitido y Google.
         strictPort: true,
         proxy: {
-            '/api': 'http://localhost:3001',
+            // Configurable solo para desarrollo (p. ej. probar contra otro backend).
+            '/api': process.env['API_PROXY_TARGET'] ?? 'http://localhost:3001',
         },
     },
     preview: {

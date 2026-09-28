@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import {
     ChevronLeft,
     ChevronRight,
@@ -7,7 +7,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/auth/context';
 import { CreateEventDialog } from '@/components/CreateEventDialog';
-import { EventCard } from '@/components/EventCard';
+// import { EventCard } from '@/components/EventCard';
 import { EventDetailDialog } from '@/components/EventDetailDialog';
 import { MonthCalendar } from '@/components/MonthCalendar';
 import {
@@ -20,9 +20,9 @@ import { Button } from '@/components/ui/button';
 import { useMonthEvents } from '@/hooks/useMonthEvents';
 import {
     dayKey,
-    formatDayLabel,
+    // formatDayLabel,
     formatMonthLabel,
-    groupByDay,
+    // groupByDay,
     type EventItem,
 } from '@/lib/events';
 
@@ -43,10 +43,10 @@ export function EventsPage() {
         cursor.year,
         cursor.month,
     );
-    const byDay = useMemo(
-        () => new Map(groupByDay(events).map((g) => [g.key, g.events])),
-        [events],
-    );
+    // const byDay = useMemo(
+    //     () => new Map(groupByDay(events).map((g) => [g.key, g.events])),
+    //     [events],
+    // );
 
     const [selectedDay, setSelectedDay] = useState<string | null>(null);
     // Se guarda el id y una copia: al recargar, la ficha se refresca con el dato
@@ -107,7 +107,7 @@ export function EventsPage() {
     };
 
     const todayKey = dayKey(new Date().toISOString());
-    const dayEvents = selectedDay ? (byDay.get(selectedDay) ?? []) : [];
+    // const dayEvents = selectedDay ? (byDay.get(selectedDay) ?? []) : [];
 
     return (
         <section>
@@ -136,7 +136,10 @@ export function EventsPage() {
                     >
                         <ChevronRight />
                     </Button>
-                    <Button variant="secondary" onClick={() => goTo(currentMonth())}>
+                    <Button
+                        variant="secondary"
+                        onClick={() => goTo(currentMonth())}
+                    >
                         Hoy
                     </Button>
                     {canCreate && (
@@ -196,7 +199,7 @@ export function EventsPage() {
                         </p>
                     )}
 
-                    {selectedDay && (
+                    {/* {selectedDay && (
                         <section className="mt-6" aria-live="polite">
                             <h2 className="mb-3 text-lg font-semibold">
                                 {formatDayLabel(selectedDay)}
@@ -217,7 +220,7 @@ export function EventsPage() {
                                 </div>
                             )}
                         </section>
-                    )}
+                    )} */}
                 </>
             )}
 

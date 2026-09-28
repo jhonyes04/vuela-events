@@ -7,6 +7,7 @@ import {
     groupByDay,
     madridLocalToIso,
     MAX_OCCURRENCES,
+    personLabel,
     previewRecurrence,
     type EventItem,
 } from './events';
@@ -22,7 +23,7 @@ const event = (id: string, startsAt: string): EventItem => ({
     capacity: null,
     seriesId: null,
     createdAt: startsAt,
-    createdBy: { id: 'u', name: 'U' },
+    createdBy: { id: 'u', name: 'U', puntoVuela: null },
     _count: { registrations: 0 },
     registered: false,
 });
@@ -101,5 +102,22 @@ describe('previewRecurrence', () => {
         expect(every?.overLimit).toBe(true);
         expect(every!.count).toBeGreaterThan(MAX_OCCURRENCES);
         expect(previewRecurrence('2027-01-01', '2099-12-31', [3])?.overLimit).toBe(true);
+    });
+});
+
+describe('personLabel', () => {
+    it('Punto Vuela y, entre paréntesis, el nombre', () => {
+        expect(
+            personLabel({
+                name: 'Ana Vanesa García López',
+                puntoVuela: 'Pueblo Nuevo Axarquía',
+            }),
+        ).toBe('Pueblo Nuevo Axarquía (Ana Vanesa García López)');
+    });
+
+    it('sin Punto Vuela, solo el nombre', () => {
+        expect(
+            personLabel({ name: 'Ana García', puntoVuela: null }),
+        ).toBe('Ana García');
     });
 });

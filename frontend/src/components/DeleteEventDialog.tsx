@@ -76,7 +76,7 @@ export function DeleteEventDialog({
                                 : `Se perderán ${registrations} inscripciones. `
                             : ''}
                         {event.seriesId
-                            ? 'Solo se elimina esta sesión; el resto de la serie no cambia. '
+                            ? 'Solo se elimina esta fecha; las demás no cambian. '
                             : ''}
                         Esta acción no se puede deshacer.
                     </DialogDescription>
