@@ -1,6 +1,7 @@
 import { NavLink } from 'react-router';
 import { useAuth } from '@/auth/context';
 import { Button } from '@/components/ui/button';
+import logo from '@/assets/logo.svg';
 import { cn } from '@/lib/utils';
 import { appRoutes, canAccess } from '@/routes/routes';
 
@@ -20,7 +21,8 @@ export const Header = () => {
         // En móvil: marca y "Cerrar sesión" arriba, menú debajo (desplazable si no cabe).
         <header className="sticky top-0 z-40 bg-brand-yellow text-brand-ink shadow-sm">
             <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-4 gap-y-1 px-4 py-2">
-                <span className="text-xl font-semibold tracking-tight">
+                <span className="flex items-center gap-2 text-xl font-semibold tracking-tight">
+                    <img src={logo} alt="" className="size-7 rounded-md" />
                     Vuela Events
                 </span>
 
