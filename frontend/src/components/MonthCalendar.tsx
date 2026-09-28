@@ -88,7 +88,7 @@ export function MonthCalendar({
                                               : `${count} eventos`
                                     }`}
                                     className={cn(
-                                        'flex size-7 items-center justify-center rounded-full text-sm font-medium hover:bg-accent',
+                                        'flex size-7 cursor-pointer items-center justify-center rounded-full text-sm font-medium hover:bg-accent',
                                         !day.inMonth && 'text-muted-foreground',
                                         day.isToday &&
                                             'bg-primary text-primary-foreground hover:bg-primary/80',
@@ -106,7 +106,7 @@ export function MonthCalendar({
                                                 onClick={() => onSelectEvent(event)}
                                                 title={`${formatTime(event.startsAt)} ${event.title}`}
                                                 className={cn(
-                                                    'block w-full truncate rounded px-1.5 py-0.5 text-left text-xs font-medium',
+                                                    'block w-full cursor-pointer truncate rounded px-1.5 py-0.5 text-left text-xs font-medium',
                                                     eventColor(event).chip,
                                                     event.registered &&
                                                         'ring-2 ring-brand-green',
@@ -130,7 +130,7 @@ export function MonthCalendar({
                                             <button
                                                 type="button"
                                                 onClick={() => onSelectDay(day.key)}
-                                                className="w-full rounded px-1.5 text-left text-xs font-medium text-muted-foreground hover:underline"
+                                                className="w-full cursor-pointer rounded px-1.5 text-left text-xs font-medium text-muted-foreground hover:underline"
                                             >
                                                 +{count - MAX_CHIPS} más
                                             </button>

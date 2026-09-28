@@ -100,7 +100,7 @@ export function GoogleSignIn() {
                 <button
                     type="button"
                     onClick={() => setOtherAccount(true)}
-                    className="text-sm text-muted-foreground underline-offset-4 hover:underline"
+                    className="cursor-pointer text-sm text-muted-foreground underline-offset-4 hover:underline"
                 >
                     ¿Entras con una cuenta fuera de @{DOMAIN_HINT}?
                 </button>
