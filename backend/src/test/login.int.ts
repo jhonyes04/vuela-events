@@ -79,6 +79,44 @@ describe('login: alta y acceso de usuarios', () => {
         assert.equal(row.email, `nuevo-correo@${env.ALLOWED_EMAIL_DOMAIN}`);
     });
 
+    it('un usuario nuevo entra con el perfil sin completar', async () => {
+        const user = await findOrCreateUser(identity('primera-vez'));
+
+        assert.equal(user.profileCompleted, false);
+        assert.equal(user.puntoVuela, null);
+    });
+
+    it('con el perfil completado, el nombre elegido por la persona NO se sobrescribe con el de Google; el correo sí se sincroniza', async () => {
+        const first = await findOrCreateUser(identity('propio'));
+
+        await prisma.user.update({
+            where: { id: first.id },
+            data: {
+                name: 'Ana Vanesa García López',
+                puntoVuela: 'Pueblo Nuevo Axarquía',
+                profileCompletedAt: new Date(),
+            },
+        });
+
+        const again = await findOrCreateUser(
+            identity('propio', {
+                name: 'nombre de google distinto',
+                email: `correo-nuevo@${env.ALLOWED_EMAIL_DOMAIN}`,
+            }),
+        );
+
+        assert.equal(again.name, 'Ana Vanesa García López');
+        assert.equal(again.puntoVuela, 'Pueblo Nuevo Axarquía');
+        assert.equal(again.profileCompleted, true);
+
+        const row = await prisma.user.findUniqueOrThrow({
+            where: { id: first.id },
+        });
+
+        assert.equal(row.name, 'Ana Vanesa García López');
+        assert.equal(row.email, `correo-nuevo@${env.ALLOWED_EMAIL_DOMAIN}`);
+    });
+
     it('una cuenta desactivada no puede entrar', async () => {
         await createUser('ail', {
             active: false,

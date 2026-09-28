@@ -1,7 +1,11 @@
 import { Router } from 'express';
 import { z } from 'zod';
 import { prisma } from '../lib/prisma.js';
-import { requireAuth, requireRole } from '../middleware/auth.js';
+import {
+    requireAuth,
+    requireCompleteProfile,
+    requireRole,
+} from '../middleware/auth.js';
 import {
     isRealDate,
     MAX_OCCURRENCES,
@@ -10,6 +14,7 @@ import {
 import { deleteEvent, EventDeleteError } from '../services/eventDeletion.js';
 import { createEventSeries } from '../services/eventSeries.js';
 import {
+    listAttendees,
     registerForEvent,
     RegistrationError,
     unregisterFromEvent,
@@ -75,7 +80,7 @@ const eventSelect = {
     capacity: true,
     seriesId: true,
     createdAt: true,
-    createdBy: { select: { id: true, name: true } },
+    createdBy: { select: { id: true, name: true, puntoVuela: true } },
     // Los DT nunca cuentan como inscritos, aunque puedan pulsar "Inscribirme".
     _count: {
         select: {
@@ -140,7 +145,7 @@ eventsRouter.get('/', async (req, res) => {
 });
 
 // Crear eventos: solo admin y dt.
-eventsRouter.post('/', requireRole('admin', 'dt'), async (req, res) => {
+eventsRouter.post('/', requireRole('admin', 'dt'), requireCompleteProfile, async (req, res) => {
     const actor = req.user;
 
     if (!actor) {
@@ -184,7 +189,7 @@ eventsRouter.post('/', requireRole('admin', 'dt'), async (req, res) => {
 
 // Crear una serie recurrente (mismos días de la semana entre dos fechas): admin y dt.
 // El servidor calcula las fechas; nunca se confía en una lista enviada por el cliente.
-eventsRouter.post('/recurring', requireRole('admin', 'dt'), async (req, res) => {
+eventsRouter.post('/recurring', requireRole('admin', 'dt'), requireCompleteProfile, async (req, res) => {
     const actor = req.user;
 
     if (!actor) {
@@ -252,8 +257,31 @@ eventsRouter.delete('/:id', requireRole('admin', 'dt'), async (req, res) => {
     }
 });
 
+// Personas inscritas en un evento (Punto Vuela y nombre; sin los DT).
+eventsRouter.get('/:id/registrations', async (req, res) => {
+    const params = idParamsSchema.safeParse(req.params);
+
+    if (!params.success) {
+        res.status(400).json({ error: 'Solicitud no válida' });
+        return;
+    }
+
+    try {
+        res.json({ registrations: await listAttendees(params.data.id) });
+    } catch (e) {
+        if (e instanceof RegistrationError) {
+            const [status, error] = registrationErrors[e.reason];
+
+            res.status(status).json({ error });
+            return;
+        }
+
+        throw e;
+    }
+});
+
 // Inscribirse: cualquier usuario autenticado, una vez por evento.
-eventsRouter.post('/:id/registrations', async (req, res) => {
+eventsRouter.post('/:id/registrations', requireCompleteProfile, async (req, res) => {
     const actor = req.user;
     const params = idParamsSchema.safeParse(req.params);
 

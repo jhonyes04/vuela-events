@@ -24,17 +24,22 @@ export const closeDb = async (): Promise<void> => {
     await Promise.allSettled([prisma.$disconnect(), sessionPool.end()]);
 };
 
+// Por defecto crea usuarios con el perfil COMPLETO (así pueden inscribirse y crear
+// eventos); con profileCompleted: false se simula el primer acceso.
 export const createUser = (
     role: Role,
-    opts: { active?: boolean; email?: string } = {},
+    opts: { active?: boolean; email?: string; profileCompleted?: boolean } = {},
 ) => {
     const n = randomBytes(4).toString('hex');
+    const completed = opts.profileCompleted ?? true;
 
     return prisma.user.create({
         data: {
             email: opts.email ?? `${role}-${n}@${env.ALLOWED_EMAIL_DOMAIN}`,
             googleSub: `sub-${n}`,
             name: `${role} ${n}`,
+            puntoVuela: completed ? `Punto ${n}` : null,
+            profileCompletedAt: completed ? new Date() : null,
             role,
             active: opts.active ?? true,
         },

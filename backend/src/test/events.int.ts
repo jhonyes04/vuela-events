@@ -56,6 +56,18 @@ describe('eventos: permisos y validación', () => {
         assert.equal(await prisma.event.count(), 1);
     });
 
+    it('el evento expone el nombre y el Punto Vuela del organizador, y nada más de él', async () => {
+        const dt = await createUser('dt');
+
+        const res = await post(dt.id, validEvent);
+
+        assert.deepEqual(res.body.event.createdBy, {
+            id: dt.id,
+            name: dt.name,
+            puntoVuela: dt.puntoVuela,
+        });
+    });
+
     it('admin puede crear eventos', async () => {
         const admin = await createUser('admin');
 

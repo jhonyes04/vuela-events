@@ -11,6 +11,7 @@ import { requireSameOrigin } from './middleware/csrf.js';
 import { createAuthRouter, type TokenVerifier } from './routes/auth.js';
 import { usersRouter } from './routes/users.js';
 import { eventsRouter } from './routes/events.js';
+import { profileRouter } from './routes/profile.js';
 import { apiLimiter } from './middleware/rateLimit.js';
 
 export interface AppOptions {
@@ -47,6 +48,7 @@ export function createApp(options: AppOptions = {}) {
         next();
     });
     app.use('/api/auth', createAuthRouter(options.verifyToken));
+    app.use('/api/profile', profileRouter);
     app.use('/api/users', usersRouter);
     app.use('/api/events', eventsRouter);
 

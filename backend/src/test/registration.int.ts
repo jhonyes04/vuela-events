@@ -338,4 +338,107 @@ describe('inscripciones a eventos', () => {
 
         assert.equal(log.newValue, '1 inscripción');
     });
+    describe('lista de inscritos', () => {
+        const attendeesOf = async (userId: string, eventId: string) =>
+            api(server.baseUrl, 'GET', `/api/events/${eventId}/registrations`, {
+                cookie: await sessionCookieFor(userId),
+            });
+
+        it('muestra Punto Vuela y nombre de cada inscrito, ordenados por Punto Vuela y nombre', async () => {
+            const { admin, event } = await setup();
+            const b = await createUser('ail');
+            const a1 = await createUser('ail');
+            const a2 = await createUser('ail');
+
+            await prisma.user.update({ where: { id: b.id }, data: { name: 'Zoe', puntoVuela: 'Benamargosa' } });
+            await prisma.user.update({ where: { id: a1.id }, data: { name: 'Marta', puntoVuela: 'Almáchar' } });
+            await prisma.user.update({ where: { id: a2.id }, data: { name: 'Alba', puntoVuela: 'Almáchar' } });
+
+            for (const u of [b, a1, a2]) await register(u.id, event.id);
+
+            const res = await attendeesOf(admin.id, event.id);
+
+            assert.equal(res.status, 200);
+            assert.deepEqual(
+                res.body.registrations.map((r: { puntoVuela: string; name: string }) => `${r.puntoVuela} (${r.name})`),
+                ['Almáchar (Alba)', 'Almáchar (Marta)', 'Benamargosa (Zoe)'],
+            );
+        });
+
+        it('cualquier persona autenticada la ve, pero solo recibe nombre y Punto Vuela (nunca correos ni ids de usuario)', async () => {
+            const { event } = await setup();
+            const ail = await createUser('ail');
+            const viewer = await createUser('ail');
+
+            await register(ail.id, event.id);
+
+            const res = await attendeesOf(viewer.id, event.id);
+
+            assert.equal(res.status, 200);
+            assert.equal(res.body.registrations.length, 1);
+            assert.deepEqual(
+                Object.keys(res.body.registrations[0]).sort(),
+                ['id', 'name', 'puntoVuela'],
+            );
+            assert.ok(!JSON.stringify(res.body).includes('@'), 'no debe haber correos');
+            assert.ok(!JSON.stringify(res.body).includes(ail.id), 'no debe haber ids de usuario');
+        });
+
+        it('los DT nunca aparecen en la lista; el admin sí', async () => {
+            const { admin, event } = await setup();
+            const dt = await createUser('dt');
+            const ail = await createUser('ail');
+
+            for (const u of [dt, admin, ail]) await register(u.id, event.id);
+
+            const res = await attendeesOf(ail.id, event.id);
+            const names = res.body.registrations.map((r: { name: string }) => r.name);
+
+            assert.equal(res.body.registrations.length, 2);
+            assert.ok(!names.includes(dt.name));
+            assert.ok(names.includes(admin.name));
+        });
+
+        it('un evento sin inscritos devuelve una lista vacía', async () => {
+            const { admin, event } = await setup();
+
+            const res = await attendeesOf(admin.id, event.id);
+
+            assert.equal(res.status, 200);
+            assert.deepEqual(res.body.registrations, []);
+        });
+
+        it('evento inexistente: 404; id mal formado: 400; sin sesión: 401', async () => {
+            const admin = await createUser('admin');
+
+            assert.equal(
+                (await attendeesOf(admin.id, '11111111-1111-4111-8111-111111111111')).status,
+                404,
+            );
+            assert.equal((await attendeesOf(admin.id, 'no-uuid')).status, 400);
+            assert.equal(
+                (
+                    await api(
+                        server.baseUrl,
+                        'GET',
+                        '/api/events/11111111-1111-4111-8111-111111111111/registrations',
+                    )
+                ).status,
+                401,
+            );
+        });
+
+        it('el número de inscritos del listado coincide con la lista', async () => {
+            const { admin, event } = await setup();
+            const dt = await createUser('dt');
+            const ail = await createUser('ail');
+
+            for (const u of [dt, ail]) await register(u.id, event.id);
+
+            const list = (await listFor(admin.id)).body.events[0];
+            const attendees = (await attendeesOf(admin.id, event.id)).body.registrations;
+
+            assert.equal(list._count.registrations, attendees.length);
+        });
+    });
 });

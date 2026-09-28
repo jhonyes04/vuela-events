@@ -90,3 +90,41 @@ export const unregisterFromEvent = async (
         throw new RegistrationError('not_found');
     }
 };
+
+export interface Attendee {
+    id: string;
+    name: string;
+    puntoVuela: string | null;
+}
+
+// Personas inscritas, para mostrarlas en la ficha del evento. Devuelve solo lo
+// necesario (nombre y Punto Vuela): nunca correos ni identificadores de usuario.
+// Los DT no aparecen nunca, igual que en los recuentos.
+export const listAttendees = async (eventId: string): Promise<Attendee[]> => {
+    const event = await prisma.event.findUnique({
+        where: { id: eventId },
+        select: { id: true },
+    });
+
+    if (!event) {
+        throw new RegistrationError('not_found');
+    }
+
+    const rows = await prisma.registration.findMany({
+        where: { eventId, user: { role: { not: 'dt' } } },
+        select: {
+            id: true,
+            user: { select: { name: true, puntoVuela: true } },
+        },
+        orderBy: [
+            { user: { puntoVuela: 'asc' } },
+            { user: { name: 'asc' } },
+        ],
+    });
+
+    return rows.map((row) => ({
+        id: row.id,
+        name: row.user.name,
+        puntoVuela: row.user.puntoVuela,
+    }));
+};

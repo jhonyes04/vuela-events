@@ -14,14 +14,18 @@ enum Role {
 }
 
 model User {
-  id        String   @id @default(uuid()) @db.Uuid
-  email     String   @unique @db.VarChar(254)
-  googleSub String   @unique @db.VarChar(255)
-  name      String   @db.VarChar(200)
-  role      Role     @default(ail)
-  active    Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id                 String    @id @default(uuid()) @db.Uuid
+  email              String    @unique @db.VarChar(254)
+  googleSub          String    @unique @db.VarChar(255)
+  name               String    @db.VarChar(200)
+  // Texto libre: Punto Vuela del AIL, o zona del DT (p. ej. "DT Axarquía y Sierra de las Nieves").
+  puntoVuela         String?   @db.VarChar(120)
+  // Nulo hasta que la persona completa su perfil en el primer acceso.
+  profileCompletedAt DateTime?
+  role               Role      @default(ail)
+  active             Boolean   @default(true)
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
 
   createdEvents Event[]        @relation("EventCreator")
   registrations Registration[]

@@ -1,13 +1,9 @@
 import type { NextFunction, Request, Response } from 'express';
 import { prisma } from '../lib/prisma.js';
+import { authUserSelect, toAuthUser, type AuthUser } from '../lib/authUser.js';
 import type { Role } from '../generated/prisma/client.js';
 
-export interface AuthUser {
-    id: string;
-    email: string;
-    name: string;
-    role: Role;
-}
+export type { AuthUser };
 
 declare global {
     namespace Express {
@@ -37,7 +33,7 @@ export const requireAuth = async (
 
     const user = await prisma.user.findUnique({
         where: { id: userId },
-        select: { id: true, email: true, name: true, role: true, active: true },
+        select: authUserSelect,
     });
 
     if (!user || !user.active) {
@@ -49,12 +45,29 @@ export const requireAuth = async (
         return;
     }
 
-    req.user = {
-        id: user.id,
-        email: user.email,
-        name: user.name,
-        role: user.role,
-    };
+    req.user = toAuthUser(user);
+    next();
+};
+
+// Para acciones que necesitan el nombre y el Punto Vuela (inscribirse, crear
+// eventos: alimentan el acta de asistencia). Debe ir después de requireAuth.
+export const requireCompleteProfile = (
+    req: Request,
+    res: Response,
+    next: NextFunction,
+): void => {
+    if (!req.user) {
+        res.status(401).json({ error: 'Autenticación requerida' });
+        return;
+    }
+
+    if (!req.user.profileCompleted) {
+        res.status(403).json({
+            error: 'Completa tu perfil (nombre y Punto Vuela) antes de continuar',
+        });
+        return;
+    }
+
     next();
 };
 
