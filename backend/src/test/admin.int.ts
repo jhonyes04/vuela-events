@@ -4,27 +4,34 @@ import { prisma } from '../lib/prisma.js';
 import {
     api,
     closeDb,
+    createCategory,
     createUser,
     resetDb,
     sessionCookieFor,
     startServer,
 } from './helpers.js';
 
-const newEvent = {
-    title: 'Evento',
-    location: 'Sala de pruebas',
-    startsAt: '2030-01-10T10:00:00.000Z',
-    endsAt: '2030-01-10T12:00:00.000Z',
-};
-
 describe('administración de usuarios', () => {
     let server: Awaited<ReturnType<typeof startServer>>;
+    let categoryId: string;
 
     before(async () => {
         server = await startServer();
     });
 
-    beforeEach(resetDb);
+    beforeEach(async () => {
+        await resetDb();
+        categoryId = (await createCategory()).id;
+    });
+
+    // categoryId cambia cada test (resetDb borra las categorías).
+    const newEvent = () => ({
+        title: 'Evento',
+        location: 'Sala de pruebas',
+        startsAt: '2030-01-10T10:00:00.000Z',
+        endsAt: '2030-01-10T12:00:00.000Z',
+        categoryId,
+    });
 
     after(async () => {
         await server.close();
@@ -116,7 +123,7 @@ describe('administración de usuarios', () => {
             const create = () =>
                 api(server.baseUrl, 'POST', '/api/events', {
                     cookie,
-                    body: newEvent,
+                    body: newEvent(),
                 });
 
             assert.equal((await create()).status, 403);

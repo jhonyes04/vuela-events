@@ -16,7 +16,7 @@ if (
 }
 
 export const resetDb = async (): Promise<void> => {
-    await prisma.$executeRaw`TRUNCATE TABLE "audit_logs", "registrations", "events", "users", "session" RESTART IDENTITY CASCADE`;
+    await prisma.$executeRaw`TRUNCATE TABLE "audit_logs", "registrations", "events", "categories", "users", "session" RESTART IDENTITY CASCADE`;
 };
 
 export const closeDb = async (): Promise<void> => {
@@ -41,6 +41,21 @@ export const createUser = (
             puntoVuela: completed ? `Punto ${n}` : null,
             profileCompletedAt: completed ? new Date() : null,
             roleId,
+            active: opts.active ?? true,
+        },
+    });
+};
+
+// Categoría de prueba: por defecto activa, para poder usarla al crear eventos.
+export const createCategory = (
+    opts: { name?: string; color?: string; active?: boolean } = {},
+) => {
+    const n = randomBytes(4).toString('hex');
+
+    return prisma.category.create({
+        data: {
+            name: opts.name ?? `Categoria ${n}`,
+            color: opts.color ?? 'amber',
             active: opts.active ?? true,
         },
     });

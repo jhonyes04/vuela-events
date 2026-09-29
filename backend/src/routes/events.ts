@@ -31,6 +31,17 @@ const eventFields = {
     description: z.string().trim().max(2000).optional(),
     location: z.string().trim().min(1).max(200),
     capacity: z.number().int().positive().max(100_000).optional(),
+    categoryId: z.uuid(),
+};
+
+// La categoría debe existir y estar activa: una inactiva no admite eventos nuevos.
+const isActiveCategory = async (categoryId: string): Promise<boolean> => {
+    const category = await prisma.category.findUnique({
+        where: { id: categoryId },
+        select: { active: true },
+    });
+
+    return category?.active === true;
 };
 
 const createEventSchema = z
@@ -85,6 +96,7 @@ const eventSelect = {
     seriesId: true,
     createdAt: true,
     createdBy: { select: { id: true, name: true, puntoVuela: true } },
+    category: { select: { id: true, name: true, color: true } },
     _count: {
         select: {
             registrations: { where: { user: { roleId: { not: 'dt' } } } },
@@ -180,7 +192,13 @@ eventsRouter.post(
             startsAt,
             endsAt,
             capacity,
+            categoryId,
         } = body.data;
+
+        if (!(await isActiveCategory(categoryId))) {
+            res.status(400).json({ error: 'Categoría no válida' });
+            return;
+        }
 
         const event = await prisma.event.create({
             data: {
@@ -191,6 +209,7 @@ eventsRouter.post(
                 startsAt: new Date(startsAt),
                 endsAt: new Date(endsAt),
                 capacity,
+                categoryId,
                 createdById: actor.id,
             },
             select: eventSelect,
@@ -222,6 +241,11 @@ eventsRouter.post(
         }
 
         const { from, to, weekdays, startTime, endTime, ...fields } = body.data;
+
+        if (!(await isActiveCategory(fields.categoryId))) {
+            res.status(400).json({ error: 'Categoría no válida' });
+            return;
+        }
 
         try {
             const series = await createEventSeries(actor.id, {

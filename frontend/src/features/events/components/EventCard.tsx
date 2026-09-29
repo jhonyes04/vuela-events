@@ -2,6 +2,8 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { AttendeeChips } from '@/features/events/components/AttendeeChips';
 import { EventInfoRows } from '@/features/events/components/EventInfoRows';
+import { CATEGORY_COLOR_STYLES } from '@/features/categories/lib/categories';
+import { cn } from '@/lib/utils';
 import { isFull, type EventItem } from '@/features/events/lib/events';
 
 import { useAttendees } from '@/features/events/hooks/useAttendees';
@@ -55,16 +57,22 @@ interface EventCardProps {
 
 export const EventCard = ({ event, onOpen }: EventCardProps) => {
     const full = isFull(event);
+    const colorStyle = CATEGORY_COLOR_STYLES[event.category.color];
 
     return (
-        <Card className="group relative gap-0 overflow-hidden border-t-4 border-t-brand-yellow py-0 transition-all hover:-translate-y-0.5 hover:shadow-lg">
-            <CardHeader className="gap-1.5 bg-muted/30 px-4! py-4!">
+        <Card
+            className={cn(
+                'group relative cursor-pointer gap-0 overflow-hidden border-t-4 py-0 transition-all hover:-translate-y-0.5 hover:shadow-lg',
+                colorStyle.border,
+            )}
+        >
+            <CardHeader className={cn('gap-1.5 px-4! py-4!', colorStyle.tint)}>
                 <div className="flex items-start justify-between gap-2">
                     <h3 className="font-heading text-base leading-snug font-semibold">
                         <button
                             type="button"
                             onClick={() => onOpen(event)}
-                            className="text-left outline-none after:absolute after:inset-0 group-hover:underline focus-visible:after:ring-3 focus-visible:after:ring-ring/50"
+                            className="cursor-pointer text-left outline-none after:absolute after:inset-0 focus-visible:after:ring-3 focus-visible:after:ring-ring/50"
                         >
                             {event.title}
                         </button>

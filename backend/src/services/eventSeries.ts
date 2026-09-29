@@ -8,6 +8,7 @@ export interface SeriesInput {
     description?: string | undefined;
     location: string;
     capacity?: number | undefined;
+    categoryId: string;
     rule: RecurrenceRule;
 }
 
@@ -28,6 +29,7 @@ export const createEventSeries = async (
                 description: input.description,
                 location: input.location,
                 capacity: input.capacity,
+                categoryId: input.categoryId,
                 startsAt: session.startsAt,
                 endsAt: session.endsAt,
                 createdById: actorId,

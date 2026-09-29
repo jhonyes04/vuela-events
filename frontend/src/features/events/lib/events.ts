@@ -1,4 +1,5 @@
 import { api } from '@/lib/api';
+import type { CategoryColor } from '@/features/categories/lib/categories';
 
 export interface EventItem {
     id: string;
@@ -13,6 +14,7 @@ export interface EventItem {
     seriesId: string | null;
     createdAt: string;
     createdBy: { id: string; name: string; puntoVuela: string | null };
+    category: { id: string; name: string; color: CategoryColor };
     _count: { registrations: number };
     registered: boolean;
 }
@@ -241,6 +243,7 @@ export interface RecurringPayload {
     description?: string | undefined;
     location: string;
     capacity?: number | undefined;
+    categoryId: string;
     from: string;
     to: string;
     weekdays: number[];

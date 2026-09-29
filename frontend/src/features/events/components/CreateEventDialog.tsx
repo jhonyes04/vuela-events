@@ -1,4 +1,4 @@
-import { useState, type FormEvent, type ReactNode } from 'react';
+import { useEffect, useState, type FormEvent, type ReactNode } from 'react';
 import { CircleAlert } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
@@ -15,6 +15,10 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { api, ApiError } from '@/lib/api';
 import {
+    listCategories,
+    type Category,
+} from '@/features/categories/lib/categories';
+import {
     createRecurringEvents,
     formatFullDate,
     madridLocalToIso,
@@ -29,6 +33,7 @@ interface FormValues {
     location: string;
     description: string;
     capacity: string;
+    categoryId: string;
     // Evento suelto
     startsAt: string;
     endsAt: string;
@@ -49,6 +54,7 @@ const EMPTY: FormValues = {
     location: '',
     description: '',
     capacity: '',
+    categoryId: '',
     startsAt: '',
     endsAt: '',
     recurring: false,
@@ -86,6 +92,13 @@ export function CreateEventDialog({
     const [values, setValues] = useState<FormValues>(EMPTY);
     const [error, setError] = useState<string | null>(null);
     const [submitting, setSubmitting] = useState(false);
+    const [categories, setCategories] = useState<Category[]>([]);
+
+    useEffect(() => {
+        void listCategories().then(setCategories);
+    }, []);
+
+    const activeCategories = categories.filter((c) => c.active);
 
     const set = (name: TextField) => (e: { target: { value: string } }) =>
         setValues((v) => ({ ...v, [name]: e.target.value }));
@@ -128,6 +141,7 @@ export function CreateEventDialog({
             location: values.location,
             description: values.description || undefined,
             capacity: values.capacity ? Number(values.capacity) : undefined,
+            categoryId: values.categoryId,
         };
 
         try {
@@ -235,6 +249,24 @@ export function CreateEventDialog({
                                 value={values.location}
                                 onChange={set('location')}
                             />
+                        </Field>
+                        <Field id="ev-category" label="Categoría *">
+                            <select
+                                id="ev-category"
+                                required
+                                value={values.categoryId}
+                                onChange={set('categoryId')}
+                                className="h-8 rounded-lg border border-input bg-transparent px-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+                            >
+                                <option value="" disabled>
+                                    Selecciona una categoría
+                                </option>
+                                {activeCategories.map((c) => (
+                                    <option key={c.id} value={c.id}>
+                                        {c.name}
+                                    </option>
+                                ))}
+                            </select>
                         </Field>
 
                         <label className="flex cursor-pointer items-center gap-2 text-sm font-medium">

@@ -1,3 +1,4 @@
+import { CATEGORY_COLOR_STYLES } from '@/features/categories/lib/categories';
 import type { EventItem } from '@/features/events/lib/events';
 
 export interface EventColor {
@@ -7,14 +8,12 @@ export interface EventColor {
     dot: string;
 }
 
-// Color por defecto: el amarillo de marca con texto oscuro (10,6:1).
-const DEFAULT_COLOR: EventColor = {
-    chip: 'bg-brand-yellow text-brand-ink hover:brightness-95',
-    dot: 'bg-brand-yellow ring-1 ring-brand-ink/40',
-};
+// El color viene de la categoría del evento (categoría es obligatoria).
+export const eventColor = (event: EventItem): EventColor => {
+    const style = CATEGORY_COLOR_STYLES[event.category.color];
 
-// Punto único de decisión del color. Cuando existan tipos de evento
-// (p. ej. event.type), se elegirá aquí una paleta de contraste ya validada
-// por tipo; el calendario no necesita ningún otro cambio.
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-export const eventColor = (_event: EventItem): EventColor => DEFAULT_COLOR;
+    return {
+        chip: `${style.chip} hover:brightness-95`,
+        dot: `${style.swatch} ring-1 ring-foreground/20`,
+    };
+};

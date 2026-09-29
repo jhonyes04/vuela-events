@@ -4,6 +4,7 @@ import { prisma } from '../lib/prisma.js';
 import {
     api,
     closeDb,
+    createCategory,
     createUser,
     resetDb,
     sessionCookieFor,
@@ -18,12 +19,16 @@ const validProfile = {
 
 describe('perfil: primer acceso y edición', () => {
     let server: Awaited<ReturnType<typeof startServer>>;
+    let categoryId: string;
 
     before(async () => {
         server = await startServer();
     });
 
-    beforeEach(resetDb);
+    beforeEach(async () => {
+        await resetDb();
+        categoryId = (await createCategory()).id;
+    });
 
     after(async () => {
         await server.close();
@@ -43,12 +48,14 @@ describe('perfil: primer acceso y edición', () => {
             })
         ).body.user;
 
-    const newEvent = {
+    // Función porque categoryId cambia cada test (resetDb borra las categorías).
+    const newEvent = () => ({
         title: 'Evento',
         location: 'Sala',
         startsAt: '2030-01-10T10:00:00.000Z',
         endsAt: '2030-01-10T12:00:00.000Z',
-    };
+        categoryId,
+    });
 
     describe('primer acceso', () => {
         it('un usuario nuevo llega con el perfil sin completar', async () => {
@@ -104,6 +111,7 @@ describe('perfil: primer acceso y edición', () => {
                     startsAt: new Date(Date.now() + 86_400_000),
                     endsAt: new Date(Date.now() + 90_000_000),
                     createdById: owner.id,
+                    categoryId,
                 },
             });
 
@@ -115,7 +123,7 @@ describe('perfil: primer acceso y edición', () => {
             );
             const create = await api(server.baseUrl, 'POST', '/api/events', {
                 cookie: await sessionCookieFor(dt.id),
-                body: newEvent,
+                body: newEvent(),
             });
             const series = await api(
                 server.baseUrl,
@@ -153,6 +161,7 @@ describe('perfil: primer acceso y edición', () => {
                     startsAt: new Date(Date.now() + 86_400_000),
                     endsAt: new Date(Date.now() + 90_000_000),
                     createdById: owner.id,
+                    categoryId,
                 },
             });
 
@@ -167,7 +176,7 @@ describe('perfil: primer acceso y edición', () => {
             );
             const create = await api(server.baseUrl, 'POST', '/api/events', {
                 cookie: await sessionCookieFor(dt.id),
-                body: newEvent,
+                body: newEvent(),
             });
 
             assert.equal(register.status, 201);

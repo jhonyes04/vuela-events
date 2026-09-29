@@ -5,6 +5,7 @@ import { Prisma } from '../generated/prisma/client.js';
 import {
     api,
     closeDb,
+    createCategory,
     createUser,
     resetDb,
     sessionCookieFor,
@@ -14,11 +15,12 @@ import {
 const HOUR = 60 * 60 * 1000;
 const DAY = 24 * HOUR;
 
-const makeEvent = (
+const makeEvent = async (
     createdById: string,
     opts: { capacity?: number; past?: boolean } = {},
 ) => {
     const start = opts.past ? Date.now() - 2 * DAY : Date.now() + DAY;
+    const category = await createCategory();
 
     return prisma.event.create({
         data: {
@@ -27,6 +29,7 @@ const makeEvent = (
             endsAt: new Date(start + HOUR),
             capacity: opts.capacity,
             createdById,
+            categoryId: category.id,
         },
     });
 };

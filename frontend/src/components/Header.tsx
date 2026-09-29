@@ -1,4 +1,4 @@
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown, Menu } from 'lucide-react';
 import { NavLink } from 'react-router';
 import { useAuth } from '@/features/auth/hooks/context';
 import { Button } from '@/components/ui/button';
@@ -8,6 +8,14 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import {
+    Sheet,
+    SheetClose,
+    SheetContent,
+    SheetHeader,
+    SheetTitle,
+    SheetTrigger,
+} from '@/components/ui/sheet';
 import logo from '@/assets/logo.svg';
 import { cn } from '@/lib/utils';
 import { appRoutes, canAccess, type AppRoute } from '@/routes/routes';
@@ -53,6 +61,31 @@ const RouteDropdown = ({ label, routes }: RouteDropdownProps) => {
     );
 };
 
+// Mismos enlaces que RouteDropdown, pero en vertical dentro del offcanvas
+// (con etiqueta de grupo en vez de desplegable, que en un panel ya no hace falta).
+const MobileRouteGroup = ({ label, routes }: RouteDropdownProps) => {
+    if (routes.length === 0) return null;
+
+    return (
+        <div className="grid gap-1">
+            <p className="px-3 pt-2 text-xs font-bold tracking-wide text-muted-foreground uppercase">
+                {label}
+            </p>
+            {routes.map((route) => (
+                <SheetClose
+                    key={route.path}
+                    nativeButton={false}
+                    render={
+                        <NavLink to={route.path} className={navClass}>
+                            {route.label}
+                        </NavLink>
+                    }
+                />
+            ))}
+        </div>
+    );
+};
+
 export const Header = () => {
     const { user, logout } = useAuth();
     const showNav = user?.profileCompleted === true;
@@ -78,9 +111,8 @@ export const Header = () => {
     );
 
     return (
-        // En móvil: marca y "Cerrar sesión" arriba, menú debajo (desplazable si no cabe).
         <header className="sticky top-0 z-40 bg-brand-yellow text-brand-ink shadow-sm">
-            <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-4 gap-y-1 px-4 py-2">
+            <div className="mx-auto flex max-w-6xl items-center gap-3 px-4 py-2">
                 <span className="flex items-center gap-2 text-xl font-semibold tracking-tight">
                     <img src={logo} alt="" className="size-7 rounded-md" />
                     Vuela Events
@@ -89,7 +121,7 @@ export const Header = () => {
                 {user && showNav && (
                     <nav
                         aria-label="Principal"
-                        className="order-3 -mx-1 flex w-full items-center gap-1 overflow-x-auto sm:order-2 sm:mx-0 sm:w-auto sm:flex-1"
+                        className="hidden flex-1 items-center gap-1 overflow-x-auto sm:flex"
                     >
                         {mainRoutes.map((route) => (
                             <NavLink
@@ -110,8 +142,61 @@ export const Header = () => {
                     </nav>
                 )}
 
+                {user && showNav && (
+                    <Sheet>
+                        <SheetTrigger
+                            render={
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    aria-label="Abrir menú"
+                                    className="sm:hidden"
+                                >
+                                    <Menu className="size-5" />
+                                </Button>
+                            }
+                        />
+                        <SheetContent
+                            side="left"
+                            className="bg-brand-yellow text-brand-ink"
+                        >
+                            <SheetHeader>
+                                <SheetTitle>Menú</SheetTitle>
+                            </SheetHeader>
+                            <nav
+                                aria-label="Principal"
+                                className="grid gap-1 px-4 pb-4"
+                            >
+                                {mainRoutes.map((route) => (
+                                    <SheetClose
+                                        key={route.path}
+                                        nativeButton={false}
+                                        render={
+                                            <NavLink
+                                                to={route.path}
+                                                end={route.path === '/'}
+                                                className={navClass}
+                                            >
+                                                {route.label}
+                                            </NavLink>
+                                        }
+                                    />
+                                ))}
+                                <MobileRouteGroup
+                                    label="Gestión"
+                                    routes={gestionRoutes}
+                                />
+                                <MobileRouteGroup
+                                    label="Administración"
+                                    routes={adminRoutes}
+                                />
+                            </nav>
+                        </SheetContent>
+                    </Sheet>
+                )}
+
                 {user && (
-                    <div className="order-2 ml-auto flex items-center gap-3 sm:order-3">
+                    <div className="ml-auto flex items-center gap-3">
                         <div className="hidden max-w-56 text-right text-sm leading-tight sm:block">
                             <p className="truncate font-medium">
                                 {user.name} {user.lastName}

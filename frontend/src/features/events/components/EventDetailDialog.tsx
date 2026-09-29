@@ -18,7 +18,9 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog';
 import { useAttendees } from '@/features/events/hooks/useAttendees';
+import { CATEGORY_COLOR_STYLES } from '@/features/categories/lib/categories';
 import { ApiError } from '@/lib/api';
+import { cn } from '@/lib/utils';
 import { scrollbarOptions } from '@/lib/overlayScrollbarsOptions';
 import {
     googleCalendarUrl,
@@ -101,8 +103,18 @@ const EventDetailBody = ({
                     if (!open) onClose();
                 }}
             >
-                <DialogContent className="sm:max-w-lg">
-                    <DialogHeader>
+                <DialogContent
+                    className={cn(
+                        'border-t-4 sm:max-w-lg',
+                        CATEGORY_COLOR_STYLES[event.category.color].border,
+                    )}
+                >
+                    <DialogHeader
+                        className={cn(
+                            '-mx-4 -mt-4 rounded-t-xl px-4 pt-4 pb-3',
+                            CATEGORY_COLOR_STYLES[event.category.color].tint,
+                        )}
+                    >
                         <DialogTitle>{event.title}</DialogTitle>
                         <DialogDescription>
                             {event.subtitle ?? 'Detalle de la sesión'}

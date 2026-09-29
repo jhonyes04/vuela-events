@@ -4,6 +4,7 @@ import { prisma } from '../lib/prisma.js';
 import {
     api,
     closeDb,
+    createCategory,
     createUser,
     resetDb,
     sessionCookieFor,
@@ -19,22 +20,30 @@ const validEvent = {
 
 describe('eventos: permisos y validación', () => {
     let server: Awaited<ReturnType<typeof startServer>>;
+    let categoryId: string;
 
     before(async () => {
         server = await startServer();
     });
 
-    beforeEach(resetDb);
+    beforeEach(async () => {
+        await resetDb();
+        categoryId = (await createCategory()).id;
+    });
 
     after(async () => {
         await server.close();
         await closeDb();
     });
 
+    // categoryId se añade solo si no viene ya en el cuerpo.
     const post = async (userId: string, body: unknown) =>
         api(server.baseUrl, 'POST', '/api/events', {
             cookie: await sessionCookieFor(userId),
-            body,
+            body:
+                typeof body === 'object' && body !== null
+                    ? { categoryId, ...body }
+                    : body,
         });
 
     it('ail NO puede crear eventos: 403 y no se escribe nada', async () => {
@@ -141,6 +150,7 @@ describe('eventos: permisos y validación', () => {
                 startsAt: new Date('2030-02-01T10:00:00Z'),
                 endsAt: new Date('2030-02-01T11:00:00Z'),
                 createdById: admin.id,
+                categoryId,
             },
         });
 
