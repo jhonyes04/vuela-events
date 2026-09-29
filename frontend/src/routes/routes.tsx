@@ -1,8 +1,8 @@
 import type { ReactNode } from 'react';
-import { EventsPage } from '@/pages/EventsPage';
-import { ProfilePage } from '@/pages/ProfilePage';
-import { RolesPage } from '@/pages/RolesPage';
-import { UsersPage } from '@/pages/UsersPage';
+import { EventsPage } from '@/features/events/pages/EventsPage';
+import { ProfilePage } from '@/features/profile/pages/ProfilePage';
+import { RolesPage } from '@/features/users/pages/RolesPage';
+import { UsersPage } from '@/features/users/pages/UsersPage';
 
 export interface AppRoute {
     path: string;

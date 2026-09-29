@@ -5,11 +5,11 @@ import {
     CircleAlert,
     CircleCheck,
 } from 'lucide-react';
-import { useAuth } from '@/auth/context';
-import { CreateEventDialog } from '@/components/CreateEventDialog';
-import { EventCard } from '@/components/EventCard';
-import { EventDetailDialog } from '@/components/EventDetailDialog';
-import { MonthCalendar } from '@/components/MonthCalendar';
+import { useAuth } from '@/features/auth/hooks/context';
+import { CreateEventDialog } from '@/features/events/components/CreateEventDialog';
+import { EventCard } from '@/features/events/components/EventCard';
+import { EventDetailDialog } from '@/features/events/components/EventDetailDialog';
+import { MonthCalendar } from '@/features/events/components/MonthCalendar';
 import {
     Alert,
     AlertAction,
@@ -17,8 +17,8 @@ import {
     AlertTitle,
 } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
-import { useMonthEvents } from '@/hooks/useMonthEvents';
-import { dayKey, formatMonthLabel, type EventItem } from '@/lib/events';
+import { useMonthEvents } from '@/features/events/hooks/useMonthEvents';
+import { dayKey, formatMonthLabel, type EventItem } from '@/features/events/lib/events';
 
 // Mes actual según la hora de Madrid.
 const currentMonth = () => {

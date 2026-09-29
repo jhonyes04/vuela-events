@@ -1,4 +1,4 @@
-import type { EventItem } from '@/lib/events';
+import type { EventItem } from '@/features/events/lib/events';
 
 export interface EventColor {
     // Etiqueta dentro de la celda del calendario (fondo y texto legibles).

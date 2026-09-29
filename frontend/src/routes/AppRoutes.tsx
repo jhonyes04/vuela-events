@@ -1,5 +1,5 @@
 import { Route, Routes } from 'react-router';
-import { RequirePermission } from '@/auth/RequirePermission';
+import { RequirePermission } from '@/features/auth/components/RequirePermission';
 import { NotFoundPage } from '@/pages/NotFoundPage';
 import { appRoutes } from './routes';
 

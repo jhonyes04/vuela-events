@@ -11,7 +11,7 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog';
 import { ApiError } from '@/lib/api';
-import { deleteEventSeriesById, type EventItem } from '@/lib/events';
+import { deleteEventSeriesById, type EventItem } from '@/features/events/lib/events';
 
 export function DeleteEventSeriesDialog({
     event,

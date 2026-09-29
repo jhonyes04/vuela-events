@@ -17,7 +17,7 @@ import {
     formatDayLabel,
     formatTime,
     type EventItem,
-} from '@/lib/events';
+} from '@/features/events/lib/events';
 
 export function DeleteEventDialog({
     event,

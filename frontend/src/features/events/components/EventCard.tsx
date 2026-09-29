@@ -9,9 +9,9 @@ import {
     isFull,
     personLabel,
     type EventItem,
-} from '@/lib/events';
+} from '@/features/events/lib/events';
 
-import { useAttendees } from '@/hooks/useAttendees';
+import { useAttendees } from '@/features/events/hooks/useAttendees';
 
 // Inscritos del evento como "Punto Vuela (Nombre)". Va por encima del botón
 // estirado de la tarjeta (z-10) para poder desplazarla y seleccionar el texto.

@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router';
-import { useAuth } from '@/auth/context';
+import { useAuth } from '@/features/auth/hooks/context';
 import { config } from '@/config';
 import { api, ApiError, type User } from '@/lib/api';
-import { loadGoogleScript } from '@/lib/googleScript';
+import { loadGoogleScript } from '@/features/auth/lib/googleScript';
 import { CircleAlert } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 

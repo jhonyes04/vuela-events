@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { GoogleSignIn } from '@/components/GoogleSignIn';
+import { GoogleSignIn } from '@/features/auth/components/GoogleSignIn';
 import logo from '@/assets/logo.svg';
 
 export const LoginPage = () => {

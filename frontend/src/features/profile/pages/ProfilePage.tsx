@@ -1,5 +1,5 @@
-import { useAuth } from '@/auth/context';
-import { ProfileForm } from '@/components/ProfileForm';
+import { useAuth } from '@/features/auth/hooks/context';
+import { ProfileForm } from '@/features/profile/components/ProfileForm';
 
 export function ProfilePage() {
     const { user, setUser } = useAuth();

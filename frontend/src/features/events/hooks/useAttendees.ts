@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { listAttendees, type Attendee } from '@/lib/events';
+import { listAttendees, type Attendee } from '@/features/events/lib/events';
 
 interface Result {
     key: string;

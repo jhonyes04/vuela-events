@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { CircleAlert } from 'lucide-react';
-import { useAuth } from '@/auth/context';
+import { useAuth } from '@/features/auth/hooks/context';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 export function RequirePermission({

@@ -7,7 +7,7 @@ import {
 } from 'react';
 import { useNavigate } from 'react-router';
 import { api, setUnauthorizedHandler, type User } from '@/lib/api';
-import { AuthContext } from './context';
+import { AuthContext } from '@/features/auth/hooks/context';
 
 export function AuthProvider({ children }: { children: ReactNode }) {
     const [user, setUser] = useState<User | null>(null);

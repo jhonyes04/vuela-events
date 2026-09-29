@@ -1,8 +1,8 @@
 import { OverlayScrollbarsComponent } from 'overlayscrollbars-react';
-import { useAuth } from '@/auth/context';
+import { useAuth } from '@/features/auth/hooks/context';
 import { Header } from '@/components/Header';
-import { LoginPage } from '@/pages/LoginPage';
-import { OnboardingPage } from '@/pages/OnboardingPage';
+import { LoginPage } from '@/features/auth/pages/LoginPage';
+import { OnboardingPage } from '@/features/profile/pages/OnboardingPage';
 import { AppRoutes } from '@/routes/AppRoutes';
 import { scrollbarOptions } from '@/lib/overlayScrollbarsOptions';
 

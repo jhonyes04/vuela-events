@@ -8,7 +8,7 @@ import {
 } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { CreateRoleDialog } from '@/components/CreateRoleDialog';
+import { CreateRoleDialog } from '@/features/users/components/CreateRoleDialog';
 import { api, ApiError } from '@/lib/api';
 
 interface RoleRow {

@@ -1,12 +1,12 @@
 import { useMemo } from 'react';
-import { buildMonthGrid, WEEKDAY_HEADERS } from '@/lib/calendar';
-import { eventColor } from '@/lib/eventColors';
+import { buildMonthGrid, WEEKDAY_HEADERS } from '@/features/events/lib/calendar';
+import { eventColor } from '@/features/events/lib/eventColors';
 import {
     formatDayLabel,
     formatTime,
     groupByDay,
     type EventItem,
-} from '@/lib/events';
+} from '@/features/events/lib/events';
 import { cn } from '@/lib/utils';
 
 const MAX_CHIPS = 3;

@@ -13,7 +13,7 @@ import {
     puntoVueloHints,
     updateProfile,
     type ProfileValues,
-} from '@/lib/profile';
+} from '@/features/profile/lib/profile';
 
 // Formulario compartido por la pantalla de bienvenida y "Mi perfil".
 export function ProfileForm({

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { ApiError } from '@/lib/api';
-import { listMonthEvents, monthKey, type EventItem } from '@/lib/events';
+import { listMonthEvents, monthKey, type EventItem } from '@/features/events/lib/events';
 
 interface Result {
     // Mes al que pertenecen los datos ('YYYY-MM').

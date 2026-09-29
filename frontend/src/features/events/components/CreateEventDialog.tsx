@@ -21,7 +21,7 @@ import {
     MAX_OCCURRENCES,
     previewRecurrence,
     WEEKDAYS,
-} from '@/lib/events';
+} from '@/features/events/lib/events';
 
 interface FormValues {
     title: string;

@@ -9,9 +9,9 @@ import {
     Users,
 } from 'lucide-react';
 import { OverlayScrollbarsComponent } from 'overlayscrollbars-react';
-import { useAuth } from '@/auth/context';
-import { DeleteEventDialog } from '@/components/DeleteEventDialog';
-import { DeleteEventSeriesDialog } from '@/components/DeleteEventSeriesDialog';
+import { useAuth } from '@/features/auth/hooks/context';
+import { DeleteEventDialog } from '@/features/events/components/DeleteEventDialog';
+import { DeleteEventSeriesDialog } from '@/features/events/components/DeleteEventSeriesDialog';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button, buttonVariants } from '@/components/ui/button';
@@ -23,7 +23,7 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
-import { useAttendees } from '@/hooks/useAttendees';
+import { useAttendees } from '@/features/events/hooks/useAttendees';
 import { ApiError } from '@/lib/api';
 import { scrollbarOptions } from '@/lib/overlayScrollbarsOptions';
 import {
@@ -38,7 +38,7 @@ import {
     registerForEventById,
     unregisterFromEventById,
     type EventItem,
-} from '@/lib/events';
+} from '@/features/events/lib/events';
 
 type Feedback = { kind: 'error' | 'success'; message: string };
 

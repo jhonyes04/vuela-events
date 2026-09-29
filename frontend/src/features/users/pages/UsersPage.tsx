@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { CircleAlert } from 'lucide-react';
 import { OverlayScrollbarsComponent } from 'overlayscrollbars-react';
-import { useAuth } from '@/auth/context';
+import { useAuth } from '@/features/auth/hooks/context';
 import {
     Alert,
     AlertAction,

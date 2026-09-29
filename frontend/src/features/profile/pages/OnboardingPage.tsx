@@ -1,6 +1,6 @@
-import { useAuth } from '@/auth/context';
-import { ProfileForm } from '@/components/ProfileForm';
-import { PUNTO_VUELA_MAX } from '@/lib/profile';
+import { useAuth } from '@/features/auth/hooks/context';
+import { ProfileForm } from '@/features/profile/components/ProfileForm';
+import { PUNTO_VUELA_MAX } from '@/features/profile/lib/profile';
 
 // Primer acceso: no se puede saltar; hasta completarlo no se ve el resto de la app.
 export function OnboardingPage() {

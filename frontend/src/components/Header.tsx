@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router';
-import { useAuth } from '@/auth/context';
+import { useAuth } from '@/features/auth/hooks/context';
 import { Button } from '@/components/ui/button';
 import logo from '@/assets/logo.svg';
 import { cn } from '@/lib/utils';
