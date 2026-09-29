@@ -3,6 +3,7 @@ import { EventsPage } from '@/features/events/pages/EventsPage';
 import { ProfilePage } from '@/features/profile/pages/ProfilePage';
 import { RolesPage } from '@/features/users/pages/RolesPage';
 import { UsersPage } from '@/features/users/pages/UsersPage';
+import { CategoriesPage } from '@/features/categories/pages/CategoriesPage';
 import { PlaceholderPage } from '@/pages/PlaceholderPage';
 
 export interface AppRoute {
@@ -20,21 +21,21 @@ export const appRoutes: AppRoute[] = [
         path: '/gestion/eventos',
         label: 'Eventos',
         element: <PlaceholderPage title="Gestión de eventos" />,
-        permissions: ['events:create'],
+        permissions: ['events:view', 'events:manage'],
         group: 'gestion',
     },
     {
         path: '/gestion/categorias',
         label: 'Categorías',
-        element: <PlaceholderPage title="Categorías" />,
-        permissions: ['events:create'],
+        element: <CategoriesPage />,
+        permissions: ['categories:view', 'categories:manage'],
         group: 'gestion',
     },
     {
         path: '/gestion/guias',
         label: 'Guías',
         element: <PlaceholderPage title="Guías" />,
-        permissions: ['events:create'],
+        permissions: ['guides:view', 'guides:manage'],
         group: 'gestion',
     },
     {
