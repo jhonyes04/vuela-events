@@ -1,9 +1,16 @@
 import { NavLink } from 'react-router';
 import { useAuth } from '@/features/auth/hooks/context';
 import { Button } from '@/components/ui/button';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import logo from '@/assets/logo.svg';
 import { cn } from '@/lib/utils';
 import { appRoutes, canAccess } from '@/routes/routes';
+import { ChevronDown } from 'lucide-react';
 
 const navClass = ({ isActive }: { isActive: boolean }) =>
     cn(
@@ -13,9 +20,20 @@ const navClass = ({ isActive }: { isActive: boolean }) =>
 
 export const Header = () => {
     const { user, logout } = useAuth();
-
-    // Hasta completar el perfil no hay menú: solo se puede continuar o salir.
     const showNav = user?.profileCompleted === true;
+    const isAdmin = user?.roleId === 'admin';
+
+    const mainRoutes = appRoutes.filter(
+        (route) => !route.group && user && canAccess(route, user.permissions),
+    );
+
+    const adminRoutes = appRoutes.filter(
+        (route) =>
+            route.group === 'admin' &&
+            isAdmin &&
+            user &&
+            canAccess(route, user.permissions),
+    );
 
     return (
         // En móvil: marca y "Cerrar sesión" arriba, menú debajo (desplazable si no cabe).
@@ -31,20 +49,44 @@ export const Header = () => {
                         aria-label="Principal"
                         className="order-3 -mx-1 flex w-full gap-1 overflow-x-auto sm:order-2 sm:mx-0 sm:w-auto sm:flex-1"
                     >
-                        {appRoutes
-                            .filter((route) =>
-                                canAccess(route, user.permissions),
-                            )
-                            .map((route) => (
-                                <NavLink
-                                    key={route.path}
-                                    to={route.path}
-                                    end={route.path === '/'}
-                                    className={navClass}
-                                >
-                                    {route.label}
-                                </NavLink>
-                            ))}
+                        {mainRoutes.map((route) => (
+                            <NavLink
+                                key={route.path}
+                                to={route.path}
+                                end={route.path === '/'}
+                                className={navClass}
+                            >
+                                {route.label}
+                            </NavLink>
+                        ))}
+
+                        {adminRoutes.length > 0 && (
+                            <DropdownMenu>
+                                <DropdownMenuTrigger
+                                    render={
+                                        <button
+                                            type="button"
+                                            className="flex shrink-0 items-center gap-1 rounded-md px-3 py-2 text-sm font-medium hover:bg-black/10"
+                                        >
+                                            Administración
+                                            <ChevronDown className="size-4" />
+                                        </button>
+                                    }
+                                />
+                                <DropdownMenuContent align="start">
+                                    {adminRoutes.map((route) => (
+                                        <DropdownMenuItem
+                                            key={route.path}
+                                            render={
+                                                <NavLink to={route.path}>
+                                                    {route.label}
+                                                </NavLink>
+                                            }
+                                        />
+                                    ))}
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+                        )}
                     </nav>
                 )}
 

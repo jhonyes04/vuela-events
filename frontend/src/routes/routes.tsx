@@ -9,6 +9,7 @@ export interface AppRoute {
     label: string;
     element: ReactNode;
     permissions?: string[];
+    group?: 'admin';
 }
 
 export const appRoutes: AppRoute[] = [
@@ -19,12 +20,14 @@ export const appRoutes: AppRoute[] = [
         label: 'Usuarios',
         element: <UsersPage />,
         permissions: ['users:manage'],
+        group: 'admin',
     },
     {
         path: '/admin/roles',
         label: 'Roles',
         element: <RolesPage />,
         permissions: ['roles:manage'],
+        group: 'admin',
     },
 ];
 
