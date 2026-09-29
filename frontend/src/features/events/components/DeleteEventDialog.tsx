@@ -1,16 +1,4 @@
-import { useState } from 'react';
-import { CircleAlert } from 'lucide-react';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Button } from '@/components/ui/button';
-import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
-} from '@/components/ui/dialog';
-import { ApiError } from '@/lib/api';
+import { ConfirmDeleteDialog } from './ConfirmDeleteDialog';
 import {
     dayKey,
     deleteEventById,
@@ -19,93 +7,47 @@ import {
     type EventItem,
 } from '@/features/events/lib/events';
 
-export function DeleteEventDialog({
-    event,
-    open,
-    onOpenChange,
-    onDeleted,
-}: {
+interface DeleteEventDialogProps {
     event: EventItem;
     open: boolean;
     onOpenChange: (open: boolean) => void;
     onDeleted: () => void;
-}) {
-    const [error, setError] = useState<string | null>(null);
-    const [deleting, setDeleting] = useState(false);
+}
 
+export const DeleteEventDialog = ({
+    event,
+    open,
+    onOpenChange,
+    onDeleted,
+}: DeleteEventDialogProps) => {
     const registrations = event._count.registrations;
 
-    const handleOpenChange = (next: boolean) => {
-        if (next) setError(null);
-
-        onOpenChange(next);
-    };
-
-    const handleDelete = async () => {
-        setDeleting(true);
-        setError(null);
-
-        try {
-            await deleteEventById(event.id);
-
-            onOpenChange(false);
-            onDeleted();
-        } catch (err) {
-            setError(
-                err instanceof ApiError
-                    ? err.message
-                    : 'No se pudo eliminar la sesión',
-            );
-        } finally {
-            setDeleting(false);
-        }
-    };
-
     return (
-        <Dialog open={open} onOpenChange={handleOpenChange}>
-            <DialogContent>
-                <DialogHeader>
-                    <DialogTitle>Eliminar sesión</DialogTitle>
-                    <DialogDescription>
-                        ¿Eliminar «{event.title}» del{' '}
-                        {formatDayLabel(dayKey(event.startsAt))} a las{' '}
-                        {formatTime(event.startsAt)}?{' '}
-                        {registrations > 0
-                            ? registrations === 1
-                                ? 'Se perderá 1 inscripción. '
-                                : `Se perderán ${registrations} inscripciones. `
-                            : ''}
-                        {event.seriesId
-                            ? 'Solo se elimina esta fecha; las demás no cambian. '
-                            : ''}
-                        Esta acción no se puede deshacer.
-                    </DialogDescription>
-                </DialogHeader>
-
-                {error && (
-                    <Alert variant="destructive">
-                        <CircleAlert />
-                        <AlertTitle>No se pudo eliminar</AlertTitle>
-                        <AlertDescription>{error}</AlertDescription>
-                    </Alert>
-                )}
-
-                <DialogFooter>
-                    <Button
-                        variant="outline"
-                        onClick={() => onOpenChange(false)}
-                    >
-                        Cancelar
-                    </Button>
-                    <Button
-                        variant="destructive"
-                        disabled={deleting}
-                        onClick={() => void handleDelete()}
-                    >
-                        {deleting ? 'Eliminando…' : 'Eliminar'}
-                    </Button>
-                </DialogFooter>
-            </DialogContent>
-        </Dialog>
+        <ConfirmDeleteDialog
+            open={open}
+            onOpenChange={onOpenChange}
+            title="Eliminar sesión"
+            description={
+                <>
+                    ¿Eliminar «{event.title}» del{' '}
+                    {formatDayLabel(dayKey(event.startsAt))} a las{' '}
+                    {formatTime(event.startsAt)}?{' '}
+                    {registrations > 0
+                        ? registrations === 1
+                            ? 'Se perderá 1 inscripción. '
+                            : `Se perderán ${registrations} inscripciones. `
+                        : ''}
+                    {event.seriesId
+                        ? 'Solo se elimina esta fecha; las demás no cambian. '
+                        : ''}
+                    Esta acción no se puede deshacer.
+                </>
+            }
+            confirmLabel="Eliminar"
+            deletingLabel="Eliminando…"
+            errorFallback="No se pudo eliminar la sesión"
+            onConfirm={() => deleteEventById(event.id)}
+            onDeleted={onDeleted}
+        />
     );
-}
+};

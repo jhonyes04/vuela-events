@@ -1,14 +1,8 @@
 import { useEffect, useState } from 'react';
-import { CircleAlert } from 'lucide-react';
 import { OverlayScrollbarsComponent } from 'overlayscrollbars-react';
 import { useAuth } from '@/features/auth/hooks/context';
-import {
-    Alert,
-    AlertAction,
-    AlertDescription,
-    AlertTitle,
-} from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
+import { ListErrors } from '@/features/users/components/ListErrors';
 import { PaginationControls } from '@/components/PaginationControls';
 import { SortableHeader } from '@/components/SortableHeader';
 import { usePagination } from '@/hooks/usePagination';
@@ -33,7 +27,7 @@ interface RoleOption {
 const selectClass =
     'h-8 rounded-lg border border-input bg-transparent px-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50';
 
-export function UsersPage() {
+export const UsersPage = () => {
     const { user: me } = useAuth();
     const [users, setUsers] = useState<AdminUser[]>([]);
     const [roles, setRoles] = useState<RoleOption[]>([]);
@@ -42,10 +36,11 @@ export function UsersPage() {
     const [busyId, setBusyId] = useState<string | null>(null);
     const [actionError, setActionError] = useState<string | null>(null);
 
-    const { sorted: sortedUsers, sort, toggleSort } = useSort<
-        AdminUser,
-        'name' | 'email' | 'role' | 'active'
-    >(
+    const {
+        sorted: sortedUsers,
+        sort,
+        toggleSort,
+    } = useSort<AdminUser, 'name' | 'email' | 'role' | 'active'>(
         users,
         {
             name: (a, b) => a.name.localeCompare(b.name),
@@ -124,30 +119,11 @@ export function UsersPage() {
         <section>
             <h1 className="mb-6 text-2xl font-semibold">Usuarios</h1>
 
-            {error && (
-                <Alert variant="destructive" className="mb-6">
-                    <CircleAlert />
-                    <AlertTitle>No se pudo cargar la lista</AlertTitle>
-                    <AlertDescription>{error}</AlertDescription>
-                    <AlertAction>
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => void load()}
-                        >
-                            Reintentar
-                        </Button>
-                    </AlertAction>
-                </Alert>
-            )}
-
-            {actionError && (
-                <Alert variant="destructive" className="mb-6">
-                    <CircleAlert />
-                    <AlertTitle>No se pudo aplicar el cambio</AlertTitle>
-                    <AlertDescription>{actionError}</AlertDescription>
-                </Alert>
-            )}
+            <ListErrors
+                error={error}
+                actionError={actionError}
+                onRetry={() => void load()}
+            />
 
             {loading ? (
                 <p role="status" className="text-muted-foreground">
@@ -162,10 +138,30 @@ export function UsersPage() {
                     <table className="w-full text-sm">
                         <thead>
                             <tr className="border-b bg-muted/50 text-left">
-                                <SortableHeader label="Nombre" sortKey="name" sort={sort} onSort={toggleSort} />
-                                <SortableHeader label="Correo" sortKey="email" sort={sort} onSort={toggleSort} />
-                                <SortableHeader label="Rol" sortKey="role" sort={sort} onSort={toggleSort} />
-                                <SortableHeader label="Estado" sortKey="active" sort={sort} onSort={toggleSort} />
+                                <SortableHeader
+                                    label="Nombre"
+                                    sortKey="name"
+                                    sort={sort}
+                                    onSort={toggleSort}
+                                />
+                                <SortableHeader
+                                    label="Correo"
+                                    sortKey="email"
+                                    sort={sort}
+                                    onSort={toggleSort}
+                                />
+                                <SortableHeader
+                                    label="Rol"
+                                    sortKey="role"
+                                    sort={sort}
+                                    onSort={toggleSort}
+                                />
+                                <SortableHeader
+                                    label="Estado"
+                                    sortKey="active"
+                                    sort={sort}
+                                    onSort={toggleSort}
+                                />
                                 <th className="p-3 font-bold">
                                     <span className="sr-only">Acciones</span>
                                 </th>
@@ -251,4 +247,4 @@ export function UsersPage() {
             )}
         </section>
     );
-}
+};

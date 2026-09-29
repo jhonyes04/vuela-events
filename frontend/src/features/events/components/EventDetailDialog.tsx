@@ -1,17 +1,11 @@
 import { useState } from 'react';
-import {
-    CalendarDays,
-    CircleAlert,
-    CircleCheck,
-    Clock,
-    MapPin,
-    User,
-    Users,
-} from 'lucide-react';
+import { CircleAlert, CircleCheck } from 'lucide-react';
 import { OverlayScrollbarsComponent } from 'overlayscrollbars-react';
 import { useAuth } from '@/features/auth/hooks/context';
 import { DeleteEventDialog } from '@/features/events/components/DeleteEventDialog';
 import { DeleteEventSeriesDialog } from '@/features/events/components/DeleteEventSeriesDialog';
+import { EventInfoRows } from '@/features/events/components/EventInfoRows';
+import { AttendeeChips } from '@/features/events/components/AttendeeChips';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button, buttonVariants } from '@/components/ui/button';
@@ -27,33 +21,33 @@ import { useAttendees } from '@/features/events/hooks/useAttendees';
 import { ApiError } from '@/lib/api';
 import { scrollbarOptions } from '@/lib/overlayScrollbarsOptions';
 import {
-    attendanceLabel,
-    dayKey,
-    formatDayLabel,
-    formatTime,
     googleCalendarUrl,
     hasEnded,
     isFull,
-    personLabel,
     registerForEventById,
     unregisterFromEventById,
     type EventItem,
 } from '@/features/events/lib/events';
 
-type Feedback = { kind: 'error' | 'success'; message: string };
+interface Feedback {
+    kind: 'error' | 'success';
+    message: string;
+}
 
-// Contenido con su propio estado: se recrea al cambiar de evento (key).
-function EventDetailBody({
-    event,
-    onClose,
-    onChanged,
-    onDeleted,
-}: {
+interface EventDetailBodyProps {
     event: EventItem;
     onClose: () => void;
     onChanged: () => void;
     onDeleted: (message: string) => void;
-}) {
+}
+
+// Contenido con su propio estado: se recrea al cambiar de evento (key).
+const EventDetailBody = ({
+    event,
+    onClose,
+    onChanged,
+    onDeleted,
+}: EventDetailBodyProps) => {
     const { user } = useAuth();
     const [feedback, setFeedback] = useState<Feedback | null>(null);
     const [busy, setBusy] = useState(false);
@@ -127,31 +121,7 @@ function EventDetailBody({
                         {ended && <Badge variant="outline">Finalizado</Badge>}
                     </div>
 
-                    <div className="grid gap-1.5 text-sm text-muted-foreground">
-                        <p className="flex items-center gap-2">
-                            <CalendarDays className="size-4 shrink-0 text-brand-green" />
-                            {formatDayLabel(dayKey(event.startsAt))}
-                        </p>
-                        <p className="flex items-center gap-2">
-                            <Clock className="size-4 shrink-0 text-brand-green" />
-                            {formatTime(event.startsAt)} –{' '}
-                            {formatTime(event.endsAt)}
-                        </p>
-                        {event.location && (
-                            <p className="flex items-center gap-2">
-                                <MapPin className="size-4 shrink-0 text-brand-green" />
-                                {event.location}
-                            </p>
-                        )}
-                        <p className="flex items-center gap-2">
-                            <User className="size-4 shrink-0 text-brand-green" />
-                            {personLabel(event.createdBy)}
-                        </p>
-                        <p className="flex items-center gap-2">
-                            <Users className="size-4 shrink-0 text-brand-green" />
-                            {attendanceLabel(event)}
-                        </p>
-                    </div>
+                    <EventInfoRows event={event} showOrganizer />
 
                     {event.description && (
                         <p className="text-sm whitespace-pre-line">
@@ -190,16 +160,7 @@ function EventDetailBody({
                                 options={scrollbarOptions}
                                 defer
                             >
-                                <ul className="grid gap-1 p-2 text-sm">
-                                    {attendees.map((person) => (
-                                        <li
-                                            key={person.id}
-                                            className="rounded-md bg-card px-2 py-1 break-words ring-1 ring-border"
-                                        >
-                                            {personLabel(person)}
-                                        </li>
-                                    ))}
-                                </ul>
+                                <AttendeeChips attendees={attendees} />
                             </OverlayScrollbarsComponent>
                         )}
                     </section>
@@ -325,19 +286,21 @@ function EventDetailBody({
             )}
         </>
     );
-}
+};
 
-export function EventDetailDialog({
-    event,
-    onClose,
-    onChanged,
-    onDeleted,
-}: {
+interface EventDetailDialogProps {
     event: EventItem | null;
     onClose: () => void;
     onChanged: () => void;
     onDeleted: (message: string) => void;
-}) {
+}
+
+export const EventDetailDialog = ({
+    event,
+    onClose,
+    onChanged,
+    onDeleted,
+}: EventDetailDialogProps) => {
     if (!event) return null;
 
     return (
@@ -349,4 +312,4 @@ export function EventDetailDialog({
             onDeleted={onDeleted}
         />
     );
-}
+};

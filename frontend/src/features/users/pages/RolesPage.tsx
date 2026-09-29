@@ -1,14 +1,8 @@
 import { useEffect, useState } from 'react';
-import { CircleAlert } from 'lucide-react';
-import {
-    Alert,
-    AlertAction,
-    AlertDescription,
-    AlertTitle,
-} from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { CreateRoleDialog } from '@/features/users/components/CreateRoleDialog';
+import { ListErrors } from '@/features/users/components/ListErrors';
 import { api, ApiError } from '@/lib/api';
 
 interface RoleRow {
@@ -23,7 +17,7 @@ interface PermissionOption {
     description: string;
 }
 
-export function RolesPage() {
+export const RolesPage = () => {
     const [roles, setRoles] = useState<RoleRow[]>([]);
     const [permissions, setPermissions] = useState<PermissionOption[]>([]);
     const [loading, setLoading] = useState(true);
@@ -117,30 +111,11 @@ export function RolesPage() {
                 />
             </div>
 
-            {error && (
-                <Alert variant="destructive" className="mb-6">
-                    <CircleAlert />
-                    <AlertTitle>No se pudo cargar la lista</AlertTitle>
-                    <AlertDescription>{error}</AlertDescription>
-                    <AlertAction>
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => void load()}
-                        >
-                            Reintentar
-                        </Button>
-                    </AlertAction>
-                </Alert>
-            )}
-
-            {actionError && (
-                <Alert variant="destructive" className="mb-6">
-                    <CircleAlert />
-                    <AlertTitle>No se pudo aplicar el cambio</AlertTitle>
-                    <AlertDescription>{actionError}</AlertDescription>
-                </Alert>
-            )}
+            <ListErrors
+                error={error}
+                actionError={actionError}
+                onRetry={() => void load()}
+            />
 
             {loading ? (
                 <p role="status" className="text-muted-foreground">
@@ -217,4 +192,4 @@ export function RolesPage() {
             )}
         </section>
     );
-}
+};
