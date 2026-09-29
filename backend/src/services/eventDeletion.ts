@@ -64,3 +64,64 @@ export const deleteEvent = async (
         });
     });
 };
+
+// Elimina las sesiones FUTURAS de una serie (las pasadas se quedan como
+// historial). Solo un admin o quien creó la serie.
+export const deleteEventSeries = async (
+    actor: { id: string; roleId: string },
+    seriesId: string,
+): Promise<{ deletedCount: number }> => {
+    return prisma.$transaction(async (tx) => {
+        const events = await tx.event.findMany({
+            where: { seriesId, startsAt: { gt: new Date() } },
+            select: {
+                title: true,
+                createdById: true,
+                _count: {
+                    select: {
+                        registrations: {
+                            where: { user: { roleId: { not: 'dt' } } },
+                        },
+                    },
+                },
+            },
+        });
+
+        if (events.length === 0) {
+            throw new EventDeleteError('not_found');
+        }
+
+        const creatorId = events[0]!.createdById;
+
+        if (actor.roleId !== 'admin' && creatorId !== actor.id) {
+            throw new EventDeleteError('forbidden');
+        }
+
+        const totalRegistrations = events.reduce(
+            (sum, e) => sum + e._count.registrations,
+            0,
+        );
+
+        await tx.event.deleteMany({
+            where: { seriesId, startsAt: { gt: new Date() } },
+        });
+
+        await tx.auditLog.create({
+            data: {
+                actorId: actor.id,
+                action: 'event_series_deleted',
+                oldValue:
+                    `${events[0]!.title} (${events.length} sesiones futuras)`.slice(
+                        0,
+                        100,
+                    ),
+                newValue:
+                    totalRegistrations === 1
+                        ? '1 inscripción'
+                        : `${totalRegistrations} inscripciones`,
+            },
+        });
+
+        return { deletedCount: events.length };
+    });
+};

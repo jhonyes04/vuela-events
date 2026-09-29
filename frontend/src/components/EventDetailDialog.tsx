@@ -1,11 +1,20 @@
-import { useState, type ReactNode } from 'react';
-import { CircleAlert, CircleCheck } from 'lucide-react';
+import { useState } from 'react';
+import {
+    CalendarDays,
+    CircleAlert,
+    CircleCheck,
+    Clock,
+    MapPin,
+    User,
+    Users,
+} from 'lucide-react';
 import { OverlayScrollbarsComponent } from 'overlayscrollbars-react';
 import { useAuth } from '@/auth/context';
 import { DeleteEventDialog } from '@/components/DeleteEventDialog';
+import { DeleteEventSeriesDialog } from '@/components/DeleteEventSeriesDialog';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 import {
     Dialog,
     DialogContent,
@@ -22,6 +31,7 @@ import {
     dayKey,
     formatDayLabel,
     formatTime,
+    googleCalendarUrl,
     hasEnded,
     isFull,
     personLabel,
@@ -31,17 +41,6 @@ import {
 } from '@/lib/events';
 
 type Feedback = { kind: 'error' | 'success'; message: string };
-
-function Detail({ label, children }: { label: string; children: ReactNode }) {
-    return (
-        <div className="grid gap-0.5">
-            <dt className="text-xs font-medium text-muted-foreground">
-                {label}
-            </dt>
-            <dd>{children}</dd>
-        </div>
-    );
-}
 
 // Contenido con su propio estado: se recrea al cambiar de evento (key).
 function EventDetailBody({
@@ -53,12 +52,13 @@ function EventDetailBody({
     event: EventItem;
     onClose: () => void;
     onChanged: () => void;
-    onDeleted: (title: string) => void;
+    onDeleted: (message: string) => void;
 }) {
     const { user } = useAuth();
     const [feedback, setFeedback] = useState<Feedback | null>(null);
     const [busy, setBusy] = useState(false);
     const [confirmOpen, setConfirmOpen] = useState(false);
+    const [seriesConfirmOpen, setSeriesConfirmOpen] = useState(false);
     // Se refresca cuando cambia el número de inscritos o la inscripción propia.
     const { attendees, failed, loading } = useAttendees(
         event.id,
@@ -102,7 +102,7 @@ function EventDetailBody({
         <>
             {/* Mientras se confirma la eliminación se oculta la ficha. */}
             <Dialog
-                open={!confirmOpen}
+                open={!confirmOpen && !seriesConfirmOpen}
                 onOpenChange={(open) => {
                     if (!open) onClose();
                 }}
@@ -127,36 +127,45 @@ function EventDetailBody({
                         {ended && <Badge variant="outline">Finalizado</Badge>}
                     </div>
 
-                    <dl className="grid gap-3 text-sm">
-                        <Detail label="Fecha">
+                    <div className="grid gap-1.5 text-sm text-muted-foreground">
+                        <p className="flex items-center gap-2">
+                            <CalendarDays className="size-4 shrink-0 text-brand-green" />
                             {formatDayLabel(dayKey(event.startsAt))}
-                            {', '}
+                        </p>
+                        <p className="flex items-center gap-2">
+                            <Clock className="size-4 shrink-0 text-brand-green" />
                             {formatTime(event.startsAt)} –{' '}
                             {formatTime(event.endsAt)}
-                        </Detail>
+                        </p>
                         {event.location && (
-                            <Detail label="Lugar">{event.location}</Detail>
+                            <p className="flex items-center gap-2">
+                                <MapPin className="size-4 shrink-0 text-brand-green" />
+                                {event.location}
+                            </p>
                         )}
-                        <Detail label="Organiza">
+                        <p className="flex items-center gap-2">
+                            <User className="size-4 shrink-0 text-brand-green" />
                             {personLabel(event.createdBy)}
-                        </Detail>
-                        <Detail label="Plazas">{attendanceLabel(event)}</Detail>
-                        {event.description && (
-                            <Detail label="Descripción">
-                                <p className="whitespace-pre-line">
-                                    {event.description}
-                                </p>
-                            </Detail>
-                        )}
-                    </dl>
+                        </p>
+                        <p className="flex items-center gap-2">
+                            <Users className="size-4 shrink-0 text-brand-green" />
+                            {attendanceLabel(event)}
+                        </p>
+                    </div>
+
+                    {event.description && (
+                        <p className="text-sm whitespace-pre-line">
+                            {event.description}
+                        </p>
+                    )}
 
                     <section
                         aria-labelledby="attendees-title"
-                        className="grid gap-2"
+                        className="grid gap-1.5"
                     >
                         <h3
                             id="attendees-title"
-                            className="text-sm font-medium"
+                            className="text-xs font-bold tracking-wide text-muted-foreground uppercase"
                         >
                             Inscritos ({event._count.registrations})
                         </h3>
@@ -177,7 +186,7 @@ function EventDetailBody({
                             </p>
                         ) : (
                             <OverlayScrollbarsComponent
-                                className="max-h-48 rounded-lg border"
+                                className="max-h-48 rounded-lg bg-muted/50"
                                 options={scrollbarOptions}
                                 defer
                             >
@@ -185,7 +194,7 @@ function EventDetailBody({
                                     {attendees.map((person) => (
                                         <li
                                             key={person.id}
-                                            className="break-words"
+                                            className="rounded-md bg-card px-2 py-1 break-words ring-1 ring-border"
                                         >
                                             {personLabel(person)}
                                         </li>
@@ -222,26 +231,46 @@ function EventDetailBody({
                     )}
 
                     <DialogFooter>
-                        {canDelete && (
-                            <Button
-                                variant="destructive"
-                                className="sm:mr-auto"
-                                disabled={busy}
-                                onClick={() => setConfirmOpen(true)}
+                        <div className="flex gap-2 sm:mr-auto">
+                            {canDelete && (
+                                <Button
+                                    variant="destructive"
+                                    disabled={busy}
+                                    onClick={() => setConfirmOpen(true)}
+                                >
+                                    Eliminar sesión
+                                </Button>
+                            )}
+
+                            {canDelete && event.seriesId && (
+                                <Button
+                                    variant="destructive"
+                                    disabled={busy}
+                                    onClick={() => setSeriesConfirmOpen(true)}
+                                >
+                                    Eliminar toda la serie
+                                </Button>
+                            )}
+                        </div>
+
+                        {!ended && event.registered && (
+                            <a
+                                href={googleCalendarUrl(event)}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className={buttonVariants({
+                                    variant: 'secondary',
+                                })}
                             >
-                                Eliminar sesión
-                            </Button>
+                                Añadir a Google Calendar
+                            </a>
                         )}
 
                         {ended ? (
                             <p className="self-center text-sm text-muted-foreground">
                                 Este evento ya ha finalizado.
                             </p>
-                        ) : isAdmin ? (
-                            <p className="self-center text-sm text-muted-foreground">
-                                Los administradores no pueden inscribirse.
-                            </p>
-                        ) : event.registered ? (
+                        ) : isAdmin ? null : event.registered ? (
                             <Button
                                 variant="outline"
                                 disabled={busy}
@@ -276,7 +305,22 @@ function EventDetailBody({
                     event={event}
                     open={confirmOpen}
                     onOpenChange={setConfirmOpen}
-                    onDeleted={() => onDeleted(event.title)}
+                    onDeleted={() =>
+                        onDeleted(`Sesión «${event.title}» eliminada.`)
+                    }
+                />
+            )}
+
+            {canDelete && event.seriesId && (
+                <DeleteEventSeriesDialog
+                    event={event}
+                    open={seriesConfirmOpen}
+                    onOpenChange={setSeriesConfirmOpen}
+                    onDeleted={(count) =>
+                        onDeleted(
+                            `Se han eliminado ${count} sesión${count === 1 ? '' : 'es'} futura${count === 1 ? '' : 's'} de «${event.title}».`,
+                        )
+                    }
                 />
             )}
         </>
@@ -292,7 +336,7 @@ export function EventDetailDialog({
     event: EventItem | null;
     onClose: () => void;
     onChanged: () => void;
-    onDeleted: (title: string) => void;
+    onDeleted: (message: string) => void;
 }) {
     if (!event) return null;
 

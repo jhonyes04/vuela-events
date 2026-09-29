@@ -17,16 +17,12 @@ export function MonthCalendar({
     month,
     todayKey,
     events,
-    selectedDay,
-    onSelectDay,
     onSelectEvent,
 }: {
     year: number;
     month: number;
     todayKey: string;
     events: EventItem[];
-    selectedDay: string | null;
-    onSelectDay: (key: string) => void;
     onSelectEvent: (event: EventItem) => void;
 }) {
     const weeks = useMemo(
@@ -72,13 +68,9 @@ export function MonthCalendar({
                                 className={cn(
                                     'min-h-16 min-w-0 border-r p-1 last:border-r-0 md:min-h-28',
                                     !day.inMonth && 'bg-muted/40',
-                                    selectedDay === day.key &&
-                                        'outline-2 -outline-offset-2 outline-ring',
                                 )}
                             >
-                                <button
-                                    type="button"
-                                    onClick={() => onSelectDay(day.key)}
+                                <span
                                     aria-current={day.isToday ? 'date' : undefined}
                                     aria-label={`${formatDayLabel(day.key)}, ${
                                         count === 0
@@ -88,14 +80,14 @@ export function MonthCalendar({
                                               : `${count} eventos`
                                     }`}
                                     className={cn(
-                                        'flex size-7 cursor-pointer items-center justify-center rounded-full text-sm font-medium hover:bg-accent',
+                                        'flex size-7 items-center justify-center rounded-full text-sm font-medium',
                                         !day.inMonth && 'text-muted-foreground',
                                         day.isToday &&
-                                            'bg-primary text-primary-foreground hover:bg-primary/80',
+                                            'bg-primary text-primary-foreground',
                                     )}
                                 >
                                     {day.day}
-                                </button>
+                                </span>
 
                                 {/* Pantallas grandes: etiquetas con hora y título. */}
                                 <ul className="mt-1 hidden gap-0.5 md:grid">
@@ -126,14 +118,8 @@ export function MonthCalendar({
                                         </li>
                                     ))}
                                     {count > MAX_CHIPS && (
-                                        <li>
-                                            <button
-                                                type="button"
-                                                onClick={() => onSelectDay(day.key)}
-                                                className="w-full cursor-pointer rounded px-1.5 text-left text-xs font-medium text-muted-foreground hover:underline"
-                                            >
-                                                +{count - MAX_CHIPS} más
-                                            </button>
+                                        <li className="px-1.5 text-xs font-medium text-muted-foreground">
+                                            +{count - MAX_CHIPS} más
                                         </li>
                                     )}
                                 </ul>

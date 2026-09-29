@@ -11,7 +11,11 @@ import {
     MAX_OCCURRENCES,
     RecurrenceError,
 } from '../lib/recurrence.js';
-import { deleteEvent, EventDeleteError } from '../services/eventDeletion.js';
+import {
+    deleteEvent,
+    deleteEventSeries,
+    EventDeleteError,
+} from '../services/eventDeletion.js';
 import { createEventSeries } from '../services/eventSeries.js';
 import {
     listAttendees,
@@ -89,6 +93,7 @@ const eventSelect = {
 } as const;
 
 const idParamsSchema = z.object({ id: z.uuid() });
+const seriesParamsSchema = z.object({ seriesId: z.uuid() });
 
 const registrationErrors = {
     not_found: [404, 'Evento o inscripción no encontrados'],
@@ -265,6 +270,47 @@ eventsRouter.delete(
                         e.reason === 'not_found'
                             ? 'Evento no encontrado'
                             : 'Solo un administrador o quien creó el evento puede eliminarlo',
+                });
+                return;
+            }
+
+            throw e;
+        }
+    },
+);
+
+// Eliminar las sesiones FUTURAS de una serie: admin o quien la creó.
+eventsRouter.delete(
+    '/series/:seriesId',
+    requirePermission('events:delete'),
+    async (req, res) => {
+        const actor = req.user;
+        const params = seriesParamsSchema.safeParse(req.params);
+
+        if (!actor) {
+            res.status(401).json({ error: 'Autenticación requerida' });
+            return;
+        }
+
+        if (!params.success) {
+            res.status(400).json({ error: 'Solicitud no válida' });
+            return;
+        }
+
+        try {
+            const result = await deleteEventSeries(
+                actor,
+                params.data.seriesId,
+            );
+
+            res.status(200).json(result);
+        } catch (e) {
+            if (e instanceof EventDeleteError) {
+                res.status(e.reason === 'not_found' ? 404 : 403).json({
+                    error:
+                        e.reason === 'not_found'
+                            ? 'No hay sesiones futuras que eliminar en esta serie'
+                            : 'Solo un administrador o quien creó la serie puede eliminarla',
                 });
                 return;
             }

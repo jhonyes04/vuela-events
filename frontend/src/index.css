@@ -159,3 +159,22 @@
             url('./assets/fondo.webp') center / cover no-repeat;
     }
 }
+
+@layer components {
+    /* Panel izquierdo del login: foto + degradado oscuro para legibilidad. */
+    .login-hero {
+        background:
+            linear-gradient(rgb(20 20 22 / 0.55), rgb(20 20 22 / 0.65)),
+            url('./assets/fondo.webp') center / cover no-repeat;
+    }
+
+    /* Textura de puntos decorativa sobre el panel. */
+    .login-hero-dots {
+        background-image: radial-gradient(
+            circle,
+            rgb(255 255 255 / 0.5) 1px,
+            transparent 1px
+        );
+        background-size: 18px 18px;
+    }
+}

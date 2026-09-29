@@ -7,7 +7,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/auth/context';
 import { CreateEventDialog } from '@/components/CreateEventDialog';
-// import { EventCard } from '@/components/EventCard';
+import { EventCard } from '@/components/EventCard';
 import { EventDetailDialog } from '@/components/EventDetailDialog';
 import { MonthCalendar } from '@/components/MonthCalendar';
 import {
@@ -18,13 +18,7 @@ import {
 } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { useMonthEvents } from '@/hooks/useMonthEvents';
-import {
-    dayKey,
-    // formatDayLabel,
-    formatMonthLabel,
-    // groupByDay,
-    type EventItem,
-} from '@/lib/events';
+import { dayKey, formatMonthLabel, type EventItem } from '@/lib/events';
 
 // Mes actual según la hora de Madrid.
 const currentMonth = () => {
@@ -43,14 +37,7 @@ export function EventsPage() {
         cursor.year,
         cursor.month,
     );
-    // const byDay = useMemo(
-    //     () => new Map(groupByDay(events).map((g) => [g.key, g.events])),
-    //     [events],
-    // );
-
-    const [selectedDay, setSelectedDay] = useState<string | null>(null);
-    // Se guarda el id y una copia: al recargar, la ficha se refresca con el dato
-    // nuevo, pero no se cierra mientras llega.
+    // Se guarda el id y una copia: al recargar, la ficha se refresca con el dato nuevo, pero no se cierra mientras llega.
     const [selectedId, setSelectedId] = useState<string | null>(null);
     const [snapshot, setSnapshot] = useState<EventItem | null>(null);
     const selectedEvent =
@@ -81,22 +68,20 @@ export function EventsPage() {
         const [year, month] = dayKey(startsAt).split('-').map(Number);
 
         setCursor({ year: year!, month: month! - 1 });
-        setSelectedDay(null);
         setNotice(
             count === 1 ? 'Evento creado.' : `Se han creado ${count} sesiones.`,
         );
         reload();
     };
 
-    const handleDeleted = (title: string) => {
+    const handleDeleted = (message: string) => {
         closeEvent();
-        setNotice(`Sesión «${title}» eliminada.`);
+        setNotice(message);
         reload();
     };
 
     const goTo = (next: { year: number; month: number }) => {
         setNotice(null);
-        setSelectedDay(null);
         setCursor(next);
     };
 
@@ -107,7 +92,6 @@ export function EventsPage() {
     };
 
     const todayKey = dayKey(new Date().toISOString());
-    // const dayEvents = selectedDay ? (byDay.get(selectedDay) ?? []) : [];
 
     return (
         <section>
@@ -188,8 +172,6 @@ export function EventsPage() {
                         month={cursor.month}
                         todayKey={todayKey}
                         events={events}
-                        selectedDay={selectedDay}
-                        onSelectDay={setSelectedDay}
                         onSelectEvent={openEvent}
                     />
 
@@ -199,28 +181,21 @@ export function EventsPage() {
                         </p>
                     )}
 
-                    {/* {selectedDay && (
-                        <section className="mt-6" aria-live="polite">
-                            <h2 className="mb-3 text-lg font-semibold">
-                                {formatDayLabel(selectedDay)}
-                            </h2>
-                            {dayEvents.length === 0 ? (
-                                <p className="text-muted-foreground">
-                                    No hay eventos este día.
-                                </p>
-                            ) : (
-                                <div className="grid gap-3 md:grid-cols-2">
-                                    {dayEvents.map((event) => (
-                                        <EventCard
-                                            key={event.id}
-                                            event={event}
-                                            onOpen={openEvent}
-                                        />
-                                    ))}
-                                </div>
-                            )}
-                        </section>
-                    )} */}
+                    {events.length > 0 && (
+                        <div className="mt-6 grid gap-3 md:grid-cols-3">
+                            {[...events]
+                                .sort((a, b) =>
+                                    a.startsAt.localeCompare(b.startsAt),
+                                )
+                                .map((event) => (
+                                    <EventCard
+                                        key={event.id}
+                                        event={event}
+                                        onOpen={openEvent}
+                                    />
+                                ))}
+                        </div>
+                    )}
                 </>
             )}
 

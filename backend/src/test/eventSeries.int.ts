@@ -1,5 +1,6 @@
 import { after, before, beforeEach, describe, it } from 'node:test';
 import assert from 'node:assert/strict';
+import { randomUUID } from 'node:crypto';
 import { prisma } from '../lib/prisma.js';
 import {
     api,
@@ -324,6 +325,270 @@ describe('series recurrentes y eliminación de sesiones', () => {
             assert.equal(log.actorId, admin.id);
             assert.equal(log.oldValue, '2030-01-10 Jornada de prueba');
             assert.equal(log.newValue, '2 inscripciones');
+        });
+    });
+
+    describe('eliminar toda la serie', () => {
+        const removeSeries = async (userId: string, seriesId: string) =>
+            api(server.baseUrl, 'DELETE', `/api/events/series/${seriesId}`, {
+                cookie: await sessionCookieFor(userId),
+            });
+
+        const makeSeries = (
+            createdById: string,
+            seriesId: string,
+            dates: { starts: string; ends: string }[],
+        ) =>
+            prisma.event.createMany({
+                data: dates.map(({ starts, ends }) => ({
+                    title: 'Sesión de serie',
+                    startsAt: new Date(starts),
+                    endsAt: new Date(ends),
+                    createdById,
+                    seriesId,
+                })),
+            });
+
+        it('elimina solo las sesiones futuras; las pasadas permanecen', async () => {
+            const dt = await createUser('dt');
+            const seriesId = randomUUID();
+
+            await makeSeries(dt.id, seriesId, [
+                { starts: '2020-01-01T10:00:00Z', ends: '2020-01-01T12:00:00Z' },
+                { starts: '2030-01-01T10:00:00Z', ends: '2030-01-01T12:00:00Z' },
+                { starts: '2030-01-08T10:00:00Z', ends: '2030-01-08T12:00:00Z' },
+            ]);
+
+            const res = await removeSeries(dt.id, seriesId);
+
+            assert.equal(res.status, 200);
+            assert.equal(res.body.deletedCount, 2);
+            assert.equal(
+                await prisma.event.count({ where: { seriesId } }),
+                1,
+            );
+
+            const remaining = await prisma.event.findFirstOrThrow({
+                where: { seriesId },
+            });
+
+            assert.equal(
+                remaining.startsAt.toISOString(),
+                '2020-01-01T10:00:00.000Z',
+            );
+        });
+
+        it('admin elimina la serie futura de otra persona', async () => {
+            const dt = await createUser('dt');
+            const admin = await createUser('admin');
+            const seriesId = randomUUID();
+
+            await makeSeries(dt.id, seriesId, [
+                { starts: '2030-01-01T10:00:00Z', ends: '2030-01-01T12:00:00Z' },
+                { starts: '2030-01-08T10:00:00Z', ends: '2030-01-08T12:00:00Z' },
+            ]);
+
+            const res = await removeSeries(admin.id, seriesId);
+
+            assert.equal(res.status, 200);
+            assert.equal(res.body.deletedCount, 2);
+            assert.equal(
+                await prisma.event.count({ where: { seriesId } }),
+                0,
+            );
+        });
+
+        it('dt elimina su propia serie futura', async () => {
+            const dt = await createUser('dt');
+            const seriesId = randomUUID();
+
+            await makeSeries(dt.id, seriesId, [
+                { starts: '2030-01-01T10:00:00Z', ends: '2030-01-01T12:00:00Z' },
+            ]);
+
+            const res = await removeSeries(dt.id, seriesId);
+
+            assert.equal(res.status, 200);
+            assert.equal(res.body.deletedCount, 1);
+        });
+
+        it('otro dt NO puede eliminar la serie de un compañero: 403 y sigue existiendo', async () => {
+            const owner = await createUser('dt');
+            const other = await createUser('dt');
+            const seriesId = randomUUID();
+
+            await makeSeries(owner.id, seriesId, [
+                { starts: '2030-01-01T10:00:00Z', ends: '2030-01-01T12:00:00Z' },
+            ]);
+
+            const res = await removeSeries(other.id, seriesId);
+
+            assert.equal(res.status, 403);
+            assert.equal(
+                await prisma.event.count({ where: { seriesId } }),
+                1,
+            );
+        });
+
+        it('ail NO puede eliminar: 403 y sigue existiendo', async () => {
+            const owner = await createUser('dt');
+            const ail = await createUser('ail');
+            const seriesId = randomUUID();
+
+            await makeSeries(owner.id, seriesId, [
+                { starts: '2030-01-01T10:00:00Z', ends: '2030-01-01T12:00:00Z' },
+            ]);
+
+            const res = await removeSeries(ail.id, seriesId);
+
+            assert.equal(res.status, 403);
+            assert.equal(
+                await prisma.event.count({ where: { seriesId } }),
+                1,
+            );
+        });
+
+        it('serie sin sesiones futuras (o inexistente): 404; seriesId mal formado: 400; sin sesión: 401; sin Origin: 403', async () => {
+            const admin = await createUser('admin');
+            const pastOnlySeriesId = randomUUID();
+
+            await makeSeries(admin.id, pastOnlySeriesId, [
+                { starts: '2020-01-01T10:00:00Z', ends: '2020-01-01T12:00:00Z' },
+            ]);
+
+            assert.equal(
+                (await removeSeries(admin.id, pastOnlySeriesId)).status,
+                404,
+            );
+            assert.equal(
+                (await removeSeries(admin.id, randomUUID())).status,
+                404,
+            );
+            assert.equal(
+                (
+                    await api(
+                        server.baseUrl,
+                        'DELETE',
+                        '/api/events/series/no-es-uuid',
+                        { cookie: await sessionCookieFor(admin.id) },
+                    )
+                ).status,
+                400,
+            );
+            assert.equal(
+                (
+                    await api(
+                        server.baseUrl,
+                        'DELETE',
+                        `/api/events/series/${pastOnlySeriesId}`,
+                    )
+                ).status,
+                401,
+            );
+            assert.equal(
+                (
+                    await api(
+                        server.baseUrl,
+                        'DELETE',
+                        `/api/events/series/${pastOnlySeriesId}`,
+                        {
+                            cookie: await sessionCookieFor(admin.id),
+                            origin: null,
+                        },
+                    )
+                ).status,
+                403,
+            );
+        });
+
+        it('borra las inscripciones en cascada y deja auditoría con nº de sesiones e inscripciones', async () => {
+            const admin = await createUser('admin');
+            const a = await createUser('ail');
+            const b = await createUser('ail');
+            const seriesId = randomUUID();
+
+            await makeSeries(admin.id, seriesId, [
+                { starts: '2030-01-01T10:00:00Z', ends: '2030-01-01T12:00:00Z' },
+                { starts: '2030-01-08T10:00:00Z', ends: '2030-01-08T12:00:00Z' },
+            ]);
+
+            const [first, second] = await prisma.event.findMany({
+                where: { seriesId },
+                orderBy: { startsAt: 'asc' },
+            });
+
+            await prisma.registration.createMany({
+                data: [
+                    { eventId: first!.id, userId: a.id },
+                    { eventId: second!.id, userId: b.id },
+                ],
+            });
+
+            const res = await removeSeries(admin.id, seriesId);
+
+            assert.equal(res.status, 200);
+            assert.equal(res.body.deletedCount, 2);
+            assert.equal(await prisma.registration.count(), 0);
+
+            const log = await prisma.auditLog.findFirstOrThrow({
+                where: { action: 'event_series_deleted' },
+            });
+
+            assert.equal(log.actorId, admin.id);
+            assert.equal(log.oldValue, 'Sesión de serie (2 sesiones futuras)');
+            assert.equal(log.newValue, '2 inscripciones');
+        });
+
+        it('los DT inscritos no cuentan en la auditoría', async () => {
+            const admin = await createUser('admin');
+            const dt = await createUser('dt');
+            const seriesId = randomUUID();
+
+            await makeSeries(admin.id, seriesId, [
+                { starts: '2030-01-01T10:00:00Z', ends: '2030-01-01T12:00:00Z' },
+            ]);
+
+            const event = await prisma.event.findFirstOrThrow({
+                where: { seriesId },
+            });
+
+            await prisma.registration.create({
+                data: { eventId: event.id, userId: dt.id },
+            });
+
+            const res = await removeSeries(admin.id, seriesId);
+
+            assert.equal(res.status, 200);
+
+            const log = await prisma.auditLog.findFirstOrThrow({
+                where: { action: 'event_series_deleted' },
+            });
+
+            assert.equal(log.newValue, '0 inscripciones');
+        });
+
+        it('no toca eventos de otra serie', async () => {
+            const dt = await createUser('dt');
+            const seriesA = randomUUID();
+            const seriesB = randomUUID();
+
+            await makeSeries(dt.id, seriesA, [
+                { starts: '2030-01-01T10:00:00Z', ends: '2030-01-01T12:00:00Z' },
+            ]);
+            await makeSeries(dt.id, seriesB, [
+                { starts: '2030-01-01T10:00:00Z', ends: '2030-01-01T12:00:00Z' },
+            ]);
+
+            await removeSeries(dt.id, seriesA);
+
+            assert.equal(
+                await prisma.event.count({ where: { seriesId: seriesA } }),
+                0,
+            );
+            assert.equal(
+                await prisma.event.count({ where: { seriesId: seriesB } }),
+                1,
+            );
         });
     });
 });

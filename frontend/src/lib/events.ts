@@ -50,6 +50,23 @@ const monthLabelFormat = new Intl.DateTimeFormat('es-ES', {
 const capitalize = (text: string) =>
     text.charAt(0).toUpperCase() + text.slice(1);
 
+// Formato requerido por Google Calendar: 'YYYYMMDDTHHmmssZ'
+const toGoogleCalendarStamp = (iso: string): string =>
+    iso.replace(/\.\d{3}/, '');
+
+// Link para añadir el evento a Google Calendar del usuario
+export const googleCalendarUrl = (event: EventItem): string => {
+    const params = new URLSearchParams({
+        action: 'TEMPLATE',
+        text: event.title,
+        dates: `${toGoogleCalendarStamp(event.startsAt)}/${toGoogleCalendarStamp(event.endsAt)}`,
+        ...(event.description && { details: event.description }),
+        ...(event.location && { location: event.location }),
+    });
+
+    return `https://calendar.google.com/calendar/render?${params.toString()}`;
+};
+
 // 'YYYY-MM-DD' del día de Madrid en que ocurre esa fecha
 export const dayKey = (iso: string): string =>
     dayKeyFormat.format(new Date(iso));
@@ -244,6 +261,11 @@ export const createRecurringEvents = (
 
 export const deleteEventById = (id: string): Promise<void> =>
     api.delete(`/events/${id}`);
+
+export const deleteEventSeriesById = (
+    seriesId: string,
+): Promise<{ deletedCount: number }> =>
+    api.delete(`/events/series/${seriesId}`);
 
 export const registerForEventById = async (id: string): Promise<void> => {
     await api.post<unknown>(`/events/${id}/registrations`);
