@@ -1,3 +1,4 @@
+import { ChevronDown } from 'lucide-react';
 import { NavLink } from 'react-router';
 import { useAuth } from '@/features/auth/hooks/context';
 import { Button } from '@/components/ui/button';
@@ -9,14 +10,48 @@ import {
 } from '@/components/ui/dropdown-menu';
 import logo from '@/assets/logo.svg';
 import { cn } from '@/lib/utils';
-import { appRoutes, canAccess } from '@/routes/routes';
-import { ChevronDown } from 'lucide-react';
+import { appRoutes, canAccess, type AppRoute } from '@/routes/routes';
 
 const navClass = ({ isActive }: { isActive: boolean }) =>
     cn(
         'shrink-0 rounded-md px-3 py-2 text-sm font-medium',
         isActive ? 'bg-brand-ink text-white' : 'hover:bg-black/10',
     );
+
+const dropdownTriggerClass =
+    'flex shrink-0 items-center gap-1 rounded-md px-3 py-2 text-sm font-medium hover:bg-black/10';
+
+interface RouteDropdownProps {
+    label: string;
+    routes: AppRoute[];
+}
+
+const RouteDropdown = ({ label, routes }: RouteDropdownProps) => {
+    if (routes.length === 0) return null;
+
+    return (
+        <DropdownMenu>
+            <DropdownMenuTrigger
+                render={
+                    <button type="button" className={dropdownTriggerClass}>
+                        {label}
+                        <ChevronDown className="size-4" />
+                    </button>
+                }
+            />
+            <DropdownMenuContent align="start">
+                {routes.map((route) => (
+                    <DropdownMenuItem
+                        key={route.path}
+                        render={
+                            <NavLink to={route.path}>{route.label}</NavLink>
+                        }
+                    />
+                ))}
+            </DropdownMenuContent>
+        </DropdownMenu>
+    );
+};
 
 export const Header = () => {
     const { user, logout } = useAuth();
@@ -25,6 +60,13 @@ export const Header = () => {
 
     const mainRoutes = appRoutes.filter(
         (route) => !route.group && user && canAccess(route, user.permissions),
+    );
+
+    const gestionRoutes = appRoutes.filter(
+        (route) =>
+            route.group === 'gestion' &&
+            user &&
+            canAccess(route, user.permissions),
     );
 
     const adminRoutes = appRoutes.filter(
@@ -47,7 +89,7 @@ export const Header = () => {
                 {user && showNav && (
                     <nav
                         aria-label="Principal"
-                        className="order-3 -mx-1 flex w-full gap-1 overflow-x-auto sm:order-2 sm:mx-0 sm:w-auto sm:flex-1"
+                        className="order-3 -mx-1 flex w-full items-center gap-1 overflow-x-auto sm:order-2 sm:mx-0 sm:w-auto sm:flex-1"
                     >
                         {mainRoutes.map((route) => (
                             <NavLink
@@ -60,33 +102,11 @@ export const Header = () => {
                             </NavLink>
                         ))}
 
-                        {adminRoutes.length > 0 && (
-                            <DropdownMenu>
-                                <DropdownMenuTrigger
-                                    render={
-                                        <button
-                                            type="button"
-                                            className="flex shrink-0 items-center gap-1 rounded-md px-3 py-2 text-sm font-medium hover:bg-black/10"
-                                        >
-                                            Administración
-                                            <ChevronDown className="size-4" />
-                                        </button>
-                                    }
-                                />
-                                <DropdownMenuContent align="start">
-                                    {adminRoutes.map((route) => (
-                                        <DropdownMenuItem
-                                            key={route.path}
-                                            render={
-                                                <NavLink to={route.path}>
-                                                    {route.label}
-                                                </NavLink>
-                                            }
-                                        />
-                                    ))}
-                                </DropdownMenuContent>
-                            </DropdownMenu>
-                        )}
+                        <RouteDropdown label="Gestión" routes={gestionRoutes} />
+                        <RouteDropdown
+                            label="Administración"
+                            routes={adminRoutes}
+                        />
                     </nav>
                 )}
 

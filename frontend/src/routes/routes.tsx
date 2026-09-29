@@ -3,18 +3,40 @@ import { EventsPage } from '@/features/events/pages/EventsPage';
 import { ProfilePage } from '@/features/profile/pages/ProfilePage';
 import { RolesPage } from '@/features/users/pages/RolesPage';
 import { UsersPage } from '@/features/users/pages/UsersPage';
+import { PlaceholderPage } from '@/pages/PlaceholderPage';
 
 export interface AppRoute {
     path: string;
     label: string;
     element: ReactNode;
     permissions?: string[];
-    group?: 'admin';
+    group?: 'admin' | 'gestion';
 }
 
 export const appRoutes: AppRoute[] = [
     { path: '/', label: 'Eventos', element: <EventsPage /> },
     { path: '/perfil', label: 'Mi perfil', element: <ProfilePage /> },
+    {
+        path: '/gestion/eventos',
+        label: 'Eventos',
+        element: <PlaceholderPage title="Gestión de eventos" />,
+        permissions: ['events:create'],
+        group: 'gestion',
+    },
+    {
+        path: '/gestion/categorias',
+        label: 'Categorías',
+        element: <PlaceholderPage title="Categorías" />,
+        permissions: ['events:create'],
+        group: 'gestion',
+    },
+    {
+        path: '/gestion/guias',
+        label: 'Guías',
+        element: <PlaceholderPage title="Guías" />,
+        permissions: ['events:create'],
+        group: 'gestion',
+    },
     {
         path: '/admin/usuarios',
         label: 'Usuarios',
