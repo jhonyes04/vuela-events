@@ -9,14 +9,12 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 const DOMAIN_HINT = 'puntosvuela.es';
 
-export function GoogleSignIn() {
+export function GoogleSignIn({ otherAccount }: { otherAccount: boolean }) {
     const { setUser } = useAuth();
     const navigate = useNavigate();
     const buttonRef = useRef<HTMLDivElement>(null);
     const [error, setError] = useState<string | null>(null);
     const [attempt, setAttempt] = useState(0);
-    // El superadmin entra con una cuenta fuera del dominio: sin la pista de dominio.
-    const [otherAccount, setOtherAccount] = useState(false);
 
     const handleCredential = useCallback(
         async (credential: string) => {
@@ -96,15 +94,6 @@ export function GoogleSignIn() {
     return (
         <div className="flex flex-col items-center gap-3">
             <div ref={buttonRef} />
-            {!otherAccount && (
-                <button
-                    type="button"
-                    onClick={() => setOtherAccount(true)}
-                    className="cursor-pointer text-sm text-muted-foreground underline-offset-4 hover:underline"
-                >
-                    ¿Entras con una cuenta fuera de @{DOMAIN_HINT}?
-                </button>
-            )}
             {error && (
                 <Alert variant="destructive" className="max-w-sm">
                     <CircleAlert />
