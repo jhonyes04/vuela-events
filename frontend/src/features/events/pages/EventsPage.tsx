@@ -18,7 +18,11 @@ import {
 } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { useMonthEvents } from '@/features/events/hooks/useMonthEvents';
-import { dayKey, formatMonthLabel, type EventItem } from '@/features/events/lib/events';
+import {
+    dayKey,
+    formatMonthLabel,
+    type EventItem,
+} from '@/features/events/lib/events';
 
 // Mes actual según la hora de Madrid.
 const currentMonth = () => {

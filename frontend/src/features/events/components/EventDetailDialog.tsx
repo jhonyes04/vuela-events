@@ -121,7 +121,7 @@ const EventDetailBody = ({
                         {ended && <Badge variant="outline">Finalizado</Badge>}
                     </div>
 
-                    <EventInfoRows event={event} showOrganizer />
+                    <EventInfoRows event={event} />
 
                     {event.description && (
                         <p className="text-sm whitespace-pre-line">
