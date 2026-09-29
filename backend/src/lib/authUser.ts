@@ -3,6 +3,7 @@ export interface AuthUser {
     id: string;
     email: string;
     name: string;
+    lastName: string;
     puntoVuela: string | null;
     profileCompleted: boolean;
     roleId: string;
@@ -15,6 +16,7 @@ export const authUserSelect = {
     id: true,
     email: true,
     name: true,
+    lastName: true,
     puntoVuela: true,
     profileCompletedAt: true,
     active: true,
@@ -31,6 +33,7 @@ export const toAuthUser = (row: {
     id: string;
     email: string;
     name: string;
+    lastName: string;
     puntoVuela: string | null;
     profileCompletedAt: Date | null;
     role: { id: string; name: string; permissions: { permissionId: string }[] };
@@ -38,6 +41,7 @@ export const toAuthUser = (row: {
     id: row.id,
     email: row.email,
     name: row.name,
+    lastName: row.lastName,
     puntoVuela: row.puntoVuela,
     profileCompleted: row.profileCompletedAt !== null,
     roleId: row.role.id,

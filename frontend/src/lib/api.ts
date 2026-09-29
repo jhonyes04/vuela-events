@@ -2,6 +2,7 @@ export interface User {
     id: string;
     email: string;
     name: string;
+    lastName: string;
     puntoVuela: string | null;
     profileCompleted: boolean;
     roleId: string;

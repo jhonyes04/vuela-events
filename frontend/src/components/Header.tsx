@@ -51,7 +51,9 @@ export const Header = () => {
                 {user && (
                     <div className="order-2 ml-auto flex items-center gap-3 sm:order-3">
                         <div className="hidden max-w-56 text-right text-sm leading-tight sm:block">
-                            <p className="truncate font-medium">{user.name}</p>
+                            <p className="truncate font-medium">
+                                {user.name} {user.lastName}
+                            </p>
                             <p className="truncate text-brand-ink/80">
                                 {user.roleName}
                             </p>

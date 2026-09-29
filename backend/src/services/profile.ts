@@ -3,6 +3,7 @@ import { authUserSelect, toAuthUser, type AuthUser } from '../lib/authUser.js';
 
 export interface ProfileInput {
     name: string;
+    lastName: string;
     puntoVuela: string;
 }
 
@@ -16,11 +17,17 @@ export const updateProfile = async (
     return prisma.$transaction(async (tx) => {
         const current = await tx.user.findUniqueOrThrow({
             where: { id: userId },
-            select: { name: true, puntoVuela: true, profileCompletedAt: true },
+            select: {
+                name: true,
+                lastName: true,
+                puntoVuela: true,
+                profileCompletedAt: true,
+            },
         });
 
         const changed = [
             current.name !== input.name ? 'name' : null,
+            current.lastName !== input.lastName ? 'lastName' : null,
             current.puntoVuela !== input.puntoVuela ? 'puntoVuela' : null,
         ].filter((field): field is string => field !== null);
 
@@ -30,6 +37,7 @@ export const updateProfile = async (
             where: { id: userId },
             data: {
                 name: input.name,
+                lastName: input.lastName,
                 puntoVuela: input.puntoVuela,
                 ...(firstTime && { profileCompletedAt: new Date() }),
             },

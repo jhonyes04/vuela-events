@@ -32,6 +32,9 @@ export function ProfileForm({
     onSaved: (user: User) => void;
 }) {
     const [name, setName] = useState(initial?.name ?? user.name);
+    const [lastName, setLastName] = useState(
+        initial?.lastName ?? user.lastName,
+    );
     const [puntoVuela, setPuntoVuela] = useState(
         initial?.puntoVuela ?? user.puntoVuela ?? '',
     );
@@ -48,11 +51,13 @@ export function ProfileForm({
 
         const values = {
             name: cleanText(name),
+            lastName: cleanText(lastName),
             puntoVuela: cleanText(puntoVuela),
         };
 
         if (
             values.name.length < MIN_LENGTH ||
+            values.lastName.length < MIN_LENGTH ||
             values.puntoVuela.length < MIN_LENGTH
         ) {
             setError(
@@ -68,6 +73,7 @@ export function ProfileForm({
 
             // Se muestra lo que el servidor guardó (ya normalizado).
             setName(updated.name);
+            setLastName(updated.lastName);
             setPuntoVuela(updated.puntoVuela ?? '');
             setSaved(true);
             onSaved(updated);
@@ -84,17 +90,32 @@ export function ProfileForm({
 
     return (
         <form onSubmit={(e) => void handleSubmit(e)} className="grid gap-4">
-            <div className="grid gap-1.5">
-                <Label htmlFor="profile-name">Nombre y apellidos</Label>
-                <Input
-                    id="profile-name"
-                    required
-                    autoComplete="name"
-                    minLength={MIN_LENGTH}
-                    maxLength={NAME_MAX}
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                />
+            <div className="grid gap-2 sm:grid-cols-2">
+                <div className="grid gap-1.5">
+                    <Label htmlFor="profile-name">Nombre</Label>
+                    <Input
+                        id="profile-name"
+                        required
+                        autoComplete="given-name"
+                        minLength={MIN_LENGTH}
+                        maxLength={NAME_MAX}
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
+                    />
+                </div>
+
+                <div className="grid gap-1.5">
+                    <Label htmlFor="profile-last-name">Apellidos</Label>
+                    <Input
+                        id="profile-last-name"
+                        required
+                        autoComplete="family-name"
+                        minLength={MIN_LENGTH}
+                        maxLength={NAME_MAX}
+                        value={lastName}
+                        onChange={(e) => setLastName(e.target.value)}
+                    />
+                </div>
             </div>
 
             <div className="grid gap-1.5">

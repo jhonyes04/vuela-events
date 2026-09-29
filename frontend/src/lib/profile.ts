@@ -27,6 +27,7 @@ export const puntoVueloHints = (roleId: string): PuntoVueloHints =>
 
 export interface ProfileValues {
     name: string;
+    lastName: string;
     puntoVuela: string;
 }
 

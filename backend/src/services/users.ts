@@ -46,11 +46,20 @@ export const findOrCreateUser = async (
                 ? identity.name
                 : existing.name;
 
-        if (existing.email !== identity.email || existing.name !== name) {
+        const lastName =
+            existing.profileCompletedAt === null
+                ? identity.lastName
+                : existing.lastName;
+
+        if (
+            existing.email !== identity.email ||
+            existing.name !== name ||
+            existing.lastName !== lastName
+        ) {
             try {
                 await prisma.user.update({
                     where: { id: existing.id },
-                    data: { email: identity.email, name },
+                    data: { email: identity.email, name, lastName },
                 });
             } catch (e) {
                 if (isUniqueViolation(e)) {
@@ -60,7 +69,12 @@ export const findOrCreateUser = async (
             }
         }
 
-        return toAuthUser({ ...existing, email: identity.email, name });
+        return toAuthUser({
+            ...existing,
+            email: identity.email,
+            name,
+            lastName,
+        });
     }
 
     const emailToken = await prisma.user.findUnique({
@@ -79,6 +93,7 @@ export const findOrCreateUser = async (
                     email: identity.email,
                     googleSub: identity.sub,
                     name: identity.name,
+                    lastName: identity.lastName,
                     roleId: initialRoleFor(identity.email),
                 },
                 select: authUserSelect,
