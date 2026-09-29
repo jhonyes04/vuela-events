@@ -13,6 +13,12 @@ import {
 const PERMISSION_IDS = [
     'events:create',
     'events:delete',
+    'events:view',
+    'events:manage',
+    'categories:view',
+    'categories:manage',
+    'guides:view',
+    'guides:manage',
     'users:manage',
     'roles:manage',
 ] as const;

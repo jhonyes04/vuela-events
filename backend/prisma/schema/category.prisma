@@ -1,0 +1,12 @@
+model Category {
+    id              String      @id @default(uuid()) @db.Uuid
+    name            String      @unique @db.VarChar(80)
+    color           String      @db.VarChar(20)
+    active          Boolean     @default(true)
+    createdAt       DateTime    @default(now())
+    updatedAt       DateTime    @updatedAt
+
+    events          Event[]
+
+    @@map("categories")
+}

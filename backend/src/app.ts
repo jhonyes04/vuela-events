@@ -13,6 +13,7 @@ import { usersRouter } from './routes/users.js';
 import { eventsRouter } from './routes/events.js';
 import { profileRouter } from './routes/profile.js';
 import { rolesRouter } from './routes/roles.js';
+import { categoriesRouter } from './routes/categories.js';
 import { apiLimiter } from './middleware/rateLimit.js';
 
 export interface AppOptions {
@@ -52,6 +53,7 @@ export function createApp(options: AppOptions = {}) {
     app.use('/api/profile', profileRouter);
     app.use('/api/users', usersRouter);
     app.use('/api/roles', rolesRouter);
+    app.use('/api/categories', categoriesRouter);
     app.use('/api/events', eventsRouter);
 
     app.get('/api/health', (_req, res) => {
