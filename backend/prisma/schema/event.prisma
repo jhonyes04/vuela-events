@@ -1,0 +1,35 @@
+model Event {
+    id                  String          @id @default(uuid()) @db.Uuid
+    title               String          @db.VarChar(120)
+    subtitle            String?         @db.VarChar(200)
+    description         String?         @db.VarChar(2000)
+    location            String?         @db.VarChar(200)
+    startsAt            DateTime        
+    endsAt              DateTime        
+    capacity            Int?        
+    createdById         String          @db.Uuid
+    seriesId            String?         @db.Uuid
+    createdAt           DateTime        @default(now())
+    updatedAt           DateTime        @updatedAt
+
+    createdBy           User            @relation("EventCreator", fields: [createdById], references: [id], onDelete: Restrict)
+    registrations       Registration[]
+
+    @@index([startsAt])
+    @@index([seriesId])
+    @@map("events")
+}
+
+model Registration {
+    id                  String      @id @default(uuid()) @db.Uuid
+    eventId             String      @db.Uuid
+    userId              String      @db.Uuid
+    createdAt           DateTime    @default(now())
+
+    event               Event       @relation(fields: [eventId], references: [id], onDelete: Cascade)
+    user                User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+    @@unique([eventId, userId])
+    @@index([userId])
+    @@map("registrations")
+}

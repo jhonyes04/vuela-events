@@ -37,6 +37,7 @@ export const createUser = (
             email: opts.email ?? `${roleId}-${n}@${env.ALLOWED_EMAIL_DOMAIN}`,
             googleSub: `sub-${n}`,
             name: `${roleId} ${n}`,
+            lastName: `Apellido ${n}`,
             puntoVuela: completed ? `Punto ${n}` : null,
             profileCompletedAt: completed ? new Date() : null,
             roleId,

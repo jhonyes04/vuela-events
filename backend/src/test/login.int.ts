@@ -13,6 +13,7 @@ const identity = (
     sub: `sub-${n}`,
     email: `${n}@${env.ALLOWED_EMAIL_DOMAIN}`,
     name: `Usuario ${n}`,
+    lastName: '',
     ...over,
 });
 

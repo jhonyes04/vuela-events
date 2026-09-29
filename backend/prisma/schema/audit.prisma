@@ -1,0 +1,15 @@
+model AuditLog {
+    id                  String      @id @default(uuid()) @db.Uuid
+    actorId             String?     @db.Uuid
+    targetId            String?     @db.Uuid
+    action              String      @db.VarChar(50)
+    oldValue            String?     @db.VarChar(100)
+    newValue            String?     @db.VarChar(100)
+    createdAt           DateTime    @default(now())
+
+    actor               User?       @relation("AuditActor", fields: [actorId], references: [id], onDelete: SetNull)
+    target              User?       @relation("AuditTarget", fields: [targetId], references: [id], onDelete: SetNull)
+
+    @@index([createdAt])
+    @@map("audit_logs")
+}

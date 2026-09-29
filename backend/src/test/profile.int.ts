@@ -11,7 +11,8 @@ import {
 } from './helpers.js';
 
 const validProfile = {
-    name: 'Ana Vanesa García López',
+    name: 'Ana Vanesa',
+    lastName: 'García López',
     puntoVuela: 'Pueblo Nuevo Axarquía',
 };
 
@@ -81,7 +82,8 @@ describe('perfil: primer acceso y edición', () => {
             const dt = await createUser('dt', { profileCompleted: false });
 
             const res = await patch(dt.id, {
-                name: 'Lucía Pérez Ruiz',
+                name: 'Lucía',
+                lastName: 'Pérez Ruiz',
                 puntoVuela: 'DT Axarquía y Sierra de las Nieves',
             });
 
@@ -179,6 +181,7 @@ describe('perfil: primer acceso y edición', () => {
 
             const res = await patch(user.id, {
                 name: 'Nombre Nuevo',
+                lastName: 'Apellido Nuevo',
                 puntoVuela: 'Almáchar',
             });
 
@@ -192,6 +195,7 @@ describe('perfil: primer acceso y edición', () => {
 
             const res = await patch(user.id, {
                 name: '  Ana    García   ',
+                lastName: '  López   Ruiz  ',
                 puntoVuela: '   Benamargosa  ',
             });
 
@@ -201,6 +205,7 @@ describe('perfil: primer acceso y edición', () => {
 
             const multiline = await patch(user.id, {
                 name: 'Ana\nGarcía\tLópez',
+                lastName: 'Pérez\nRuiz',
                 puntoVuela: 'Sierra\r\nde las Nieves',
             });
 
@@ -221,8 +226,13 @@ describe('perfil: primer acceso y edición', () => {
                 'Ñandú Pérez',
             ]) {
                 assert.equal(
-                    (await patch(user.id, { name, puntoVuela: 'Lugar' }))
-                        .status,
+                    (
+                        await patch(user.id, {
+                            name,
+                            lastName: name,
+                            puntoVuela: 'Lugar',
+                        })
+                    ).status,
                     200,
                     name,
                 );
@@ -234,6 +244,7 @@ describe('perfil: primer acceso y edición', () => {
 
             await patch(user.id, {
                 name: 'Nombre Distinto',
+                lastName: 'Apellido Distinto',
                 puntoVuela: 'Lugar Distinto',
             });
 
@@ -242,7 +253,7 @@ describe('perfil: primer acceso y edición', () => {
             });
 
             assert.equal(log.actorId, user.id);
-            assert.equal(log.newValue, 'name,puntoVuela');
+            assert.equal(log.newValue, 'name,lastName,puntoVuela');
             assert.ok(!log.newValue?.includes('Distinto'));
         });
 
@@ -254,6 +265,7 @@ describe('perfil: primer acceso y edición', () => {
 
             const res = await patch(user.id, {
                 name: before.name,
+                lastName: before.lastName,
                 puntoVuela: before.puntoVuela,
             });
 

@@ -42,6 +42,7 @@ describe('identityFromPayload', () => {
             sub: '123',
             email: `ana@${D}`,
             name: 'Ana',
+            lastName: '',
         });
     });
 
