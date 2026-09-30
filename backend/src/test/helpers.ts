@@ -16,7 +16,7 @@ if (
 }
 
 export const resetDb = async (): Promise<void> => {
-    await prisma.$executeRaw`TRUNCATE TABLE "audit_logs", "registrations", "events", "categories", "users", "session" RESTART IDENTITY CASCADE`;
+    await prisma.$executeRaw`TRUNCATE TABLE "audit_logs", "registrations", "events", "categories", "guides", "users", "session" RESTART IDENTITY CASCADE`;
 };
 
 export const closeDb = async (): Promise<void> => {
@@ -56,6 +56,21 @@ export const createCategory = (
         data: {
             name: opts.name ?? `Categoria ${n}`,
             color: opts.color ?? 'amber',
+            active: opts.active ?? true,
+        },
+    });
+};
+
+// Guía de prueba: por defecto activa, para poder usarla al crear eventos.
+export const createGuide = (
+    opts: { name?: string; url?: string; active?: boolean } = {},
+) => {
+    const n = randomBytes(4).toString('hex');
+
+    return prisma.guide.create({
+        data: {
+            name: opts.name ?? `Guía ${n}`,
+            url: opts.url ?? `https://example.com/guia-${n}`,
             active: opts.active ?? true,
         },
     });

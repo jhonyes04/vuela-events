@@ -15,6 +15,7 @@ export interface EventItem {
     createdAt: string;
     createdBy: { id: string; name: string; puntoVuela: string | null };
     category: { id: string; name: string; color: CategoryColor };
+    guide: { id: string; name: string; url: string };
     _count: { registrations: number };
     registered: boolean;
 }
@@ -244,6 +245,7 @@ export interface RecurringPayload {
     location: string;
     capacity?: number | undefined;
     categoryId: string;
+    guideId: string;
     from: string;
     to: string;
     weekdays: number[];

@@ -6,6 +6,7 @@ import {
     api,
     closeDb,
     createCategory,
+    createGuide,
     createUser,
     resetDb,
     sessionCookieFor,
@@ -21,6 +22,7 @@ const makeEvent = async (
 ) => {
     const start = opts.past ? Date.now() - 2 * DAY : Date.now() + DAY;
     const category = await createCategory();
+    const guide = await createGuide();
 
     return prisma.event.create({
         data: {
@@ -30,6 +32,7 @@ const makeEvent = async (
             capacity: opts.capacity,
             createdById,
             categoryId: category.id,
+            guideId: guide.id,
         },
     });
 };

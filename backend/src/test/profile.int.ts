@@ -5,6 +5,7 @@ import {
     api,
     closeDb,
     createCategory,
+    createGuide,
     createUser,
     resetDb,
     sessionCookieFor,
@@ -20,6 +21,7 @@ const validProfile = {
 describe('perfil: primer acceso y edición', () => {
     let server: Awaited<ReturnType<typeof startServer>>;
     let categoryId: string;
+    let guideId: string;
 
     before(async () => {
         server = await startServer();
@@ -28,6 +30,7 @@ describe('perfil: primer acceso y edición', () => {
     beforeEach(async () => {
         await resetDb();
         categoryId = (await createCategory()).id;
+        guideId = (await createGuide()).id;
     });
 
     after(async () => {
@@ -55,6 +58,7 @@ describe('perfil: primer acceso y edición', () => {
         startsAt: '2030-01-10T10:00:00.000Z',
         endsAt: '2030-01-10T12:00:00.000Z',
         categoryId,
+        guideId,
     });
 
     describe('primer acceso', () => {
@@ -112,6 +116,7 @@ describe('perfil: primer acceso y edición', () => {
                     endsAt: new Date(Date.now() + 90_000_000),
                     createdById: owner.id,
                     categoryId,
+                    guideId,
                 },
             });
 
@@ -162,6 +167,7 @@ describe('perfil: primer acceso y edición', () => {
                     endsAt: new Date(Date.now() + 90_000_000),
                     createdById: owner.id,
                     categoryId,
+                    guideId,
                 },
             });
 

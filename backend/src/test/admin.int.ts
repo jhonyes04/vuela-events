@@ -5,6 +5,7 @@ import {
     api,
     closeDb,
     createCategory,
+    createGuide,
     createUser,
     resetDb,
     sessionCookieFor,
@@ -14,6 +15,7 @@ import {
 describe('administración de usuarios', () => {
     let server: Awaited<ReturnType<typeof startServer>>;
     let categoryId: string;
+    let guideId: string;
 
     before(async () => {
         server = await startServer();
@@ -22,6 +24,7 @@ describe('administración de usuarios', () => {
     beforeEach(async () => {
         await resetDb();
         categoryId = (await createCategory()).id;
+        guideId = (await createGuide()).id;
     });
 
     // categoryId cambia cada test (resetDb borra las categorías).
@@ -31,6 +34,7 @@ describe('administración de usuarios', () => {
         startsAt: '2030-01-10T10:00:00.000Z',
         endsAt: '2030-01-10T12:00:00.000Z',
         categoryId,
+        guideId,
     });
 
     after(async () => {

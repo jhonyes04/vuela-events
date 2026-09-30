@@ -5,6 +5,7 @@ import {
     api,
     closeDb,
     createCategory,
+    createGuide,
     createUser,
     resetDb,
     sessionCookieFor,
@@ -21,6 +22,7 @@ const validEvent = {
 describe('eventos: permisos y validación', () => {
     let server: Awaited<ReturnType<typeof startServer>>;
     let categoryId: string;
+    let guideId: string;
 
     before(async () => {
         server = await startServer();
@@ -29,6 +31,7 @@ describe('eventos: permisos y validación', () => {
     beforeEach(async () => {
         await resetDb();
         categoryId = (await createCategory()).id;
+        guideId = (await createGuide()).id;
     });
 
     after(async () => {
@@ -42,7 +45,7 @@ describe('eventos: permisos y validación', () => {
             cookie: await sessionCookieFor(userId),
             body:
                 typeof body === 'object' && body !== null
-                    ? { categoryId, ...body }
+                    ? { categoryId, guideId, ...body }
                     : body,
         });
 
@@ -151,6 +154,7 @@ describe('eventos: permisos y validación', () => {
                 endsAt: new Date('2030-02-01T11:00:00Z'),
                 createdById: admin.id,
                 categoryId,
+                guideId,
             },
         });
 

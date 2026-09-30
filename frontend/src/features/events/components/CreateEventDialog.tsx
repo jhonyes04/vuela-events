@@ -26,6 +26,7 @@ import {
     listCategories,
     type Category,
 } from '@/features/categories/lib/categories';
+import { listGuides, type Guide } from '@/features/guides/lib/guides';
 import { CATEGORY_COLOR_STYLES } from '@/features/categories/lib/colors';
 import {
     createRecurringEvents,
@@ -43,6 +44,7 @@ interface FormValues {
     description: string;
     capacity: string;
     categoryId: string;
+    guideId: string;
     // Evento suelto
     startsAt: string;
     endsAt: string;
@@ -64,6 +66,7 @@ const EMPTY: FormValues = {
     description: '',
     capacity: '',
     categoryId: '',
+    guideId: '',
     startsAt: '',
     endsAt: '',
     recurring: false,
@@ -102,12 +105,15 @@ export function CreateEventDialog({
     const [error, setError] = useState<string | null>(null);
     const [submitting, setSubmitting] = useState(false);
     const [categories, setCategories] = useState<Category[]>([]);
+    const [guides, setGuides] = useState<Guide[]>([]);
 
     useEffect(() => {
         void listCategories().then(setCategories);
+        void listGuides().then(setGuides);
     }, []);
 
     const activeCategories = categories.filter((c) => c.active);
+    const activeGuides = guides.filter((g) => g.active);
 
     const set = (name: TextField) => (e: { target: { value: string } }) =>
         setValues((v) => ({ ...v, [name]: e.target.value }));
@@ -148,6 +154,11 @@ export function CreateEventDialog({
             return;
         }
 
+        if (!values.guideId) {
+            setError('Selecciona una guía');
+            return;
+        }
+
         const common = {
             title: values.title,
             // Los opcionales vacíos no se envían.
@@ -156,6 +167,7 @@ export function CreateEventDialog({
             description: values.description || undefined,
             capacity: values.capacity ? Number(values.capacity) : undefined,
             categoryId: values.categoryId,
+            guideId: values.guideId,
         };
 
         try {
@@ -267,6 +279,10 @@ export function CreateEventDialog({
                         <Field id="ev-category" label="Categoría *">
                             <Select
                                 value={values.categoryId}
+                                items={activeCategories.map((c) => ({
+                                    value: c.id,
+                                    label: c.name,
+                                }))}
                                 onValueChange={(value) =>
                                     setValues((v) => ({
                                         ...v,
@@ -278,11 +294,38 @@ export function CreateEventDialog({
                                     id="ev-category"
                                     className="w-full"
                                 >
-                                    <SelectValue placeholder="Selecciona una categoría" />
+                                    <SelectValue placeholder="Selecciona una categoría">
+                                        {(value: string | null) => {
+                                            const selected =
+                                                activeCategories.find(
+                                                    (c) => c.id === value,
+                                                );
+
+                                            if (!selected) return null;
+
+                                            return (
+                                                <>
+                                                    <span
+                                                        className={cn(
+                                                            'size-3 shrink-0 rounded-full',
+                                                            CATEGORY_COLOR_STYLES[
+                                                                selected.color
+                                                            ].swatch,
+                                                        )}
+                                                    />
+                                                    {selected.name}
+                                                </>
+                                            );
+                                        }}
+                                    </SelectValue>
                                 </SelectTrigger>
                                 <SelectContent>
                                     {activeCategories.map((c) => (
-                                        <SelectItem key={c.id} value={c.id}>
+                                        <SelectItem
+                                            key={c.id}
+                                            value={c.id}
+                                            label={c.name}
+                                        >
                                             <span
                                                 className={cn(
                                                     'size-3 shrink-0 rounded-full',
@@ -292,6 +335,37 @@ export function CreateEventDialog({
                                                 )}
                                             />
                                             {c.name}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </Field>
+
+                        <Field id="ev-guide" label="Guía *">
+                            <Select
+                                value={values.guideId}
+                                items={activeGuides.map((g) => ({
+                                    value: g.id,
+                                    label: g.name,
+                                }))}
+                                onValueChange={(value) =>
+                                    setValues((v) => ({
+                                        ...v,
+                                        guideId: value ?? '',
+                                    }))
+                                }
+                            >
+                                <SelectTrigger id="ev-guide" className="w-full">
+                                    <SelectValue placeholder="Selecciona una guía" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {activeGuides.map((g) => (
+                                        <SelectItem
+                                            key={g.id}
+                                            value={g.id}
+                                            label={g.name}
+                                        >
+                                            {g.name}
                                         </SelectItem>
                                     ))}
                                 </SelectContent>

@@ -6,6 +6,7 @@ import {
     api,
     closeDb,
     createCategory,
+    createGuide,
     createUser,
     resetDb,
     sessionCookieFor,
@@ -31,6 +32,7 @@ const weekdayOf = (d: Date) =>
 describe('series recurrentes y eliminación de sesiones', () => {
     let server: Awaited<ReturnType<typeof startServer>>;
     let categoryId: string;
+    let guideId: string;
 
     before(async () => {
         server = await startServer();
@@ -39,6 +41,7 @@ describe('series recurrentes y eliminación de sesiones', () => {
     beforeEach(async () => {
         await resetDb();
         categoryId = (await createCategory()).id;
+        guideId = (await createGuide()).id;
     });
 
     after(async () => {
@@ -53,7 +56,7 @@ describe('series recurrentes y eliminación de sesiones', () => {
             cookie: await sessionCookieFor(userId),
             body:
                 typeof body === 'object' && body !== null
-                    ? { categoryId, ...body }
+                    ? { categoryId, guideId, ...body }
                     : body,
         });
 
@@ -70,6 +73,7 @@ describe('series recurrentes y eliminación de sesiones', () => {
                 endsAt: new Date('2030-01-10T12:00:00Z'),
                 createdById,
                 categoryId,
+                guideId,
             },
         });
 
@@ -86,14 +90,24 @@ describe('series recurrentes y eliminación de sesiones', () => {
         it('sin sesión: 401; sin Origin: 403; en ambos casos no se crea nada', async () => {
             const dt = await createUser('dt');
 
-            const anon = await api(server.baseUrl, 'POST', '/api/events/recurring', {
-                body: validSeries,
-            });
-            const noOrigin = await api(server.baseUrl, 'POST', '/api/events/recurring', {
-                cookie: await sessionCookieFor(dt.id),
-                body: validSeries,
-                origin: null,
-            });
+            const anon = await api(
+                server.baseUrl,
+                'POST',
+                '/api/events/recurring',
+                {
+                    body: validSeries,
+                },
+            );
+            const noOrigin = await api(
+                server.baseUrl,
+                'POST',
+                '/api/events/recurring',
+                {
+                    cookie: await sessionCookieFor(dt.id),
+                    body: validSeries,
+                    origin: null,
+                },
+            );
 
             assert.equal(anon.status, 401);
             assert.equal(noOrigin.status, 403);
@@ -119,8 +133,14 @@ describe('series recurrentes y eliminación de sesiones', () => {
             assert.ok(events.every((e) => weekdayOf(e.startsAt) === 'Wed'));
             assert.ok(events.every((e) => e.location === 'Sala de pruebas'));
             // Enero es UTC+1 y julio es UTC+2: la hora local es siempre 09:00.
-            assert.equal(events[0]?.startsAt.toISOString(), '2027-01-06T08:00:00.000Z');
-            assert.equal(events[0]?.endsAt.toISOString(), '2027-01-06T12:00:00.000Z');
+            assert.equal(
+                events[0]?.startsAt.toISOString(),
+                '2027-01-06T08:00:00.000Z',
+            );
+            assert.equal(
+                events[0]?.endsAt.toISOString(),
+                '2027-01-06T12:00:00.000Z',
+            );
 
             const july = events.find((e) => e.startsAt.getUTCMonth() === 6);
 
@@ -183,7 +203,8 @@ describe('series recurrentes y eliminación de sesiones', () => {
             assert.equal(list.body.events.length, created.body.count);
             assert.ok(
                 list.body.events.every(
-                    (e: { seriesId: string }) => e.seriesId === created.body.seriesId,
+                    (e: { seriesId: string }) =>
+                        e.seriesId === created.body.seriesId,
                 ),
             );
         });
@@ -196,19 +217,37 @@ describe('series recurrentes y eliminación de sesiones', () => {
             void _unused;
 
             const cases: [string, object][] = [
-                ['cada día del año supera el máximo', { ...validSeries, weekdays: [1, 2, 3, 4, 5, 6, 7] }],
-                ['rango invertido', { ...validSeries, from: '2027-02-01', to: '2027-01-01' }],
+                [
+                    'cada día del año supera el máximo',
+                    { ...validSeries, weekdays: [1, 2, 3, 4, 5, 6, 7] },
+                ],
+                [
+                    'rango invertido',
+                    { ...validSeries, from: '2027-02-01', to: '2027-01-01' },
+                ],
                 ['fecha inexistente', { ...validSeries, to: '2027-02-30' }],
-                ['fin igual al inicio', { ...validSeries, startTime: '13:00', endTime: '13:00' }],
-                ['fin anterior al inicio', { ...validSeries, startTime: '13:00', endTime: '09:00' }],
+                [
+                    'fin igual al inicio',
+                    { ...validSeries, startTime: '13:00', endTime: '13:00' },
+                ],
+                [
+                    'fin anterior al inicio',
+                    { ...validSeries, startTime: '13:00', endTime: '09:00' },
+                ],
                 ['hora mal formada', { ...validSeries, startTime: '9:00' }],
-                ['ningún día coincide', { ...validSeries, from: '2027-01-07', to: '2027-01-07' }],
+                [
+                    'ningún día coincide',
+                    { ...validSeries, from: '2027-01-07', to: '2027-01-07' },
+                ],
                 ['sin días de la semana', { ...validSeries, weekdays: [] }],
                 ['día de la semana 8', { ...validSeries, weekdays: [8] }],
                 ['días repetidos', { ...validSeries, weekdays: [3, 3] }],
                 ['rango de décadas', { ...validSeries, to: '2099-12-31' }],
                 ['sin lugar', withoutLocation],
-                ['createdById en el cuerpo', { ...validSeries, createdById: other.id }],
+                [
+                    'createdById en el cuerpo',
+                    { ...validSeries, createdById: other.id },
+                ],
                 ['aforo negativo', { ...validSeries, capacity: -1 }],
             ];
 
@@ -291,20 +330,27 @@ describe('series recurrentes y eliminación de sesiones', () => {
             const event = await makeEvent(admin.id);
 
             assert.equal(
-                (await remove(admin.id, '11111111-1111-4111-8111-111111111111')).status,
+                (await remove(admin.id, '11111111-1111-4111-8111-111111111111'))
+                    .status,
                 404,
             );
             assert.equal((await remove(admin.id, 'no-es-uuid')).status, 400);
             assert.equal(
-                (await api(server.baseUrl, 'DELETE', `/api/events/${event.id}`)).status,
+                (await api(server.baseUrl, 'DELETE', `/api/events/${event.id}`))
+                    .status,
                 401,
             );
             assert.equal(
                 (
-                    await api(server.baseUrl, 'DELETE', `/api/events/${event.id}`, {
-                        cookie: await sessionCookieFor(admin.id),
-                        origin: null,
-                    })
+                    await api(
+                        server.baseUrl,
+                        'DELETE',
+                        `/api/events/${event.id}`,
+                        {
+                            cookie: await sessionCookieFor(admin.id),
+                            origin: null,
+                        },
+                    )
                 ).status,
                 403,
             );
@@ -357,6 +403,7 @@ describe('series recurrentes y eliminación de sesiones', () => {
                     endsAt: new Date(ends),
                     createdById,
                     categoryId,
+                    guideId,
                     seriesId,
                 })),
             });
@@ -366,19 +413,25 @@ describe('series recurrentes y eliminación de sesiones', () => {
             const seriesId = randomUUID();
 
             await makeSeries(dt.id, seriesId, [
-                { starts: '2020-01-01T10:00:00Z', ends: '2020-01-01T12:00:00Z' },
-                { starts: '2030-01-01T10:00:00Z', ends: '2030-01-01T12:00:00Z' },
-                { starts: '2030-01-08T10:00:00Z', ends: '2030-01-08T12:00:00Z' },
+                {
+                    starts: '2020-01-01T10:00:00Z',
+                    ends: '2020-01-01T12:00:00Z',
+                },
+                {
+                    starts: '2030-01-01T10:00:00Z',
+                    ends: '2030-01-01T12:00:00Z',
+                },
+                {
+                    starts: '2030-01-08T10:00:00Z',
+                    ends: '2030-01-08T12:00:00Z',
+                },
             ]);
 
             const res = await removeSeries(dt.id, seriesId);
 
             assert.equal(res.status, 200);
             assert.equal(res.body.deletedCount, 2);
-            assert.equal(
-                await prisma.event.count({ where: { seriesId } }),
-                1,
-            );
+            assert.equal(await prisma.event.count({ where: { seriesId } }), 1);
 
             const remaining = await prisma.event.findFirstOrThrow({
                 where: { seriesId },
@@ -396,18 +449,21 @@ describe('series recurrentes y eliminación de sesiones', () => {
             const seriesId = randomUUID();
 
             await makeSeries(dt.id, seriesId, [
-                { starts: '2030-01-01T10:00:00Z', ends: '2030-01-01T12:00:00Z' },
-                { starts: '2030-01-08T10:00:00Z', ends: '2030-01-08T12:00:00Z' },
+                {
+                    starts: '2030-01-01T10:00:00Z',
+                    ends: '2030-01-01T12:00:00Z',
+                },
+                {
+                    starts: '2030-01-08T10:00:00Z',
+                    ends: '2030-01-08T12:00:00Z',
+                },
             ]);
 
             const res = await removeSeries(admin.id, seriesId);
 
             assert.equal(res.status, 200);
             assert.equal(res.body.deletedCount, 2);
-            assert.equal(
-                await prisma.event.count({ where: { seriesId } }),
-                0,
-            );
+            assert.equal(await prisma.event.count({ where: { seriesId } }), 0);
         });
 
         it('dt elimina su propia serie futura', async () => {
@@ -415,7 +471,10 @@ describe('series recurrentes y eliminación de sesiones', () => {
             const seriesId = randomUUID();
 
             await makeSeries(dt.id, seriesId, [
-                { starts: '2030-01-01T10:00:00Z', ends: '2030-01-01T12:00:00Z' },
+                {
+                    starts: '2030-01-01T10:00:00Z',
+                    ends: '2030-01-01T12:00:00Z',
+                },
             ]);
 
             const res = await removeSeries(dt.id, seriesId);
@@ -430,16 +489,16 @@ describe('series recurrentes y eliminación de sesiones', () => {
             const seriesId = randomUUID();
 
             await makeSeries(owner.id, seriesId, [
-                { starts: '2030-01-01T10:00:00Z', ends: '2030-01-01T12:00:00Z' },
+                {
+                    starts: '2030-01-01T10:00:00Z',
+                    ends: '2030-01-01T12:00:00Z',
+                },
             ]);
 
             const res = await removeSeries(other.id, seriesId);
 
             assert.equal(res.status, 403);
-            assert.equal(
-                await prisma.event.count({ where: { seriesId } }),
-                1,
-            );
+            assert.equal(await prisma.event.count({ where: { seriesId } }), 1);
         });
 
         it('ail NO puede eliminar: 403 y sigue existiendo', async () => {
@@ -448,16 +507,16 @@ describe('series recurrentes y eliminación de sesiones', () => {
             const seriesId = randomUUID();
 
             await makeSeries(owner.id, seriesId, [
-                { starts: '2030-01-01T10:00:00Z', ends: '2030-01-01T12:00:00Z' },
+                {
+                    starts: '2030-01-01T10:00:00Z',
+                    ends: '2030-01-01T12:00:00Z',
+                },
             ]);
 
             const res = await removeSeries(ail.id, seriesId);
 
             assert.equal(res.status, 403);
-            assert.equal(
-                await prisma.event.count({ where: { seriesId } }),
-                1,
-            );
+            assert.equal(await prisma.event.count({ where: { seriesId } }), 1);
         });
 
         it('serie sin sesiones futuras (o inexistente): 404; seriesId mal formado: 400; sin sesión: 401; sin Origin: 403', async () => {
@@ -465,7 +524,10 @@ describe('series recurrentes y eliminación de sesiones', () => {
             const pastOnlySeriesId = randomUUID();
 
             await makeSeries(admin.id, pastOnlySeriesId, [
-                { starts: '2020-01-01T10:00:00Z', ends: '2020-01-01T12:00:00Z' },
+                {
+                    starts: '2020-01-01T10:00:00Z',
+                    ends: '2020-01-01T12:00:00Z',
+                },
             ]);
 
             assert.equal(
@@ -520,8 +582,14 @@ describe('series recurrentes y eliminación de sesiones', () => {
             const seriesId = randomUUID();
 
             await makeSeries(admin.id, seriesId, [
-                { starts: '2030-01-01T10:00:00Z', ends: '2030-01-01T12:00:00Z' },
-                { starts: '2030-01-08T10:00:00Z', ends: '2030-01-08T12:00:00Z' },
+                {
+                    starts: '2030-01-01T10:00:00Z',
+                    ends: '2030-01-01T12:00:00Z',
+                },
+                {
+                    starts: '2030-01-08T10:00:00Z',
+                    ends: '2030-01-08T12:00:00Z',
+                },
             ]);
 
             const [first, second] = await prisma.event.findMany({
@@ -557,7 +625,10 @@ describe('series recurrentes y eliminación de sesiones', () => {
             const seriesId = randomUUID();
 
             await makeSeries(admin.id, seriesId, [
-                { starts: '2030-01-01T10:00:00Z', ends: '2030-01-01T12:00:00Z' },
+                {
+                    starts: '2030-01-01T10:00:00Z',
+                    ends: '2030-01-01T12:00:00Z',
+                },
             ]);
 
             const event = await prisma.event.findFirstOrThrow({
@@ -585,10 +656,16 @@ describe('series recurrentes y eliminación de sesiones', () => {
             const seriesB = randomUUID();
 
             await makeSeries(dt.id, seriesA, [
-                { starts: '2030-01-01T10:00:00Z', ends: '2030-01-01T12:00:00Z' },
+                {
+                    starts: '2030-01-01T10:00:00Z',
+                    ends: '2030-01-01T12:00:00Z',
+                },
             ]);
             await makeSeries(dt.id, seriesB, [
-                { starts: '2030-01-01T10:00:00Z', ends: '2030-01-01T12:00:00Z' },
+                {
+                    starts: '2030-01-01T10:00:00Z',
+                    ends: '2030-01-01T12:00:00Z',
+                },
             ]);
 
             await removeSeries(dt.id, seriesA);

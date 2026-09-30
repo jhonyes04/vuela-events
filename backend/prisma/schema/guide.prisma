@@ -5,6 +5,7 @@ model Guide {
     active          Boolean         @default(true)
     createdAt       DateTime        @default(now())
     updatedAt       DateTime        @updatedAt
+    events          Event[]
 
     @@map("guides")
 }

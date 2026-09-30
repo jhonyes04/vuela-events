@@ -32,6 +32,7 @@ const eventFields = {
     location: z.string().trim().min(1).max(200),
     capacity: z.number().int().positive().max(100_000).optional(),
     categoryId: z.uuid(),
+    guideId: z.uuid(),
 };
 
 // La categoría debe existir y estar activa: una inactiva no admite eventos nuevos.
@@ -42,6 +43,16 @@ const isActiveCategory = async (categoryId: string): Promise<boolean> => {
     });
 
     return category?.active === true;
+};
+
+// La guía debe existir y estar activa: una inactiva no admite eventos nuevos.
+const isActiveGuide = async (guideId: string): Promise<boolean> => {
+    const guide = await prisma.guide.findUnique({
+        where: { id: guideId },
+        select: { active: true },
+    });
+
+    return guide?.active === true;
 };
 
 const createEventSchema = z
@@ -97,6 +108,7 @@ const eventSelect = {
     createdAt: true,
     createdBy: { select: { id: true, name: true, puntoVuela: true } },
     category: { select: { id: true, name: true, color: true } },
+    guide: { select: { id: true, name: true, url: true } },
     _count: {
         select: {
             registrations: { where: { user: { roleId: { not: 'dt' } } } },
@@ -193,10 +205,16 @@ eventsRouter.post(
             endsAt,
             capacity,
             categoryId,
+            guideId,
         } = body.data;
 
         if (!(await isActiveCategory(categoryId))) {
             res.status(400).json({ error: 'Categoría no válida' });
+            return;
+        }
+
+        if (!(await isActiveGuide(guideId))) {
+            res.status(400).json({ error: 'Guía no válida' });
             return;
         }
 
@@ -210,6 +228,7 @@ eventsRouter.post(
                 endsAt: new Date(endsAt),
                 capacity,
                 categoryId,
+                guideId,
                 createdById: actor.id,
             },
             select: eventSelect,
@@ -244,6 +263,11 @@ eventsRouter.post(
 
         if (!(await isActiveCategory(fields.categoryId))) {
             res.status(400).json({ error: 'Categoría no válida' });
+            return;
+        }
+
+        if (!(await isActiveGuide(fields.guideId))) {
+            res.status(400).json({ error: 'Guía no válida' });
             return;
         }
 
@@ -322,10 +346,7 @@ eventsRouter.delete(
         }
 
         try {
-            const result = await deleteEventSeries(
-                actor,
-                params.data.seriesId,
-            );
+            const result = await deleteEventSeries(actor, params.data.seriesId);
 
             res.status(200).json(result);
         } catch (e) {

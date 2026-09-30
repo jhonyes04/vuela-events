@@ -1,5 +1,15 @@
 import { type ReactNode } from 'react';
-import { CalendarDays, Clock, MapPin, User, Users } from 'lucide-react';
+import {
+    BookOpen,
+    CalendarDays,
+    Clock,
+    MapPin,
+    Tag,
+    User,
+    Users,
+} from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { CATEGORY_COLOR_STYLES } from '@/features/categories/lib/colors';
 import {
     attendanceLabel,
     dayKey,
@@ -24,6 +34,12 @@ export const EventInfoRows = ({
 }: EventInfoRowsProps) => (
     <div className="grid gap-1.5 text-sm text-muted-foreground">
         <p className="flex items-center gap-2">
+            <Tag className="size-4 shrink-0 text-brand-green" />
+            <Badge className={CATEGORY_COLOR_STYLES[event.category.color].chip}>
+                {event.category.name}
+            </Badge>
+        </p>
+        <p className="flex items-center gap-2">
             <CalendarDays className="size-4 shrink-0 text-brand-green" />
             {formatDayLabel(dayKey(event.startsAt))}
         </p>
@@ -38,6 +54,19 @@ export const EventInfoRows = ({
                 {event.location}
             </p>
         )}
+
+        <p className="relative z-10 flex items-center gap-2">
+            <BookOpen className="size-4 shrink-0 text-brand-green" />
+            <a
+                href={event.guide.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="truncate hover:underline"
+            >
+                {event.guide.name}
+            </a>
+        </p>
+
         {showOrganizer && (
             <p className="flex items-center gap-2">
                 <User className="size-4 shrink-0 text-brand-green" />
