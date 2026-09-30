@@ -195,10 +195,52 @@ const Toolbar = ({ editor }: ToolbarProps) => (
     </div>
 );
 
+export interface EditorPlaceholder {
+    // Token literal que se inserta, p. ej. '{{fecha}}'.
+    token: string;
+    label: string;
+}
+
+interface PlaceholderPaletteProps {
+    editor: Editor;
+    placeholders: EditorPlaceholder[];
+}
+
+// Arrastrables (ProseMirror acepta texto plano soltado de forma nativa) y,
+// como alternativa accesible/táctil, también se insertan con un clic.
+const PlaceholderPalette = ({
+    editor,
+    placeholders,
+}: PlaceholderPaletteProps) => (
+    <div className="flex flex-wrap items-center gap-1.5 rounded-b-lg border border-t-0 border-input bg-muted/50 p-2">
+        <span className="text-xs font-medium text-muted-foreground">
+            Arrastra o haz clic para insertar:
+        </span>
+        {placeholders.map(({ token, label }) => (
+            <button
+                key={token}
+                type="button"
+                draggable
+                onDragStart={(e) =>
+                    e.dataTransfer.setData('text/plain', token)
+                }
+                onClick={() =>
+                    editor.chain().focus().insertContent(token).run()
+                }
+                className="cursor-grab rounded-full border border-border bg-background px-2 py-0.5 text-xs font-medium hover:bg-muted active:cursor-grabbing"
+            >
+                {label}
+            </button>
+        ))}
+    </div>
+);
+
 interface RichTextEditorProps {
     value: string;
     onChange: (html: string) => void;
     className?: string;
+    // Chips de inserción rápida (arrastrar o clic) para tokens dinámicos.
+    placeholders?: EditorPlaceholder[];
 }
 
 // Editor de texto enriquecido reutilizable; el valor entra y sale como HTML.
@@ -206,6 +248,7 @@ export const RichTextEditor = ({
     value,
     onChange,
     className,
+    placeholders,
 }: RichTextEditorProps) => {
     const editor = useEditor({
         extensions: [
@@ -220,13 +263,16 @@ export const RichTextEditor = ({
 
     if (!editor) return null;
 
+    const hasPlaceholders = placeholders && placeholders.length > 0;
+
     return (
         <div className={cn('grid', className)}>
             <Toolbar editor={editor} />
             <EditorContent
                 editor={editor}
                 className={cn(
-                    'min-h-32 rounded-b-lg border border-input bg-transparent px-3 py-2 text-sm outline-none',
+                    'min-h-32 border border-input bg-transparent px-3 py-2 text-sm outline-none',
+                    hasPlaceholders ? 'border-b-0' : 'rounded-b-lg',
                     'focus-within:border-ring focus-within:ring-3 focus-within:ring-ring/50',
                     '[&_.tiptap]:outline-none',
                     '[&_h2]:text-lg [&_h2]:font-semibold',
@@ -236,6 +282,9 @@ export const RichTextEditor = ({
                     '[&_a]:text-primary [&_a]:underline',
                 )}
             />
+            {hasPlaceholders && (
+                <PlaceholderPalette editor={editor} placeholders={placeholders} />
+            )}
         </div>
     );
 };

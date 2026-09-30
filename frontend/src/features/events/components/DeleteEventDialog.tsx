@@ -1,4 +1,4 @@
-import { ConfirmDeleteDialog } from './ConfirmDeleteDialog';
+import { ConfirmDeleteDialog } from '@/components/ConfirmDeleteDialog';
 import {
     dayKey,
     deleteEventById,

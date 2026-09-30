@@ -6,6 +6,7 @@ import { RolesPage } from '@/features/users/pages/RolesPage';
 import { UsersPage } from '@/features/users/pages/UsersPage';
 import { CategoriesPage } from '@/features/categories/pages/CategoriesPage';
 import { GuidesPage } from '@/features/guides/pages/GuidesPage';
+import { EmailTemplatesPage } from '@/features/emailTemplates/pages/EmailTemplatesPage';
 
 export interface AppRoute {
     path: string;
@@ -37,6 +38,13 @@ export const appRoutes: AppRoute[] = [
         label: 'Guías',
         element: <GuidesPage />,
         permissions: ['guides:view', 'guides:manage'],
+        group: 'gestion',
+    },
+    {
+        path: '/gestion/plantillas-correo',
+        label: 'Plantillas de correo',
+        element: <EmailTemplatesPage />,
+        permissions: ['email:view', 'email:manage'],
         group: 'gestion',
     },
     {

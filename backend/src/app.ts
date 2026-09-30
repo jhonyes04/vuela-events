@@ -15,6 +15,7 @@ import { profileRouter } from './routes/profile.js';
 import { rolesRouter } from './routes/roles.js';
 import { categoriesRouter } from './routes/categories.js';
 import { guidesRouter } from './routes/guides.js';
+import { emailTemplatesRouter } from './routes/emailTemplates.js';
 import { apiLimiter } from './middleware/rateLimit.js';
 
 export interface AppOptions {
@@ -41,7 +42,7 @@ export function createApp(options: AppOptions = {}) {
 
     app.use(requireSameOrigin);
 
-    app.use(express.json({ limit: '10kb' }));
+    app.use(express.json({ limit: '100kb' }));
 
     app.use(sessionMiddleware);
 
@@ -56,6 +57,7 @@ export function createApp(options: AppOptions = {}) {
     app.use('/api/roles', rolesRouter);
     app.use('/api/categories', categoriesRouter);
     app.use('/api/guides', guidesRouter);
+    app.use('/api/email-templates', emailTemplatesRouter);
     app.use('/api/events', eventsRouter);
 
     app.get('/api/health', (_req, res) => {

@@ -19,6 +19,8 @@ const PERMISSION_IDS = [
     'categories:manage',
     'guides:view',
     'guides:manage',
+    'email:view',
+    'email:manage',
     'users:manage',
     'roles:manage',
 ] as const;

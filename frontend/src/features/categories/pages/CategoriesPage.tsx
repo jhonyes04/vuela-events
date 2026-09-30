@@ -3,7 +3,7 @@ import { Pencil, Trash2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { IconTooltip } from '@/components/IconTooltip';
-import { ConfirmDeleteDialog } from '@/features/events/components/ConfirmDeleteDialog';
+import { ConfirmDeleteDialog } from '@/components/ConfirmDeleteDialog';
 import { ListErrors } from '@/features/users/components/ListErrors';
 import { CategoryFormDialog } from '@/features/categories/components/CategoryFormDialog';
 import {
