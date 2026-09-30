@@ -1,11 +1,11 @@
 import type { ReactNode } from 'react';
 import { EventsPage } from '@/features/events/pages/EventsPage';
+import { EventsManagementPage } from '@/features/events/pages/EventsManagementPage';
 import { ProfilePage } from '@/features/profile/pages/ProfilePage';
 import { RolesPage } from '@/features/users/pages/RolesPage';
 import { UsersPage } from '@/features/users/pages/UsersPage';
 import { CategoriesPage } from '@/features/categories/pages/CategoriesPage';
 import { GuidesPage } from '@/features/guides/pages/GuidesPage';
-import { PlaceholderPage } from '@/pages/PlaceholderPage';
 
 export interface AppRoute {
     path: string;
@@ -21,7 +21,7 @@ export const appRoutes: AppRoute[] = [
     {
         path: '/gestion/eventos',
         label: 'Eventos',
-        element: <PlaceholderPage title="Gestión de eventos" />,
+        element: <EventsManagementPage />,
         permissions: ['events:view', 'events:manage'],
         group: 'gestion',
     },

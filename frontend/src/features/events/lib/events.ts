@@ -44,6 +44,13 @@ const timeFormat = new Intl.DateTimeFormat('es-ES', {
     hourCycle: 'h23',
 });
 
+const shortDateFormat = new Intl.DateTimeFormat('es-ES', {
+    timeZone: TZ,
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+});
+
 const monthLabelFormat = new Intl.DateTimeFormat('es-ES', {
     timeZone: 'UTC',
     month: 'long',
@@ -81,6 +88,10 @@ export const formatDayLabel = (key: string): string =>
 // '09:00'
 export const formatTime = (iso: string): string =>
     timeFormat.format(new Date(iso));
+
+// '24/09/2026'
+export const formatShortDate = (iso: string): string =>
+    shortDateFormat.format(new Date(iso));
 
 // 'Septiembre de 2026'. `month` va de 0 a 11
 export const formatMonthLabel = (year: number, month: number): string =>
@@ -164,6 +175,15 @@ export const madridLocalToIso = (local: string): string => {
     instant = asIfUtc - madridOffsetMs(new Date(instant));
 
     return new Date(instant).toISOString();
+};
+
+// ISO en UTC -> 'YYYY-MM-DDTHH:mm' (hora de Madrid, para precargar un datetime-local).
+export const isoToMadridLocal = (iso: string): string => {
+    const parts = wallClockFormat.formatToParts(new Date(iso));
+    const part = (type: string) =>
+        parts.find((p) => p.type === type)?.value ?? '';
+
+    return `${part('year')}-${part('month')}-${part('day')}T${part('hour')}:${part('minute')}`;
 };
 
 // Días ISO: 1 = lunes ... 7 = domingo (los mismos que usa el servidor).
@@ -263,6 +283,32 @@ export const createRecurringEvents = (
     payload: RecurringPayload,
 ): Promise<CreatedSeries> =>
     api.post<CreatedSeries>('/events/recurring', payload);
+
+export interface EventUpdateInput {
+    title: string;
+    subtitle?: string | undefined;
+    description?: string | undefined;
+    location: string;
+    capacity?: number | undefined;
+    categoryId: string;
+    guideId: string;
+    startsAt: string;
+    endsAt: string;
+}
+
+// El servidor no devuelve "registered" (no aplica fuera de la vista del
+// calendario): se recarga la lista después en vez de fiarse de la respuesta.
+export const updateEventById = (
+    id: string,
+    input: EventUpdateInput,
+): Promise<void> => api.patch(`/events/${id}`, input);
+
+// Sin rango de fechas: todos los eventos, para el listado de gestión.
+export const listAllEvents = async (): Promise<EventItem[]> => {
+    const { events } = await api.get<{ events: EventItem[] }>('/events');
+
+    return events;
+};
 
 export const deleteEventById = (id: string): Promise<void> =>
     api.delete(`/events/${id}`);

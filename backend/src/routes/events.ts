@@ -66,6 +66,17 @@ const createEventSchema = z
         message: 'La fecha de fin debe ser posterior a la de inicio',
     });
 
+const updateEventSchema = z
+    .strictObject({
+        ...eventFields,
+        startsAt: z.iso.datetime(),
+        endsAt: z.iso.datetime(),
+    })
+    .refine((e) => new Date(e.endsAt) > new Date(e.startsAt), {
+        path: ['endsAt'],
+        message: 'La fecha de fin debe ser posterior a la de inicio',
+    });
+
 const dateOnly = z.string().refine(isRealDate, 'Fecha no válida');
 const timeOfDay = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/);
 
@@ -235,6 +246,71 @@ eventsRouter.post(
         });
 
         res.status(201).json({ event });
+    },
+);
+
+// Editar un evento suelto: solo quien tiene permiso de gestión.
+eventsRouter.patch(
+    '/:id',
+    requirePermission('events:manage'),
+    async (req, res) => {
+        const params = idParamsSchema.safeParse(req.params);
+        const body = updateEventSchema.safeParse(req.body);
+
+        if (!params.success || !body.success) {
+            res.status(400).json({ error: 'Solicitud no válida' });
+            return;
+        }
+
+        const {
+            title,
+            subtitle,
+            description,
+            location,
+            startsAt,
+            endsAt,
+            capacity,
+            categoryId,
+            guideId,
+        } = body.data;
+
+        if (!(await isActiveCategory(categoryId))) {
+            res.status(400).json({ error: 'Categoría no válida' });
+            return;
+        }
+
+        if (!(await isActiveGuide(guideId))) {
+            res.status(400).json({ error: 'Guía no válida' });
+            return;
+        }
+
+        const exists = await prisma.event.findUnique({
+            where: { id: params.data.id },
+            select: { id: true },
+        });
+
+        if (!exists) {
+            res.status(404).json({ error: 'Evento no encontrado' });
+            return;
+        }
+
+        const event = await prisma.event.update({
+            where: { id: params.data.id },
+            data: {
+                title,
+                subtitle,
+                description,
+                location,
+                startsAt: new Date(startsAt),
+                endsAt: new Date(endsAt),
+                capacity,
+                categoryId,
+                guideId,
+            },
+            select: eventSelect,
+        });
+
+        res.json({ event });
     },
 );
 

@@ -31,10 +31,13 @@ import { CATEGORY_COLOR_STYLES } from '@/features/categories/lib/colors';
 import {
     createRecurringEvents,
     formatFullDate,
+    isoToMadridLocal,
     madridLocalToIso,
     MAX_OCCURRENCES,
     previewRecurrence,
+    updateEventById,
     WEEKDAYS,
+    type EventItem,
 } from '@/features/events/lib/events';
 
 interface FormValues {
@@ -48,7 +51,7 @@ interface FormValues {
     // Evento suelto
     startsAt: string;
     endsAt: string;
-    // Serie recurrente
+    // Serie recurrente (solo al crear; al editar no se usa)
     recurring: boolean;
     from: string;
     to: string;
@@ -77,6 +80,24 @@ const EMPTY: FormValues = {
     endTime: '',
 };
 
+const valuesFromEvent = (event: EventItem): FormValues => ({
+    title: event.title,
+    subtitle: event.subtitle ?? '',
+    location: event.location ?? '',
+    description: event.description ?? '',
+    capacity: event.capacity ? String(event.capacity) : '',
+    categoryId: event.category.id,
+    guideId: event.guide.id,
+    startsAt: isoToMadridLocal(event.startsAt),
+    endsAt: isoToMadridLocal(event.endsAt),
+    recurring: false,
+    from: '',
+    to: '',
+    weekdays: [],
+    startTime: '',
+    endTime: '',
+});
+
 function Field({
     id,
     label,
@@ -94,14 +115,23 @@ function Field({
     );
 }
 
-// onCreated recibe el inicio de la primera sesión creada y cuántas se crearon.
-export function CreateEventDialog({
-    onCreated,
-}: {
-    onCreated: (result: { startsAt: string; count: number }) => void;
-}) {
-    const [open, setOpen] = useState(false);
-    const [values, setValues] = useState<FormValues>(EMPTY);
+interface EventFormBodyProps {
+    // null = crear; evento = editar (solo la sesión, sin recurrencia).
+    event: EventItem | null;
+    onCreated?: (result: { startsAt: string; count: number }) => void;
+    onSaved?: () => void;
+    onClose: () => void;
+}
+
+// Con su propio estado: se recrea (key) al pasar de crear a editar o entre eventos.
+function EventFormBody({ event, onCreated, onSaved, onClose }: EventFormBodyProps) {
+    const isEdit = event !== null;
+    const idPrefix = isEdit ? 'edit-ev-' : 'ev-';
+    const fieldId = (name: string) => `${idPrefix}${name}`;
+
+    const [values, setValues] = useState<FormValues>(
+        event ? valuesFromEvent(event) : EMPTY,
+    );
     const [error, setError] = useState<string | null>(null);
     const [submitting, setSubmitting] = useState(false);
     const [categories, setCategories] = useState<Category[]>([]);
@@ -112,8 +142,14 @@ export function CreateEventDialog({
         void listGuides().then(setGuides);
     }, []);
 
-    const activeCategories = categories.filter((c) => c.active);
-    const activeGuides = guides.filter((g) => g.active);
+    // La categoría/guía actuales del evento siguen disponibles al editar
+    // aunque se hayan desactivado después de crearlo.
+    const activeCategories = categories.filter(
+        (c) => c.active || c.id === event?.category.id,
+    );
+    const activeGuides = guides.filter(
+        (g) => g.active || g.id === event?.guide.id,
+    );
 
     const set = (name: TextField) => (e: { target: { value: string } }) =>
         setValues((v) => ({ ...v, [name]: e.target.value }));
@@ -125,15 +161,6 @@ export function CreateEventDialog({
                 ? v.weekdays.filter((d) => d !== day)
                 : [...v.weekdays, day],
         }));
-
-    const handleOpenChange = (next: boolean) => {
-        setOpen(next);
-
-        if (next) {
-            setValues(EMPTY);
-            setError(null);
-        }
-    };
 
     const preview = values.recurring
         ? previewRecurrence(values.from, values.to, values.weekdays)
@@ -171,6 +198,29 @@ export function CreateEventDialog({
         };
 
         try {
+            if (event) {
+                const startsAt = madridLocalToIso(values.startsAt);
+                const endsAt = madridLocalToIso(values.endsAt);
+
+                if (new Date(endsAt) <= new Date(startsAt)) {
+                    setError(
+                        'La fecha de fin debe ser posterior a la de inicio',
+                    );
+                    return;
+                }
+
+                setSubmitting(true);
+                await updateEventById(event.id, {
+                    ...common,
+                    startsAt,
+                    endsAt,
+                });
+
+                onSaved?.();
+                onClose();
+                return;
+            }
+
             if (values.recurring) {
                 if (values.endTime <= values.startTime) {
                     setError(
@@ -199,11 +249,11 @@ export function CreateEventDialog({
                     endTime: values.endTime,
                 });
 
-                setOpen(false);
-                onCreated({
+                onCreated?.({
                     startsAt: created.firstStartsAt,
                     count: created.count,
                 });
+                onClose();
                 return;
             }
 
@@ -218,13 +268,15 @@ export function CreateEventDialog({
             setSubmitting(true);
             await api.post('/events', { ...common, startsAt, endsAt });
 
-            setOpen(false);
-            onCreated({ startsAt, count: 1 });
+            onCreated?.({ startsAt, count: 1 });
+            onClose();
         } catch (err) {
             setError(
                 err instanceof ApiError
                     ? err.message
-                    : 'No se pudo crear el evento',
+                    : isEdit
+                      ? 'No se pudo guardar el evento'
+                      : 'No se pudo crear el evento',
             );
         } finally {
             setSubmitting(false);
@@ -232,335 +284,391 @@ export function CreateEventDialog({
     };
 
     return (
-        <>
-            <Button onClick={() => handleOpenChange(true)}>Crear evento</Button>
+        <DialogContent className="sm:max-w-lg">
+            <DialogHeader>
+                <DialogTitle>
+                    {isEdit ? 'Editar evento' : 'Crear evento'}
+                </DialogTitle>
+                <DialogDescription>
+                    Las horas son de Madrid. Los campos con * son
+                    obligatorios.
+                </DialogDescription>
+            </DialogHeader>
 
-            <Dialog open={open} onOpenChange={handleOpenChange}>
-                <DialogContent className="sm:max-w-lg">
-                    <DialogHeader>
-                        <DialogTitle>Crear evento</DialogTitle>
-                        <DialogDescription>
-                            Las horas son de Madrid. Los campos con * son
-                            obligatorios.
-                        </DialogDescription>
-                    </DialogHeader>
-
-                    <form
-                        id="create-event-form"
-                        onSubmit={(e) => void handleSubmit(e)}
-                        className="grid gap-4"
+            <form
+                id={fieldId('form')}
+                onSubmit={(e) => void handleSubmit(e)}
+                className="grid gap-4"
+            >
+                <Field id={fieldId('title')} label="Título *">
+                    <Input
+                        id={fieldId('title')}
+                        required
+                        maxLength={120}
+                        value={values.title}
+                        onChange={set('title')}
+                    />
+                </Field>
+                <Field id={fieldId('subtitle')} label="Subtítulo">
+                    <Input
+                        id={fieldId('subtitle')}
+                        maxLength={200}
+                        value={values.subtitle}
+                        onChange={set('subtitle')}
+                    />
+                </Field>
+                <Field id={fieldId('location')} label="Lugar *">
+                    <Input
+                        id={fieldId('location')}
+                        required
+                        maxLength={200}
+                        value={values.location}
+                        onChange={set('location')}
+                    />
+                </Field>
+                <Field id={fieldId('category')} label="Categoría *">
+                    <Select
+                        value={values.categoryId}
+                        items={activeCategories.map((c) => ({
+                            value: c.id,
+                            label: c.name,
+                        }))}
+                        onValueChange={(value) =>
+                            setValues((v) => ({
+                                ...v,
+                                categoryId: value ?? '',
+                            }))
+                        }
                     >
-                        <Field id="ev-title" label="Título *">
-                            <Input
-                                id="ev-title"
-                                required
-                                maxLength={120}
-                                value={values.title}
-                                onChange={set('title')}
-                            />
-                        </Field>
-                        <Field id="ev-subtitle" label="Subtítulo">
-                            <Input
-                                id="ev-subtitle"
-                                maxLength={200}
-                                value={values.subtitle}
-                                onChange={set('subtitle')}
-                            />
-                        </Field>
-                        <Field id="ev-location" label="Lugar *">
-                            <Input
-                                id="ev-location"
-                                required
-                                maxLength={200}
-                                value={values.location}
-                                onChange={set('location')}
-                            />
-                        </Field>
-                        <Field id="ev-category" label="Categoría *">
-                            <Select
-                                value={values.categoryId}
-                                items={activeCategories.map((c) => ({
-                                    value: c.id,
-                                    label: c.name,
-                                }))}
-                                onValueChange={(value) =>
-                                    setValues((v) => ({
-                                        ...v,
-                                        categoryId: value ?? '',
-                                    }))
-                                }
-                            >
-                                <SelectTrigger
-                                    id="ev-category"
-                                    className="w-full"
-                                >
-                                    <SelectValue placeholder="Selecciona una categoría">
-                                        {(value: string | null) => {
-                                            const selected =
-                                                activeCategories.find(
-                                                    (c) => c.id === value,
-                                                );
+                        <SelectTrigger
+                            id={fieldId('category')}
+                            className="w-full"
+                        >
+                            <SelectValue placeholder="Selecciona una categoría">
+                                {(value: string | null) => {
+                                    const selected = activeCategories.find(
+                                        (c) => c.id === value,
+                                    );
 
-                                            if (!selected) return null;
+                                    if (!selected) return null;
 
-                                            return (
-                                                <>
-                                                    <span
-                                                        className={cn(
-                                                            'size-3 shrink-0 rounded-full',
-                                                            CATEGORY_COLOR_STYLES[
-                                                                selected.color
-                                                            ].swatch,
-                                                        )}
-                                                    />
-                                                    {selected.name}
-                                                </>
-                                            );
-                                        }}
-                                    </SelectValue>
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {activeCategories.map((c) => (
-                                        <SelectItem
-                                            key={c.id}
-                                            value={c.id}
-                                            label={c.name}
-                                        >
+                                    return (
+                                        <>
                                             <span
                                                 className={cn(
                                                     'size-3 shrink-0 rounded-full',
                                                     CATEGORY_COLOR_STYLES[
-                                                        c.color
+                                                        selected.color
                                                     ].swatch,
                                                 )}
                                             />
-                                            {c.name}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </Field>
-
-                        <Field id="ev-guide" label="Guía *">
-                            <Select
-                                value={values.guideId}
-                                items={activeGuides.map((g) => ({
-                                    value: g.id,
-                                    label: g.name,
-                                }))}
-                                onValueChange={(value) =>
-                                    setValues((v) => ({
-                                        ...v,
-                                        guideId: value ?? '',
-                                    }))
-                                }
-                            >
-                                <SelectTrigger id="ev-guide" className="w-full">
-                                    <SelectValue placeholder="Selecciona una guía" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {activeGuides.map((g) => (
-                                        <SelectItem
-                                            key={g.id}
-                                            value={g.id}
-                                            label={g.name}
-                                        >
-                                            {g.name}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </Field>
-
-                        <label className="flex cursor-pointer items-center gap-2 text-sm font-medium">
-                            <input
-                                type="checkbox"
-                                className="size-4 accent-primary"
-                                checked={values.recurring}
-                                onChange={(e) =>
-                                    setValues((v) => ({
-                                        ...v,
-                                        recurring: e.target.checked,
-                                    }))
-                                }
-                            />
-                            Repetir cada semana
-                        </label>
-
-                        {values.recurring ? (
-                            <>
-                                <div className="grid gap-4 sm:grid-cols-2">
-                                    <Field id="ev-from" label="Desde *">
-                                        <Input
-                                            id="ev-from"
-                                            type="date"
-                                            required
-                                            value={values.from}
-                                            onChange={set('from')}
-                                        />
-                                    </Field>
-                                    <Field id="ev-to" label="Hasta *">
-                                        <Input
-                                            id="ev-to"
-                                            type="date"
-                                            required
-                                            value={values.to}
-                                            onChange={set('to')}
-                                        />
-                                    </Field>
-                                </div>
-
-                                <fieldset className="grid gap-1.5">
-                                    <legend className="mb-1.5 text-sm font-medium">
-                                        Días de la semana *
-                                    </legend>
-                                    <div className="flex flex-wrap gap-2">
-                                        {WEEKDAYS.map((day) => (
-                                            <label
-                                                key={day.value}
-                                                className="cursor-pointer"
-                                            >
-                                                <input
-                                                    type="checkbox"
-                                                    className="peer sr-only"
-                                                    aria-label={day.label}
-                                                    checked={values.weekdays.includes(
-                                                        day.value,
-                                                    )}
-                                                    onChange={() =>
-                                                        toggleWeekday(day.value)
-                                                    }
-                                                />
-                                                <span
-                                                    aria-hidden="true"
-                                                    className="flex size-9 items-center justify-center rounded-lg border border-input text-sm font-medium peer-checked:border-primary peer-checked:bg-primary peer-checked:text-primary-foreground peer-focus-visible:border-ring peer-focus-visible:ring-3 peer-focus-visible:ring-ring/50"
-                                                >
-                                                    {day.short}
-                                                </span>
-                                            </label>
-                                        ))}
-                                    </div>
-                                </fieldset>
-
-                                <div className="grid gap-4 sm:grid-cols-2">
-                                    <Field
-                                        id="ev-start-time"
-                                        label="Hora de inicio *"
-                                    >
-                                        <Input
-                                            id="ev-start-time"
-                                            type="time"
-                                            required
-                                            value={values.startTime}
-                                            onChange={set('startTime')}
-                                        />
-                                    </Field>
-                                    <Field
-                                        id="ev-end-time"
-                                        label="Hora de fin *"
-                                    >
-                                        <Input
-                                            id="ev-end-time"
-                                            type="time"
-                                            required
-                                            value={values.endTime}
-                                            onChange={set('endTime')}
-                                        />
-                                    </Field>
-                                </div>
-
-                                <p
-                                    role="status"
-                                    className="rounded-lg bg-muted px-3 py-2 text-sm"
+                                            {selected.name}
+                                        </>
+                                    );
+                                }}
+                            </SelectValue>
+                        </SelectTrigger>
+                        <SelectContent>
+                            {activeCategories.map((c) => (
+                                <SelectItem
+                                    key={c.id}
+                                    value={c.id}
+                                    label={c.name}
                                 >
-                                    {!preview
-                                        ? 'Elige fechas y días para ver cuántas sesiones se crearán.'
-                                        : preview.overLimit
-                                          ? `Una serie no puede superar las ${MAX_OCCURRENCES} sesiones ni abarcar más de dos años.`
-                                          : preview.count === 0
-                                            ? 'Ningún día del rango coincide con los días elegidos.'
-                                            : `Se crearán ${sessionsLabel}, del ${formatFullDate(preview.first!)} al ${formatFullDate(preview.last!)}.`}
-                                </p>
-                            </>
-                        ) : (
-                            <div className="grid gap-4 sm:grid-cols-2">
-                                <Field id="ev-starts" label="Inicio *">
-                                    <Input
-                                        id="ev-starts"
-                                        type="datetime-local"
-                                        required
-                                        value={values.startsAt}
-                                        onChange={set('startsAt')}
+                                    <span
+                                        className={cn(
+                                            'size-3 shrink-0 rounded-full',
+                                            CATEGORY_COLOR_STYLES[c.color]
+                                                .swatch,
+                                        )}
                                     />
-                                </Field>
-                                <Field id="ev-ends" label="Fin *">
-                                    <Input
-                                        id="ev-ends"
-                                        type="datetime-local"
-                                        required
-                                        value={values.endsAt}
-                                        onChange={set('endsAt')}
-                                    />
-                                </Field>
-                            </div>
-                        )}
+                                    {c.name}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                </Field>
 
-                        <Field
-                            id="ev-capacity"
-                            label={
-                                values.recurring
-                                    ? 'Aforo de cada sesión (opcional)'
-                                    : 'Aforo (opcional)'
+                <Field id={fieldId('guide')} label="Guía *">
+                    <Select
+                        value={values.guideId}
+                        items={activeGuides.map((g) => ({
+                            value: g.id,
+                            label: g.name,
+                        }))}
+                        onValueChange={(value) =>
+                            setValues((v) => ({
+                                ...v,
+                                guideId: value ?? '',
+                            }))
+                        }
+                    >
+                        <SelectTrigger id={fieldId('guide')} className="w-full">
+                            <SelectValue placeholder="Selecciona una guía" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {activeGuides.map((g) => (
+                                <SelectItem
+                                    key={g.id}
+                                    value={g.id}
+                                    label={g.name}
+                                >
+                                    {g.name}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                </Field>
+
+                {!isEdit && (
+                    <label className="flex cursor-pointer items-center gap-2 text-sm font-medium">
+                        <input
+                            type="checkbox"
+                            className="size-4 accent-primary"
+                            checked={values.recurring}
+                            onChange={(e) =>
+                                setValues((v) => ({
+                                    ...v,
+                                    recurring: e.target.checked,
+                                }))
                             }
+                        />
+                        Repetir cada semana
+                    </label>
+                )}
+
+                {values.recurring ? (
+                    <>
+                        <div className="grid gap-4 sm:grid-cols-2">
+                            <Field id={fieldId('from')} label="Desde *">
+                                <Input
+                                    id={fieldId('from')}
+                                    type="date"
+                                    required
+                                    value={values.from}
+                                    onChange={set('from')}
+                                />
+                            </Field>
+                            <Field id={fieldId('to')} label="Hasta *">
+                                <Input
+                                    id={fieldId('to')}
+                                    type="date"
+                                    required
+                                    value={values.to}
+                                    onChange={set('to')}
+                                />
+                            </Field>
+                        </div>
+
+                        <fieldset className="grid gap-1.5">
+                            <legend className="mb-1.5 text-sm font-medium">
+                                Días de la semana *
+                            </legend>
+                            <div className="flex flex-wrap gap-2">
+                                {WEEKDAYS.map((day) => (
+                                    <label
+                                        key={day.value}
+                                        className="cursor-pointer"
+                                    >
+                                        <input
+                                            type="checkbox"
+                                            className="peer sr-only"
+                                            aria-label={day.label}
+                                            checked={values.weekdays.includes(
+                                                day.value,
+                                            )}
+                                            onChange={() =>
+                                                toggleWeekday(day.value)
+                                            }
+                                        />
+                                        <span
+                                            aria-hidden="true"
+                                            className="flex size-9 items-center justify-center rounded-lg border border-input text-sm font-medium peer-checked:border-primary peer-checked:bg-primary peer-checked:text-primary-foreground peer-focus-visible:border-ring peer-focus-visible:ring-3 peer-focus-visible:ring-ring/50"
+                                        >
+                                            {day.short}
+                                        </span>
+                                    </label>
+                                ))}
+                            </div>
+                        </fieldset>
+
+                        <div className="grid gap-4 sm:grid-cols-2">
+                            <Field
+                                id={fieldId('start-time')}
+                                label="Hora de inicio *"
+                            >
+                                <Input
+                                    id={fieldId('start-time')}
+                                    type="time"
+                                    required
+                                    value={values.startTime}
+                                    onChange={set('startTime')}
+                                />
+                            </Field>
+                            <Field
+                                id={fieldId('end-time')}
+                                label="Hora de fin *"
+                            >
+                                <Input
+                                    id={fieldId('end-time')}
+                                    type="time"
+                                    required
+                                    value={values.endTime}
+                                    onChange={set('endTime')}
+                                />
+                            </Field>
+                        </div>
+
+                        <p
+                            role="status"
+                            className="rounded-lg bg-muted px-3 py-2 text-sm"
                         >
+                            {!preview
+                                ? 'Elige fechas y días para ver cuántas sesiones se crearán.'
+                                : preview.overLimit
+                                  ? `Una serie no puede superar las ${MAX_OCCURRENCES} sesiones ni abarcar más de dos años.`
+                                  : preview.count === 0
+                                    ? 'Ningún día del rango coincide con los días elegidos.'
+                                    : `Se crearán ${sessionsLabel}, del ${formatFullDate(preview.first!)} al ${formatFullDate(preview.last!)}.`}
+                        </p>
+                    </>
+                ) : (
+                    <div className="grid gap-4 sm:grid-cols-2">
+                        <Field id={fieldId('starts')} label="Inicio *">
                             <Input
-                                id="ev-capacity"
-                                type="number"
-                                min={1}
-                                max={100000}
-                                step={1}
-                                value={values.capacity}
-                                onChange={set('capacity')}
+                                id={fieldId('starts')}
+                                type="datetime-local"
+                                required
+                                value={values.startsAt}
+                                onChange={set('startsAt')}
                             />
                         </Field>
-                        <Field id="ev-description" label="Descripción">
-                            <Textarea
-                                id="ev-description"
-                                maxLength={2000}
-                                value={values.description}
-                                onChange={set('description')}
+                        <Field id={fieldId('ends')} label="Fin *">
+                            <Input
+                                id={fieldId('ends')}
+                                type="datetime-local"
+                                required
+                                value={values.endsAt}
+                                onChange={set('endsAt')}
                             />
                         </Field>
+                    </div>
+                )}
 
-                        {error && (
-                            <Alert variant="destructive">
-                                <CircleAlert />
-                                <AlertTitle>
-                                    No se pudo crear el evento
-                                </AlertTitle>
-                                <AlertDescription>{error}</AlertDescription>
-                            </Alert>
-                        )}
-                    </form>
+                <Field
+                    id={fieldId('capacity')}
+                    label={
+                        values.recurring
+                            ? 'Aforo de cada sesión (opcional)'
+                            : 'Aforo (opcional)'
+                    }
+                >
+                    <Input
+                        id={fieldId('capacity')}
+                        type="number"
+                        min={1}
+                        max={100000}
+                        step={1}
+                        value={values.capacity}
+                        onChange={set('capacity')}
+                    />
+                </Field>
+                <Field id={fieldId('description')} label="Descripción">
+                    <Textarea
+                        id={fieldId('description')}
+                        maxLength={2000}
+                        value={values.description}
+                        onChange={set('description')}
+                    />
+                </Field>
 
-                    <DialogFooter>
-                        <Button
-                            type="submit"
-                            form="create-event-form"
-                            disabled={submitting}
-                        >
-                            {submitting
-                                ? 'Creando…'
-                                : values.recurring &&
-                                    preview &&
-                                    preview.count > 0 &&
-                                    !preview.overLimit
-                                  ? `Crear ${sessionsLabel}`
-                                  : 'Crear evento'}
-                        </Button>
-                    </DialogFooter>
-                </DialogContent>
+                {error && (
+                    <Alert variant="destructive">
+                        <CircleAlert />
+                        <AlertTitle>
+                            {isEdit
+                                ? 'No se pudo guardar'
+                                : 'No se pudo crear el evento'}
+                        </AlertTitle>
+                        <AlertDescription>{error}</AlertDescription>
+                    </Alert>
+                )}
+            </form>
+
+            <DialogFooter>
+                <Button
+                    type="submit"
+                    form={fieldId('form')}
+                    disabled={submitting}
+                >
+                    {isEdit
+                        ? submitting
+                            ? 'Guardando…'
+                            : 'Guardar'
+                        : submitting
+                          ? 'Creando…'
+                          : values.recurring &&
+                              preview &&
+                              preview.count > 0 &&
+                              !preview.overLimit
+                            ? `Crear ${sessionsLabel}`
+                            : 'Crear evento'}
+                </Button>
+            </DialogFooter>
+        </DialogContent>
+    );
+}
+
+// onCreated recibe el inicio de la primera sesión creada y cuántas se crearon.
+export function CreateEventDialog({
+    onCreated,
+}: {
+    onCreated: (result: { startsAt: string; count: number }) => void;
+}) {
+    const [open, setOpen] = useState(false);
+
+    return (
+        <>
+            <Button onClick={() => setOpen(true)}>Crear evento</Button>
+
+            <Dialog open={open} onOpenChange={setOpen}>
+                <EventFormBody
+                    key="new"
+                    event={null}
+                    onCreated={onCreated}
+                    onClose={() => setOpen(false)}
+                />
             </Dialog>
         </>
+    );
+}
+
+interface EventEditDialogProps {
+    open: boolean;
+    onOpenChange: (open: boolean) => void;
+    // null = nada que editar (el diálogo no se muestra).
+    event: EventItem | null;
+    onSaved: () => void;
+}
+
+// Usado desde la gestión de eventos: mismo formulario que crear, sin
+// recurrencia, precargado con los datos del evento.
+export function EventEditDialog({
+    open,
+    onOpenChange,
+    event,
+    onSaved,
+}: EventEditDialogProps) {
+    if (!event) return null;
+
+    return (
+        <Dialog open={open} onOpenChange={onOpenChange}>
+            <EventFormBody
+                key={event.id}
+                event={event}
+                onSaved={onSaved}
+                onClose={() => onOpenChange(false)}
+            />
+        </Dialog>
     );
 }
