@@ -20,6 +20,8 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { DatePicker } from '@/features/datetime/components/DatePicker';
+import { DateTimePicker } from '@/features/datetime/components/DateTimePicker';
 import { api, ApiError } from '@/lib/api';
 import { cn } from '@/lib/utils';
 import {
@@ -124,7 +126,12 @@ interface EventFormBodyProps {
 }
 
 // Con su propio estado: se recrea (key) al pasar de crear a editar o entre eventos.
-function EventFormBody({ event, onCreated, onSaved, onClose }: EventFormBodyProps) {
+function EventFormBody({
+    event,
+    onCreated,
+    onSaved,
+    onClose,
+}: EventFormBodyProps) {
     const isEdit = event !== null;
     const idPrefix = isEdit ? 'edit-ev-' : 'ev-';
     const fieldId = (name: string) => `${idPrefix}${name}`;
@@ -290,8 +297,7 @@ function EventFormBody({ event, onCreated, onSaved, onClose }: EventFormBodyProp
                     {isEdit ? 'Editar evento' : 'Crear evento'}
                 </DialogTitle>
                 <DialogDescription>
-                    Las horas son de Madrid. Los campos con * son
-                    obligatorios.
+                    Las horas son de Madrid. Los campos con * son obligatorios.
                 </DialogDescription>
             </DialogHeader>
 
@@ -441,21 +447,27 @@ function EventFormBody({ event, onCreated, onSaved, onClose }: EventFormBodyProp
                     <>
                         <div className="grid gap-4 sm:grid-cols-2">
                             <Field id={fieldId('from')} label="Desde *">
-                                <Input
+                                <DatePicker
                                     id={fieldId('from')}
-                                    type="date"
-                                    required
                                     value={values.from}
-                                    onChange={set('from')}
+                                    onChange={(v) =>
+                                        setValues((val) => ({
+                                            ...val,
+                                            from: v,
+                                        }))
+                                    }
                                 />
                             </Field>
                             <Field id={fieldId('to')} label="Hasta *">
-                                <Input
+                                <DatePicker
                                     id={fieldId('to')}
-                                    type="date"
-                                    required
                                     value={values.to}
-                                    onChange={set('to')}
+                                    onChange={(v) =>
+                                        setValues((val) => ({
+                                            ...val,
+                                            to: v,
+                                        }))
+                                    }
                                 />
                             </Field>
                         </div>
@@ -535,21 +547,27 @@ function EventFormBody({ event, onCreated, onSaved, onClose }: EventFormBodyProp
                 ) : (
                     <div className="grid gap-4 sm:grid-cols-2">
                         <Field id={fieldId('starts')} label="Inicio *">
-                            <Input
+                            <DateTimePicker
                                 id={fieldId('starts')}
-                                type="datetime-local"
-                                required
                                 value={values.startsAt}
-                                onChange={set('startsAt')}
+                                onChange={(v) =>
+                                    setValues((val) => ({
+                                        ...val,
+                                        startsAt: v,
+                                    }))
+                                }
                             />
                         </Field>
                         <Field id={fieldId('ends')} label="Fin *">
-                            <Input
+                            <DateTimePicker
                                 id={fieldId('ends')}
-                                type="datetime-local"
-                                required
                                 value={values.endsAt}
-                                onChange={set('endsAt')}
+                                onChange={(v) =>
+                                    setValues((val) => ({
+                                        ...val,
+                                        endsAt: v,
+                                    }))
+                                }
                             />
                         </Field>
                     </div>
