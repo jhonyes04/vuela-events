@@ -33,7 +33,12 @@ guidesRouter.use(requireAuth);
 
 guidesRouter.get(
     '/',
-    requirePermission('guides:view', 'guides:manage'),
+    requirePermission(
+        'guides:view',
+        'guides:create',
+        'guides:edit',
+        'guides:delete',
+    ),
     async (_req, res) => {
         const guides = await listGuides();
 
@@ -41,7 +46,7 @@ guidesRouter.get(
     },
 );
 
-guidesRouter.post('/', requirePermission('guides:manage'), async (req, res) => {
+guidesRouter.post('/', requirePermission('guides:create'), async (req, res) => {
     const body = createGuideSchema.safeParse(req.body);
 
     if (!body.success) {
@@ -67,7 +72,7 @@ guidesRouter.post('/', requirePermission('guides:manage'), async (req, res) => {
 
 guidesRouter.patch(
     '/:id',
-    requirePermission('guides:manage'),
+    requirePermission('guides:edit'),
     async (req, res) => {
         const params = idParamsSchema.safeParse(req.params);
         const body = updateGuideSchema.safeParse(req.body);
@@ -96,7 +101,7 @@ guidesRouter.patch(
 
 guidesRouter.delete(
     '/:id',
-    requirePermission('guides:manage'),
+    requirePermission('guides:delete'),
     async (req, res) => {
         const params = idParamsSchema.safeParse(req.params);
 

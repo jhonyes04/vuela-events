@@ -12,6 +12,7 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { PermissionsFieldset } from '@/features/users/components/PermissionsFieldset';
 import { api, ApiError } from '@/lib/api';
 
 interface PermissionOption {
@@ -125,31 +126,14 @@ export function CreateRoleDialog({
                             />
                         </div>
 
-                        <fieldset className="grid gap-1.5">
-                            <legend className="mb-1.5 text-sm font-medium">
-                                Permisos
-                            </legend>
-                            <div className="grid gap-2">
-                                {permissions.map((p) => (
-                                    <label
-                                        key={p.id}
-                                        className="flex items-start gap-2 text-sm"
-                                    >
-                                        <input
-                                            type="checkbox"
-                                            className="mt-0.5 size-4 accent-primary"
-                                            checked={values.permissionIds.includes(
-                                                p.id,
-                                            )}
-                                            onChange={() =>
-                                                togglePermission(p.id)
-                                            }
-                                        />
-                                        <span>{p.description}</span>
-                                    </label>
-                                ))}
-                            </div>
-                        </fieldset>
+                        <div className="grid gap-1.5">
+                            <p className="text-sm font-medium">Permisos</p>
+                            <PermissionsFieldset
+                                permissions={permissions}
+                                checked={new Set(values.permissionIds)}
+                                onToggle={(id) => togglePermission(id)}
+                            />
+                        </div>
 
                         {error && (
                             <Alert variant="destructive">

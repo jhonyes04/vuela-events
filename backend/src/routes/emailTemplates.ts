@@ -35,7 +35,12 @@ emailTemplatesRouter.use(requireAuth);
 
 emailTemplatesRouter.get(
     '/',
-    requirePermission('email:view', 'email:manage'),
+    requirePermission(
+        'email:view',
+        'email:create',
+        'email:edit',
+        'email:delete',
+    ),
     async (_req, res) => {
         const templates = await listEmailTemplates();
 
@@ -45,7 +50,7 @@ emailTemplatesRouter.get(
 
 emailTemplatesRouter.post(
     '/',
-    requirePermission('email:manage'),
+    requirePermission('email:create'),
     async (req, res) => {
         const body = createEmailTemplateSchema.safeParse(req.body);
 
@@ -77,7 +82,7 @@ emailTemplatesRouter.post(
 
 emailTemplatesRouter.patch(
     '/:id',
-    requirePermission('email:manage'),
+    requirePermission('email:edit'),
     async (req, res) => {
         const params = idParamsSchema.safeParse(req.params);
         const body = updateEmailTemplateSchema.safeParse(req.body);
@@ -109,7 +114,7 @@ emailTemplatesRouter.patch(
 
 emailTemplatesRouter.delete(
     '/:id',
-    requirePermission('email:manage'),
+    requirePermission('email:delete'),
     async (req, res) => {
         const params = idParamsSchema.safeParse(req.params);
 

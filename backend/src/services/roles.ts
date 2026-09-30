@@ -2,6 +2,11 @@ import { prisma } from '../lib/prisma.js';
 import { Prisma } from '../generated/prisma/client.js';
 
 const MANAGE_USERS = 'users:manage';
+const MANAGE_ROLES = 'roles:manage';
+const ADMIN_ROLE_ID = 'admin';
+
+// Si se quitan de un rol, nadie más podría volver a concedérselos a sí mismo.
+const CRITICAL_PERMISSIONS = [MANAGE_USERS, MANAGE_ROLES];
 
 export type RoleChangeFailure =
     | 'forbidden'
@@ -24,7 +29,8 @@ export type RoleManageFailure =
     | 'duplicate'
     | 'not_found'
     | 'protected'
-    | 'has_users';
+    | 'has_users'
+    | 'last_manager';
 
 export class RoleManageError extends Error {
     readonly reason: RoleManageFailure;
@@ -255,13 +261,51 @@ export const setRolePermissions = async (
     roleId: string,
     permissionIds: string[],
 ) => {
-    const role = await prisma.role.findUnique({ where: { id: roleId } });
+    const role = await prisma.role.findUnique({
+        where: { id: roleId },
+        select: { id: true, permissions: { select: { permissionId: true } } },
+    });
 
     if (!role) {
         throw new RoleManageError('not_found');
     }
 
+    // El admin siempre tiene todos los permisos: se ignora lo que se pida y
+    // se guarda el catálogo completo (incluye los que se añadan más adelante).
+    if (roleId === ADMIN_ROLE_ID) {
+        const all = await prisma.permission.findMany({ select: { id: true } });
+
+        permissionIds = all.map((p) => p.id);
+    }
+
+    const current = new Set(role.permissions.map((p) => p.permissionId));
+    const next = new Set(permissionIds);
+
     return prisma.$transaction(async (tx) => {
+        for (const permissionId of CRITICAL_PERMISSIONS) {
+            const isBeingRemoved =
+                current.has(permissionId) && !next.has(permissionId);
+
+            if (!isBeingRemoved) continue;
+
+            const activeWithThisRole = await tx.user.count({
+                where: { roleId, active: true },
+            });
+
+            // Si nadie activo tiene este rol, quitarle el permiso no deja a
+            // nadie tirado; solo hay que comprobar cuando sí lo tiene alguien.
+            if (activeWithThisRole === 0) continue;
+
+            const others = await countActiveWithPermission(tx, permissionId);
+            const othersOutsideThisRole =
+                others -
+                (current.has(permissionId) ? activeWithThisRole : 0);
+
+            if (othersOutsideThisRole <= 0) {
+                throw new RoleManageError('last_manager');
+            }
+        }
+
         await tx.rolePermission.deleteMany({ where: { roleId } });
 
         if (permissionIds.length > 0) {

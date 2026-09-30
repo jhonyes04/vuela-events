@@ -252,7 +252,7 @@ eventsRouter.post(
 // Editar un evento suelto: solo quien tiene permiso de gestión.
 eventsRouter.patch(
     '/:id',
-    requirePermission('events:manage'),
+    requirePermission('events:edit'),
     async (req, res) => {
         const params = idParamsSchema.safeParse(req.params);
         const body = updateEventSchema.safeParse(req.body);

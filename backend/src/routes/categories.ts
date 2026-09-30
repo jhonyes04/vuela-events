@@ -35,7 +35,12 @@ categoriesRouter.use(requireAuth);
 
 categoriesRouter.get(
     '/',
-    requirePermission('categories:view', 'categories:manage'),
+    requirePermission(
+        'categories:view',
+        'categories:create',
+        'categories:edit',
+        'categories:delete',
+    ),
     async (_req, res) => {
         const categories = await listCategories();
 
@@ -45,7 +50,7 @@ categoriesRouter.get(
 
 categoriesRouter.post(
     '/',
-    requirePermission('categories:manage'),
+    requirePermission('categories:create'),
     async (req, res) => {
         const body = createCategorySchema.safeParse(req.body);
 
@@ -76,7 +81,7 @@ categoriesRouter.post(
 
 categoriesRouter.patch(
     '/:id',
-    requirePermission('categories:manage'),
+    requirePermission('categories:edit'),
     async (req, res) => {
         const params = idParamSchema.safeParse(req.params);
         const body = updateCategorySchema.safeParse(req.body);
@@ -105,7 +110,7 @@ categoriesRouter.patch(
 
 categoriesRouter.delete(
     '/:id',
-    requirePermission('categories:manage'),
+    requirePermission('categories:delete'),
     async (req, res) => {
         const params = idParamSchema.safeParse(req.params);
 

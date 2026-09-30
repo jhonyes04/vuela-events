@@ -1,8 +1,14 @@
 import { useEffect, useState } from 'react';
+import { ShieldCheck, Trash2 } from 'lucide-react';
+import { OverlayScrollbarsComponent } from 'overlayscrollbars-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { ConfirmDeleteDialog } from '@/components/ConfirmDeleteDialog';
+import { IconTooltip } from '@/components/IconTooltip';
 import { CreateRoleDialog } from '@/features/users/components/CreateRoleDialog';
 import { ListErrors } from '@/features/users/components/ListErrors';
+import { RolePermissionsDialog } from '@/features/users/components/RolePermissionsDialog';
+import { scrollbarOptions } from '@/lib/overlayScrollbarsOptions';
 import { api, ApiError } from '@/lib/api';
 
 interface RoleRow {
@@ -22,8 +28,9 @@ export const RolesPage = () => {
     const [permissions, setPermissions] = useState<PermissionOption[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const [busyId, setBusyId] = useState<string | null>(null);
-    const [actionError, setActionError] = useState<string | null>(null);
+    const [editingId, setEditingId] = useState<string | null>(null);
+    const [permissionsOpen, setPermissionsOpen] = useState(false);
+    const [deleting, setDeleting] = useState<RoleRow | null>(null);
 
     const load = async () => {
         setLoading(true);
@@ -54,52 +61,14 @@ export const RolesPage = () => {
         void Promise.resolve().then(load);
     }, []);
 
-    const togglePermission = async (
-        role: RoleRow,
-        permissionId: string,
-        checked: boolean,
-    ) => {
-        const current = role.permissions.map((p) => p.permissionId);
-        const next = checked
-            ? [...current, permissionId]
-            : current.filter((id) => id !== permissionId);
-
-        setBusyId(role.id);
-        setActionError(null);
-
-        try {
-            await api.patch(`/roles/${role.id}/permissions`, {
-                permissionIds: next,
-            });
-            await load();
-        } catch (e) {
-            setActionError(
-                e instanceof ApiError
-                    ? e.message
-                    : 'No se pudo cambiar el permiso',
-            );
-        } finally {
-            setBusyId(null);
-        }
+    const openPermissions = (roleId: string) => {
+        setEditingId(roleId);
+        setPermissionsOpen(true);
     };
 
-    const deleteRole = async (roleId: string) => {
-        setBusyId(roleId);
-        setActionError(null);
-
-        try {
-            await api.delete(`/roles/${roleId}`);
-            await load();
-        } catch (e) {
-            setActionError(
-                e instanceof ApiError
-                    ? e.message
-                    : 'No se pudo eliminar el rol',
-            );
-        } finally {
-            setBusyId(null);
-        }
-    };
+    // El rol que edita el diálogo se busca siempre en la lista actual,
+    // para que se refresque solo tras cada cambio de permiso.
+    const editingRole = roles.find((r) => r.id === editingId) ?? null;
 
     return (
         <section>
@@ -113,7 +82,7 @@ export const RolesPage = () => {
 
             <ListErrors
                 error={error}
-                actionError={actionError}
+                actionError={null}
                 onRetry={() => void load()}
             />
 
@@ -122,73 +91,105 @@ export const RolesPage = () => {
                     Cargando roles…
                 </p>
             ) : (
-                <div className="grid gap-4">
-                    {roles.map((role) => {
-                        const granted = new Set(
-                            role.permissions.map((p) => p.permissionId),
-                        );
-                        const busy = busyId === role.id;
-
-                        return (
-                            <div
-                                key={role.id}
-                                className="rounded-xl border bg-card p-4"
-                            >
-                                <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-                                    <div className="flex items-center gap-2">
-                                        <h2 className="font-medium">
-                                            {role.name}
-                                        </h2>
-                                        <span className="text-xs text-muted-foreground">
-                                            {role.id}
-                                        </span>
+                <OverlayScrollbarsComponent
+                    className="rounded-xl border bg-card"
+                    options={scrollbarOptions}
+                    defer
+                >
+                    <table className="w-full text-sm">
+                        <thead>
+                            <tr className="border-b bg-muted/50 text-left">
+                                <th className="p-3 font-bold">Nombre</th>
+                                <th className="p-3 font-bold">
+                                    Identificador
+                                </th>
+                                <th className="p-3 font-bold">Estado</th>
+                                <th className="p-3 font-bold">
+                                    <span className="sr-only">Acciones</span>
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {roles.map((role) => (
+                                <tr
+                                    key={role.id}
+                                    className="border-b last:border-0"
+                                >
+                                    <td className="p-3">{role.name}</td>
+                                    <td className="p-3 text-muted-foreground">
+                                        {role.id}
+                                    </td>
+                                    <td className="p-3">
                                         {role.protected && (
                                             <Badge variant="secondary">
                                                 Protegido
                                             </Badge>
                                         )}
-                                    </div>
-                                    {!role.protected && (
-                                        <Button
-                                            variant="outline"
-                                            size="sm"
-                                            disabled={busy}
-                                            onClick={() =>
-                                                void deleteRole(role.id)
-                                            }
-                                        >
-                                            Eliminar
-                                        </Button>
-                                    )}
-                                </div>
+                                    </td>
+                                    <td className="p-3 text-right">
+                                        <div className="flex justify-end gap-2">
+                                            <IconTooltip label="Editar permisos">
+                                                <Button
+                                                    variant="outline"
+                                                    size="icon"
+                                                    aria-label="Editar permisos"
+                                                    onClick={() =>
+                                                        openPermissions(
+                                                            role.id,
+                                                        )
+                                                    }
+                                                >
+                                                    <ShieldCheck className="size-4" />
+                                                </Button>
+                                            </IconTooltip>
+                                            {!role.protected && (
+                                                <IconTooltip label="Eliminar">
+                                                    <Button
+                                                        variant="destructive"
+                                                        size="icon"
+                                                        aria-label="Eliminar"
+                                                        onClick={() =>
+                                                            setDeleting(role)
+                                                        }
+                                                    >
+                                                        <Trash2 className="size-4" />
+                                                    </Button>
+                                                </IconTooltip>
+                                            )}
+                                        </div>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </OverlayScrollbarsComponent>
+            )}
 
-                                <div className="grid gap-2 sm:grid-cols-2">
-                                    {permissions.map((p) => (
-                                        <label
-                                            key={p.id}
-                                            className="flex items-start gap-2 text-sm"
-                                        >
-                                            <input
-                                                type="checkbox"
-                                                className="mt-0.5 size-4 accent-primary"
-                                                checked={granted.has(p.id)}
-                                                disabled={busy}
-                                                onChange={(e) =>
-                                                    void togglePermission(
-                                                        role,
-                                                        p.id,
-                                                        e.target.checked,
-                                                    )
-                                                }
-                                            />
-                                            <span>{p.description}</span>
-                                        </label>
-                                    ))}
-                                </div>
-                            </div>
+            <RolePermissionsDialog
+                open={permissionsOpen}
+                onOpenChange={setPermissionsOpen}
+                role={editingRole}
+                permissions={permissions}
+                onChanged={() => void load()}
+            />
+
+            {deleting && (
+                <ConfirmDeleteDialog
+                    open={deleting !== null}
+                    onOpenChange={(open) => !open && setDeleting(null)}
+                    title="Eliminar rol"
+                    description={`¿Eliminar «${deleting.name}»? Esta acción no se puede deshacer.`}
+                    confirmLabel="Eliminar"
+                    deletingLabel="Eliminando…"
+                    errorFallback="No se pudo eliminar el rol"
+                    onConfirm={() => api.delete(`/roles/${deleting.id}`)}
+                    onDeleted={() => {
+                        setRoles((prev) =>
+                            prev.filter((r) => r.id !== deleting.id),
                         );
-                    })}
-                </div>
+                        setDeleting(null);
+                    }}
+                />
             )}
         </section>
     );

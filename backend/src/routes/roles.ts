@@ -11,16 +11,22 @@ import {
 } from '../services/roles.js';
 
 const PERMISSION_IDS = [
-    'events:create',
-    'events:delete',
     'events:view',
-    'events:manage',
+    'events:create',
+    'events:edit',
+    'events:delete',
     'categories:view',
-    'categories:manage',
+    'categories:create',
+    'categories:edit',
+    'categories:delete',
     'guides:view',
-    'guides:manage',
+    'guides:create',
+    'guides:edit',
+    'guides:delete',
     'email:view',
-    'email:manage',
+    'email:create',
+    'email:edit',
+    'email:delete',
     'users:manage',
     'roles:manage',
 ] as const;
@@ -57,6 +63,10 @@ const roleManageErrors = {
     not_found: [404, 'Rol no encontrado'],
     protected: [403, 'Este rol no se puede eliminar'],
     has_users: [409, 'No se puede eliminar: hay usuarios con este rol'],
+    last_manager: [
+        409,
+        'No puedes dejar el sistema sin nadie que pueda gestionar usuarios o roles',
+    ],
 } as const;
 
 const handleRoleManageError = (e: unknown, res: Response) => {
