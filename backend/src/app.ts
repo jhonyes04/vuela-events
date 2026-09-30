@@ -16,6 +16,8 @@ import { rolesRouter } from './routes/roles.js';
 import { categoriesRouter } from './routes/categories.js';
 import { guidesRouter } from './routes/guides.js';
 import { emailTemplatesRouter } from './routes/emailTemplates.js';
+import { emailSettingsRouter } from './routes/emailSettings.js';
+import { emailSendsRouter } from './routes/emailSends.js';
 import { apiLimiter } from './middleware/rateLimit.js';
 
 export interface AppOptions {
@@ -58,6 +60,8 @@ export function createApp(options: AppOptions = {}) {
     app.use('/api/categories', categoriesRouter);
     app.use('/api/guides', guidesRouter);
     app.use('/api/email-templates', emailTemplatesRouter);
+    app.use('/api/email-settings', emailSettingsRouter);
+    app.use('/api/email-sends', emailSendsRouter);
     app.use('/api/events', eventsRouter);
 
     app.get('/api/health', (_req, res) => {

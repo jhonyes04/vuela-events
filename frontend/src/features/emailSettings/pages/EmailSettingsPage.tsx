@@ -1,0 +1,309 @@
+import { useEffect, useState, type FormEvent } from 'react';
+import { CircleAlert, CircleCheck } from 'lucide-react';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
+import {
+    getEmailSettings,
+    updateSmtpConfig,
+    updateTemplateAssignment,
+    type SlotId,
+    type SmtpConfig,
+    type TemplateAssignment,
+} from '@/features/emailSettings/lib/emailSettings';
+import {
+    listEmailTemplates,
+    type EmailTemplate,
+} from '@/features/emailTemplates/lib/emailTemplates';
+import { ApiError } from '@/lib/api';
+
+const SLOT_LABELS: Record<SlotId, string> = {
+    convocatoria: 'Convocatoria',
+    parte_firmas: 'Parte de firmas',
+};
+
+const EMPTY_SMTP: SmtpConfig = { host: '', port: 587, secure: true };
+
+export const EmailSettingsPage = () => {
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+    const [smtp, setSmtp] = useState<SmtpConfig>(EMPTY_SMTP);
+    const [assignments, setAssignments] = useState<TemplateAssignment[]>([]);
+    const [templates, setTemplates] = useState<EmailTemplate[]>([]);
+    const [savingSmtp, setSavingSmtp] = useState(false);
+    const [smtpNotice, setSmtpNotice] = useState<string | null>(null);
+    const [smtpError, setSmtpError] = useState<string | null>(null);
+    const [savingSlot, setSavingSlot] = useState<SlotId | null>(null);
+    const [slotError, setSlotError] = useState<string | null>(null);
+    const [slotNotice, setSlotNotice] = useState<string | null>(null);
+
+    const load = async () => {
+        setLoading(true);
+        setError(null);
+
+        try {
+            const [settings, templateList] = await Promise.all([
+                getEmailSettings(),
+                listEmailTemplates(),
+            ]);
+
+            setSmtp(settings.smtpConfig ?? EMPTY_SMTP);
+            setAssignments(settings.templateAssignments);
+            setTemplates(templateList);
+        } catch (e) {
+            setError(
+                e instanceof ApiError
+                    ? e.message
+                    : 'No se pudo cargar la configuración',
+            );
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        void Promise.resolve().then(load);
+    }, []);
+
+    const activeTemplates = templates.filter((t) => t.active);
+
+    const handleSmtpSubmit = async (e: FormEvent) => {
+        e.preventDefault();
+        setSmtpError(null);
+        setSmtpNotice(null);
+        setSavingSmtp(true);
+
+        try {
+            const saved = await updateSmtpConfig(smtp);
+
+            setSmtp(saved);
+            setSmtpNotice('Configuración guardada.');
+        } catch (err) {
+            setSmtpError(
+                err instanceof ApiError ? err.message : 'No se pudo guardar',
+            );
+        } finally {
+            setSavingSmtp(false);
+        }
+    };
+
+    const handleAssignmentChange = async (slot: SlotId, templateId: string) => {
+        setSlotError(null);
+        setSlotNotice(null);
+        setSavingSlot(slot);
+
+        try {
+            const updated = await updateTemplateAssignment(
+                slot,
+                templateId || null,
+            );
+
+            setAssignments((prev) =>
+                prev.map((a) => (a.slot === slot ? updated : a)),
+            );
+
+            setSlotNotice('Asignación guardada');
+        } catch (err) {
+            setSlotError(
+                err instanceof ApiError ? err.message : 'No se pudo guardar',
+            );
+        } finally {
+            setSavingSlot(null);
+        }
+    };
+
+    if (loading) {
+        return (
+            <p role="status" className="text-muted-foreground">
+                Cargando configuración…
+            </p>
+        );
+    }
+
+    return (
+        <section className="grid max-w-xl mx-auto gap-8">
+            <div>
+                <h1 className="mb-2 text-2xl font-semibold">
+                    Configuración de Correo
+                </h1>
+
+                {error && (
+                    <Alert variant="destructive" className="mb-4">
+                        <CircleAlert />
+                        <AlertTitle>No se pudo cargar</AlertTitle>
+                        <AlertDescription>{error}</AlertDescription>
+                    </Alert>
+                )}
+            </div>
+
+            <div className="rounded-xl border bg-card p-4">
+                <h2 className="mb-1 font-medium">Servidor SMTP</h2>
+                <p className="mb-4 text-sm text-muted-foreground">
+                    Sin usuario ni contraseña: se piden justo antes de enviar,
+                    nunca se guardan.
+                </p>
+
+                <form
+                    id="smtp-form"
+                    onSubmit={(e) => void handleSmtpSubmit(e)}
+                    className="grid gap-4"
+                >
+                    <div className="grid gap-1.5">
+                        <Label htmlFor="smtp-host">Servidor *</Label>
+                        <Input
+                            id="smtp-host"
+                            required
+                            maxLength={255}
+                            placeholder="smtp.gmail.com"
+                            value={smtp.host}
+                            onChange={(e) =>
+                                setSmtp((v) => ({
+                                    ...v,
+                                    host: e.target.value,
+                                }))
+                            }
+                        />
+                    </div>
+
+                    <div className="grid gap-4 sm:grid-cols-2">
+                        <div className="grid gap-1.5">
+                            <Label htmlFor="smtp-port">Puerto *</Label>
+                            <Input
+                                id="smtp-port"
+                                type="number"
+                                required
+                                min={1}
+                                max={65535}
+                                value={smtp.port}
+                                onChange={(e) =>
+                                    setSmtp((v) => ({
+                                        ...v,
+                                        port: Number(e.target.value),
+                                    }))
+                                }
+                            />
+                        </div>
+
+                        <label className="flex items-end gap-2 pb-2 text-sm">
+                            <input
+                                type="checkbox"
+                                className="size-4 accent-primary"
+                                checked={smtp.secure}
+                                onChange={(e) =>
+                                    setSmtp((v) => ({
+                                        ...v,
+                                        secure: e.target.checked,
+                                    }))
+                                }
+                            />
+                            TLS
+                        </label>
+                    </div>
+
+                    {smtpNotice && (
+                        <Alert variant="success">
+                            <CircleCheck />
+                            <AlertTitle>{smtpNotice}</AlertTitle>
+                        </Alert>
+                    )}
+
+                    {smtpError && (
+                        <Alert variant="destructive">
+                            <CircleAlert />
+                            <AlertTitle>No se pudo guardar</AlertTitle>
+                            <AlertDescription>{smtpError}</AlertDescription>
+                        </Alert>
+                    )}
+                </form>
+
+                <div className="mt-4 flex justify-end">
+                    <Button
+                        type="submit"
+                        form="smtp-form"
+                        disabled={savingSmtp}
+                    >
+                        {savingSmtp ? 'Guardando…' : 'Guardar'}
+                    </Button>
+                </div>
+            </div>
+
+            <div className="rounded-xl border bg-card p-4">
+                <h2 className="mb-1 font-medium">Asignación de plantillas</h2>
+                <p className="mb-4 text-sm text-muted-foreground">
+                    Qué plantilla usa cada botón de envío.
+                </p>
+
+                <div className="grid gap-4">
+                    {assignments.map(({ slot, templateId }) => (
+                        <div key={slot} className="grid gap-1.5">
+                            <Label htmlFor={`slot-${slot}`}>
+                                {SLOT_LABELS[slot]}
+                            </Label>
+                            <Select
+                                value={templateId ?? ''}
+                                items={[
+                                    { value: '', label: 'Sin asignar' },
+                                    ...activeTemplates.map((t) => ({
+                                        value: t.id,
+                                        label: t.name,
+                                    })),
+                                ]}
+                                onValueChange={(value) =>
+                                    void handleAssignmentChange(
+                                        slot,
+                                        value ?? '',
+                                    )
+                                }
+                            >
+                                <SelectTrigger
+                                    id={`slot-${slot}`}
+                                    className="w-full"
+                                    disabled={savingSlot === slot}
+                                >
+                                    <SelectValue placeholder="Sin asignar" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="" label="Sin asignar">
+                                        Sin asignar
+                                    </SelectItem>
+                                    {activeTemplates.map((t) => (
+                                        <SelectItem
+                                            key={t.id}
+                                            value={t.id}
+                                            label={t.name}
+                                        >
+                                            {t.name}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    ))}
+                </div>
+
+                {slotNotice && (
+                    <Alert variant="success" className="mt-4">
+                        <CircleAlert />
+                        <AlertTitle>{slotNotice}</AlertTitle>
+                    </Alert>
+                )}
+
+                {slotError && (
+                    <Alert variant="destructive" className="mt-4">
+                        <CircleAlert />
+                        <AlertTitle>No se pudo guardar</AlertTitle>
+                        <AlertDescription>{slotError}</AlertDescription>
+                    </Alert>
+                )}
+            </div>
+        </section>
+    );
+};

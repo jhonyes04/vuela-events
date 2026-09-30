@@ -10,9 +10,11 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog';
 import { AttendeeChips } from '@/features/events/components/AttendeeChips';
+import { SendEmailDialog } from '@/features/emailSettings/components/SendEmailDialog';
 import { useAttendees } from '@/features/events/hooks/useAttendees';
 import { scrollbarOptions } from '@/lib/overlayScrollbarsOptions';
 import type { EventItem } from '@/features/events/lib/events';
+import type { SlotId } from '@/features/emailSettings/lib/emailSettings';
 
 interface AttendeesBodyProps {
     event: EventItem;
@@ -23,8 +25,9 @@ const AttendeesBody = ({ event }: AttendeesBodyProps) => {
         event.id,
         `${event._count.registrations}`,
     );
-    // Selección para futuras acciones en lote sobre inscritos.
+
     const [selected, setSelected] = useState<Set<string>>(new Set());
+    const [sendSlot, setSendSlot] = useState<SlotId | null>(null);
 
     const toggle = (id: string) =>
         setSelected((prev) => {
@@ -78,9 +81,38 @@ const AttendeesBody = ({ event }: AttendeesBodyProps) => {
             )}
 
             <DialogFooter>
-                <Button variant="outline">Enviar convocatoria</Button>
-                <Button variant="outline">Enviar parte de firmas</Button>
+                <Button
+                    variant="outline"
+                    disabled={selected.size === 0}
+                    onClick={() => setSendSlot('convocatoria')}
+                >
+                    Enviar convocatoria
+                </Button>
+                <Button
+                    variant="outline"
+                    disabled={selected.size === 0}
+                    onClick={() => setSendSlot('parte_firmas')}
+                >
+                    Enviar parte de firmas
+                </Button>
             </DialogFooter>
+
+            {sendSlot && (
+                <SendEmailDialog
+                    open={sendSlot !== null}
+                    onOpenChange={(open) => !open && setSendSlot(null)}
+                    slot={sendSlot}
+                    slotLabel={
+                        sendSlot === 'convocatoria'
+                            ? 'convocatoria'
+                            : 'parte de firmas'
+                    }
+                    eventId={event.id}
+                    recipients={attendees.filter((a) =>
+                        selected.has(a.id),
+                    )}
+                />
+            )}
         </DialogContent>
     );
 };

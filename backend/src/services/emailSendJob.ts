@@ -1,0 +1,199 @@
+import { randomUUID } from 'node:crypto';
+import nodemailer from 'nodemailer';
+import { prisma } from '../lib/prisma.js';
+import { renderEmail } from '../lib/emailTemplateRender.js';
+import { type SlotId } from './emailSending.js';
+
+const BATCH_SIZE = 15;
+const PAUSE_MS = 5_000;
+// Límite defensivo por si algo evita la validación del frontend.
+const MAX_RECIPIENTS = 500;
+// Los jobs terminados se olvidan pasado este tiempo (evita crecer sin límite).
+const JOB_TTL_MS = 10 * 60 * 1000;
+
+export type StartSendFailure =
+    | 'smtp_not_configured'
+    | 'template_not_assigned'
+    | 'event_not_found'
+    | 'no_recipients';
+
+export class StartSendError extends Error {
+    readonly reason: StartSendFailure;
+
+    constructor(reason: StartSendFailure) {
+        super(reason);
+
+        this.name = 'StartSendError';
+        this.reason = reason;
+    }
+}
+
+interface RecipientResult {
+    userId: string;
+    email: string;
+    ok: boolean;
+    error?: string;
+}
+
+interface SendJob {
+    id: string;
+    total: number;
+    sent: number;
+    failed: number;
+    done: boolean;
+    results: RecipientResult[];
+    createdAt: number;
+}
+
+// En memoria: es una acción puntual iniciada por una persona; si el
+// servidor se reinicia a mitad, ese envío concreto se pierde (asumible).
+const jobs = new Map<string, SendJob>();
+
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+const scheduleCleanup = (jobId: string) => {
+    setTimeout(() => jobs.delete(jobId), JOB_TTL_MS).unref();
+};
+
+export const getSendJob = (jobId: string): SendJob | undefined =>
+    jobs.get(jobId);
+
+interface StartSendInput {
+    actorEmail: string;
+    smtpPassword: string;
+    slot: SlotId;
+    eventId: string;
+    recipientUserIds: string[];
+}
+
+export const startBulkSend = async (
+    input: StartSendInput,
+): Promise<{ jobId: string }> => {
+    if (input.recipientUserIds.length === 0) {
+        throw new StartSendError('no_recipients');
+    }
+
+    const recipientIds = input.recipientUserIds.slice(0, MAX_RECIPIENTS);
+
+    const smtpConfig = await prisma.smtpConfig.findUnique({
+        where: { id: 'default' },
+    });
+
+    if (!smtpConfig) {
+        throw new StartSendError('smtp_not_configured');
+    }
+
+    const assignment = await prisma.emailTemplateAssignment.findUnique({
+        where: { slot: input.slot },
+        select: { template: true },
+    });
+
+    if (!assignment?.template) {
+        throw new StartSendError('template_not_assigned');
+    }
+
+    const event = await prisma.event.findUnique({
+        where: { id: input.eventId },
+        select: { title: true, location: true, startsAt: true, endsAt: true },
+    });
+
+    if (!event) {
+        throw new StartSendError('event_not_found');
+    }
+
+    const recipients = await prisma.user.findMany({
+        where: { id: { in: recipientIds } },
+        select: { id: true, email: true },
+    });
+
+    const template = assignment.template;
+    const { subject, body } = renderEmail(template, event);
+
+    const jobId = randomUUID();
+    const job: SendJob = {
+        id: jobId,
+        total: recipients.length,
+        sent: 0,
+        failed: 0,
+        done: false,
+        results: [],
+        createdAt: Date.now(),
+    };
+
+    jobs.set(jobId, job);
+
+    void runSendJob(job, {
+        smtpConfig,
+        actorEmail: input.actorEmail,
+        smtpPassword: input.smtpPassword,
+        subject,
+        body,
+        recipients,
+    });
+
+    return { jobId };
+};
+
+const runSendJob = async (
+    job: SendJob,
+    ctx: {
+        smtpConfig: { host: string; port: number; secure: boolean };
+        actorEmail: string;
+        smtpPassword: string;
+        subject: string;
+        body: string;
+        recipients: { id: string; email: string }[];
+    },
+) => {
+    const transporter = nodemailer.createTransport({
+        host: ctx.smtpConfig.host,
+        port: ctx.smtpConfig.port,
+        secure: ctx.smtpConfig.secure,
+        auth: { user: ctx.actorEmail, pass: ctx.smtpPassword },
+    });
+
+    try {
+        for (let i = 0; i < ctx.recipients.length; i += BATCH_SIZE) {
+            const batch = ctx.recipients.slice(i, i + BATCH_SIZE);
+
+            for (const recipient of batch) {
+                try {
+                    await transporter.sendMail({
+                        from: ctx.actorEmail,
+                        to: recipient.email,
+                        subject: ctx.subject,
+                        html: ctx.body,
+                    });
+
+                    job.sent += 1;
+                    job.results.push({
+                        userId: recipient.id,
+                        email: recipient.email,
+                        ok: true,
+                    });
+                } catch (e) {
+                    job.failed += 1;
+                    job.results.push({
+                        userId: recipient.id,
+                        email: recipient.email,
+                        ok: false,
+                        error:
+                            e instanceof Error
+                                ? e.message
+                                : 'Error desconocido',
+                    });
+                }
+            }
+
+            const isLastBatch = i + BATCH_SIZE >= ctx.recipients.length;
+
+            if (!isLastBatch) {
+                await sleep(PAUSE_MS);
+            }
+        }
+    } finally {
+        transporter.close();
+        job.done = true;
+        scheduleCleanup(job.id);
+    }
+};

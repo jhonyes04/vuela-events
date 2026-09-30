@@ -7,6 +7,7 @@ import { UsersPage } from '@/features/users/pages/UsersPage';
 import { CategoriesPage } from '@/features/categories/pages/CategoriesPage';
 import { GuidesPage } from '@/features/guides/pages/GuidesPage';
 import { EmailTemplatesPage } from '@/features/emailTemplates/pages/EmailTemplatesPage';
+import { EmailSettingsPage } from '@/features/emailSettings/pages/EmailSettingsPage';
 
 export interface AppRoute {
     path: string;
@@ -79,6 +80,13 @@ export const appRoutes: AppRoute[] = [
         label: 'Roles',
         element: <RolesPage />,
         permissions: ['roles:manage'],
+        group: 'admin',
+    },
+    {
+        path: '/admin/correo',
+        label: 'Configuración correo',
+        element: <EmailSettingsPage />,
+        permissions: ['email:send'],
         group: 'admin',
     },
 ];

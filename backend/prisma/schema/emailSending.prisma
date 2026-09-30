@@ -1,0 +1,21 @@
+model SmtpConfig {
+    id              String          @id @db.VarChar(20)
+    host            String          @db.VarChar(255)
+    port            Int
+    secure          Boolean         @default(true)
+    updatedAt       DateTime        @updatedAt
+
+    @@map("smtp_config")
+}
+
+// Una fila por "hueco" de envío (slot): 'convocatoria', 'parte_firmas', y
+// los que se añadan más adelante sin tocar el esquema.
+model EmailTemplateAssignment {
+    slot            String          @id @db.VarChar(40)
+    templateId      String?         @db.Uuid
+    updatedAt       DateTime        @updatedAt
+
+    template        EmailTemplate?  @relation(fields: [templateId], references: [id], onDelete: SetNull)
+
+    @@map("email_template_assignments")
+}

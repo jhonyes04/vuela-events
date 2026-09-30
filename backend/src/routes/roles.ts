@@ -27,6 +27,7 @@ const PERMISSION_IDS = [
     'email:create',
     'email:edit',
     'email:delete',
+    'email:send',
     'users:manage',
     'roles:manage',
 ] as const;

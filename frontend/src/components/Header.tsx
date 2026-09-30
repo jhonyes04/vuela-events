@@ -47,7 +47,10 @@ const RouteDropdown = ({ label, routes }: RouteDropdownProps) => {
                     </button>
                 }
             />
-            <DropdownMenuContent align="start">
+            <DropdownMenuContent
+                align="start"
+                className="w-max whitespace-nowrap"
+            >
                 {routes.map((route) => (
                     <DropdownMenuItem
                         key={route.path}
