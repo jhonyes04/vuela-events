@@ -18,7 +18,7 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog';
 import { useAttendees } from '@/features/events/hooks/useAttendees';
-import { CATEGORY_COLOR_STYLES } from '@/features/categories/lib/categories';
+import { CATEGORY_COLOR_STYLES } from '@/features/categories/lib/colors';
 import { ApiError } from '@/lib/api';
 import { cn } from '@/lib/utils';
 import { scrollbarOptions } from '@/lib/overlayScrollbarsOptions';

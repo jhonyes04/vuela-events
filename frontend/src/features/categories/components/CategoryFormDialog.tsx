@@ -15,13 +15,15 @@ import { Label } from '@/components/ui/label';
 import { ApiError } from '@/lib/api';
 import { cn } from '@/lib/utils';
 import {
-    CATEGORY_COLORS,
-    CATEGORY_COLOR_STYLES,
     createCategory,
     updateCategory,
     type Category,
-    type CategoryColor,
 } from '@/features/categories/lib/categories';
+import {
+    CATEGORY_COLORS,
+    CATEGORY_COLOR_STYLES,
+    type CategoryColor,
+} from '@/features/categories/lib/colors';
 
 interface CategoryFormBodyProps {
     category: Category | null;

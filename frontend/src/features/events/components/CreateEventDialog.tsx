@@ -12,12 +12,21 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { api, ApiError } from '@/lib/api';
+import { cn } from '@/lib/utils';
 import {
     listCategories,
     type Category,
 } from '@/features/categories/lib/categories';
+import { CATEGORY_COLOR_STYLES } from '@/features/categories/lib/colors';
 import {
     createRecurringEvents,
     formatFullDate,
@@ -133,6 +142,11 @@ export function CreateEventDialog({
     const handleSubmit = async (e: FormEvent) => {
         e.preventDefault();
         setError(null);
+
+        if (!values.categoryId) {
+            setError('Selecciona una categoría');
+            return;
+        }
 
         const common = {
             title: values.title,
@@ -251,22 +265,37 @@ export function CreateEventDialog({
                             />
                         </Field>
                         <Field id="ev-category" label="Categoría *">
-                            <select
-                                id="ev-category"
-                                required
+                            <Select
                                 value={values.categoryId}
-                                onChange={set('categoryId')}
-                                className="h-8 rounded-lg border border-input bg-transparent px-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+                                onValueChange={(value) =>
+                                    setValues((v) => ({
+                                        ...v,
+                                        categoryId: value ?? '',
+                                    }))
+                                }
                             >
-                                <option value="" disabled>
-                                    Selecciona una categoría
-                                </option>
-                                {activeCategories.map((c) => (
-                                    <option key={c.id} value={c.id}>
-                                        {c.name}
-                                    </option>
-                                ))}
-                            </select>
+                                <SelectTrigger
+                                    id="ev-category"
+                                    className="w-full"
+                                >
+                                    <SelectValue placeholder="Selecciona una categoría" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {activeCategories.map((c) => (
+                                        <SelectItem key={c.id} value={c.id}>
+                                            <span
+                                                className={cn(
+                                                    'size-3 shrink-0 rounded-full',
+                                                    CATEGORY_COLOR_STYLES[
+                                                        c.color
+                                                    ].swatch,
+                                                )}
+                                            />
+                                            {c.name}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
                         </Field>
 
                         <label className="flex cursor-pointer items-center gap-2 text-sm font-medium">

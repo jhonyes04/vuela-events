@@ -1,4 +1,4 @@
-import { CATEGORY_COLOR_STYLES } from '@/features/categories/lib/categories';
+import { CATEGORY_COLOR_STYLES } from '@/features/categories/lib/colors';
 import type { EventItem } from '@/features/events/lib/events';
 
 export interface EventColor {

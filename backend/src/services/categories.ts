@@ -7,9 +7,21 @@ export const CATEGORY_COLORS = [
     'sky',
     'rose',
     'violet',
-    'slate',
+    // 'slate',
     'orange',
     'pink',
+    // 'gray',
+    // 'zinc',
+    // 'neutral',
+    // 'stone',
+    'lime',
+    // 'green',
+    // 'teal',
+    // 'cyan',
+    // 'blue',
+    // 'indigo',
+    // 'purple',
+    'fuchsia',
 ] as const;
 
 export type CategoryColor = (typeof CATEGORY_COLORS)[number];

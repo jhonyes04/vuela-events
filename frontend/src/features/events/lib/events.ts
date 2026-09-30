@@ -1,5 +1,5 @@
 import { api } from '@/lib/api';
-import type { CategoryColor } from '@/features/categories/lib/categories';
+import type { CategoryColor } from '@/features/categories/lib/colors';
 
 export interface EventItem {
     id: string;

@@ -6,11 +6,11 @@ import { ConfirmDeleteDialog } from '@/features/events/components/ConfirmDeleteD
 import { ListErrors } from '@/features/users/components/ListErrors';
 import { CategoryFormDialog } from '@/features/categories/components/CategoryFormDialog';
 import {
-    CATEGORY_COLOR_STYLES,
     deleteCategory,
     listCategories,
     type Category,
 } from '@/features/categories/lib/categories';
+import { CATEGORY_COLOR_STYLES } from '@/features/categories/lib/colors';
 import { ApiError } from '@/lib/api';
 
 export const CategoriesPage = () => {
@@ -110,7 +110,7 @@ export const CategoriesPage = () => {
                                 <Pencil className="size-4" />
                             </Button>
                             <Button
-                                variant="outline"
+                                variant="destructive"
                                 size="icon"
                                 aria-label="Eliminar"
                                 onClick={() => setDeleting(category)}

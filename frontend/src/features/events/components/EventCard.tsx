@@ -2,7 +2,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { AttendeeChips } from '@/features/events/components/AttendeeChips';
 import { EventInfoRows } from '@/features/events/components/EventInfoRows';
-import { CATEGORY_COLOR_STYLES } from '@/features/categories/lib/categories';
+import { CATEGORY_COLOR_STYLES } from '@/features/categories/lib/colors';
 import { cn } from '@/lib/utils';
 import { isFull, type EventItem } from '@/features/events/lib/events';
 
