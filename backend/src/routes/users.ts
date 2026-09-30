@@ -59,6 +59,7 @@ usersRouter.get('/', async (_req, res) => {
             id: true,
             email: true,
             name: true,
+            lastName: true,
             active: true,
             createdAt: true,
             role: { select: { id: true, name: true } },

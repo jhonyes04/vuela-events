@@ -11,6 +11,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import { IconTooltip } from '@/components/IconTooltip';
 import { AttendeesDialog } from '@/features/events/components/AttendeesDialog';
 import { EventEditDialog } from '@/features/events/components/CreateEventDialog';
 import { ConfirmDeleteDialog } from '@/features/events/components/ConfirmDeleteDialog';
@@ -334,34 +335,42 @@ export const EventsManagementPage = () => {
                                     </td>
                                     <td className="p-3 text-right">
                                         <div className="flex justify-end gap-2">
-                                            <Button
-                                                variant="outline"
-                                                size="icon"
-                                                aria-label="Ver participantes"
-                                                onClick={() =>
-                                                    openAttendees(event)
-                                                }
-                                            >
-                                                <Users className="size-4" />
-                                            </Button>
-                                            <Button
-                                                variant="outline"
-                                                size="icon"
-                                                aria-label="Editar"
-                                                onClick={() => openEdit(event)}
-                                            >
-                                                <Pencil className="size-4" />
-                                            </Button>
-                                            <Button
-                                                variant="destructive"
-                                                size="icon"
-                                                aria-label="Eliminar"
-                                                onClick={() =>
-                                                    setDeleting(event)
-                                                }
-                                            >
-                                                <Trash2 className="size-4" />
-                                            </Button>
+                                            <IconTooltip label="Ver participantes">
+                                                <Button
+                                                    variant="outline"
+                                                    size="icon"
+                                                    aria-label="Ver participantes"
+                                                    onClick={() =>
+                                                        openAttendees(event)
+                                                    }
+                                                >
+                                                    <Users className="size-4" />
+                                                </Button>
+                                            </IconTooltip>
+                                            <IconTooltip label="Editar">
+                                                <Button
+                                                    variant="outline"
+                                                    size="icon"
+                                                    aria-label="Editar"
+                                                    onClick={() =>
+                                                        openEdit(event)
+                                                    }
+                                                >
+                                                    <Pencil className="size-4" />
+                                                </Button>
+                                            </IconTooltip>
+                                            <IconTooltip label="Eliminar">
+                                                <Button
+                                                    variant="destructive"
+                                                    size="icon"
+                                                    aria-label="Eliminar"
+                                                    onClick={() =>
+                                                        setDeleting(event)
+                                                    }
+                                                >
+                                                    <Trash2 className="size-4" />
+                                                </Button>
+                                            </IconTooltip>
                                         </div>
                                     </td>
                                 </tr>

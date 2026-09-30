@@ -6,6 +6,7 @@ import {
     CircleCheck,
 } from 'lucide-react';
 import { useAuth } from '@/features/auth/hooks/context';
+import { IconTooltip } from '@/components/IconTooltip';
 import { CreateEventDialog } from '@/features/events/components/CreateEventDialog';
 import { EventCard } from '@/features/events/components/EventCard';
 import { EventDetailDialog } from '@/features/events/components/EventDetailDialog';
@@ -102,28 +103,32 @@ export function EventsPage() {
             <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
                 <h1 className="text-2xl font-semibold">Eventos</h1>
                 <div className="flex flex-wrap items-center gap-2">
-                    <Button
-                        variant="outline"
-                        size="icon"
-                        aria-label="Mes anterior"
-                        onClick={() => shift(-1)}
-                    >
-                        <ChevronLeft />
-                    </Button>
+                    <IconTooltip label="Mes anterior">
+                        <Button
+                            variant="outline"
+                            size="icon"
+                            aria-label="Mes anterior"
+                            onClick={() => shift(-1)}
+                        >
+                            <ChevronLeft />
+                        </Button>
+                    </IconTooltip>
                     <span
                         className="min-w-40 text-center font-medium"
                         aria-live="polite"
                     >
                         {formatMonthLabel(cursor.year, cursor.month)}
                     </span>
-                    <Button
-                        variant="outline"
-                        size="icon"
-                        aria-label="Mes siguiente"
-                        onClick={() => shift(1)}
-                    >
-                        <ChevronRight />
-                    </Button>
+                    <IconTooltip label="Mes siguiente">
+                        <Button
+                            variant="outline"
+                            size="icon"
+                            aria-label="Mes siguiente"
+                            onClick={() => shift(1)}
+                        >
+                            <ChevronRight />
+                        </Button>
+                    </IconTooltip>
                     <Button
                         variant="secondary"
                         onClick={() => goTo(currentMonth())}

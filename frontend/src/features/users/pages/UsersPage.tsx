@@ -14,6 +14,7 @@ interface AdminUser {
     id: string;
     email: string;
     name: string;
+    lastName: string;
     active: boolean;
     createdAt: string;
     role: { id: string; name: string };
@@ -40,15 +41,16 @@ export const UsersPage = () => {
         sorted: sortedUsers,
         sort,
         toggleSort,
-    } = useSort<AdminUser, 'name' | 'email' | 'role' | 'active'>(
+    } = useSort<AdminUser, 'name' | 'lastName' | 'email' | 'role' | 'active'>(
         users,
         {
             name: (a, b) => a.name.localeCompare(b.name),
+            lastName: (a, b) => a.lastName.localeCompare(b.lastName),
             email: (a, b) => a.email.localeCompare(b.email),
             role: (a, b) => a.role.name.localeCompare(b.role.name),
             active: (a, b) => Number(a.active) - Number(b.active),
         },
-        { key: 'name', dir: 'asc' },
+        { key: 'lastName', dir: 'asc' },
     );
 
     const { paged, page, pageCount, pageSize, total, setPage, setPageSize } =
@@ -145,6 +147,12 @@ export const UsersPage = () => {
                                     onSort={toggleSort}
                                 />
                                 <SortableHeader
+                                    label="Apellidos"
+                                    sortKey="lastName"
+                                    sort={sort}
+                                    onSort={toggleSort}
+                                />
+                                <SortableHeader
                                     label="Correo"
                                     sortKey="email"
                                     sort={sort}
@@ -178,6 +186,9 @@ export const UsersPage = () => {
                                         className="border-b last:border-0"
                                     >
                                         <td className="p-3">{u.name}</td>
+                                        <td className="p-3">
+                                            {u.lastName}
+                                        </td>
                                         <td className="p-3 break-all">
                                             {u.email}
                                         </td>

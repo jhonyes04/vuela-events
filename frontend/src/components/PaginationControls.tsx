@@ -7,6 +7,7 @@ import {
     PaginationLink,
 } from '@/components/ui/pagination';
 import { Button } from '@/components/ui/button';
+import { IconTooltip } from '@/components/IconTooltip';
 import { PAGE_SIZES, type PageSize } from '@/hooks/usePagination';
 
 const selectClass =
@@ -86,14 +87,17 @@ export function PaginationControls({
                 <Pagination className="mx-0 w-auto">
                     <PaginationContent>
                         <PaginationItem>
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                disabled={page <= 1}
-                                onClick={() => onPageChange(page - 1)}
-                            >
-                                <ChevronLeft />
-                            </Button>
+                            <IconTooltip label="Página anterior">
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    aria-label="Página anterior"
+                                    disabled={page <= 1}
+                                    onClick={() => onPageChange(page - 1)}
+                                >
+                                    <ChevronLeft />
+                                </Button>
+                            </IconTooltip>
                         </PaginationItem>
 
                         {pageNumbers(page, pageCount).map((p, i) =>
@@ -115,14 +119,17 @@ export function PaginationControls({
                         )}
 
                         <PaginationItem>
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                disabled={page >= pageCount}
-                                onClick={() => onPageChange(page + 1)}
-                            >
-                                <ChevronRight />
-                            </Button>
+                            <IconTooltip label="Página siguiente">
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    aria-label="Página siguiente"
+                                    disabled={page >= pageCount}
+                                    onClick={() => onPageChange(page + 1)}
+                                >
+                                    <ChevronRight />
+                                </Button>
+                            </IconTooltip>
                         </PaginationItem>
                     </PaginationContent>
                 </Pagination>

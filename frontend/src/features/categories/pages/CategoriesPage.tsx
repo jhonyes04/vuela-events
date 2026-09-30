@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Pencil, Trash2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { IconTooltip } from '@/components/IconTooltip';
 import { ConfirmDeleteDialog } from '@/features/events/components/ConfirmDeleteDialog';
 import { ListErrors } from '@/features/users/components/ListErrors';
 import { CategoryFormDialog } from '@/features/categories/components/CategoryFormDialog';
@@ -101,22 +102,26 @@ export const CategoriesPage = () => {
                             {!category.active && (
                                 <Badge variant="secondary">Inactiva</Badge>
                             )}
-                            <Button
-                                variant="outline"
-                                size="icon"
-                                aria-label="Editar"
-                                onClick={() => openEdit(category)}
-                            >
-                                <Pencil className="size-4" />
-                            </Button>
-                            <Button
-                                variant="destructive"
-                                size="icon"
-                                aria-label="Eliminar"
-                                onClick={() => setDeleting(category)}
-                            >
-                                <Trash2 className="size-4" />
-                            </Button>
+                            <IconTooltip label="Editar">
+                                <Button
+                                    variant="outline"
+                                    size="icon"
+                                    aria-label="Editar"
+                                    onClick={() => openEdit(category)}
+                                >
+                                    <Pencil className="size-4" />
+                                </Button>
+                            </IconTooltip>
+                            <IconTooltip label="Eliminar">
+                                <Button
+                                    variant="destructive"
+                                    size="icon"
+                                    aria-label="Eliminar"
+                                    onClick={() => setDeleting(category)}
+                                >
+                                    <Trash2 className="size-4" />
+                                </Button>
+                            </IconTooltip>
                         </li>
                     ))}
                 </ul>

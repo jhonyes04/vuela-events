@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { ExternalLink, Pencil, Trash2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { IconTooltip } from '@/components/IconTooltip';
 import { ConfirmDeleteDialog } from '@/features/events/components/ConfirmDeleteDialog';
 import { ListErrors } from '@/features/users/components/ListErrors';
 import { GuideFormDialog } from '@/features/guides/components/GuideFormDialog';
@@ -108,22 +109,26 @@ export const GuidesPage = () => {
                             {!guide.active && (
                                 <Badge variant="secondary">Inactiva</Badge>
                             )}
-                            <Button
-                                variant="outline"
-                                size="icon"
-                                aria-label="Editar"
-                                onClick={() => openEdit(guide)}
-                            >
-                                <Pencil className="size-4" />
-                            </Button>
-                            <Button
-                                variant="destructive"
-                                size="icon"
-                                aria-label="Eliminar"
-                                onClick={() => setDeleting(guide)}
-                            >
-                                <Trash2 className="size-4" />
-                            </Button>
+                            <IconTooltip label="Editar">
+                                <Button
+                                    variant="outline"
+                                    size="icon"
+                                    aria-label="Editar"
+                                    onClick={() => openEdit(guide)}
+                                >
+                                    <Pencil className="size-4" />
+                                </Button>
+                            </IconTooltip>
+                            <IconTooltip label="Eliminar">
+                                <Button
+                                    variant="destructive"
+                                    size="icon"
+                                    aria-label="Eliminar"
+                                    onClick={() => setDeleting(guide)}
+                                >
+                                    <Trash2 className="size-4" />
+                                </Button>
+                            </IconTooltip>
                         </li>
                     ))}
                 </ul>
