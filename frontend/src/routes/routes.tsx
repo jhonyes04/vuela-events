@@ -4,6 +4,7 @@ import { ProfilePage } from '@/features/profile/pages/ProfilePage';
 import { RolesPage } from '@/features/users/pages/RolesPage';
 import { UsersPage } from '@/features/users/pages/UsersPage';
 import { CategoriesPage } from '@/features/categories/pages/CategoriesPage';
+import { GuidesPage } from '@/features/guides/pages/GuidesPage';
 import { PlaceholderPage } from '@/pages/PlaceholderPage';
 
 export interface AppRoute {
@@ -34,7 +35,7 @@ export const appRoutes: AppRoute[] = [
     {
         path: '/gestion/guias',
         label: 'Guías',
-        element: <PlaceholderPage title="Guías" />,
+        element: <GuidesPage />,
         permissions: ['guides:view', 'guides:manage'],
         group: 'gestion',
     },
