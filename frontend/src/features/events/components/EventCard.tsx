@@ -57,7 +57,9 @@ interface EventCardProps {
 
 export const EventCard = ({ event, onOpen }: EventCardProps) => {
     const full = isFull(event);
-    const colorStyle = CATEGORY_COLOR_STYLES[event.category.color];
+    const colorStyle = full
+        ? { border: 'border-t-red-500', tint: 'bg-red-500/10' }
+        : CATEGORY_COLOR_STYLES[event.category.color];
 
     return (
         <Card
@@ -94,7 +96,7 @@ export const EventCard = ({ event, onOpen }: EventCardProps) => {
                     event={event}
                     trailing={
                         full && (
-                            <Badge variant="secondary" className="ml-1">
+                            <Badge variant="destructive" className="ml-1">
                                 Completo
                             </Badge>
                         )

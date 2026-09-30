@@ -1,5 +1,5 @@
 import { CATEGORY_COLOR_STYLES } from '@/features/categories/lib/colors';
-import type { EventItem } from '@/features/events/lib/events';
+import { isFull, type EventItem } from '@/features/events/lib/events';
 
 export interface EventColor {
     // Etiqueta dentro de la celda del calendario (fondo y texto legibles).
@@ -8,9 +8,12 @@ export interface EventColor {
     dot: string;
 }
 
-// El color viene de la categoría del evento (categoría es obligatoria).
+// El color viene de la categoría del evento (categoría es obligatoria),
+// salvo que esté completo: entonces se marca en rojo.
 export const eventColor = (event: EventItem): EventColor => {
-    const style = CATEGORY_COLOR_STYLES[event.category.color];
+    const style = isFull(event)
+        ? { chip: 'bg-red-500 text-white', swatch: 'bg-red-500' }
+        : CATEGORY_COLOR_STYLES[event.category.color];
 
     return {
         chip: `${style.chip} hover:brightness-95`,

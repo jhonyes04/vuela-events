@@ -62,10 +62,14 @@ const EventDetailBody = ({
     );
 
     const ended = hasEnded(event);
+    const full = isFull(event);
     const isDt = user?.roleId === 'dt';
     const isAdmin = user?.roleId === 'admin';
     // Un DT puede inscribirse aunque esté completo: no ocupa plaza.
-    const blockedByCapacity = isFull(event) && !isDt && !event.registered;
+    const blockedByCapacity = full && !isDt && !event.registered;
+    const colorStyle = full
+        ? { border: 'border-t-red-500', tint: 'bg-red-500/10' }
+        : CATEGORY_COLOR_STYLES[event.category.color];
 
     // Solo oculta el botón: el servidor comprueba de nuevo quién puede eliminar.
     const canDelete =
@@ -106,13 +110,13 @@ const EventDetailBody = ({
                 <DialogContent
                     className={cn(
                         'border-t-4 sm:max-w-lg',
-                        CATEGORY_COLOR_STYLES[event.category.color].border,
+                        colorStyle.border,
                     )}
                 >
                     <DialogHeader
                         className={cn(
                             '-mx-4 -mt-4 rounded-t-xl px-4 pt-4 pb-3',
-                            CATEGORY_COLOR_STYLES[event.category.color].tint,
+                            colorStyle.tint,
                         )}
                     >
                         <DialogTitle>{event.title}</DialogTitle>
@@ -127,9 +131,7 @@ const EventDetailBody = ({
                                 Inscrito
                             </Badge>
                         )}
-                        {isFull(event) && (
-                            <Badge variant="secondary">Completo</Badge>
-                        )}
+                        {full && <Badge variant="destructive">Completo</Badge>}
                         {ended && <Badge variant="outline">Finalizado</Badge>}
                     </div>
 
@@ -258,13 +260,22 @@ const EventDetailBody = ({
                             </Button>
                         ) : (
                             <Button
-                                disabled={busy || blockedByCapacity}
-                                onClick={() =>
+                                disabled={busy}
+                                onClick={() => {
+                                    if (blockedByCapacity) {
+                                        setFeedback({
+                                            kind: 'error',
+                                            message:
+                                                'Este evento está completo.',
+                                        });
+                                        return;
+                                    }
+
                                     void run(
                                         () => registerForEventById(event.id),
                                         'Te has inscrito correctamente.',
-                                    )
-                                }
+                                    );
+                                }}
                             >
                                 {blockedByCapacity ? 'Completo' : 'Inscribirme'}
                             </Button>
