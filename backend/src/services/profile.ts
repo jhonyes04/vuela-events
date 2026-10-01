@@ -88,3 +88,31 @@ export const getDecryptedAppPassword = async (
 
     return row?.smtpAppPassword ? decrypt(row.smtpAppPassword) : null;
 };
+
+export const setSignatureImage = async (
+    userId: string,
+    image: Buffer,
+): Promise<void> => {
+    await prisma.user.update({
+        where: { id: userId },
+        data: { signatureImage: new Uint8Array(image) },
+    });
+};
+
+export const clearSignatureImage = async (userId: string): Promise<void> => {
+    await prisma.user.update({
+        where: { id: userId },
+        data: { signatureImage: null },
+    });
+};
+
+export const getSignatureImage = async (
+    userId: string,
+): Promise<Buffer | null> => {
+    const row = await prisma.user.findUnique({
+        where: { id: userId },
+        select: { signatureImage: true },
+    });
+
+    return row?.signatureImage ? Buffer.from(row.signatureImage) : null;
+};

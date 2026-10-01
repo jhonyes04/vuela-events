@@ -44,7 +44,7 @@ export function createApp(options: AppOptions = {}) {
 
     app.use(requireSameOrigin);
 
-    app.use(express.json({ limit: '100kb' }));
+    app.use(express.json({ limit: '500kb' }));
 
     app.use(sessionMiddleware);
 

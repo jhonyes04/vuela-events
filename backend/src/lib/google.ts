@@ -22,6 +22,7 @@ export interface GoogleIdentity {
     email: string;
     name: string;
     lastName: string;
+    picture?: string;
 }
 
 export function identityFromPayload(
@@ -59,8 +60,15 @@ export function identityFromPayload(
 
     const name = (payload.name?.trim() || email.split('@')[0]) ?? email;
     const lastName = (payload.family_name?.trim() || '').slice(0, 200);
+    const picture = payload.picture?.trim() || undefined;
 
-    return { sub: payload.sub, email, name: name.slice(0, 200), lastName };
+    return {
+        sub: payload.sub,
+        email,
+        name: name.slice(0, 200),
+        lastName,
+        picture,
+    };
 }
 
 const client = new OAuth2Client();

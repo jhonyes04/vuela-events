@@ -28,6 +28,10 @@ const startSendErrors = {
         409,
         'No tienes una contraseña de aplicación configurada en tu perfil',
     ],
+    report_generation_failed: [
+        500,
+        'No se pudo generar el acta de asistencia para adjuntarla',
+    ],
 } as const;
 
 export const emailSendsRouter = Router();

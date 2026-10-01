@@ -4,6 +4,13 @@ import { Prisma } from '../generated/prisma/client.js';
 import { authUserSelect, toAuthUser, type AuthUser } from '../lib/authUser.js';
 import type { GoogleIdentity } from '../lib/google.js';
 
+const MAX_AVATAR_BYTES = 1024 * 1024;
+const ALLOWED_AVATAR_TYPES = new Set([
+    'image/jpeg',
+    'image/png',
+    'image/webp',
+]);
+
 export type LoginFailure = 'account_disabled' | 'email_conflict';
 
 export class LoginFailureError extends Error {
@@ -25,6 +32,65 @@ const isUniqueViolation = (e: unknown): boolean => {
 
 const initialRoleFor = (email: string): string =>
     env.SUPERADMIN_EMAIL && email === env.SUPERADMIN_EMAIL ? 'admin' : 'ail';
+
+// Si ya tiene avatar, no hace nada (solo se descarga una vez). Si Google
+// falla o el fichero no es válido, no bloquea el login: simplemente no
+// queda avatar guardado y se reintentará en el siguiente login.
+const downloadAvatarIfMissing = async (
+    userId: string,
+    pictureUrl: string,
+): Promise<void> => {
+    const current = await prisma.user.findUnique({
+        where: { id: userId },
+        select: { avatarImage: true },
+    });
+
+    if (current?.avatarImage) return;
+
+    try {
+        const res = await fetch(pictureUrl, {
+            signal: AbortSignal.timeout(5000),
+        });
+
+        if (!res.ok) return;
+
+        const contentType = res.headers.get('content-type') ?? '';
+
+        if (!ALLOWED_AVATAR_TYPES.has(contentType)) return;
+
+        const buffer = Buffer.from(await res.arrayBuffer());
+
+        if (buffer.length === 0 || buffer.length > MAX_AVATAR_BYTES) return;
+
+        await prisma.user.update({
+            where: { id: userId },
+            data: {
+                avatarImage: new Uint8Array(buffer),
+                avatarImageType: contentType,
+            },
+        });
+    } catch {
+        // Descarga best-effort: ver comentario de la función.
+    }
+};
+
+// Tras construir el AuthUser, si Google trae foto y todavía no hay una
+// guardada, la descarga y devuelve el AuthUser ya actualizado.
+const finishLogin = async (
+    user: AuthUser,
+    picture: string | undefined,
+): Promise<AuthUser> => {
+    if (!picture || user.avatarConfigured) return user;
+
+    await downloadAvatarIfMissing(user.id, picture);
+
+    const refreshed = await prisma.user.findUnique({
+        where: { id: user.id },
+        select: authUserSelect,
+    });
+
+    return refreshed ? toAuthUser(refreshed) : user;
+};
 
 export const findOrCreateUser = async (
     identity: GoogleIdentity,
@@ -69,12 +135,15 @@ export const findOrCreateUser = async (
             }
         }
 
-        return toAuthUser({
-            ...existing,
-            email: identity.email,
-            name,
-            lastName,
-        });
+        return finishLogin(
+            toAuthUser({
+                ...existing,
+                email: identity.email,
+                name,
+                lastName,
+            }),
+            identity.picture,
+        );
     }
 
     const emailToken = await prisma.user.findUnique({
@@ -87,17 +156,20 @@ export const findOrCreateUser = async (
     }
 
     try {
-        return toAuthUser(
-            await prisma.user.create({
-                data: {
-                    email: identity.email,
-                    googleSub: identity.sub,
-                    name: identity.name,
-                    lastName: identity.lastName,
-                    roleId: initialRoleFor(identity.email),
-                },
-                select: authUserSelect,
-            }),
+        return finishLogin(
+            toAuthUser(
+                await prisma.user.create({
+                    data: {
+                        email: identity.email,
+                        googleSub: identity.sub,
+                        name: identity.name,
+                        lastName: identity.lastName,
+                        roleId: initialRoleFor(identity.email),
+                    },
+                    select: authUserSelect,
+                }),
+            ),
+            identity.picture,
         );
     } catch (e) {
         if (!isUniqueViolation(e)) {
@@ -120,6 +192,6 @@ export const findOrCreateUser = async (
             throw new LoginFailureError('account_disabled');
         }
 
-        return toAuthUser(winner);
+        return finishLogin(toAuthUser(winner), identity.picture);
     }
 };

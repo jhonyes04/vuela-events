@@ -3,6 +3,7 @@ import nodemailer from 'nodemailer';
 import { prisma } from '../lib/prisma.js';
 import { renderEmail } from '../lib/emailTemplateRender.js';
 import { getDecryptedAppPassword } from './profile.js';
+import { generateAttendanceReport } from './attendanceReport.js';
 import { type SlotId } from './emailSending.js';
 
 const BATCH_SIZE = 15;
@@ -12,12 +13,21 @@ const MAX_RECIPIENTS = 500;
 // Los jobs terminados se olvidan pasado este tiempo (evita crecer sin límite).
 const JOB_TTL_MS = 10 * 60 * 1000;
 
+// en-CA da directamente el formato YYYY-MM-DD.
+const fileDateFormat = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Europe/Madrid',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+});
+
 export type StartSendFailure =
     | 'smtp_not_configured'
     | 'template_not_assigned'
     | 'event_not_found'
     | 'no_recipients'
-    | 'app_password_not_configured';
+    | 'app_password_not_configured'
+    | 'report_generation_failed';
 
 export class StartSendError extends Error {
     readonly reason: StartSendFailure;
@@ -125,6 +135,27 @@ export const startBulkSend = async (
     const template = assignment.template;
     const { subject, body } = renderEmail(template, event);
 
+    // El parte de firmas lleva siempre adjunta el acta de asistencia en PDF
+    // con los mismos destinatarios seleccionados, generada una sola vez.
+    let attachment: { filename: string; content: Buffer } | undefined;
+
+    if (input.slot === 'parte_firmas') {
+        try {
+            const pdf = await generateAttendanceReport({
+                eventId: input.eventId,
+                recipientRegistrationIds: registrationIds,
+                signerUserId: input.actorId,
+            });
+
+            attachment = {
+                filename: `${fileDateFormat.format(event.startsAt)} Acta de asistencia ${event.title}.pdf`,
+                content: pdf,
+            };
+        } catch {
+            throw new StartSendError('report_generation_failed');
+        }
+    }
+
     const jobId = randomUUID();
     const job: SendJob = {
         id: jobId,
@@ -144,6 +175,7 @@ export const startBulkSend = async (
         smtpPassword,
         subject,
         body,
+        attachment,
         recipients,
     });
 
@@ -158,6 +190,7 @@ const runSendJob = async (
         smtpPassword: string;
         subject: string;
         body: string;
+        attachment?: { filename: string; content: Buffer };
         recipients: { registrationId: string; email: string }[];
     },
 ) => {
@@ -179,6 +212,7 @@ const runSendJob = async (
                         to: recipient.email,
                         subject: ctx.subject,
                         html: ctx.body,
+                        attachments: ctx.attachment ? [ctx.attachment] : [],
                     });
 
                     job.sent += 1;

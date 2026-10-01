@@ -23,6 +23,10 @@ import {
     RegistrationError,
     unregisterFromEvent,
 } from '../services/registration.js';
+import {
+    generateAttendanceReport,
+    AttendanceReportError,
+} from '../services/attendanceReport.js';
 
 // Campos comunes a un evento suelto y a una serie.
 const eventFields = {
@@ -140,6 +144,15 @@ const registrationErrors = {
         'Los administradores no pueden inscribirse en eventos',
     ],
 } as const;
+
+const attendanceReportErrors = {
+    event_not_found: [404, 'Evento no encontrado'],
+    no_recipients: [400, 'Selecciona al menos un destinatario'],
+} as const;
+
+const attendanceReportSchema = z.strictObject({
+    recipientRegistrationIds: z.array(z.uuid()).min(1),
+});
 
 export const eventsRouter = Router();
 
@@ -532,3 +545,54 @@ eventsRouter.delete('/:id/registrations', async (req, res) => {
         throw e;
     }
 });
+
+// Genera el acta de asistencia en PDF de los seleccionados y la descarga.
+eventsRouter.post(
+    '/:id/attendance-report',
+    requirePermission('email:send'),
+    async (req, res) => {
+        const actor = req.user;
+        const params = idParamsSchema.safeParse(req.params);
+
+        if (!actor) {
+            res.status(401).json({ error: 'Autenticación requerida' });
+            return;
+        }
+
+        if (!params.success) {
+            res.status(400).json({ error: 'Solicitud no válida' });
+            return;
+        }
+
+        const body = attendanceReportSchema.safeParse(req.body);
+
+        if (!body.success) {
+            res.status(400).json({ error: 'Solicitud no válida' });
+            return;
+        }
+
+        try {
+            const pdf = await generateAttendanceReport({
+                eventId: params.data.id,
+                recipientRegistrationIds: body.data.recipientRegistrationIds,
+                signerUserId: actor.id,
+            });
+
+            res.setHeader('Content-Type', 'application/pdf');
+            res.setHeader(
+                'Content-Disposition',
+                'attachment; filename="acta-asistencia.pdf"',
+            );
+            res.send(pdf);
+        } catch (e) {
+            if (e instanceof AttendanceReportError) {
+                const [status, error] = attendanceReportErrors[e.reason];
+
+                res.status(status).json({ error });
+                return;
+            }
+
+            throw e;
+        }
+    },
+);

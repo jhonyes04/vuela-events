@@ -57,3 +57,22 @@ export const clearAppPassword = async (): Promise<boolean> => {
 
     return configured;
 };
+
+export const setSignatureImage = async (
+    imageBase64: string,
+): Promise<boolean> => {
+    const { configured } = await api.patch<{ configured: boolean }>(
+        '/profile/signature',
+        { imageBase64 },
+    );
+
+    return configured;
+};
+
+export const clearSignatureImage = async (): Promise<boolean> => {
+    const { configured } = await api.delete<{ configured: boolean }>(
+        '/profile/signature',
+    );
+
+    return configured;
+};

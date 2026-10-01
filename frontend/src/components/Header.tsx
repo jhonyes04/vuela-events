@@ -6,6 +6,10 @@ import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
+    DropdownMenuSeparator,
+    DropdownMenuSub,
+    DropdownMenuSubContent,
+    DropdownMenuSubTrigger,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import {
@@ -26,46 +30,13 @@ const navClass = ({ isActive }: { isActive: boolean }) =>
         isActive ? 'bg-brand-ink text-white' : 'hover:bg-black/10',
     );
 
-const dropdownTriggerClass =
-    'flex shrink-0 items-center gap-1 rounded-md px-3 py-2 text-sm font-medium hover:bg-black/10';
-
 interface RouteDropdownProps {
     label: string;
     routes: AppRoute[];
 }
 
-const RouteDropdown = ({ label, routes }: RouteDropdownProps) => {
-    if (routes.length === 0) return null;
-
-    return (
-        <DropdownMenu>
-            <DropdownMenuTrigger
-                render={
-                    <button type="button" className={dropdownTriggerClass}>
-                        {label}
-                        <ChevronDown className="size-4" />
-                    </button>
-                }
-            />
-            <DropdownMenuContent
-                align="start"
-                className="w-max whitespace-nowrap"
-            >
-                {routes.map((route) => (
-                    <DropdownMenuItem
-                        key={route.path}
-                        render={
-                            <NavLink to={route.path}>{route.label}</NavLink>
-                        }
-                    />
-                ))}
-            </DropdownMenuContent>
-        </DropdownMenu>
-    );
-};
-
-// Mismos enlaces que RouteDropdown, pero en vertical dentro del offcanvas
-// (con etiqueta de grupo en vez de desplegable, que en un panel ya no hace falta).
+// En vertical dentro del offcanvas (con etiqueta de grupo en vez de
+// desplegable, que en un panel ya no hace falta).
 const MobileRouteGroup = ({ label, routes }: RouteDropdownProps) => {
     if (routes.length === 0) return null;
 
@@ -95,7 +66,11 @@ export const Header = () => {
     const isAdmin = user?.roleId === 'admin';
 
     const mainRoutes = appRoutes.filter(
-        (route) => !route.group && user && canAccess(route, user.permissions),
+        (route) =>
+            !route.group &&
+            route.path !== '/perfil' &&
+            user &&
+            canAccess(route, user.permissions),
     );
 
     const gestionRoutes = appRoutes.filter(
@@ -136,12 +111,6 @@ export const Header = () => {
                                 {route.label}
                             </NavLink>
                         ))}
-
-                        <RouteDropdown label="Gestión" routes={gestionRoutes} />
-                        <RouteDropdown
-                            label="Administración"
-                            routes={adminRoutes}
-                        />
                     </nav>
                 )}
 
@@ -199,19 +168,102 @@ export const Header = () => {
                 )}
 
                 {user && (
-                    <div className="ml-auto flex items-center gap-3">
-                        <div className="hidden max-w-56 text-right text-sm leading-tight sm:block">
-                            <p className="truncate font-medium">
-                                {user.name} {user.lastName}
-                            </p>
-                            <p className="truncate text-brand-ink/80">
-                                {user.roleName}
-                            </p>
-                        </div>
-                        <Button size="lg" onClick={() => void logout()}>
-                            Cerrar sesión
-                        </Button>
-                    </div>
+                    <DropdownMenu>
+                        <DropdownMenuTrigger
+                            render={
+                                <button
+                                    type="button"
+                                    className="ml-auto flex cursor-pointer items-center gap-2 rounded-md px-2 py-1 hover:bg-black/10"
+                                >
+                                    {user.avatarConfigured ? (
+                                        <img
+                                            src={`/api/profile/avatar-image?u=${user.id}`}
+                                            alt=""
+                                            className="size-9 shrink-0 rounded-full object-cover ring-2 ring-white shadow-sm"
+                                        />
+                                    ) : (
+                                        <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-brand-ink text-sm font-semibold text-white ring-2 ring-white shadow-sm">
+                                            {user.name[0]}
+                                            {user.lastName[0]}
+                                        </span>
+                                    )}
+                                    <div className="hidden max-w-56 text-right text-sm leading-tight sm:block">
+                                        <p className="truncate font-medium">
+                                            {user.name} {user.lastName}
+                                        </p>
+                                        <p className="truncate text-brand-ink/80">
+                                            {user.roleName}
+                                        </p>
+                                    </div>
+                                    <ChevronDown className="hidden size-4 shrink-0 sm:block" />
+                                </button>
+                            }
+                        />
+                        <DropdownMenuContent align="end">
+                            <DropdownMenuItem
+                                className="cursor-pointer"
+                                render={
+                                    <NavLink to="/perfil">Mi perfil</NavLink>
+                                }
+                            />
+                            {(gestionRoutes.length > 0 ||
+                                adminRoutes.length > 0 ||
+                                user.roleId === 'ail') && (
+                                <DropdownMenuSeparator />
+                            )}
+                            {gestionRoutes.length > 0 && (
+                                <DropdownMenuSub>
+                                    <DropdownMenuSubTrigger className="cursor-pointer">
+                                        Gestión
+                                    </DropdownMenuSubTrigger>
+                                    <DropdownMenuSubContent>
+                                        {gestionRoutes.map((route) => (
+                                            <DropdownMenuItem
+                                                key={route.path}
+                                                className="cursor-pointer"
+                                                render={
+                                                    <NavLink to={route.path}>
+                                                        {route.label}
+                                                    </NavLink>
+                                                }
+                                            />
+                                        ))}
+                                    </DropdownMenuSubContent>
+                                </DropdownMenuSub>
+                            )}
+                            {adminRoutes.length > 0 && (
+                                <DropdownMenuSub>
+                                    <DropdownMenuSubTrigger className="cursor-pointer">
+                                        Administración
+                                    </DropdownMenuSubTrigger>
+                                    <DropdownMenuSubContent>
+                                        {adminRoutes.map((route) => (
+                                            <DropdownMenuItem
+                                                key={route.path}
+                                                className="cursor-pointer"
+                                                render={
+                                                    <NavLink to={route.path}>
+                                                        {route.label}
+                                                    </NavLink>
+                                                }
+                                            />
+                                        ))}
+                                    </DropdownMenuSubContent>
+                                </DropdownMenuSub>
+                            )}
+                            {(gestionRoutes.length > 0 ||
+                                adminRoutes.length > 0) && (
+                                <DropdownMenuSeparator />
+                            )}
+                            <DropdownMenuItem
+                                variant="destructive"
+                                className="cursor-pointer"
+                                onClick={() => void logout()}
+                            >
+                                Cerrar sesión
+                            </DropdownMenuItem>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
                 )}
             </div>
         </header>

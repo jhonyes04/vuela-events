@@ -1,5 +1,4 @@
-// Lo que la aplicación sabe de quien está autenticado. Nunca incluye googleSub
-// ni la contraseña de aplicación cifrada, solo si está configurada.
+// Lo que la aplicación sabe de quien está autenticado. Nunca incluye googleSub ni los datos cifrados/binarios en sí (contraseña de aplicación, firma, avatar), solo si están configurados.
 export interface AuthUser {
     id: string;
     email: string;
@@ -11,6 +10,8 @@ export interface AuthUser {
     roleName: string;
     permissions: string[];
     smtpAppPasswordConfigured: boolean;
+    signatureConfigured: boolean;
+    avatarConfigured: boolean;
 }
 
 // Campos que se leen de la base de datos para construir un AuthUser.
@@ -23,6 +24,8 @@ export const authUserSelect = {
     profileCompletedAt: true,
     active: true,
     smtpAppPassword: true,
+    signatureImage: true,
+    avatarImage: true,
     role: {
         select: {
             id: true,
@@ -40,6 +43,8 @@ export const toAuthUser = (row: {
     puntoVuela: string | null;
     profileCompletedAt: Date | null;
     smtpAppPassword: string | null;
+    signatureImage: unknown | null;
+    avatarImage: unknown | null;
     role: { id: string; name: string; permissions: { permissionId: string }[] };
 }): AuthUser => ({
     id: row.id,
@@ -54,4 +59,6 @@ export const toAuthUser = (row: {
         (permission) => permission.permissionId,
     ),
     smtpAppPasswordConfigured: row.smtpAppPassword !== null,
+    signatureConfigured: row.signatureImage !== null,
+    avatarConfigured: row.avatarImage !== null,
 });
