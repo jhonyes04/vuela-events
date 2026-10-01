@@ -24,11 +24,8 @@ import { DatePicker } from '@/features/datetime/components/DatePicker';
 import { DateTimePicker } from '@/features/datetime/components/DateTimePicker';
 import { api, ApiError } from '@/lib/api';
 import { cn } from '@/lib/utils';
-import {
-    listCategories,
-    type Category,
-} from '@/features/categories/lib/categories';
-import { listGuides, type Guide } from '@/features/guides/lib/guides';
+import { useCategoriesStore } from '@/features/categories/store';
+import { useGuidesStore } from '@/features/guides/store';
 import { CATEGORY_COLOR_STYLES } from '@/features/categories/lib/colors';
 import {
     createRecurringEvents,
@@ -141,13 +138,16 @@ function EventFormBody({
     );
     const [error, setError] = useState<string | null>(null);
     const [submitting, setSubmitting] = useState(false);
-    const [categories, setCategories] = useState<Category[]>([]);
-    const [guides, setGuides] = useState<Guide[]>([]);
+    const categories = useCategoriesStore((s) => s.items);
+    const guides = useGuidesStore((s) => s.items);
+    const loadCategories = useCategoriesStore((s) => s.load);
+    const loadGuides = useGuidesStore((s) => s.load);
 
+    // Usa la caché si ya se cargaron; solo pide lo que falta.
     useEffect(() => {
-        void listCategories().then(setCategories);
-        void listGuides().then(setGuides);
-    }, []);
+        void loadCategories();
+        void loadGuides();
+    }, [loadCategories, loadGuides]);
 
     // La categoría/guía actuales del evento siguen disponibles al editar
     // aunque se hayan desactivado después de crearlo.

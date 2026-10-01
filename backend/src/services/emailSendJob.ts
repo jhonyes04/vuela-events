@@ -3,7 +3,8 @@ import nodemailer from 'nodemailer';
 import { prisma } from '../lib/prisma.js';
 import { renderEmail } from '../lib/emailTemplateRender.js';
 import { getDecryptedAppPassword } from './profile.js';
-import { generateAttendanceReport } from './attendanceReport.js';
+import { deleteReportDraft, getReportDraft } from './reportDrafts.js';
+import { saveSentReport } from './sentReports.js';
 import { type SlotId } from './emailSending.js';
 
 const BATCH_SIZE = 15;
@@ -13,21 +14,15 @@ const MAX_RECIPIENTS = 500;
 // Los jobs terminados se olvidan pasado este tiempo (evita crecer sin límite).
 const JOB_TTL_MS = 10 * 60 * 1000;
 
-// en-CA da directamente el formato YYYY-MM-DD.
-const fileDateFormat = new Intl.DateTimeFormat('en-CA', {
-    timeZone: 'Europe/Madrid',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-});
-
 export type StartSendFailure =
     | 'smtp_not_configured'
     | 'template_not_assigned'
     | 'event_not_found'
     | 'no_recipients'
     | 'app_password_not_configured'
-    | 'report_generation_failed';
+    | 'report_draft_required'
+    | 'report_draft_not_found'
+    | 'report_draft_mismatch';
 
 export class StartSendError extends Error {
     readonly reason: StartSendFailure;
@@ -75,6 +70,8 @@ interface StartSendInput {
     slot: SlotId;
     eventId: string;
     recipientRegistrationIds: string[];
+    // Acta generada y revisada antes del envío (obligatoria en 'parte_firmas').
+    reportDraftId?: string;
 }
 
 export const startBulkSend = async (
@@ -88,6 +85,37 @@ export const startBulkSend = async (
         0,
         MAX_RECIPIENTS,
     );
+
+    // El parte de firmas adjunta exactamente el acta que la persona generó y
+    // revisó antes de enviar, y solo si los destinatarios no han cambiado.
+    let attachment: { filename: string; content: Buffer } | undefined;
+
+    if (input.slot === 'parte_firmas') {
+        if (!input.reportDraftId) {
+            throw new StartSendError('report_draft_required');
+        }
+
+        const draft = getReportDraft(
+            input.reportDraftId,
+            input.actorId,
+            input.eventId,
+        );
+
+        if (!draft) {
+            throw new StartSendError('report_draft_not_found');
+        }
+
+        const selected = new Set(registrationIds);
+
+        if (
+            selected.size !== draft.registrationIds.length ||
+            draft.registrationIds.some((id) => !selected.has(id))
+        ) {
+            throw new StartSendError('report_draft_mismatch');
+        }
+
+        attachment = { filename: draft.filename, content: draft.pdf };
+    }
 
     const smtpConfig = await prisma.smtpConfig.findUnique({
         where: { id: 'default' },
@@ -125,35 +153,20 @@ export const startBulkSend = async (
     // colar el id de inscripción de otro evento para enviarse algo ajeno.
     const registrations = await prisma.registration.findMany({
         where: { id: { in: registrationIds }, eventId: input.eventId },
-        select: { id: true, user: { select: { email: true } } },
+        select: { id: true, userId: true, user: { select: { email: true } } },
     });
     const recipients = registrations.map((r) => ({
         registrationId: r.id,
+        userId: r.userId,
         email: r.user.email,
     }));
 
     const template = assignment.template;
     const { subject, body } = renderEmail(template, event);
 
-    // El parte de firmas lleva siempre adjunta el acta de asistencia en PDF
-    // con los mismos destinatarios seleccionados, generada una sola vez.
-    let attachment: { filename: string; content: Buffer } | undefined;
-
-    if (input.slot === 'parte_firmas') {
-        try {
-            const pdf = await generateAttendanceReport({
-                eventId: input.eventId,
-                recipientRegistrationIds: registrationIds,
-                signerUserId: input.actorId,
-            });
-
-            attachment = {
-                filename: `${fileDateFormat.format(event.startsAt)} Acta de asistencia ${event.title}.pdf`,
-                content: pdf,
-            };
-        } catch {
-            throw new StartSendError('report_generation_failed');
-        }
+    // Un borrador se usa una sola vez, y solo si ya no puede fallar nada antes del envío.
+    if (attachment && input.reportDraftId) {
+        deleteReportDraft(input.reportDraftId);
     }
 
     const jobId = randomUUID();
@@ -177,6 +190,7 @@ export const startBulkSend = async (
         body,
         attachment,
         recipients,
+        report: { eventId: input.eventId, senderId: input.actorId },
     });
 
     return { jobId };
@@ -191,9 +205,13 @@ const runSendJob = async (
         subject: string;
         body: string;
         attachment?: { filename: string; content: Buffer };
-        recipients: { registrationId: string; email: string }[];
+        recipients: { registrationId: string; userId: string; email: string }[];
+        // Si hay adjunto, se guarda una copia del acta enviada.
+        report: { eventId: string; senderId: string };
     },
 ) => {
+    const deliveredUserIds: string[] = [];
+
     const transporter = nodemailer.createTransport({
         host: ctx.smtpConfig.host,
         port: ctx.smtpConfig.port,
@@ -216,6 +234,7 @@ const runSendJob = async (
                     });
 
                     job.sent += 1;
+                    deliveredUserIds.push(recipient.userId);
                     job.results.push({
                         registrationId: recipient.registrationId,
                         ok: true,
@@ -241,6 +260,23 @@ const runSendJob = async (
         }
     } finally {
         transporter.close();
+
+        // La copia solo se guarda si el correo llegó al menos a alguien.
+        if (ctx.attachment && deliveredUserIds.length > 0) {
+            try {
+                await saveSentReport({
+                    eventId: ctx.report.eventId,
+                    senderId: ctx.report.senderId,
+                    filename: ctx.attachment.filename,
+                    pdf: ctx.attachment.content,
+                    recipientUserIds: deliveredUserIds,
+                });
+            } catch (e) {
+                // El envío ya salió: un fallo al archivar no debe romper el job.
+                console.error('No se pudo guardar la copia del acta', e);
+            }
+        }
+
         job.done = true;
         scheduleCleanup(job.id);
     }

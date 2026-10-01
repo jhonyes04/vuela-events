@@ -208,4 +208,60 @@ describe('eventos: permisos y validación', () => {
         assert.equal(res.status, 201);
         assert.equal(res.body.event.subtitle, 'Taller de robótica');
     });
+
+    const get = async (userId: string, path: string) =>
+        api(server.baseUrl, 'GET', path, {
+            cookie: await sessionCookieFor(userId),
+        });
+
+    it('quien puede crear eventos (dt) puede listar categorías y guías', async () => {
+        const dt = await createUser('dt');
+
+        const categories = await get(dt.id, '/api/categories');
+        const guides = await get(dt.id, '/api/guides');
+
+        assert.equal(categories.status, 200);
+        assert.equal(categories.body.categories[0].id, categoryId);
+        assert.equal(guides.status, 200);
+        assert.equal(guides.body.guides[0].id, guideId);
+    });
+
+    it('ail sin permisos de eventos ni de catálogos NO las lista: 403', async () => {
+        const ail = await createUser('ail');
+
+        assert.equal((await get(ail.id, '/api/categories')).status, 403);
+        assert.equal((await get(ail.id, '/api/guides')).status, 403);
+    });
+
+    it('GET /events?registered=1 solo devuelve los eventos en los que estoy inscrito', async () => {
+        const dt = await createUser('dt');
+        const ail = await createUser('ail');
+
+        const base = {
+            ...validEvent,
+            startsAt: new Date(validEvent.startsAt),
+            endsAt: new Date(validEvent.endsAt),
+            createdById: dt.id,
+            categoryId,
+            guideId,
+        };
+        const mine = await prisma.event.create({ data: base });
+
+        await prisma.event.create({ data: { ...base, title: 'Otro evento' } });
+        await prisma.registration.create({
+            data: { eventId: mine.id, userId: ail.id },
+        });
+
+        const filtered = await get(ail.id, '/api/events?registered=1');
+        const all = await get(ail.id, '/api/events');
+        const invalid = await get(ail.id, '/api/events?registered=0');
+
+        assert.equal(filtered.status, 200);
+        assert.deepEqual(
+            filtered.body.events.map((e: { id: string }) => e.id),
+            [mine.id],
+        );
+        assert.equal(all.body.events.length, 2);
+        assert.equal(invalid.status, 400);
+    });
 });

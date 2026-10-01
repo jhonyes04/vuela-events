@@ -12,6 +12,7 @@ const startSendSchema = z.strictObject({
     slot: z.enum(SLOT_IDS),
     eventId: z.uuid(),
     recipientRegistrationIds: z.array(z.uuid()).min(1),
+    reportDraftId: z.uuid().optional(),
 });
 
 const jobIdParamsSchema = z.object({ jobId: z.uuid() });
@@ -28,9 +29,17 @@ const startSendErrors = {
         409,
         'No tienes una contraseña de aplicación configurada en tu perfil',
     ],
-    report_generation_failed: [
-        500,
-        'No se pudo generar el acta de asistencia para adjuntarla',
+    report_draft_required: [
+        400,
+        'Genera y revisa el parte de firmas antes de enviarlo',
+    ],
+    report_draft_not_found: [
+        409,
+        'El parte de firmas generado ha caducado; genéralo de nuevo',
+    ],
+    report_draft_mismatch: [
+        409,
+        'Los destinatarios han cambiado desde que se generó el parte; genéralo de nuevo',
     ],
 } as const;
 
@@ -60,6 +69,7 @@ emailSendsRouter.post('/', async (req, res) => {
             slot: body.data.slot,
             eventId: body.data.eventId,
             recipientRegistrationIds: body.data.recipientRegistrationIds,
+            reportDraftId: body.data.reportDraftId,
         });
 
         res.status(202).json({ jobId });

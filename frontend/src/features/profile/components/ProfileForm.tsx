@@ -160,7 +160,7 @@ export function ProfileForm({
             <Button
                 type="submit"
                 size="lg"
-                className="w-full sm:w-auto sm:justify-self-start"
+                className="ms-auto w-full sm:w-auto sm:justify-self-start"
                 disabled={submitting}
             >
                 {submitting ? 'Guardando…' : submitLabel}

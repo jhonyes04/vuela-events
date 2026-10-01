@@ -23,6 +23,7 @@ import {
 import logo from '@/assets/logo.svg';
 import { cn } from '@/lib/utils';
 import { appRoutes, canAccess, type AppRoute } from '@/routes/routes';
+import { UserAvatar } from '@/components/UserAvatar';
 
 const navClass = ({ isActive }: { isActive: boolean }) =>
     cn(
@@ -175,18 +176,7 @@ export const Header = () => {
                                     type="button"
                                     className="ml-auto flex cursor-pointer items-center gap-2 rounded-md px-2 py-1 hover:bg-black/10"
                                 >
-                                    {user.avatarConfigured ? (
-                                        <img
-                                            src={`/api/profile/avatar-image?u=${user.id}`}
-                                            alt=""
-                                            className="size-9 shrink-0 rounded-full object-cover ring-2 ring-white shadow-sm"
-                                        />
-                                    ) : (
-                                        <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-brand-ink text-sm font-semibold text-white ring-2 ring-white shadow-sm">
-                                            {user.name[0]}
-                                            {user.lastName[0]}
-                                        </span>
-                                    )}
+                                    <UserAvatar user={user} />
                                     <div className="hidden max-w-56 text-right text-sm leading-tight sm:block">
                                         <p className="truncate font-medium">
                                             {user.name} {user.lastName}

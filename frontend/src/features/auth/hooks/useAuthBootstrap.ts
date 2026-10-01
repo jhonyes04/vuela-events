@@ -1,17 +1,12 @@
-import {
-    useCallback,
-    useEffect,
-    useMemo,
-    useState,
-    type ReactNode,
-} from 'react';
+import { useEffect } from 'react';
 import { useNavigate } from 'react-router';
 import { api, setUnauthorizedHandler, type User } from '@/lib/api';
-import { AuthContext } from '@/features/auth/hooks/context';
+import { useAuthStore } from '@/features/auth/store';
 
-export function AuthProvider({ children }: { children: ReactNode }) {
-    const [user, setUser] = useState<User | null>(null);
-    const [loading, setLoading] = useState(true);
+// Arranque de la sesión: se llama una sola vez, en <App />.
+export const useAuthBootstrap = () => {
+    const setUser = useAuthStore((s) => s.setUser);
+    const setLoading = useAuthStore((s) => s.setLoading);
     const navigate = useNavigate();
 
     // Cualquier 401 del servidor (sesión caducada, usuario desactivado)
@@ -23,7 +18,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         });
 
         return () => setUnauthorizedHandler(null);
-    }, [navigate]);
+    }, [navigate, setUser]);
 
     // Al arrancar, pregunta al servidor si ya hay una sesión válida.
     useEffect(() => {
@@ -43,21 +38,5 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return () => {
             cancelled = true;
         };
-    }, []);
-
-    const logout = useCallback(async () => {
-        try {
-            await api.post('/auth/logout');
-        } finally {
-            setUser(null);
-            navigate('/');
-        }
-    }, [navigate]);
-
-    const value = useMemo(
-        () => ({ user, loading, setUser, logout }),
-        [user, loading, logout],
-    );
-
-    return <AuthContext value={value}>{children}</AuthContext>;
-}
+    }, [setUser, setLoading]);
+};

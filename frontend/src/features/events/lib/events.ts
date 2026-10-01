@@ -310,6 +310,14 @@ export const listAllEvents = async (): Promise<EventItem[]> => {
     return events;
 };
 
+export const listMyEvents = async (): Promise<EventItem[]> => {
+    const { events } = await api.get<{ events: EventItem[] }>(
+        '/events?registered=1',
+    );
+
+    return events;
+};
+
 export const deleteEventById = (id: string): Promise<void> =>
     api.delete(`/events/${id}`);
 

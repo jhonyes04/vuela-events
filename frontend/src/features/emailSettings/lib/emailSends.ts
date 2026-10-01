@@ -5,7 +5,13 @@ export interface StartSendInput {
     slot: SlotId;
     eventId: string;
     recipientRegistrationIds: string[];
+    // Acta generada y revisada antes del envío (obligatoria en 'parte_firmas').
+    reportDraftId?: string;
 }
+
+// El servidor lo dice así cuando el acta caducó o los destinatarios cambiaron.
+export const isStaleDraftMessage = (message: string): boolean =>
+    message.includes('genéralo de nuevo');
 
 export const startBulkSend = async (input: StartSendInput): Promise<string> => {
     const { jobId } = await api.post<{ jobId: string }>('/email-sends', input);

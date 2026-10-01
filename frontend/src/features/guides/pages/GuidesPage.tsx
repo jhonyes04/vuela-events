@@ -6,41 +6,24 @@ import { IconTooltip } from '@/components/IconTooltip';
 import { ConfirmDeleteDialog } from '@/components/ConfirmDeleteDialog';
 import { ListErrors } from '@/features/users/components/ListErrors';
 import { GuideFormDialog } from '@/features/guides/components/GuideFormDialog';
-import {
-    deleteGuide,
-    listGuides,
-    type Guide,
-} from '@/features/guides/lib/guides';
-import { ApiError } from '@/lib/api';
+import { deleteGuide, type Guide } from '@/features/guides/lib/guides';
+import { useGuidesStore } from '@/features/guides/store';
 
 export const GuidesPage = () => {
-    const [guides, setGuides] = useState<Guide[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
+    const guides = useGuidesStore((s) => s.items);
+    const loading = useGuidesStore((s) => s.loading);
+    const error = useGuidesStore((s) => s.error);
+    const load = useGuidesStore((s) => s.load);
+    const upsert = useGuidesStore((s) => s.upsert);
+    const remove = useGuidesStore((s) => s.remove);
     const [formOpen, setFormOpen] = useState(false);
     const [editing, setEditing] = useState<Guide | null>(null);
     const [deleting, setDeleting] = useState<Guide | null>(null);
 
-    const load = async () => {
-        setLoading(true);
-        setError(null);
-
-        try {
-            setGuides(await listGuides());
-        } catch (e) {
-            setError(
-                e instanceof ApiError
-                    ? e.message
-                    : 'No se pudo cargar la lista',
-            );
-        } finally {
-            setLoading(false);
-        }
-    };
-
+    // Al entrar se refresca, pero la lista en caché se ve mientras tanto.
     useEffect(() => {
-        void Promise.resolve().then(load);
-    }, []);
+        void load(true);
+    }, [load]);
 
     const openCreate = () => {
         setEditing(null);
@@ -50,18 +33,6 @@ export const GuidesPage = () => {
     const openEdit = (guide: Guide) => {
         setEditing(guide);
         setFormOpen(true);
-    };
-
-    const handleSaved = (guide: Guide) => {
-        setGuides((prev) => {
-            const exists = prev.some((g) => g.id === guide.id);
-
-            return (
-                exists
-                    ? prev.map((g) => (g.id === guide.id ? guide : g))
-                    : [...prev, guide]
-            ).sort((a, b) => a.name.localeCompare(b.name));
-        });
     };
 
     return (
@@ -74,7 +45,7 @@ export const GuidesPage = () => {
             <ListErrors
                 error={error}
                 actionError={null}
-                onRetry={() => void load()}
+                onRetry={() => void load(true)}
             />
 
             {loading ? (
@@ -138,7 +109,7 @@ export const GuidesPage = () => {
                 open={formOpen}
                 onOpenChange={setFormOpen}
                 guide={editing}
-                onSaved={handleSaved}
+                onSaved={upsert}
             />
 
             {deleting && (
@@ -152,9 +123,7 @@ export const GuidesPage = () => {
                     errorFallback="No se pudo eliminar la guía"
                     onConfirm={() => deleteGuide(deleting.id)}
                     onDeleted={() => {
-                        setGuides((prev) =>
-                            prev.filter((g) => g.id !== deleting.id),
-                        );
+                        remove(deleting.id);
                         setDeleting(null);
                     }}
                 />

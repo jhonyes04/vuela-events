@@ -10,6 +10,7 @@ import {
     clearSignatureImage,
     getSignatureImage,
 } from '../services/profile.js';
+import { getSentReportPdf, listSentReports } from '../services/sentReports.js';
 
 // Firma la genera cualquier lector de imágenes normal: cabe de sobra en 300KB.
 const MAX_SIGNATURE_BYTES = 300 * 1024;
@@ -49,6 +50,12 @@ const appPasswordSchema = z.strictObject({
 const signatureSchema = z.strictObject({
     imageBase64: z.string().min(1),
 });
+
+const reportsQuerySchema = z.object({
+    q: z.string().trim().max(120).optional(),
+});
+
+const reportParamsSchema = z.object({ id: z.uuid() });
 
 export const profileRouter = Router();
 
@@ -223,4 +230,54 @@ profileRouter.get('/avatar-image', requireAuth, async (req, res) => {
     res.setHeader('Cache-Control', 'private, no-store');
     res.setHeader('Content-Type', row.avatarImageType ?? 'image/jpeg');
     res.send(Buffer.from(row.avatarImage));
+});
+
+// Partes de firmas enviados por mí o recibidos por mí, del más reciente al más antiguo.
+profileRouter.get('/reports', requireAuth, async (req, res) => {
+    const actor = req.user;
+
+    if (!actor) {
+        res.status(401).json({ error: 'Autenticación requerida' });
+        return;
+    }
+
+    const query = reportsQuerySchema.safeParse(req.query);
+
+    if (!query.success) {
+        res.status(400).json({ error: 'Solicitud no válida' });
+        return;
+    }
+
+    res.json({ reports: await listSentReports(actor.id, query.data.q) });
+});
+
+// Descarga el acta original (la que se adjuntó al correo).
+profileRouter.get('/reports/:id/pdf', requireAuth, async (req, res) => {
+    const actor = req.user;
+    const params = reportParamsSchema.safeParse(req.params);
+
+    if (!actor) {
+        res.status(401).json({ error: 'Autenticación requerida' });
+        return;
+    }
+
+    if (!params.success) {
+        res.status(400).json({ error: 'Solicitud no válida' });
+        return;
+    }
+
+    const report = await getSentReportPdf(actor.id, params.data.id);
+
+    if (!report) {
+        res.status(404).json({ error: 'Acta no encontrada' });
+        return;
+    }
+
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Cache-Control', 'private, no-store');
+    res.setHeader(
+        'Content-Disposition',
+        "attachment; filename*=UTF-8''" + encodeURIComponent(report.filename),
+    );
+    res.send(report.pdf);
 });

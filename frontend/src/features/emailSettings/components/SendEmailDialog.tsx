@@ -13,6 +13,7 @@ import {
 import { ApiError } from '@/lib/api';
 import {
     getSendJobStatus,
+    isStaleDraftMessage,
     startBulkSend,
     type SendJobStatus,
 } from '@/features/emailSettings/lib/emailSends';
@@ -26,6 +27,8 @@ interface SendEmailBodyProps {
     slotLabel: string;
     eventId: string;
     recipients: Attendee[];
+    reportDraftId?: string;
+    onDraftRejected?: () => void;
     status: SendJobStatus | null;
     setStatus: (status: SendJobStatus | null) => void;
     onClose: () => void;
@@ -36,6 +39,8 @@ const SendEmailBody = ({
     slotLabel,
     eventId,
     recipients,
+    reportDraftId,
+    onDraftRejected,
     status,
     setStatus,
     onClose,
@@ -73,11 +78,18 @@ const SendEmailBody = ({
                 slot,
                 eventId,
                 recipientRegistrationIds,
+                reportDraftId,
             });
 
             poll(jobId);
         } catch (err) {
             setSending(false);
+
+            // El acta caducó o cambiaron los destinatarios: hay que generarla de nuevo.
+            if (err instanceof ApiError && isStaleDraftMessage(err.message)) {
+                onDraftRejected?.();
+            }
+
             setError(
                 err instanceof ApiError
                     ? err.message
@@ -273,6 +285,9 @@ interface SendEmailDialogProps {
     slotLabel: string;
     eventId: string;
     recipients: Attendee[];
+    // Acta generada y revisada (solo para el parte de firmas).
+    reportDraftId?: string;
+    onDraftRejected?: () => void;
 }
 
 export const SendEmailDialog = ({
@@ -283,6 +298,8 @@ export const SendEmailDialog = ({
     slotLabel,
     eventId,
     recipients,
+    reportDraftId,
+    onDraftRejected,
 }: SendEmailDialogProps) => {
     const [status, setStatus] = useState<SendJobStatus | null>(null);
 
@@ -302,6 +319,8 @@ export const SendEmailDialog = ({
                 slotLabel={slotLabel}
                 eventId={eventId}
                 recipients={recipients}
+                reportDraftId={reportDraftId}
+                onDraftRejected={onDraftRejected}
                 status={status}
                 setStatus={setStatus}
                 onClose={() => handleOpenChange(false)}

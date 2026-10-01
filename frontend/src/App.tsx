@@ -1,5 +1,6 @@
 import { OverlayScrollbarsComponent } from 'overlayscrollbars-react';
 import { useAuth } from '@/features/auth/hooks/context';
+import { useAuthBootstrap } from '@/features/auth/hooks/useAuthBootstrap';
 import { Header } from '@/components/Header';
 import { LoginPage } from '@/features/auth/pages/LoginPage';
 import { OnboardingPage } from '@/features/profile/pages/OnboardingPage';
@@ -7,6 +8,8 @@ import { AppRoutes } from '@/routes/AppRoutes';
 import { scrollbarOptions } from '@/lib/overlayScrollbarsOptions';
 
 export default function App() {
+    useAuthBootstrap();
+
     const { user, loading } = useAuth();
 
     return (

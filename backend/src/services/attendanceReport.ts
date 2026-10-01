@@ -18,6 +18,14 @@ const timeFormat = new Intl.DateTimeFormat('es-ES', {
     hourCycle: 'h23',
 });
 
+// en-CA da directamente el formato YYYY-MM-DD.
+const fileDateFormat = new Intl.DateTimeFormat('en-CA', {
+    timeZone: TZ,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+});
+
 export type AttendanceReportFailure = 'event_not_found' | 'no_recipients';
 
 export class AttendanceReportError extends Error {
@@ -37,9 +45,14 @@ interface GenerateInput {
     signerUserId: string;
 }
 
+export interface AttendanceReportFile {
+    pdf: Buffer;
+    filename: string;
+}
+
 export const generateAttendanceReport = async (
     input: GenerateInput,
-): Promise<Buffer> => {
+): Promise<AttendanceReportFile> => {
     if (input.recipientRegistrationIds.length === 0) {
         throw new AttendanceReportError('no_recipients');
     }
@@ -81,12 +94,17 @@ export const generateAttendanceReport = async (
 
     const signatureImage = await getSignatureImage(input.signerUserId);
 
-    return renderPdf({
+    const pdf = await renderPdf({
         event,
         attendees: registrations.map((r) => r.user),
         signerName: signer ? `${signer.name} ${signer.lastName}`.trim() : '',
         signatureImage,
     });
+
+    return {
+        pdf,
+        filename: `${fileDateFormat.format(event.startsAt)} Acta de asistencia ${event.title}.pdf`,
+    };
 };
 
 interface RenderInput {

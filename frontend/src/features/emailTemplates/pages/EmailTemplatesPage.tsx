@@ -8,39 +8,25 @@ import { ListErrors } from '@/features/users/components/ListErrors';
 import { EmailTemplateFormDialog } from '@/features/emailTemplates/components/EmailTemplateFormDialog';
 import {
     deleteEmailTemplate,
-    listEmailTemplates,
     type EmailTemplate,
 } from '@/features/emailTemplates/lib/emailTemplates';
-import { ApiError } from '@/lib/api';
+import { useEmailTemplatesStore } from '@/features/emailTemplates/store';
 
 export const EmailTemplatesPage = () => {
-    const [templates, setTemplates] = useState<EmailTemplate[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
+    const templates = useEmailTemplatesStore((s) => s.items);
+    const loading = useEmailTemplatesStore((s) => s.loading);
+    const error = useEmailTemplatesStore((s) => s.error);
+    const load = useEmailTemplatesStore((s) => s.load);
+    const upsert = useEmailTemplatesStore((s) => s.upsert);
+    const remove = useEmailTemplatesStore((s) => s.remove);
     const [formOpen, setFormOpen] = useState(false);
     const [editing, setEditing] = useState<EmailTemplate | null>(null);
     const [deleting, setDeleting] = useState<EmailTemplate | null>(null);
 
-    const load = async () => {
-        setLoading(true);
-        setError(null);
-
-        try {
-            setTemplates(await listEmailTemplates());
-        } catch (e) {
-            setError(
-                e instanceof ApiError
-                    ? e.message
-                    : 'No se pudo cargar la lista',
-            );
-        } finally {
-            setLoading(false);
-        }
-    };
-
+    // Al entrar se refresca, pero la lista en caché se ve mientras tanto.
     useEffect(() => {
-        void Promise.resolve().then(load);
-    }, []);
+        void load(true);
+    }, [load]);
 
     const openCreate = () => {
         setEditing(null);
@@ -50,18 +36,6 @@ export const EmailTemplatesPage = () => {
     const openEdit = (template: EmailTemplate) => {
         setEditing(template);
         setFormOpen(true);
-    };
-
-    const handleSaved = (template: EmailTemplate) => {
-        setTemplates((prev) => {
-            const exists = prev.some((t) => t.id === template.id);
-
-            return (
-                exists
-                    ? prev.map((t) => (t.id === template.id ? template : t))
-                    : [...prev, template]
-            ).sort((a, b) => a.name.localeCompare(b.name));
-        });
     };
 
     return (
@@ -76,7 +50,7 @@ export const EmailTemplatesPage = () => {
             <ListErrors
                 error={error}
                 actionError={null}
-                onRetry={() => void load()}
+                onRetry={() => void load(true)}
             />
 
             {loading ? (
@@ -134,7 +108,7 @@ export const EmailTemplatesPage = () => {
                 open={formOpen}
                 onOpenChange={setFormOpen}
                 template={editing}
-                onSaved={handleSaved}
+                onSaved={upsert}
             />
 
             {deleting && (
@@ -148,9 +122,7 @@ export const EmailTemplatesPage = () => {
                     errorFallback="No se pudo eliminar la plantilla"
                     onConfirm={() => deleteEmailTemplate(deleting.id)}
                     onDeleted={() => {
-                        setTemplates((prev) =>
-                            prev.filter((t) => t.id !== deleting.id),
-                        );
+                        remove(deleting.id);
                         setDeleting(null);
                     }}
                 />

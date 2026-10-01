@@ -8,6 +8,7 @@ import { SortableHeader } from '@/components/SortableHeader';
 import { usePagination } from '@/hooks/usePagination';
 import { useSort } from '@/hooks/useSort';
 import { scrollbarOptions } from '@/lib/overlayScrollbarsOptions';
+import { useRolesStore } from '@/features/users/store';
 import { api, ApiError } from '@/lib/api';
 
 interface AdminUser {
@@ -20,18 +21,14 @@ interface AdminUser {
     role: { id: string; name: string };
 }
 
-interface RoleOption {
-    id: string;
-    name: string;
-}
-
 const selectClass =
     'h-8 rounded-lg border border-input bg-transparent px-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50';
 
 export const UsersPage = () => {
     const { user: me } = useAuth();
     const [users, setUsers] = useState<AdminUser[]>([]);
-    const [roles, setRoles] = useState<RoleOption[]>([]);
+    const roles = useRolesStore((s) => s.items);
+    const loadRoles = useRolesStore((s) => s.load);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [busyId, setBusyId] = useState<string | null>(null);
@@ -61,13 +58,12 @@ export const UsersPage = () => {
         setError(null);
 
         try {
-            const [usersRes, rolesRes] = await Promise.all([
+            const [usersRes] = await Promise.all([
                 api.get<{ users: AdminUser[] }>('/users'),
-                api.get<{ roles: RoleOption[] }>('/roles'),
+                loadRoles(true),
             ]);
 
             setUsers(usersRes.users);
-            setRoles(rolesRes.roles);
         } catch (e) {
             setError(
                 e instanceof ApiError

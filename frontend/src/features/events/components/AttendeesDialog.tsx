@@ -11,7 +11,9 @@ import {
 } from '@/components/ui/dialog';
 import { AttendeeChips } from '@/features/events/components/AttendeeChips';
 import { SendEmailDialog } from '@/features/emailSettings/components/SendEmailDialog';
+import { ReportPreviewDialog } from '@/features/events/components/ReportPreviewDialog';
 import { useAttendees } from '@/features/events/hooks/useAttendees';
+import { useReportDraft } from '@/features/events/hooks/useReportDraft';
 import { scrollbarOptions } from '@/lib/overlayScrollbarsOptions';
 import type { EventItem } from '@/features/events/lib/events';
 import type { SlotId } from '@/features/emailSettings/lib/emailSettings';
@@ -29,8 +31,15 @@ const AttendeesBody = ({ event, onCloseAll }: AttendeesBodyProps) => {
 
     const [selected, setSelected] = useState<Set<string>>(new Set());
     const [sendSlot, setSendSlot] = useState<SlotId | null>(null);
+    const [previewOpen, setPreviewOpen] = useState(false);
+    const { draft, generating, error, generate, clear } = useReportDraft(
+        event.id,
+    );
 
-    const toggle = (id: string) =>
+    // Cambiar la selección invalida el parte generado: hay que volver a generarlo.
+    const toggle = (id: string) => {
+        clear();
+        setPreviewOpen(false);
         setSelected((prev) => {
             const next = new Set(prev);
 
@@ -42,6 +51,17 @@ const AttendeesBody = ({ event, onCloseAll }: AttendeesBodyProps) => {
 
             return next;
         });
+    };
+
+    // Primero se genera y se visualiza; con el parte generado, el mismo botón envía.
+    const handleReportClick = async () => {
+        if (draft) {
+            setSendSlot('parte_firmas');
+            return;
+        }
+
+        if (await generate([...selected])) setPreviewOpen(true);
+    };
 
     return (
         <DialogContent className="sm:max-w-md">
@@ -81,6 +101,12 @@ const AttendeesBody = ({ event, onCloseAll }: AttendeesBodyProps) => {
                 </OverlayScrollbarsComponent>
             )}
 
+            {error && (
+                <p role="alert" className="text-sm text-destructive">
+                    {error}
+                </p>
+            )}
+
             <DialogFooter>
                 <Button
                     variant="outline"
@@ -89,14 +115,35 @@ const AttendeesBody = ({ event, onCloseAll }: AttendeesBodyProps) => {
                 >
                     Enviar convocatoria
                 </Button>
+                {draft && (
+                    <Button
+                        variant="outline"
+                        onClick={() => setPreviewOpen(true)}
+                    >
+                        Ver parte
+                    </Button>
+                )}
                 <Button
                     variant="outline"
-                    disabled={selected.size === 0}
-                    onClick={() => setSendSlot('parte_firmas')}
+                    disabled={selected.size === 0 || generating}
+                    onClick={() => void handleReportClick()}
                 >
-                    Enviar parte de firmas
+                    {generating
+                        ? 'Generando…'
+                        : draft
+                          ? 'Enviar parte de firmas'
+                          : 'Generar parte de firmas'}
                 </Button>
             </DialogFooter>
+
+            {draft && (
+                <ReportPreviewDialog
+                    open={previewOpen}
+                    onOpenChange={setPreviewOpen}
+                    url={draft.url}
+                    filename={draft.filename}
+                />
+            )}
 
             {sendSlot && (
                 <SendEmailDialog
@@ -114,6 +161,10 @@ const AttendeesBody = ({ event, onCloseAll }: AttendeesBodyProps) => {
                     }
                     eventId={event.id}
                     recipients={attendees.filter((a) => selected.has(a.id))}
+                    reportDraftId={
+                        sendSlot === 'parte_firmas' ? draft?.id : undefined
+                    }
+                    onDraftRejected={clear}
                 />
             )}
         </DialogContent>

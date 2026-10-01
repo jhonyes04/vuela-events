@@ -2,6 +2,13 @@ import { useRef, useState } from 'react';
 import { CircleAlert, CircleCheck } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
 import { ApiError, type User } from '@/lib/api';
 import {
     clearSignatureImage,
@@ -17,16 +24,13 @@ const fileToBase64 = (file: File): Promise<string> =>
 
         reader.onload = () => {
             const result = reader.result as string;
-            // "data:image/png;base64,AAAA..." -> solo la parte tras la coma.
+
             resolve(result.slice(result.indexOf(',') + 1));
         };
         reader.onerror = () => reject(reader.error);
         reader.readAsDataURL(file);
     });
 
-// Gestiona la imagen de firma estampada en el acta de asistencia en PDF.
-// Solo PNG, máximo 300KB. Nunca se incrusta en AuthUser: se previsualiza
-// pidiéndola aparte a /profile/signature-image.
 export function SignatureSection({
     user,
     onSaved,
@@ -38,18 +42,20 @@ export function SignatureSection({
     const [saved, setSaved] = useState(false);
     const [submitting, setSubmitting] = useState(false);
     const [previewVersion, setPreviewVersion] = useState(0);
-    const [mode, setMode] = useState<'upload' | 'draw'>('upload');
+    const [drawOpen, setDrawOpen] = useState(false);
     const inputRef = useRef<HTMLInputElement>(null);
 
     const handleSaveBase64 = async (imageBase64: string) => {
         setError(null);
         setSaved(false);
+        setDrawOpen(false);
         setSubmitting(true);
 
         try {
             const configured = await setSignatureImage(imageBase64);
 
             setSaved(true);
+            setDrawOpen(false);
             setPreviewVersion((v) => v + 1);
             onSaved(configured);
         } catch (err) {
@@ -114,8 +120,8 @@ export function SignatureSection({
                 </h2>
                 <p className="text-sm text-muted-foreground">
                     Imagen PNG de tu firma (recorta solo el trazo, fondo
-                    transparente si puedes). Se estampa en el acta de
-                    asistencia que se genera al enviar el parte de firmas.
+                    transparente si puedes). Se estampa en el acta de asistencia
+                    que se genera al enviar el parte de firmas.
                 </p>
             </div>
 
@@ -154,68 +160,63 @@ export function SignatureSection({
                 </Alert>
             )}
 
-            <div className="flex gap-2">
+            <input
+                ref={inputRef}
+                type="file"
+                accept="image/png"
+                className="hidden"
+                onChange={(e) => {
+                    const file = e.target.files?.[0];
+
+                    if (file) void handleFileChange(file);
+                }}
+            />
+
+            <div className="flex gap-2 ms-auto">
                 <Button
                     type="button"
-                    variant={mode === 'upload' ? 'default' : 'outline'}
-                    onClick={() => setMode('upload')}
+                    disabled={submitting}
+                    onClick={() => inputRef.current?.click()}
                 >
-                    Subir imagen
+                    {submitting ? 'Guardando…' : 'Subir imagen'}
                 </Button>
                 <Button
                     type="button"
-                    variant={mode === 'draw' ? 'default' : 'outline'}
-                    onClick={() => setMode('draw')}
+                    variant="default"
+                    disabled={submitting}
+                    onClick={() => setDrawOpen(true)}
                 >
-                    Dibujar con el ratón
+                    Crear firma
                 </Button>
-            </div>
-
-            {mode === 'draw' ? (
-                <SignatureCanvas
-                    onSave={(imageBase64) =>
-                        void handleSaveBase64(imageBase64)
-                    }
-                    saving={submitting}
-                />
-            ) : (
-                <div className="flex gap-2">
-                    <input
-                        ref={inputRef}
-                        type="file"
-                        accept="image/png"
-                        className="hidden"
-                        onChange={(e) => {
-                            const file = e.target.files?.[0];
-
-                            if (file) void handleFileChange(file);
-                        }}
-                    />
+                {user.signatureConfigured && (
                     <Button
                         type="button"
+                        variant="destructive"
                         disabled={submitting}
-                        onClick={() => inputRef.current?.click()}
+                        className="w-fit"
+                        onClick={() => void handleClear()}
                     >
-                        {submitting
-                            ? 'Guardando…'
-                            : user.signatureConfigured
-                              ? 'Reemplazar firma'
-                              : 'Subir firma'}
+                        Quitar
                     </Button>
-                </div>
-            )}
+                )}
+            </div>
 
-            {user.signatureConfigured && (
-                <Button
-                    type="button"
-                    variant="outline"
-                    disabled={submitting}
-                    className="w-fit"
-                    onClick={() => void handleClear()}
-                >
-                    Quitar
-                </Button>
-            )}
+            <Dialog open={drawOpen} onOpenChange={setDrawOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Crear firma</DialogTitle>
+                        <DialogDescription>
+                            Dibuja tu firma con el ratón o el dedo.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <SignatureCanvas
+                        onSave={(imageBase64) =>
+                            void handleSaveBase64(imageBase64)
+                        }
+                        saving={submitting}
+                    />
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }

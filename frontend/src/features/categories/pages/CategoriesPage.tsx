@@ -8,40 +8,26 @@ import { ListErrors } from '@/features/users/components/ListErrors';
 import { CategoryFormDialog } from '@/features/categories/components/CategoryFormDialog';
 import {
     deleteCategory,
-    listCategories,
     type Category,
 } from '@/features/categories/lib/categories';
 import { CATEGORY_COLOR_STYLES } from '@/features/categories/lib/colors';
-import { ApiError } from '@/lib/api';
+import { useCategoriesStore } from '@/features/categories/store';
 
 export const CategoriesPage = () => {
-    const [categories, setCategories] = useState<Category[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
+    const categories = useCategoriesStore((s) => s.items);
+    const loading = useCategoriesStore((s) => s.loading);
+    const error = useCategoriesStore((s) => s.error);
+    const load = useCategoriesStore((s) => s.load);
+    const upsert = useCategoriesStore((s) => s.upsert);
+    const remove = useCategoriesStore((s) => s.remove);
     const [formOpen, setFormOpen] = useState(false);
     const [editing, setEditing] = useState<Category | null>(null);
     const [deleting, setDeleting] = useState<Category | null>(null);
 
-    const load = async () => {
-        setLoading(true);
-        setError(null);
-
-        try {
-            setCategories(await listCategories());
-        } catch (e) {
-            setError(
-                e instanceof ApiError
-                    ? e.message
-                    : 'No se pudo cargar la lista',
-            );
-        } finally {
-            setLoading(false);
-        }
-    };
-
+    // Al entrar se refresca, pero la lista en caché se ve mientras tanto.
     useEffect(() => {
-        void Promise.resolve().then(load);
-    }, []);
+        void load(true);
+    }, [load]);
 
     const openCreate = () => {
         setEditing(null);
@@ -51,18 +37,6 @@ export const CategoriesPage = () => {
     const openEdit = (category: Category) => {
         setEditing(category);
         setFormOpen(true);
-    };
-
-    const handleSaved = (category: Category) => {
-        setCategories((prev) => {
-            const exists = prev.some((c) => c.id === category.id);
-
-            return (
-                exists
-                    ? prev.map((c) => (c.id === category.id ? category : c))
-                    : [...prev, category]
-            ).sort((a, b) => a.name.localeCompare(b.name));
-        });
     };
 
     return (
@@ -75,7 +49,7 @@ export const CategoriesPage = () => {
             <ListErrors
                 error={error}
                 actionError={null}
-                onRetry={() => void load()}
+                onRetry={() => void load(true)}
             />
 
             {loading ? (
@@ -131,7 +105,7 @@ export const CategoriesPage = () => {
                 open={formOpen}
                 onOpenChange={setFormOpen}
                 category={editing}
-                onSaved={handleSaved}
+                onSaved={upsert}
             />
 
             {deleting && (
@@ -145,9 +119,7 @@ export const CategoriesPage = () => {
                     errorFallback="No se pudo eliminar la categoría"
                     onConfirm={() => deleteCategory(deleting.id)}
                     onDeleted={() => {
-                        setCategories((prev) =>
-                            prev.filter((c) => c.id !== deleting.id),
-                        );
+                        remove(deleting.id);
                         setDeleting(null);
                     }}
                 />

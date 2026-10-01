@@ -19,10 +19,7 @@ import {
     type SmtpConfig,
     type TemplateAssignment,
 } from '@/features/emailSettings/lib/emailSettings';
-import {
-    listEmailTemplates,
-    type EmailTemplate,
-} from '@/features/emailTemplates/lib/emailTemplates';
+import { useEmailTemplatesStore } from '@/features/emailTemplates/store';
 import { ApiError } from '@/lib/api';
 
 const SLOT_LABELS: Record<SlotId, string> = {
@@ -37,7 +34,8 @@ export const EmailSettingsPage = () => {
     const [error, setError] = useState<string | null>(null);
     const [smtp, setSmtp] = useState<SmtpConfig>(EMPTY_SMTP);
     const [assignments, setAssignments] = useState<TemplateAssignment[]>([]);
-    const [templates, setTemplates] = useState<EmailTemplate[]>([]);
+    const templates = useEmailTemplatesStore((s) => s.items);
+    const loadTemplates = useEmailTemplatesStore((s) => s.load);
     const [savingSmtp, setSavingSmtp] = useState(false);
     const [smtpNotice, setSmtpNotice] = useState<string | null>(null);
     const [smtpError, setSmtpError] = useState<string | null>(null);
@@ -50,14 +48,16 @@ export const EmailSettingsPage = () => {
         setError(null);
 
         try {
-            const [settings, templateList] = await Promise.all([
+            // Las plantillas vienen de la caché compartida; se refrescan al entrar.
+            const [settings] = await Promise.all([
                 getEmailSettings(),
-                listEmailTemplates(),
+                loadTemplates(true),
             ]);
 
             setSmtp(settings.smtpConfig ?? EMPTY_SMTP);
             setAssignments(settings.templateAssignments);
-            setTemplates(templateList);
+            // El store no lanza: deja su fallo en `error`.
+            setError(useEmailTemplatesStore.getState().error);
         } catch (e) {
             setError(
                 e instanceof ApiError

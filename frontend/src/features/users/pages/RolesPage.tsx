@@ -9,14 +9,9 @@ import { CreateRoleDialog } from '@/features/users/components/CreateRoleDialog';
 import { ListErrors } from '@/features/users/components/ListErrors';
 import { RolePermissionsDialog } from '@/features/users/components/RolePermissionsDialog';
 import { scrollbarOptions } from '@/lib/overlayScrollbarsOptions';
+import { useRolesStore } from '@/features/users/store';
+import type { Role } from '@/features/users/lib/roles';
 import { api, ApiError } from '@/lib/api';
-
-interface RoleRow {
-    id: string;
-    name: string;
-    protected: boolean;
-    permissions: { permissionId: string }[];
-}
 
 interface PermissionOption {
     id: string;
@@ -24,42 +19,51 @@ interface PermissionOption {
 }
 
 export const RolesPage = () => {
-    const [roles, setRoles] = useState<RoleRow[]>([]);
+    const roles = useRolesStore((s) => s.items);
+    const rolesLoading = useRolesStore((s) => s.loading);
+    const rolesError = useRolesStore((s) => s.error);
+    const loadRoles = useRolesStore((s) => s.load);
+    const removeRole = useRolesStore((s) => s.remove);
     const [permissions, setPermissions] = useState<PermissionOption[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
+    const [permissionsLoading, setPermissionsLoading] = useState(true);
+    const [permissionsError, setPermissionsError] = useState<string | null>(
+        null,
+    );
     const [editingId, setEditingId] = useState<string | null>(null);
     const [permissionsOpen, setPermissionsOpen] = useState(false);
-    const [deleting, setDeleting] = useState<RoleRow | null>(null);
+    const [deleting, setDeleting] = useState<Role | null>(null);
 
-    const load = async () => {
-        setLoading(true);
-        setError(null);
+    const loadPermissions = async () => {
+        setPermissionsLoading(true);
+        setPermissionsError(null);
 
         try {
-            const [rolesRes, permissionsRes] = await Promise.all([
-                api.get<{ roles: RoleRow[] }>('/roles'),
-                api.get<{ permissions: PermissionOption[] }>(
-                    '/roles/permissions',
-                ),
-            ]);
+            const res = await api.get<{ permissions: PermissionOption[] }>(
+                '/roles/permissions',
+            );
 
-            setRoles(rolesRes.roles);
-            setPermissions(permissionsRes.permissions);
+            setPermissions(res.permissions);
         } catch (e) {
-            setError(
+            setPermissionsError(
                 e instanceof ApiError
                     ? e.message
                     : 'No se pudo cargar la lista',
             );
         } finally {
-            setLoading(false);
+            setPermissionsLoading(false);
         }
     };
 
+    const load = () => Promise.all([loadRoles(true), loadPermissions()]);
+
+    // Al entrar se refresca, pero los roles en caché se ven mientras tanto.
     useEffect(() => {
-        void Promise.resolve().then(load);
-    }, []);
+        void loadRoles(true);
+        void Promise.resolve().then(loadPermissions);
+    }, [loadRoles]);
+
+    const loading = rolesLoading || permissionsLoading;
+    const error = rolesError ?? permissionsError;
 
     const openPermissions = (roleId: string) => {
         setEditingId(roleId);
@@ -184,9 +188,7 @@ export const RolesPage = () => {
                     errorFallback="No se pudo eliminar el rol"
                     onConfirm={() => api.delete(`/roles/${deleting.id}`)}
                     onDeleted={() => {
-                        setRoles((prev) =>
-                            prev.filter((r) => r.id !== deleting.id),
-                        );
+                        removeRole(deleting.id);
                         setDeleting(null);
                     }}
                 />

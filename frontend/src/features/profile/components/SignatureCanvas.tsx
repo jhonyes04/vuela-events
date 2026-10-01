@@ -92,14 +92,7 @@ export function SignatureCanvas({
                 onPointerUp={handlePointerUp}
                 onPointerLeave={handlePointerUp}
             />
-            <div className="flex gap-2">
-                <Button
-                    type="button"
-                    disabled={!hasDrawing || saving}
-                    onClick={handleSave}
-                >
-                    {saving ? 'Guardando…' : 'Guardar firma'}
-                </Button>
+            <div className="flex gap-2 justify-between">
                 <Button
                     type="button"
                     variant="outline"
@@ -107,6 +100,13 @@ export function SignatureCanvas({
                     onClick={handleClear}
                 >
                     Volver a intentar
+                </Button>
+                <Button
+                    type="button"
+                    disabled={!hasDrawing || saving}
+                    onClick={handleSave}
+                >
+                    {saving ? 'Guardando…' : 'Guardar firma'}
                 </Button>
             </div>
         </div>

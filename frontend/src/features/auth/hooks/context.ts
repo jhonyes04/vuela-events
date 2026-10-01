@@ -1,22 +1,29 @@
-import { createContext, useContext } from 'react';
-import type { User } from '@/lib/api';
+import { useCallback } from 'react';
+import { useNavigate } from 'react-router';
+import { api, type User } from '@/lib/api';
+import { useAuthStore } from '@/features/auth/store';
 
-export interface AuthContextValue {
+export interface AuthValue {
     user: User | null;
-    // true mientras se comprueba si ya hay una sesión abierta
     loading: boolean;
     setUser: (user: User | null) => void;
     logout: () => Promise<void>;
 }
 
-export const AuthContext = createContext<AuthContextValue | null>(null);
+export const useAuth = (): AuthValue => {
+    const user = useAuthStore((s) => s.user);
+    const loading = useAuthStore((s) => s.loading);
+    const setUser = useAuthStore((s) => s.setUser);
+    const navigate = useNavigate();
 
-export const useAuth = (): AuthContextValue => {
-    const value = useContext(AuthContext);
+    const logout = useCallback(async () => {
+        try {
+            await api.post('/auth/logout');
+        } finally {
+            setUser(null);
+            navigate('/');
+        }
+    }, [navigate, setUser]);
 
-    if (!value) {
-        throw new Error('useAuth debe usarse dentro de <AuthProvider>');
-    }
-
-    return value;
+    return { user, loading, setUser, logout };
 };

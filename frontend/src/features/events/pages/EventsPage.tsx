@@ -19,25 +19,18 @@ import {
 } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { useMonthEvents } from '@/features/events/hooks/useMonthEvents';
+import { currentMonth, useEventsStore } from '@/features/events/store';
 import {
     dayKey,
     formatMonthLabel,
     type EventItem,
 } from '@/features/events/lib/events';
 
-// Mes actual según la hora de Madrid.
-const currentMonth = () => {
-    const [year, month] = dayKey(new Date().toISOString())
-        .split('-')
-        .map(Number);
-
-    return { year: year!, month: month! - 1 };
-};
-
 export function EventsPage() {
     const { user } = useAuth();
     const canCreate = user?.permissions.includes('events:create') ?? false;
-    const [cursor, setCursor] = useState(currentMonth);
+    const cursor = useEventsStore((s) => s.cursor);
+    const setCursor = useEventsStore((s) => s.setCursor);
     const { events, loading, error, reload } = useMonthEvents(
         cursor.year,
         cursor.month,

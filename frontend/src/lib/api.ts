@@ -91,3 +91,81 @@ export const api = {
     patch: <T>(path: string, body?: unknown) => request<T>('PATCH', path, body),
     delete: <T = void>(path: string) => request<T>('DELETE', path),
 };
+
+// Nombre del fichero según Content-Disposition (admite filename*=UTF-8'').
+const filenameFrom = (res: Response, fallback: string): string => {
+    const header = res.headers.get('Content-Disposition') ?? '';
+    const encoded = /filename\*=UTF-8''([^;]+)/i.exec(header)?.[1];
+
+    if (!encoded) return fallback;
+
+    try {
+        return decodeURIComponent(encoded);
+    } catch {
+        return fallback;
+    }
+};
+
+interface FileResponse {
+    blob: Blob;
+    filename: string;
+    headers: Headers;
+}
+
+// Pide un fichero (p. ej. un PDF) y lo devuelve en memoria, con su nombre y cabeceras.
+export const requestFile = async (
+    method: 'GET' | 'POST',
+    path: string,
+    fallbackName: string,
+    body?: unknown,
+): Promise<FileResponse> => {
+    let res: Response;
+
+    try {
+        res = await fetch(`/api${path}`, {
+            method,
+            headers:
+                body === undefined
+                    ? undefined
+                    : { 'Content-Type': 'application/json' },
+            body: body === undefined ? undefined : JSON.stringify(body),
+            credentials: 'same-origin',
+            signal: AbortSignal.timeout(30_000),
+        });
+    } catch {
+        throw new ApiError(0, 'No se pudo conectar con el servidor');
+    }
+
+    if (!res.ok) {
+        if (res.status === 401) {
+            unauthorizedHandler?.();
+        }
+
+        const data: unknown = await res.json().catch(() => null);
+
+        throw new ApiError(res.status, errorMessageFrom(data));
+    }
+
+    return {
+        blob: await res.blob(),
+        filename: filenameFrom(res, fallbackName),
+        headers: res.headers,
+    };
+};
+
+// Descarga un fichero y lo guarda con el diálogo del navegador.
+export const downloadFile = async (
+    path: string,
+    fallbackName: string,
+): Promise<void> => {
+    const { blob, filename } = await requestFile('GET', path, fallbackName);
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+};

@@ -1,0 +1,19 @@
+// Copia del acta de asistencia (PDF) tal y como se adjuntó al correo del parte
+// de firmas: con la firma de quien lo envió, para poder descargarla después.
+model SentReport {
+    id                  String      @id @default(uuid()) @db.Uuid
+    eventId             String      @db.Uuid
+    senderId            String      @db.Uuid
+    filename            String      @db.VarChar(300)
+    pdf                 Bytes
+    // Personas a las que se les entregó el correo (sin errores de envío).
+    recipientUserIds    String[]    @db.Uuid
+    createdAt           DateTime    @default(now())
+
+    event               Event       @relation(fields: [eventId], references: [id], onDelete: Cascade)
+    sender              User        @relation("ReportSender", fields: [senderId], references: [id], onDelete: Cascade)
+
+    @@index([eventId])
+    @@index([senderId])
+    @@map("sent_reports")
+}

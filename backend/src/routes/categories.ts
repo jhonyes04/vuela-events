@@ -40,6 +40,10 @@ categoriesRouter.get(
         'categories:create',
         'categories:edit',
         'categories:delete',
+        // El formulario de eventos necesita elegir categoría.
+        'events:create',
+        'events:create_recurring',
+        'events:edit',
     ),
     async (_req, res) => {
         const categories = await listCategories();

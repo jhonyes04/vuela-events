@@ -27,6 +27,7 @@ import {
     generateAttendanceReport,
     AttendanceReportError,
 } from '../services/attendanceReport.js';
+import { createReportDraft } from '../services/reportDrafts.js';
 
 // Campos comunes a un evento suelto y a una serie.
 const eventFields = {
@@ -108,6 +109,7 @@ const seriesErrors = {
 const listQuerySchema = z.object({
     from: z.iso.datetime().optional(),
     to: z.iso.datetime().optional(),
+    registered: z.literal('1').optional(),
 });
 
 const eventSelect = {
@@ -174,12 +176,15 @@ eventsRouter.get('/', async (req, res) => {
         return;
     }
 
-    const { from, to } = query.data;
+    const { from, to, registered } = query.data;
 
     const rows = await prisma.event.findMany({
         where: {
             ...(from && { endsAt: { gte: new Date(from) } }),
             ...(to && { startsAt: { lte: new Date(to) } }),
+            ...(registered && {
+                registrations: { some: { userId: actor.id } },
+            }),
         },
         select: {
             ...eventSelect,
@@ -546,7 +551,7 @@ eventsRouter.delete('/:id/registrations', async (req, res) => {
     }
 });
 
-// Genera el acta de asistencia en PDF de los seleccionados y la descarga.
+// Genera el acta de asistencia en PDF de los seleccionados (borrador para revisar y enviar).
 eventsRouter.post(
     '/:id/attendance-report',
     requirePermission('email:send'),
@@ -572,16 +577,29 @@ eventsRouter.post(
         }
 
         try {
-            const pdf = await generateAttendanceReport({
+            const { pdf, filename } = await generateAttendanceReport({
                 eventId: params.data.id,
                 recipientRegistrationIds: body.data.recipientRegistrationIds,
                 signerUserId: actor.id,
             });
 
+            // Se guarda como borrador: el envío adjuntará exactamente este PDF.
+            const draft = createReportDraft({
+                eventId: params.data.id,
+                senderId: actor.id,
+                registrationIds: [
+                    ...new Set(body.data.recipientRegistrationIds),
+                ],
+                filename,
+                pdf,
+            });
+
             res.setHeader('Content-Type', 'application/pdf');
+            res.setHeader('Cache-Control', 'private, no-store');
+            res.setHeader('X-Report-Draft-Id', draft.id);
             res.setHeader(
                 'Content-Disposition',
-                'attachment; filename="acta-asistencia.pdf"',
+                "inline; filename*=UTF-8''" + encodeURIComponent(filename),
             );
             res.send(pdf);
         } catch (e) {

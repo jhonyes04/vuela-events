@@ -38,6 +38,10 @@ guidesRouter.get(
         'guides:create',
         'guides:edit',
         'guides:delete',
+        // El formulario de eventos necesita elegir guía.
+        'events:create',
+        'events:create_recurring',
+        'events:edit',
     ),
     async (_req, res) => {
         const guides = await listGuides();

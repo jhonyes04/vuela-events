@@ -118,9 +118,7 @@ export function AppPasswordSection({
                             className="pr-8"
                             value={password}
                             onChange={(e) =>
-                                setPassword(
-                                    e.target.value.replace(/\s+/g, ''),
-                                )
+                                setPassword(e.target.value.replace(/\s+/g, ''))
                             }
                         />
                         <button
@@ -157,7 +155,7 @@ export function AppPasswordSection({
                     </Alert>
                 )}
 
-                <div className="flex gap-2">
+                <div className="flex gap-2 ms-auto">
                     <Button type="submit" disabled={submitting}>
                         {submitting ? 'Guardando…' : 'Guardar'}
                     </Button>
@@ -165,7 +163,7 @@ export function AppPasswordSection({
                     {user.smtpAppPasswordConfigured && (
                         <Button
                             type="button"
-                            variant="outline"
+                            variant="destructive"
                             disabled={submitting}
                             onClick={() => void handleClear()}
                         >
