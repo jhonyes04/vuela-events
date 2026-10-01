@@ -1,7 +1,11 @@
 import { Router } from 'express';
 import { z } from 'zod';
-import { requireAuth } from '../middleware/auth.js';
-import { updateProfile } from '../services/profile.js';
+import { requireAuth, requirePermission } from '../middleware/auth.js';
+import {
+    updateProfile,
+    setAppPassword,
+    clearAppPassword,
+} from '../services/profile.js';
 
 // Sin caracteres de control ni de formato (\p{C}) y sin < ni >.
 const NO_CONTROL_OR_TAGS = /^[^\p{C}<>]+$/u;
@@ -28,6 +32,10 @@ const profileSchema = z.strictObject({
     puntoVuela: cleaned(2, 120),
 });
 
+const appPasswordSchema = z.strictObject({
+    password: z.string().min(1).max(200),
+});
+
 export const profileRouter = Router();
 
 // Cada persona edita SOLO su propio perfil: la ruta no lleva id.
@@ -50,3 +58,47 @@ profileRouter.patch('/', requireAuth, async (req, res) => {
 
     res.json({ user });
 });
+
+// Solo quien puede enviar correos guarda su propia contraseña de aplicación.
+profileRouter.patch(
+    '/smtp-app-password',
+    requireAuth,
+    requirePermission('email:send'),
+    async (req, res) => {
+        const actor = req.user;
+
+        if (!actor) {
+            res.status(401).json({ error: 'Autenticación requerida' });
+            return;
+        }
+
+        const body = appPasswordSchema.safeParse(req.body);
+
+        if (!body.success) {
+            res.status(400).json({ error: 'Solicitud no válida' });
+            return;
+        }
+
+        await setAppPassword(actor.id, body.data.password);
+
+        res.json({ configured: true });
+    },
+);
+
+profileRouter.delete(
+    '/smtp-app-password',
+    requireAuth,
+    requirePermission('email:send'),
+    async (req, res) => {
+        const actor = req.user;
+
+        if (!actor) {
+            res.status(401).json({ error: 'Autenticación requerida' });
+            return;
+        }
+
+        await clearAppPassword(actor.id);
+
+        res.json({ configured: false });
+    },
+);

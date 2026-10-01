@@ -1,5 +1,6 @@
 import { useAuth } from '@/features/auth/hooks/context';
 import { ProfileForm } from '@/features/profile/components/ProfileForm';
+import { AppPasswordSection } from '@/features/profile/components/AppPasswordSection';
 
 export function ProfilePage() {
     const { user, setUser } = useAuth();
@@ -25,7 +26,7 @@ export function ProfilePage() {
                 </div>
             </dl>
 
-            <div className="rounded-xl border bg-card p-4 sm:p-6">
+            <div className="mb-6 rounded-xl border bg-card p-4 sm:p-6">
                 <ProfileForm
                     user={user}
                     submitLabel="Guardar cambios"
@@ -33,6 +34,20 @@ export function ProfilePage() {
                     onSaved={setUser}
                 />
             </div>
+
+            {user.permissions.includes('email:send') && (
+                <div className="rounded-xl border bg-card p-4 sm:p-6">
+                    <AppPasswordSection
+                        user={user}
+                        onSaved={(configured) =>
+                            setUser({
+                                ...user,
+                                smtpAppPasswordConfigured: configured,
+                            })
+                        }
+                    />
+                </div>
+            )}
         </section>
     );
 }

@@ -8,6 +8,7 @@ export interface User {
     roleId: string;
     roleName: string;
     permissions: string[];
+    smtpAppPasswordConfigured: boolean;
 }
 
 export class ApiError extends Error {

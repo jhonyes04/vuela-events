@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import nodemailer from 'nodemailer';
 import { prisma } from '../lib/prisma.js';
 import { renderEmail } from '../lib/emailTemplateRender.js';
+import { getDecryptedAppPassword } from './profile.js';
 import { type SlotId } from './emailSending.js';
 
 const BATCH_SIZE = 15;
@@ -15,7 +16,8 @@ export type StartSendFailure =
     | 'smtp_not_configured'
     | 'template_not_assigned'
     | 'event_not_found'
-    | 'no_recipients';
+    | 'no_recipients'
+    | 'app_password_not_configured';
 
 export class StartSendError extends Error {
     readonly reason: StartSendFailure;
@@ -29,8 +31,7 @@ export class StartSendError extends Error {
 }
 
 interface RecipientResult {
-    userId: string;
-    email: string;
+    registrationId: string;
     ok: boolean;
     error?: string;
 }
@@ -59,21 +60,24 @@ export const getSendJob = (jobId: string): SendJob | undefined =>
     jobs.get(jobId);
 
 interface StartSendInput {
+    actorId: string;
     actorEmail: string;
-    smtpPassword: string;
     slot: SlotId;
     eventId: string;
-    recipientUserIds: string[];
+    recipientRegistrationIds: string[];
 }
 
 export const startBulkSend = async (
     input: StartSendInput,
 ): Promise<{ jobId: string }> => {
-    if (input.recipientUserIds.length === 0) {
+    if (input.recipientRegistrationIds.length === 0) {
         throw new StartSendError('no_recipients');
     }
 
-    const recipientIds = input.recipientUserIds.slice(0, MAX_RECIPIENTS);
+    const registrationIds = input.recipientRegistrationIds.slice(
+        0,
+        MAX_RECIPIENTS,
+    );
 
     const smtpConfig = await prisma.smtpConfig.findUnique({
         where: { id: 'default' },
@@ -81,6 +85,12 @@ export const startBulkSend = async (
 
     if (!smtpConfig) {
         throw new StartSendError('smtp_not_configured');
+    }
+
+    const smtpPassword = await getDecryptedAppPassword(input.actorId);
+
+    if (!smtpPassword) {
+        throw new StartSendError('app_password_not_configured');
     }
 
     const assignment = await prisma.emailTemplateAssignment.findUnique({
@@ -101,10 +111,16 @@ export const startBulkSend = async (
         throw new StartSendError('event_not_found');
     }
 
-    const recipients = await prisma.user.findMany({
-        where: { id: { in: recipientIds } },
-        select: { id: true, email: true },
+    // Resuelto por inscripción, acotado a este evento: así nadie puede
+    // colar el id de inscripción de otro evento para enviarse algo ajeno.
+    const registrations = await prisma.registration.findMany({
+        where: { id: { in: registrationIds }, eventId: input.eventId },
+        select: { id: true, user: { select: { email: true } } },
     });
+    const recipients = registrations.map((r) => ({
+        registrationId: r.id,
+        email: r.user.email,
+    }));
 
     const template = assignment.template;
     const { subject, body } = renderEmail(template, event);
@@ -125,7 +141,7 @@ export const startBulkSend = async (
     void runSendJob(job, {
         smtpConfig,
         actorEmail: input.actorEmail,
-        smtpPassword: input.smtpPassword,
+        smtpPassword,
         subject,
         body,
         recipients,
@@ -142,7 +158,7 @@ const runSendJob = async (
         smtpPassword: string;
         subject: string;
         body: string;
-        recipients: { id: string; email: string }[];
+        recipients: { registrationId: string; email: string }[];
     },
 ) => {
     const transporter = nodemailer.createTransport({
@@ -167,15 +183,13 @@ const runSendJob = async (
 
                     job.sent += 1;
                     job.results.push({
-                        userId: recipient.id,
-                        email: recipient.email,
+                        registrationId: recipient.registrationId,
                         ok: true,
                     });
                 } catch (e) {
                     job.failed += 1;
                     job.results.push({
-                        userId: recipient.id,
-                        email: recipient.email,
+                        registrationId: recipient.registrationId,
                         ok: false,
                         error:
                             e instanceof Error

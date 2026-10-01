@@ -11,8 +11,7 @@ import {
 const startSendSchema = z.strictObject({
     slot: z.enum(SLOT_IDS),
     eventId: z.uuid(),
-    recipientUserIds: z.array(z.uuid()).min(1),
-    smtpPassword: z.string().min(1).max(200),
+    recipientRegistrationIds: z.array(z.uuid()).min(1),
 });
 
 const jobIdParamsSchema = z.object({ jobId: z.uuid() });
@@ -25,6 +24,10 @@ const startSendErrors = {
     ],
     event_not_found: [404, 'Evento no encontrado'],
     no_recipients: [400, 'Selecciona al menos un destinatario'],
+    app_password_not_configured: [
+        409,
+        'No tienes una contraseña de aplicación configurada en tu perfil',
+    ],
 } as const;
 
 export const emailSendsRouter = Router();
@@ -48,11 +51,11 @@ emailSendsRouter.post('/', async (req, res) => {
 
     try {
         const { jobId } = await startBulkSend({
+            actorId: actor.id,
             actorEmail: actor.email,
-            smtpPassword: body.data.smtpPassword,
             slot: body.data.slot,
             eventId: body.data.eventId,
-            recipientUserIds: body.data.recipientUserIds,
+            recipientRegistrationIds: body.data.recipientRegistrationIds,
         });
 
         res.status(202).json({ jobId });

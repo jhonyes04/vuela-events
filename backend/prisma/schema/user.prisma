@@ -8,6 +8,7 @@ model User {
     profileCompletedAt  DateTime?   
     roleId              String          @default("ail") @db.VarChar(40)             
     active              Boolean         @default(true)
+    smtpAppPassword     String?         @db.Text
     createdAt           DateTime        @default(now())
     updatedAt           DateTime        @updatedAt
 

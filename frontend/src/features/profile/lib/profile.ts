@@ -40,3 +40,20 @@ export const updateProfile = async (values: ProfileValues): Promise<User> => {
 
     return user;
 };
+
+export const setAppPassword = async (password: string): Promise<boolean> => {
+    const { configured } = await api.patch<{ configured: boolean }>(
+        '/profile/smtp-app-password',
+        { password },
+    );
+
+    return configured;
+};
+
+export const clearAppPassword = async (): Promise<boolean> => {
+    const { configured } = await api.delete<{ configured: boolean }>(
+        '/profile/smtp-app-password',
+    );
+
+    return configured;
+};

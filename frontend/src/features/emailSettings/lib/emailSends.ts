@@ -4,8 +4,7 @@ import type { SlotId } from '@/features/emailSettings/lib/emailSettings';
 export interface StartSendInput {
     slot: SlotId;
     eventId: string;
-    recipientUserIds: string[];
-    smtpPassword: string;
+    recipientRegistrationIds: string[];
 }
 
 export const startBulkSend = async (input: StartSendInput): Promise<string> => {
@@ -15,8 +14,7 @@ export const startBulkSend = async (input: StartSendInput): Promise<string> => {
 };
 
 export interface SendRecipientResult {
-    userId: string;
-    email: string;
+    registrationId: string;
     ok: boolean;
     error?: string;
 }

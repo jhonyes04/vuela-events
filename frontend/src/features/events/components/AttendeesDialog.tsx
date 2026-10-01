@@ -18,9 +18,10 @@ import type { SlotId } from '@/features/emailSettings/lib/emailSettings';
 
 interface AttendeesBodyProps {
     event: EventItem;
+    onCloseAll: () => void;
 }
 
-const AttendeesBody = ({ event }: AttendeesBodyProps) => {
+const AttendeesBody = ({ event, onCloseAll }: AttendeesBodyProps) => {
     const { attendees, failed, loading } = useAttendees(
         event.id,
         `${event._count.registrations}`,
@@ -101,6 +102,10 @@ const AttendeesBody = ({ event }: AttendeesBodyProps) => {
                 <SendEmailDialog
                     open={sendSlot !== null}
                     onOpenChange={(open) => !open && setSendSlot(null)}
+                    onFinishedClose={() => {
+                        setSendSlot(null);
+                        onCloseAll();
+                    }}
                     slot={sendSlot}
                     slotLabel={
                         sendSlot === 'convocatoria'
@@ -108,9 +113,7 @@ const AttendeesBody = ({ event }: AttendeesBodyProps) => {
                             : 'parte de firmas'
                     }
                     eventId={event.id}
-                    recipients={attendees.filter((a) =>
-                        selected.has(a.id),
-                    )}
+                    recipients={attendees.filter((a) => selected.has(a.id))}
                 />
             )}
         </DialogContent>
@@ -133,7 +136,11 @@ export const AttendeesDialog = ({
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <AttendeesBody key={event.id} event={event} />
+            <AttendeesBody
+                key={event.id}
+                event={event}
+                onCloseAll={() => onOpenChange(false)}
+            />
         </Dialog>
     );
 };

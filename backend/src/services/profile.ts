@@ -1,4 +1,5 @@
 import { prisma } from '../lib/prisma.js';
+import { encrypt, decrypt } from '../lib/crypto.js';
 import { authUserSelect, toAuthUser, type AuthUser } from '../lib/authUser.js';
 
 export interface ProfileInput {
@@ -57,4 +58,33 @@ export const updateProfile = async (
 
         return toAuthUser(updated);
     });
+};
+
+export const setAppPassword = async (
+    userId: string,
+    password: string,
+): Promise<void> => {
+    await prisma.user.update({
+        where: { id: userId },
+        data: { smtpAppPassword: encrypt(password) },
+    });
+};
+
+export const clearAppPassword = async (userId: string): Promise<void> => {
+    await prisma.user.update({
+        where: { id: userId },
+        data: { smtpAppPassword: null },
+    });
+};
+
+// Nunca se envía al frontend sólo se usa en servidor para enviar correo
+export const getDecryptedAppPassword = async (
+    userId: string,
+): Promise<string | null> => {
+    const row = await prisma.user.findUnique({
+        where: { id: userId },
+        select: { smtpAppPassword: true },
+    });
+
+    return row?.smtpAppPassword ? decrypt(row.smtpAppPassword) : null;
 };

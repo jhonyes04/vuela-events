@@ -1,6 +1,6 @@
-import { useEffect, useRef, useState, type FormEvent } from 'react';
-import { CircleAlert, CircleCheck } from 'lucide-react';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { useEffect, useRef, useState } from 'react';
+import { CircleAlert, CircleCheck, CircleDashed } from 'lucide-react';
+import { Alert, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -10,8 +10,6 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { ApiError } from '@/lib/api';
 import {
     getSendJobStatus,
@@ -28,6 +26,8 @@ interface SendEmailBodyProps {
     slotLabel: string;
     eventId: string;
     recipients: Attendee[];
+    status: SendJobStatus | null;
+    setStatus: (status: SendJobStatus | null) => void;
     onClose: () => void;
 }
 
@@ -36,13 +36,14 @@ const SendEmailBody = ({
     slotLabel,
     eventId,
     recipients,
+    status,
+    setStatus,
     onClose,
 }: SendEmailBodyProps) => {
-    const recipientUserIds = recipients.map((r) => r.id);
-    const [password, setPassword] = useState('');
+    const recipientRegistrationIds = recipients.map((r) => r.id);
+    const recipientById = new Map(recipients.map((r) => [r.id, r]));
     const [error, setError] = useState<string | null>(null);
     const [sending, setSending] = useState(false);
-    const [status, setStatus] = useState<SendJobStatus | null>(null);
     const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
     useEffect(() => {
@@ -63,8 +64,7 @@ const SendEmailBody = ({
         }, POLL_MS);
     };
 
-    const handleSubmit = async (e: FormEvent) => {
-        e.preventDefault();
+    const handleSend = async () => {
         setError(null);
         setSending(true);
 
@@ -72,12 +72,9 @@ const SendEmailBody = ({
             const jobId = await startBulkSend({
                 slot,
                 eventId,
-                recipientUserIds,
-                smtpPassword: password,
+                recipientRegistrationIds,
             });
 
-            // La contraseña ya no hace falta: se limpia de inmediato.
-            setPassword('');
             poll(jobId);
         } catch (err) {
             setSending(false);
@@ -90,6 +87,11 @@ const SendEmailBody = ({
     };
 
     const finished = status?.done ?? false;
+    const results = status?.results ?? [];
+    const processedIds = new Set(results.map((r) => r.registrationId));
+    const pending = recipients.filter((r) => !processedIds.has(r.id));
+    const succeeded = results.filter((r) => r.ok);
+    const failed = results.filter((r) => !r.ok);
 
     return (
         <DialogContent className="sm:max-w-md">
@@ -100,7 +102,7 @@ const SendEmailBody = ({
                     {recipients.length === 1
                         ? 'destinatario seleccionado'
                         : 'destinatarios seleccionados'}
-                    . La contraseña no se guarda, solo se usa para este envío.
+                    .
                 </DialogDescription>
             </DialogHeader>
 
@@ -114,35 +116,7 @@ const SendEmailBody = ({
                 </div>
             )}
 
-            {!status ? (
-                <form
-                    id="send-email-form"
-                    onSubmit={(e) => void handleSubmit(e)}
-                    className="grid gap-4"
-                >
-                    <div className="grid gap-1.5">
-                        <Label htmlFor="send-email-password">
-                            Tu contraseña de correo *
-                        </Label>
-                        <Input
-                            id="send-email-password"
-                            type="password"
-                            required
-                            autoComplete="off"
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                        />
-                    </div>
-
-                    {error && (
-                        <Alert variant="destructive">
-                            <CircleAlert />
-                            <AlertTitle>No se pudo enviar</AlertTitle>
-                            <AlertDescription>{error}</AlertDescription>
-                        </Alert>
-                    )}
-                </form>
-            ) : (
+            {status && (
                 <div className="grid gap-3">
                     <p
                         role="status"
@@ -153,41 +127,129 @@ const SendEmailBody = ({
                             : `Enviando… ${status.sent + status.failed} de ${status.total}`}
                     </p>
 
+                    {!finished && (
+                        <div className="max-h-48 overflow-y-auto rounded-lg bg-muted/50 p-2 text-sm">
+                            <ul className="grid gap-1">
+                                {results.map((r) => {
+                                    const recipient = recipientById.get(
+                                        r.registrationId,
+                                    );
+
+                                    return (
+                                        <li
+                                            key={r.registrationId}
+                                            className="flex items-center gap-1.5"
+                                        >
+                                            {r.ok ? (
+                                                <CircleCheck className="size-3.5 shrink-0 text-emerald-600" />
+                                            ) : (
+                                                <CircleAlert className="size-3.5 shrink-0 text-destructive" />
+                                            )}
+                                            <span>
+                                                {recipient
+                                                    ? personLabel(recipient)
+                                                    : 'Destinatario'}
+                                            </span>
+                                        </li>
+                                    );
+                                })}
+                                {pending.map((r) => (
+                                    <li
+                                        key={r.id}
+                                        className="flex items-center gap-1.5 text-muted-foreground"
+                                    >
+                                        <CircleDashed className="size-3.5 shrink-0" />
+                                        <span>{personLabel(r)}</span>
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+                    )}
+
                     {finished && (
-                        <Alert
-                            variant={
-                                status.failed > 0 ? 'destructive' : 'success'
-                            }
-                        >
-                            {status.failed > 0 ? (
-                                <CircleAlert />
-                            ) : (
-                                <CircleCheck />
+                        <div className="grid gap-3">
+                            <Alert
+                                variant={
+                                    failed.length > 0
+                                        ? 'destructive'
+                                        : 'success'
+                                }
+                            >
+                                {failed.length > 0 ? (
+                                    <CircleAlert />
+                                ) : (
+                                    <CircleCheck />
+                                )}
+                                <AlertTitle>
+                                    {succeeded.length} enviados
+                                    {failed.length > 0 &&
+                                        `, ${failed.length} fallidos`}
+                                </AlertTitle>
+                            </Alert>
+
+                            {succeeded.length > 0 && (
+                                <div className="grid gap-1">
+                                    <p className="text-xs font-medium text-muted-foreground">
+                                        Enviados correctamente
+                                    </p>
+                                    <ul className="grid max-h-28 gap-1 overflow-y-auto rounded-lg bg-muted/50 p-2 text-sm">
+                                        {succeeded.map((r) => {
+                                            const recipient = recipientById.get(
+                                                r.registrationId,
+                                            );
+
+                                            return (
+                                                <li key={r.registrationId}>
+                                                    {recipient
+                                                        ? personLabel(recipient)
+                                                        : 'Destinatario'}
+                                                </li>
+                                            );
+                                        })}
+                                    </ul>
+                                </div>
                             )}
-                            <AlertTitle>
-                                {status.sent} enviados
-                                {status.failed > 0 &&
-                                    `, ${status.failed} fallidos`}
-                            </AlertTitle>
-                            {status.failed > 0 && (
-                                <AlertDescription>
-                                    {status.results
-                                        .filter((r) => !r.ok)
-                                        .map((r) => r.email)
-                                        .join(', ')}
-                                </AlertDescription>
+
+                            {failed.length > 0 && (
+                                <div className="grid gap-1">
+                                    <p className="text-xs font-medium text-destructive">
+                                        Fallidos
+                                    </p>
+                                    <ul className="grid max-h-28 gap-1 overflow-y-auto rounded-lg bg-destructive/10 p-2 text-sm">
+                                        {failed.map((r) => {
+                                            const recipient = recipientById.get(
+                                                r.registrationId,
+                                            );
+
+                                            return (
+                                                <li key={r.registrationId}>
+                                                    {recipient
+                                                        ? personLabel(recipient)
+                                                        : 'Destinatario'}
+                                                </li>
+                                            );
+                                        })}
+                                    </ul>
+                                </div>
                             )}
-                        </Alert>
+                        </div>
                     )}
                 </div>
+            )}
+
+            {error && (
+                <Alert variant="destructive">
+                    <CircleAlert />
+                    <AlertTitle>{error}</AlertTitle>
+                </Alert>
             )}
 
             <DialogFooter>
                 {!status ? (
                     <Button
-                        type="submit"
-                        form="send-email-form"
+                        type="button"
                         disabled={sending}
+                        onClick={() => void handleSend()}
                     >
                         {sending ? 'Enviando…' : 'Enviar'}
                     </Button>
@@ -204,6 +266,9 @@ const SendEmailBody = ({
 interface SendEmailDialogProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
+    // Se llama cuando el envío ya había terminado y el diálogo se cierra:
+    // así el que lo abrió puede cerrarse también sin pasos extra.
+    onFinishedClose: () => void;
     slot: SlotId;
     slotLabel: string;
     eventId: string;
@@ -213,19 +278,34 @@ interface SendEmailDialogProps {
 export const SendEmailDialog = ({
     open,
     onOpenChange,
+    onFinishedClose,
     slot,
     slotLabel,
     eventId,
     recipients,
-}: SendEmailDialogProps) => (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-        <SendEmailBody
-            key={slot}
-            slot={slot}
-            slotLabel={slotLabel}
-            eventId={eventId}
-            recipients={recipients}
-            onClose={() => onOpenChange(false)}
-        />
-    </Dialog>
-);
+}: SendEmailDialogProps) => {
+    const [status, setStatus] = useState<SendJobStatus | null>(null);
+
+    const handleOpenChange = (next: boolean) => {
+        onOpenChange(next);
+
+        if (!next && status?.done) {
+            onFinishedClose();
+        }
+    };
+
+    return (
+        <Dialog open={open} onOpenChange={handleOpenChange}>
+            <SendEmailBody
+                key={slot}
+                slot={slot}
+                slotLabel={slotLabel}
+                eventId={eventId}
+                recipients={recipients}
+                status={status}
+                setStatus={setStatus}
+                onClose={() => handleOpenChange(false)}
+            />
+        </Dialog>
+    );
+};
