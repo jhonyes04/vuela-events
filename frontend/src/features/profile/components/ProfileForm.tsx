@@ -20,6 +20,7 @@ export function ProfileForm({
     initial,
     submitLabel,
     showSuccess,
+    layout = 'row',
     onSaved,
 }: {
     user: User;
@@ -28,6 +29,7 @@ export function ProfileForm({
     submitLabel: string;
     // "Mi perfil" confirma el guardado; en la bienvenida la pantalla simplemente cambia.
     showSuccess: boolean;
+    layout?: 'row' | 'stack';
     onSaved: (user: User) => void;
 }) {
     const [name, setName] = useState(initial?.name ?? user.name);
@@ -87,7 +89,13 @@ export function ProfileForm({
 
     return (
         <form onSubmit={(e) => void handleSubmit(e)} className="grid gap-4">
-            <div className="grid gap-2 sm:grid-cols-4 sm:items-end">
+            <div
+                className={
+                    layout === 'row'
+                        ? 'grid gap-2 sm:grid-cols-4 sm:items-end'
+                        : 'grid gap-4'
+                }
+            >
                 <div className="grid gap-1.5">
                     <Label htmlFor="profile-name">Nombre</Label>
                     <Input

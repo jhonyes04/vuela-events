@@ -9,7 +9,7 @@ export function OnboardingPage() {
     if (!user) return null;
 
     return (
-        <section className="mx-auto w-full max-w-md rounded-xl border bg-brand-cream-soft p-5 sm:p-8">
+        <section className="mx-auto w-full max-w-md rounded-xl border bg-white p-5 sm:p-8">
             <h1 className="mb-2 text-2xl font-semibold">Completa tu perfil</h1>
             <p className="mb-6 text-muted-foreground">
                 Es tu primer acceso. Escribe tu nombre y apellidos y confirma tu
@@ -26,6 +26,7 @@ export function OnboardingPage() {
                 }}
                 submitLabel="Continuar"
                 showSuccess={false}
+                layout="stack"
                 onSaved={setUser}
             />
         </section>

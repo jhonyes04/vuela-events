@@ -1,4 +1,5 @@
 import { prisma } from '../lib/prisma.js';
+import { recordAudit } from './audit.js';
 
 const SMTP_CONFIG_ID = 'default';
 
@@ -28,17 +29,25 @@ export const getSmtpConfig = () =>
         select: smtpConfigSelect,
     });
 
-export const setSmtpConfig = (input: {
-    host: string;
-    port: number;
-    secure: boolean;
-}) =>
-    prisma.smtpConfig.upsert({
+export const setSmtpConfig = async (
+    actorId: string,
+    input: { host: string; port: number; secure: boolean },
+) => {
+    const config = await prisma.smtpConfig.upsert({
         where: { id: SMTP_CONFIG_ID },
         create: { id: SMTP_CONFIG_ID, ...input },
         update: input,
         select: smtpConfigSelect,
     });
+
+    await recordAudit({
+        action: 'smtp_config_updated',
+        actorId,
+        newValue: `${input.host}:${input.port}`.slice(0, 100),
+    });
+
+    return config;
+};
 
 export const getTemplateAssignments = async (): Promise<
     { slot: SlotId; templateId: string | null }[]
@@ -55,6 +64,7 @@ export const getTemplateAssignments = async (): Promise<
 };
 
 export const setTemplateAssignment = async (
+    actorId: string,
     slot: SlotId,
     templateId: string | null,
 ) => {
@@ -68,10 +78,19 @@ export const setTemplateAssignment = async (
         }
     }
 
-    return prisma.emailTemplateAssignment.upsert({
+    const assignment = await prisma.emailTemplateAssignment.upsert({
         where: { slot },
         create: { slot, templateId },
         update: { templateId },
         select: { slot: true, templateId: true },
     });
+
+    await recordAudit({
+        action: 'email_template_assigned',
+        actorId,
+        oldValue: slot,
+        newValue: templateId ?? 'sin asignar',
+    });
+
+    return assignment;
 };

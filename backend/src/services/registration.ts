@@ -1,5 +1,6 @@
 import { prisma } from '../lib/prisma.js';
 import { Prisma } from '../generated/prisma/client.js';
+import { recordAudit } from './audit.js';
 
 export type RegistrationFailure =
     | 'not_found'
@@ -26,7 +27,7 @@ export const registerForEvent = async (userId: string, eventId: string) => {
 
             const event = await tx.event.findUnique({
                 where: { id: eventId },
-                select: { capacity: true, endsAt: true },
+                select: { capacity: true, endsAt: true, title: true },
             });
 
             if (!event) {
@@ -67,10 +68,20 @@ export const registerForEvent = async (userId: string, eventId: string) => {
                 }
             }
 
-            return tx.registration.create({
+            const registration = await tx.registration.create({
                 data: { eventId, userId },
                 select: { id: true, eventId: true, createdAt: true },
             });
+
+            await tx.auditLog.create({
+                data: {
+                    actorId: userId,
+                    action: 'event_registered',
+                    newValue: event.title.slice(0, 100),
+                },
+            });
+
+            return registration;
         });
     } catch (e) {
         if (
@@ -95,6 +106,12 @@ export const unregisterFromEvent = async (
     if (count === 0) {
         throw new RegistrationError('not_found');
     }
+
+    await recordAudit({
+        action: 'event_unregistered',
+        actorId: userId,
+        newValue: eventId,
+    });
 };
 
 export interface Attendee {

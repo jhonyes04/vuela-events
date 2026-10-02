@@ -40,6 +40,13 @@ emailSettingsRouter.get('/', async (_req, res) => {
 });
 
 emailSettingsRouter.patch('/smtp', async (req, res) => {
+    const actor = req.user;
+
+    if (!actor) {
+        res.status(401).json({ error: 'Autenticación requerida' });
+        return;
+    }
+
     const body = smtpConfigSchema.safeParse(req.body);
 
     if (!body.success) {
@@ -47,12 +54,19 @@ emailSettingsRouter.patch('/smtp', async (req, res) => {
         return;
     }
 
-    const smtpConfig = await setSmtpConfig(body.data);
+    const smtpConfig = await setSmtpConfig(actor.id, body.data);
 
     res.json({ smtpConfig });
 });
 
 emailSettingsRouter.patch('/template-assignment/:slot', async (req, res) => {
+    const actor = req.user;
+
+    if (!actor) {
+        res.status(401).json({ error: 'Autenticación requerida' });
+        return;
+    }
+
     const params = slotParamsSchema.safeParse(req.params);
     const body = templateAssignmentBodySchema.safeParse(req.body);
 
@@ -63,6 +77,7 @@ emailSettingsRouter.patch('/template-assignment/:slot', async (req, res) => {
 
     try {
         const assignment = await setTemplateAssignment(
+            actor.id,
             params.data.slot,
             body.data.templateId,
         );

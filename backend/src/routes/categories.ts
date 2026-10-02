@@ -56,6 +56,13 @@ categoriesRouter.post(
     '/',
     requirePermission('categories:create'),
     async (req, res) => {
+        const actor = req.user;
+
+        if (!actor) {
+            res.status(401).json({ error: 'Autenticación requerida' });
+            return;
+        }
+
         const body = createCategorySchema.safeParse(req.body);
 
         if (!body.success) {
@@ -65,6 +72,7 @@ categoriesRouter.post(
 
         try {
             const category = await createCategory(
+                actor.id,
                 body.data.name,
                 body.data.color,
             );
@@ -87,6 +95,13 @@ categoriesRouter.patch(
     '/:id',
     requirePermission('categories:edit'),
     async (req, res) => {
+        const actor = req.user;
+
+        if (!actor) {
+            res.status(401).json({ error: 'Autenticación requerida' });
+            return;
+        }
+
         const params = idParamSchema.safeParse(req.params);
         const body = updateCategorySchema.safeParse(req.body);
 
@@ -96,7 +111,11 @@ categoriesRouter.patch(
         }
 
         try {
-            const category = await updateCategory(params.data.id, body.data);
+            const category = await updateCategory(
+                actor.id,
+                params.data.id,
+                body.data,
+            );
 
             res.json({ category });
         } catch (e) {
@@ -116,6 +135,13 @@ categoriesRouter.delete(
     '/:id',
     requirePermission('categories:delete'),
     async (req, res) => {
+        const actor = req.user;
+
+        if (!actor) {
+            res.status(401).json({ error: 'Autenticación requerida' });
+            return;
+        }
+
         const params = idParamSchema.safeParse(req.params);
 
         if (!params.success) {
@@ -124,7 +150,7 @@ categoriesRouter.delete(
         }
 
         try {
-            await deleteCategory(params.data.id);
+            await deleteCategory(actor.id, params.data.id);
             res.status(204).end();
         } catch (e) {
             if (e instanceof CategoryManageError) {

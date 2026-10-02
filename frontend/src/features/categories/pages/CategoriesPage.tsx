@@ -21,6 +21,7 @@ export const CategoriesPage = () => {
     const upsert = useCategoriesStore((s) => s.upsert);
     const remove = useCategoriesStore((s) => s.remove);
     const [formOpen, setFormOpen] = useState(false);
+    const [formKey, setFormKey] = useState(0);
     const [editing, setEditing] = useState<Category | null>(null);
     const [deleting, setDeleting] = useState<Category | null>(null);
 
@@ -31,11 +32,13 @@ export const CategoriesPage = () => {
 
     const openCreate = () => {
         setEditing(null);
+        setFormKey((k) => k + 1);
         setFormOpen(true);
     };
 
     const openEdit = (category: Category) => {
         setEditing(category);
+        setFormKey((k) => k + 1);
         setFormOpen(true);
     };
 
@@ -78,7 +81,7 @@ export const CategoriesPage = () => {
                             )}
                             <IconTooltip label="Editar">
                                 <Button
-                                    variant="outline"
+                                    variant="secondary"
                                     size="icon"
                                     aria-label="Editar"
                                     onClick={() => openEdit(category)}
@@ -102,6 +105,7 @@ export const CategoriesPage = () => {
             )}
 
             <CategoryFormDialog
+                key={formKey}
                 open={formOpen}
                 onOpenChange={setFormOpen}
                 category={editing}

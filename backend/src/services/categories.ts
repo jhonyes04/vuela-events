@@ -1,4 +1,5 @@
 import { prisma } from '../lib/prisma.js';
+import { recordAudit } from './audit.js';
 
 export const CATEGORY_COLORS = [
     'yellow',
@@ -52,20 +53,33 @@ export const listCategories = () =>
         select: categorySelect,
     });
 
-export const createCategory = async (name: string, color: CategoryColor) => {
+export const createCategory = async (
+    actorId: string,
+    name: string,
+    color: CategoryColor,
+) => {
     const exists = await prisma.category.findUnique({ where: { name } });
 
     if (exists) {
         throw new CategoryManageError('duplicate');
     }
 
-    return prisma.category.create({
+    const category = await prisma.category.create({
         data: { name, color },
         select: categorySelect,
     });
+
+    await recordAudit({
+        action: 'category_created',
+        actorId,
+        newValue: category.name.slice(0, 100),
+    });
+
+    return category;
 };
 
 export const updateCategory = async (
+    actorId: string,
     id: string,
     input: { name: string; color: CategoryColor; active: boolean },
 ) => {
@@ -85,14 +99,23 @@ export const updateCategory = async (
         }
     }
 
-    return prisma.category.update({
+    const updated = await prisma.category.update({
         where: { id },
         data: input,
         select: categorySelect,
     });
+
+    await recordAudit({
+        action: 'category_updated',
+        actorId,
+        oldValue: category.name.slice(0, 100),
+        newValue: updated.name.slice(0, 100),
+    });
+
+    return updated;
 };
 
-export const deleteCategory = async (id: string) => {
+export const deleteCategory = async (actorId: string, id: string) => {
     const category = await prisma.category.findUnique({ where: { id } });
 
     if (!category) {
@@ -108,4 +131,10 @@ export const deleteCategory = async (id: string) => {
     }
 
     await prisma.category.delete({ where: { id } });
+
+    await recordAudit({
+        action: 'category_deleted',
+        actorId,
+        oldValue: category.name.slice(0, 100),
+    });
 };

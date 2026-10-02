@@ -1,4 +1,5 @@
 import { prisma } from '../lib/prisma.js';
+import { recordAudit } from './audit.js';
 
 export type GuideManageFealure = 'duplicate' | 'not_found';
 
@@ -26,20 +27,33 @@ export const listGuides = () =>
         select: guideSelect,
     });
 
-export const createGuide = async (name: string, url: string) => {
+export const createGuide = async (
+    actorId: string,
+    name: string,
+    url: string,
+) => {
     const exists = await prisma.guide.findUnique({ where: { name } });
 
     if (exists) {
         throw new GuideManageError('duplicate');
     }
 
-    return prisma.guide.create({
+    const guide = await prisma.guide.create({
         data: { name, url },
         select: guideSelect,
     });
+
+    await recordAudit({
+        action: 'guide_created',
+        actorId,
+        newValue: guide.name.slice(0, 100),
+    });
+
+    return guide;
 };
 
 export const updateGuide = async (
+    actorId: string,
     id: string,
     input: { name: string; url: string; active: boolean },
 ) => {
@@ -59,14 +73,23 @@ export const updateGuide = async (
         }
     }
 
-    return prisma.guide.update({
+    const updated = await prisma.guide.update({
         where: { id },
         data: input,
         select: guideSelect,
     });
+
+    await recordAudit({
+        action: 'guide_updated',
+        actorId,
+        oldValue: guide.name.slice(0, 100),
+        newValue: updated.name.slice(0, 100),
+    });
+
+    return updated;
 };
 
-export const deleteGuide = async (id: string) => {
+export const deleteGuide = async (actorId: string, id: string) => {
     const guide = await prisma.guide.findUnique({ where: { id } });
 
     if (!guide) {
@@ -74,4 +97,10 @@ export const deleteGuide = async (id: string) => {
     }
 
     await prisma.guide.delete({ where: { id } });
+
+    await recordAudit({
+        action: 'guide_deleted',
+        actorId,
+        oldValue: guide.name.slice(0, 100),
+    });
 };

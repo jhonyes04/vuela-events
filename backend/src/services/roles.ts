@@ -12,7 +12,8 @@ export type RoleChangeFailure =
     | 'forbidden'
     | 'not_found'
     | 'self_change'
-    | 'last_manager';
+    | 'last_manager'
+    | 'has_events';
 
 export class RoleChangeError extends Error {
     readonly reason: RoleChangeFailure;
@@ -226,6 +227,61 @@ export const setUserActive = async (
     );
 };
 
+export const deleteUser = async (actorId: string, targetId: string) => {
+    if (actorId === targetId) {
+        throw new RoleChangeError('self_change');
+    }
+
+    return prisma.$transaction(
+        async (tx) => {
+            await assertCanManageUsers(tx, actorId);
+
+            const target = await tx.user.findUnique({
+                where: { id: targetId },
+                select: userSelect,
+            });
+
+            if (!target) {
+                throw new RoleChangeError('not_found');
+            }
+
+            const createdEvents = await tx.event.count({
+                where: { createdById: targetId },
+            });
+
+            if (createdEvents > 0) {
+                throw new RoleChangeError('has_events');
+            }
+
+            if (
+                target.active &&
+                (await hasPermission(tx, target.id, MANAGE_USERS))
+            ) {
+                const managers = await countActiveWithPermission(
+                    tx,
+                    MANAGE_USERS,
+                );
+
+                if (managers <= 1) {
+                    throw new RoleChangeError('last_manager');
+                }
+            }
+
+            await tx.auditLog.create({
+                data: {
+                    actorId,
+                    targetId,
+                    action: 'user_deleted',
+                    oldValue: target.email,
+                },
+            });
+
+            await tx.user.delete({ where: { id: targetId } });
+        },
+        { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
+    );
+};
+
 export const listRoles = () =>
     prisma.role.findMany({ orderBy: { id: 'asc' }, select: roleSelect });
 
@@ -233,6 +289,7 @@ export const listPermissions = () =>
     prisma.permission.findMany({ orderBy: { id: 'asc' } });
 
 export const createRole = async (
+    actorId: string,
     id: string,
     name: string,
     permissionIds: string[],
@@ -243,21 +300,34 @@ export const createRole = async (
         throw new RoleManageError('duplicate');
     }
 
-    return prisma.role.create({
-        data: {
-            id,
-            name,
-            permissions: {
-                create: permissionIds.map((permissionId) => ({
-                    permissionId,
-                })),
+    return prisma.$transaction(async (tx) => {
+        const role = await tx.role.create({
+            data: {
+                id,
+                name,
+                permissions: {
+                    create: permissionIds.map((permissionId) => ({
+                        permissionId,
+                    })),
+                },
             },
-        },
-        select: roleSelect,
+            select: roleSelect,
+        });
+
+        await tx.auditLog.create({
+            data: {
+                actorId,
+                action: 'role_created',
+                newValue: role.name.slice(0, 100),
+            },
+        });
+
+        return role;
     });
 };
 
 export const setRolePermissions = async (
+    actorId: string,
     roleId: string,
     permissionIds: string[],
 ) => {
@@ -298,8 +368,7 @@ export const setRolePermissions = async (
 
             const others = await countActiveWithPermission(tx, permissionId);
             const othersOutsideThisRole =
-                others -
-                (current.has(permissionId) ? activeWithThisRole : 0);
+                others - (current.has(permissionId) ? activeWithThisRole : 0);
 
             if (othersOutsideThisRole <= 0) {
                 throw new RoleManageError('last_manager');
@@ -317,6 +386,15 @@ export const setRolePermissions = async (
             });
         }
 
+        await tx.auditLog.create({
+            data: {
+                actorId,
+                action: 'role_permissions_changed',
+                oldValue: `${current.size} permisos`,
+                newValue: `${next.size} permisos`,
+            },
+        });
+
         return tx.role.findUniqueOrThrow({
             where: { id: roleId },
             select: roleSelect,
@@ -324,7 +402,7 @@ export const setRolePermissions = async (
     });
 };
 
-export const deleteRole = async (roleId: string) => {
+export const deleteRole = async (actorId: string, roleId: string) => {
     const role = await prisma.role.findUnique({ where: { id: roleId } });
 
     if (!role) {
@@ -341,5 +419,15 @@ export const deleteRole = async (roleId: string) => {
         throw new RoleManageError('has_users');
     }
 
-    await prisma.role.delete({ where: { id: roleId } });
+    await prisma.$transaction(async (tx) => {
+        await tx.auditLog.create({
+            data: {
+                actorId,
+                action: 'role_deleted',
+                oldValue: role.name.slice(0, 100),
+            },
+        });
+
+        await tx.role.delete({ where: { id: roleId } });
+    });
 };

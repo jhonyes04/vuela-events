@@ -89,7 +89,8 @@ export const api = {
     get: <T>(path: string) => request<T>('GET', path),
     post: <T>(path: string, body?: unknown) => request<T>('POST', path, body),
     patch: <T>(path: string, body?: unknown) => request<T>('PATCH', path, body),
-    delete: <T = void>(path: string) => request<T>('DELETE', path),
+    delete: <T = void>(path: string, body?: unknown) =>
+        request<T>('DELETE', path, body),
 };
 
 // Nombre del fichero según Content-Disposition (admite filename*=UTF-8'').

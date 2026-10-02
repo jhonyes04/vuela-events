@@ -30,7 +30,7 @@ interface CategoryFormBodyProps {
     onClose: () => void;
 }
 
-// Con su propio estado: se recrea (key) al cambiar de categoría o al pasar a "nueva".
+// Con su propio estado: el padre la remonta (key) cada vez que abre el diálogo.
 const CategoryFormBody = ({
     category,
     onSaved,
@@ -163,7 +163,6 @@ export const CategoryFormDialog = ({
 }: CategoryFormDialogProps) => (
     <Dialog open={open} onOpenChange={onOpenChange}>
         <CategoryFormBody
-            key={category?.id ?? 'new'}
             category={category}
             onSaved={onSaved}
             onClose={() => onOpenChange(false)}

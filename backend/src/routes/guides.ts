@@ -51,6 +51,13 @@ guidesRouter.get(
 );
 
 guidesRouter.post('/', requirePermission('guides:create'), async (req, res) => {
+    const actor = req.user;
+
+    if (!actor) {
+        res.status(401).json({ error: 'Autenticación requerida' });
+        return;
+    }
+
     const body = createGuideSchema.safeParse(req.body);
 
     if (!body.success) {
@@ -59,7 +66,11 @@ guidesRouter.post('/', requirePermission('guides:create'), async (req, res) => {
     }
 
     try {
-        const guide = await createGuide(body.data.name, body.data.url);
+        const guide = await createGuide(
+            actor.id,
+            body.data.name,
+            body.data.url,
+        );
 
         res.status(201).json({ guide });
     } catch (e) {
@@ -78,6 +89,13 @@ guidesRouter.patch(
     '/:id',
     requirePermission('guides:edit'),
     async (req, res) => {
+        const actor = req.user;
+
+        if (!actor) {
+            res.status(401).json({ error: 'Autenticación requerida' });
+            return;
+        }
+
         const params = idParamsSchema.safeParse(req.params);
         const body = updateGuideSchema.safeParse(req.body);
 
@@ -87,7 +105,11 @@ guidesRouter.patch(
         }
 
         try {
-            const guide = await updateGuide(params.data.id, body.data);
+            const guide = await updateGuide(
+                actor.id,
+                params.data.id,
+                body.data,
+            );
 
             res.json({ guide });
         } catch (e) {
@@ -107,6 +129,13 @@ guidesRouter.delete(
     '/:id',
     requirePermission('guides:delete'),
     async (req, res) => {
+        const actor = req.user;
+
+        if (!actor) {
+            res.status(401).json({ error: 'Autenticación requerida' });
+            return;
+        }
+
         const params = idParamsSchema.safeParse(req.params);
 
         if (!params.success) {
@@ -115,7 +144,7 @@ guidesRouter.delete(
         }
 
         try {
-            await deleteGuide(params.data.id);
+            await deleteGuide(actor.id, params.data.id);
             res.status(204).end();
         } catch (e) {
             if (e instanceof GuideManageError) {

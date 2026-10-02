@@ -1,8 +1,11 @@
 import { useEffect, useState } from 'react';
+import { Trash2 } from 'lucide-react';
 import { OverlayScrollbarsComponent } from 'overlayscrollbars-react';
 import { toast } from 'sonner';
 import { useAuth } from '@/features/auth/hooks/context';
 import { Button } from '@/components/ui/button';
+import { ConfirmDeleteDialog } from '@/components/ConfirmDeleteDialog';
+import { IconTooltip } from '@/components/IconTooltip';
 import { ListErrors } from '@/features/users/components/ListErrors';
 import { PaginationControls } from '@/components/PaginationControls';
 import { SortableHeader } from '@/components/SortableHeader';
@@ -33,6 +36,7 @@ export const UsersPage = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [busyId, setBusyId] = useState<string | null>(null);
+    const [deleting, setDeleting] = useState<AdminUser | null>(null);
 
     const {
         sorted: sortedUsers,
@@ -101,7 +105,9 @@ export const UsersPage = () => {
         try {
             await api.patch(`/users/${userId}/active`, { active });
             await load();
-            toast.success(active ? 'Usuario activado.' : 'Usuario desactivado.');
+            toast.success(
+                active ? 'Usuario activado.' : 'Usuario desactivado.',
+            );
         } catch (e) {
             toast.error(
                 e instanceof ApiError
@@ -214,21 +220,36 @@ export const UsersPage = () => {
                                                 : 'Desactivado'}
                                         </td>
                                         <td className="p-3 text-right">
-                                            <Button
-                                                variant="outline"
-                                                size="sm"
-                                                disabled={isSelf || busy}
-                                                onClick={() =>
-                                                    void toggleActive(
-                                                        u.id,
-                                                        !u.active,
-                                                    )
-                                                }
-                                            >
-                                                {u.active
-                                                    ? 'Desactivar'
-                                                    : 'Activar'}
-                                            </Button>
+                                            <div className="flex justify-end gap-2">
+                                                <Button
+                                                    variant="outline"
+                                                    size="sm"
+                                                    disabled={isSelf || busy}
+                                                    onClick={() =>
+                                                        void toggleActive(
+                                                            u.id,
+                                                            !u.active,
+                                                        )
+                                                    }
+                                                >
+                                                    {u.active
+                                                        ? 'Desactivar'
+                                                        : 'Activar'}
+                                                </Button>
+                                                <IconTooltip label="Eliminar">
+                                                    <Button
+                                                        variant="destructive"
+                                                        size="icon"
+                                                        aria-label="Eliminar"
+                                                        disabled={isSelf || busy}
+                                                        onClick={() =>
+                                                            setDeleting(u)
+                                                        }
+                                                    >
+                                                        <Trash2 className="size-4" />
+                                                    </Button>
+                                                </IconTooltip>
+                                            </div>
                                         </td>
                                     </tr>
                                 );
@@ -249,6 +270,26 @@ export const UsersPage = () => {
                         onPageSizeChange={setPageSize}
                     />
                 </div>
+            )}
+
+            {deleting && (
+                <ConfirmDeleteDialog
+                    open={deleting !== null}
+                    onOpenChange={(open) => !open && setDeleting(null)}
+                    title="Eliminar usuario"
+                    description={`¿Eliminar a «${deleting.name} ${deleting.lastName}» (${deleting.email})? Esta acción no se puede deshacer.`}
+                    confirmLabel="Eliminar"
+                    deletingLabel="Eliminando…"
+                    errorFallback="No se pudo eliminar el usuario"
+                    successLabel={`${deleting.name} ${deleting.lastName} eliminado.`}
+                    onConfirm={() => api.delete(`/users/${deleting.id}`)}
+                    onDeleted={() => {
+                        setUsers((prev) =>
+                            prev.filter((u) => u.id !== deleting.id),
+                        );
+                        setDeleting(null);
+                    }}
+                />
             )}
         </section>
     );

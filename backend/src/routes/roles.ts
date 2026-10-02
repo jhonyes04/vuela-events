@@ -30,6 +30,7 @@ const PERMISSION_IDS = [
     'email:send',
     'users:manage',
     'roles:manage',
+    'audit:manage',
 ] as const;
 
 const permissionIdsSchema = z
@@ -104,6 +105,13 @@ rolesRouter.get(
 );
 
 rolesRouter.post('/', requirePermission('roles:manage'), async (req, res) => {
+    const actor = req.user;
+
+    if (!actor) {
+        res.status(401).json({ error: 'Autenticación requerida' });
+        return;
+    }
+
     const body = createRoleSchema.safeParse(req.body);
 
     if (!body.success) {
@@ -113,6 +121,7 @@ rolesRouter.post('/', requirePermission('roles:manage'), async (req, res) => {
 
     try {
         const role = await createRole(
+            actor.id,
             body.data.id,
             body.data.name,
             body.data.permissionIds,
@@ -130,6 +139,13 @@ rolesRouter.patch(
     '/:id/permissions',
     requirePermission('roles:manage'),
     async (req, res) => {
+        const actor = req.user;
+
+        if (!actor) {
+            res.status(401).json({ error: 'Autenticación requerida' });
+            return;
+        }
+
         const params = idParamSchema.safeParse(req.params);
         const body = permissionsBodySchema.safeParse(req.body);
 
@@ -140,6 +156,7 @@ rolesRouter.patch(
 
         try {
             const role = await setRolePermissions(
+                actor.id,
                 params.data.id,
                 body.data.permissionIds,
             );
@@ -157,6 +174,13 @@ rolesRouter.delete(
     '/:id',
     requirePermission('roles:manage'),
     async (req, res) => {
+        const actor = req.user;
+
+        if (!actor) {
+            res.status(401).json({ error: 'Autenticación requerida' });
+            return;
+        }
+
         const params = idParamSchema.safeParse(req.params);
 
         if (!params.success) {
@@ -165,7 +189,7 @@ rolesRouter.delete(
         }
 
         try {
-            await deleteRole(params.data.id);
+            await deleteRole(actor.id, params.data.id);
             res.status(204).end();
         } catch (e) {
             if (handleRoleManageError(e, res)) return;

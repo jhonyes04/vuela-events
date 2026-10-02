@@ -5,6 +5,7 @@ import { Prisma } from '../generated/prisma/client.js';
 import { requireAuth, requirePermission } from '../middleware/auth.js';
 import {
     changeUserRole,
+    deleteUser,
     RoleChangeError,
     setUserActive,
 } from '../services/roles.js';
@@ -23,6 +24,10 @@ const adminErrors = {
     last_manager: [
         409,
         'No puedes dejar el sistema sin nadie que pueda gestionar usuarios',
+    ],
+    has_events: [
+        409,
+        'No puedes eliminar un usuario que ha creado eventos. Desactívalo en su lugar.',
     ],
 } as const;
 
@@ -126,6 +131,32 @@ usersRouter.patch('/:id/active', async (req, res) => {
         );
 
         res.json({ user });
+    } catch (e) {
+        if (handleAdminError(e, res)) return;
+
+        throw e;
+    }
+});
+
+usersRouter.delete('/:id', async (req, res) => {
+    const actor = req.user;
+
+    if (!actor) {
+        res.status(401).json({ error: 'Autenticación requerida' });
+        return;
+    }
+
+    const params = paramsSchema.safeParse(req.params);
+
+    if (!params.success) {
+        res.status(400).json({ error: 'Solicitud no válida' });
+        return;
+    }
+
+    try {
+        await deleteUser(actor.id, params.data.id);
+
+        res.status(204).end();
     } catch (e) {
         if (handleAdminError(e, res)) return;
 

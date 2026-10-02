@@ -17,6 +17,7 @@ export const GuidesPage = () => {
     const upsert = useGuidesStore((s) => s.upsert);
     const remove = useGuidesStore((s) => s.remove);
     const [formOpen, setFormOpen] = useState(false);
+    const [formKey, setFormKey] = useState(0);
     const [editing, setEditing] = useState<Guide | null>(null);
     const [deleting, setDeleting] = useState<Guide | null>(null);
 
@@ -27,11 +28,13 @@ export const GuidesPage = () => {
 
     const openCreate = () => {
         setEditing(null);
+        setFormKey((k) => k + 1);
         setFormOpen(true);
     };
 
     const openEdit = (guide: Guide) => {
         setEditing(guide);
+        setFormKey((k) => k + 1);
         setFormOpen(true);
     };
 
@@ -82,7 +85,7 @@ export const GuidesPage = () => {
                             )}
                             <IconTooltip label="Editar">
                                 <Button
-                                    variant="outline"
+                                    variant="secondary"
                                     size="icon"
                                     aria-label="Editar"
                                     onClick={() => openEdit(guide)}
@@ -106,6 +109,7 @@ export const GuidesPage = () => {
             )}
 
             <GuideFormDialog
+                key={formKey}
                 open={formOpen}
                 onOpenChange={setFormOpen}
                 guide={editing}

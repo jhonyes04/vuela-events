@@ -272,7 +272,9 @@ function EventFormBody({
             const endsAt = madridLocalToIso(values.endsAt);
 
             if (new Date(endsAt) <= new Date(startsAt)) {
-                toast.error('La fecha de fin debe ser posterior a la de inicio');
+                toast.error(
+                    'La fecha de fin debe ser posterior a la de inicio',
+                );
                 return;
             }
 
@@ -295,7 +297,7 @@ function EventFormBody({
     };
 
     return (
-        <DialogContent className="sm:max-w-2xl">
+        <DialogContent className="sm:max-w-xl">
             <DialogHeader>
                 <DialogTitle>
                     {isEdit ? 'Editar evento' : 'Crear evento'}

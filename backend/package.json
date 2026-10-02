@@ -13,7 +13,12 @@
     "db:test:migrate": "node --env-file=.env.test node_modules/prisma/build/index.js migrate deploy",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
-    "db:status": "prisma migrate status"
+    "db:status": "prisma migrate status",
+    "db:seed": "tsx --env-file=.env prisma/seed.ts",
+    "db:deploy": "prisma migrate deploy && pnpm run db:seed"
+  },
+  "prisma": {
+    "seed": "tsx --env-file=.env prisma/seed.ts"
   },
   "keywords": [],
   "author": "",

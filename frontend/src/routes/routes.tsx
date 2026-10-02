@@ -8,6 +8,7 @@ import { CategoriesPage } from '@/features/categories/pages/CategoriesPage';
 import { GuidesPage } from '@/features/guides/pages/GuidesPage';
 import { EmailTemplatesPage } from '@/features/emailTemplates/pages/EmailTemplatesPage';
 import { EmailSettingsPage } from '@/features/emailSettings/pages/EmailSettingsPage';
+import { AuditPage } from '@/features/audit/pages/AuditPage';
 
 export interface AppRoute {
     path: string;
@@ -87,6 +88,13 @@ export const appRoutes: AppRoute[] = [
         label: 'Configuración correo',
         element: <EmailSettingsPage />,
         permissions: ['email:send'],
+        group: 'admin',
+    },
+    {
+        path: '/admin/auditoria',
+        label: 'Auditoría',
+        element: <AuditPage />,
+        permissions: ['audit:manage'],
         group: 'admin',
     },
 ];

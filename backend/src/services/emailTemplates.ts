@@ -1,4 +1,5 @@
 import { prisma } from '../lib/prisma.js';
+import { recordAudit } from './audit.js';
 
 export type EmailTemplateManageFailure = 'duplicate' | 'not_found';
 
@@ -28,6 +29,7 @@ export const listEmailTemplates = () =>
     });
 
 export const createEmailTemplate = async (
+    actorId: string,
     name: string,
     subject: string,
     body: string,
@@ -38,13 +40,22 @@ export const createEmailTemplate = async (
         throw new EmailTemplateManageError('duplicate');
     }
 
-    return prisma.emailTemplate.create({
+    const template = await prisma.emailTemplate.create({
         data: { name, subject, body },
         select: emailTemplateSelect,
     });
+
+    await recordAudit({
+        action: 'email_template_created',
+        actorId,
+        newValue: template.name.slice(0, 100),
+    });
+
+    return template;
 };
 
 export const updateEmailTemplate = async (
+    actorId: string,
     id: string,
     input: { name: string; subject: string; body: string; active: boolean },
 ) => {
@@ -64,14 +75,23 @@ export const updateEmailTemplate = async (
         }
     }
 
-    return prisma.emailTemplate.update({
+    const updated = await prisma.emailTemplate.update({
         where: { id },
         data: input,
         select: emailTemplateSelect,
     });
+
+    await recordAudit({
+        action: 'email_template_updated',
+        actorId,
+        oldValue: template.name.slice(0, 100),
+        newValue: updated.name.slice(0, 100),
+    });
+
+    return updated;
 };
 
-export const deleteEmailTemplate = async (id: string) => {
+export const deleteEmailTemplate = async (actorId: string, id: string) => {
     const template = await prisma.emailTemplate.findUnique({ where: { id } });
 
     if (!template) {
@@ -79,4 +99,10 @@ export const deleteEmailTemplate = async (id: string) => {
     }
 
     await prisma.emailTemplate.delete({ where: { id } });
+
+    await recordAudit({
+        action: 'email_template_deleted',
+        actorId,
+        oldValue: template.name.slice(0, 100),
+    });
 };

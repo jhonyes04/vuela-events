@@ -52,6 +52,13 @@ emailTemplatesRouter.post(
     '/',
     requirePermission('email:create'),
     async (req, res) => {
+        const actor = req.user;
+
+        if (!actor) {
+            res.status(401).json({ error: 'Autenticación requerida' });
+            return;
+        }
+
         const body = createEmailTemplateSchema.safeParse(req.body);
 
         if (!body.success) {
@@ -61,6 +68,7 @@ emailTemplatesRouter.post(
 
         try {
             const template = await createEmailTemplate(
+                actor.id,
                 body.data.name,
                 body.data.subject,
                 body.data.body,
@@ -84,6 +92,13 @@ emailTemplatesRouter.patch(
     '/:id',
     requirePermission('email:edit'),
     async (req, res) => {
+        const actor = req.user;
+
+        if (!actor) {
+            res.status(401).json({ error: 'Autenticación requerida' });
+            return;
+        }
+
         const params = idParamsSchema.safeParse(req.params);
         const body = updateEmailTemplateSchema.safeParse(req.body);
 
@@ -94,6 +109,7 @@ emailTemplatesRouter.patch(
 
         try {
             const template = await updateEmailTemplate(
+                actor.id,
                 params.data.id,
                 body.data,
             );
@@ -116,6 +132,13 @@ emailTemplatesRouter.delete(
     '/:id',
     requirePermission('email:delete'),
     async (req, res) => {
+        const actor = req.user;
+
+        if (!actor) {
+            res.status(401).json({ error: 'Autenticación requerida' });
+            return;
+        }
+
         const params = idParamsSchema.safeParse(req.params);
 
         if (!params.success) {
@@ -124,7 +147,7 @@ emailTemplatesRouter.delete(
         }
 
         try {
-            await deleteEmailTemplate(params.data.id);
+            await deleteEmailTemplate(actor.id, params.data.id);
             res.status(204).end();
         } catch (e) {
             if (e instanceof EmailTemplateManageError) {

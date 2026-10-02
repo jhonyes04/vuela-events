@@ -28,6 +28,7 @@ import {
     AttendanceReportError,
 } from '../services/attendanceReport.js';
 import { createReportDraft } from '../services/reportDrafts.js';
+import { recordAudit } from '../services/audit.js';
 
 // Campos comunes a un evento suelto y a una serie.
 const eventFields = {
@@ -263,6 +264,12 @@ eventsRouter.post(
             select: eventSelect,
         });
 
+        await recordAudit({
+            action: 'event_created',
+            actorId: actor.id,
+            newValue: event.title.slice(0, 100),
+        });
+
         res.status(201).json({ event });
     },
 );
@@ -272,6 +279,13 @@ eventsRouter.patch(
     '/:id',
     requirePermission('events:edit'),
     async (req, res) => {
+        const actor = req.user;
+
+        if (!actor) {
+            res.status(401).json({ error: 'Autenticación requerida' });
+            return;
+        }
+
         const params = idParamsSchema.safeParse(req.params);
         const body = updateEventSchema.safeParse(req.body);
 
@@ -326,6 +340,12 @@ eventsRouter.patch(
                 guideId,
             },
             select: eventSelect,
+        });
+
+        await recordAudit({
+            action: 'event_updated',
+            actorId: actor.id,
+            newValue: event.title.slice(0, 100),
         });
 
         res.json({ event });
