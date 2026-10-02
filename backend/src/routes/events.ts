@@ -156,6 +156,7 @@ const registrationErrors = {
 const attendanceReportErrors = {
     event_not_found: [404, 'Evento no encontrado'],
     no_recipients: [400, 'Selecciona al menos un destinatario'],
+    event_not_ended: [409, 'El evento todavía no ha finalizado'],
 } as const;
 
 const attendanceReportSchema = z.strictObject({

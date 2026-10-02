@@ -15,7 +15,7 @@ import { ReportPreviewDialog } from '@/features/events/components/ReportPreviewD
 import { useAttendees } from '@/features/events/hooks/useAttendees';
 import { useReportDraft } from '@/features/events/hooks/useReportDraft';
 import { scrollbarOptions } from '@/lib/overlayScrollbarsOptions';
-import type { EventItem } from '@/features/events/lib/events';
+import { hasEnded, type EventItem } from '@/features/events/lib/events';
 import type { SlotId } from '@/features/emailSettings/lib/emailSettings';
 
 interface AttendeesBodyProps {
@@ -24,6 +24,7 @@ interface AttendeesBodyProps {
 }
 
 const AttendeesBody = ({ event, onCloseAll }: AttendeesBodyProps) => {
+    const ended = hasEnded(event);
     const { attendees, failed, loading } = useAttendees(
         event.id,
         `${event._count.registrations}`,
@@ -100,32 +101,44 @@ const AttendeesBody = ({ event, onCloseAll }: AttendeesBodyProps) => {
             )}
 
             <DialogFooter>
-                <Button
-                    variant="default"
-                    disabled={selected.size === 0}
-                    onClick={() => setSendSlot('convocatoria')}
-                >
-                    Enviar convocatoria
-                </Button>
-                {draft && (
-                    <Button
-                        variant="default"
-                        onClick={() => setPreviewOpen(true)}
-                    >
-                        Ver parte
-                    </Button>
-                )}
-                <Button
-                    variant="default"
-                    disabled={selected.size === 0 || generating}
-                    onClick={() => void handleReportClick()}
-                >
-                    {generating
-                        ? 'Generando…'
-                        : draft
-                          ? 'Enviar parte de firmas'
-                          : 'Generar parte de firmas'}
-                </Button>
+                <div className="grid w-full gap-2">
+                    <div className="flex gap-2 sm:flex-row sm:justify-end">
+                        <Button
+                            variant="default"
+                            disabled={selected.size === 0}
+                            onClick={() => setSendSlot('convocatoria')}
+                        >
+                            Enviar convocatoria
+                        </Button>
+                        {draft && (
+                            <Button
+                                variant="default"
+                                onClick={() => setPreviewOpen(true)}
+                            >
+                                Ver parte
+                            </Button>
+                        )}
+                        <Button
+                            variant="default"
+                            disabled={
+                                selected.size === 0 || generating || !ended
+                            }
+                            onClick={() => void handleReportClick()}
+                        >
+                            {generating
+                                ? 'Generando…'
+                                : draft
+                                  ? 'Enviar parte de firmas'
+                                  : 'Generar parte de firmas'}
+                        </Button>
+                    </div>
+                    {!ended && (
+                        <p className="text-xs text-destructive sm:text-right">
+                            El parte de firmas solo se puede generar una vez
+                            finalizado el evento.
+                        </p>
+                    )}
+                </div>
             </DialogFooter>
 
             {draft && (

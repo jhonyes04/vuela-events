@@ -32,7 +32,10 @@ const fileDateFormat = new Intl.DateTimeFormat('en-CA', {
     day: '2-digit',
 });
 
-export type AttendanceReportFailure = 'event_not_found' | 'no_recipients';
+export type AttendanceReportFailure =
+    | 'event_not_found'
+    | 'no_recipients'
+    | 'event_not_ended';
 
 export class AttendanceReportError extends Error {
     readonly reason: AttendanceReportFailure;
@@ -76,6 +79,10 @@ export const generateAttendanceReport = async (
 
     if (!event) {
         throw new AttendanceReportError('event_not_found');
+    }
+
+    if (event.endsAt > new Date()) {
+        throw new AttendanceReportError('event_not_ended');
     }
 
     // Acotado al evento: así nadie puede colar el id de inscripción de otro
