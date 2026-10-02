@@ -7,9 +7,9 @@ import {
     CreateEventDialog,
     CreateEventOnDayDialog,
 } from '@/features/events/components/CreateEventDialog';
+import { CalendarGrid } from '@/features/events/components/CalendarGrid';
 import { EventCard } from '@/features/events/components/EventCard';
 import { EventDetailDialog } from '@/features/events/components/EventDetailDialog';
-import { MonthCalendar } from '@/features/events/components/MonthCalendar';
 import {
     Alert,
     AlertAction,
@@ -17,23 +17,51 @@ import {
     AlertTitle,
 } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
-import { useMonthEvents } from '@/features/events/hooks/useMonthEvents';
-import { currentMonth, useEventsStore } from '@/features/events/store';
+import { useRangeEvents } from '@/features/events/hooks/useRangeEvents';
+import { today, useEventsStore } from '@/features/events/store';
+import {
+    addDays,
+    buildMonthGrid,
+    buildWeekGrid,
+    mondayKeyOf,
+} from '@/features/events/lib/calendar';
 import {
     dayKey,
     formatMonthLabel,
+    formatWeekRangeLabel,
+    listMonthEvents,
+    listWeekEvents,
+    monthKey,
     type EventItem,
 } from '@/features/events/lib/events';
 
 export function EventsPage() {
     const { user } = useAuth();
     const canCreate = user?.permissions.includes('events:create') ?? false;
-    const cursor = useEventsStore((s) => s.cursor);
-    const setCursor = useEventsStore((s) => s.setCursor);
-    const { events, loading, error, reload } = useMonthEvents(
-        cursor.year,
-        cursor.month,
+    const view = useEventsStore((s) => s.view);
+    const anchor = useEventsStore((s) => s.anchor);
+    const setView = useEventsStore((s) => s.setView);
+    const setAnchor = useEventsStore((s) => s.setAnchor);
+
+    const [yearPart, monthPart] = anchor.split('-').map(Number);
+    const year = yearPart!;
+    const monthIndex = monthPart! - 1;
+    const weekMondayKey = mondayKeyOf(anchor);
+
+    const cacheKey =
+        view === 'month'
+            ? `month:${monthKey(year, monthIndex)}`
+            : `week:${weekMondayKey}`;
+    const fetchEvents =
+        view === 'month'
+            ? () => listMonthEvents(year, monthIndex)
+            : () => listWeekEvents(weekMondayKey);
+
+    const { events, loading, error, reload } = useRangeEvents(
+        cacheKey,
+        fetchEvents,
     );
+
     // Se guarda el id y una copia: al recargar, la ficha se refresca con el dato nuevo, pero no se cierra mientras llega.
     const [selectedId, setSelectedId] = useState<string | null>(null);
     const [snapshot, setSnapshot] = useState<EventItem | null>(null);
@@ -54,7 +82,8 @@ export function EventsPage() {
         setSnapshot(null);
     };
 
-    // Tras crear, la agenda se lleva al mes de la primera sesión y se recarga.
+    // Tras crear, la agenda se lleva al día de la primera sesión (su mes o su
+    // semana, según la vista) y se recarga.
     const handleCreated = ({
         startsAt,
         count,
@@ -62,9 +91,7 @@ export function EventsPage() {
         startsAt: string;
         count: number;
     }) => {
-        const [year, month] = dayKey(startsAt).split('-').map(Number);
-
-        setCursor({ year: year!, month: month! - 1 });
+        setAnchor(dayKey(startsAt));
         toast.success(
             count === 1 ? 'Evento creado.' : `Se han creado ${count} sesiones.`,
         );
@@ -76,28 +103,51 @@ export function EventsPage() {
         reload();
     };
 
-    const goTo = (next: { year: number; month: number }) => {
-        setCursor(next);
-    };
-
     const shift = (delta: number) => {
-        const next = new Date(Date.UTC(cursor.year, cursor.month + delta, 1));
+        if (view === 'month') {
+            const next = new Date(Date.UTC(year, monthIndex + delta, 1));
+            const nextMonth = String(next.getUTCMonth() + 1).padStart(2, '0');
 
-        goTo({ year: next.getUTCFullYear(), month: next.getUTCMonth() });
+            setAnchor(`${next.getUTCFullYear()}-${nextMonth}-01`);
+        } else {
+            setAnchor(addDays(anchor, delta * 7));
+        }
     };
 
-    const todayKey = dayKey(new Date().toISOString());
+    const todayKey = today();
+    const weeks =
+        view === 'month'
+            ? buildMonthGrid(year, monthIndex, todayKey)
+            : [buildWeekGrid(anchor, todayKey)];
+    const prevLabel = view === 'month' ? 'Mes anterior' : 'Semana anterior';
+    const nextLabel = view === 'month' ? 'Mes siguiente' : 'Semana siguiente';
 
     return (
         <section>
             <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
                 <h1 className="text-2xl font-semibold">Eventos</h1>
                 <div className="flex flex-wrap items-center gap-2">
-                    <IconTooltip label="Mes anterior">
+                    <div className="flex rounded-lg border p-0.5">
+                        <Button
+                            variant={view === 'month' ? 'default' : 'ghost'}
+                            size="sm"
+                            onClick={() => setView('month')}
+                        >
+                            Mes
+                        </Button>
+                        <Button
+                            variant={view === 'week' ? 'default' : 'ghost'}
+                            size="sm"
+                            onClick={() => setView('week')}
+                        >
+                            Semana
+                        </Button>
+                    </div>
+                    <IconTooltip label={prevLabel}>
                         <Button
                             variant="outline"
                             size="icon"
-                            aria-label="Mes anterior"
+                            aria-label={prevLabel}
                             onClick={() => shift(-1)}
                         >
                             <ChevronLeft />
@@ -107,22 +157,21 @@ export function EventsPage() {
                         className="min-w-40 text-center font-medium"
                         aria-live="polite"
                     >
-                        {formatMonthLabel(cursor.year, cursor.month)}
+                        {view === 'month'
+                            ? formatMonthLabel(year, monthIndex)
+                            : formatWeekRangeLabel(weekMondayKey)}
                     </span>
-                    <IconTooltip label="Mes siguiente">
+                    <IconTooltip label={nextLabel}>
                         <Button
                             variant="outline"
                             size="icon"
-                            aria-label="Mes siguiente"
+                            aria-label={nextLabel}
                             onClick={() => shift(1)}
                         >
                             <ChevronRight />
                         </Button>
                     </IconTooltip>
-                    <Button
-                        variant="secondary"
-                        onClick={() => goTo(currentMonth())}
-                    >
+                    <Button variant="secondary" onClick={() => setAnchor(today())}>
                         Hoy
                     </Button>
                     {canCreate && (
@@ -150,10 +199,8 @@ export function EventsPage() {
                 </p>
             ) : (
                 <>
-                    <MonthCalendar
-                        year={cursor.year}
-                        month={cursor.month}
-                        todayKey={todayKey}
+                    <CalendarGrid
+                        weeks={weeks}
                         events={events}
                         onSelectEvent={openEvent}
                         onSelectDay={canCreate ? setNewEventDay : undefined}
@@ -161,7 +208,8 @@ export function EventsPage() {
 
                     {events.length === 0 && !error && (
                         <p className="mt-4 text-muted-foreground">
-                            No hay eventos este mes.
+                            No hay eventos{' '}
+                            {view === 'month' ? 'este mes' : 'esta semana'}.
                         </p>
                     )}
 

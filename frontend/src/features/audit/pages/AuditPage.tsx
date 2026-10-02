@@ -280,9 +280,7 @@ export const AuditPage = () => {
                                             className="size-4 accent-primary"
                                             aria-label="Seleccionar"
                                             checked={selected.has(log.id)}
-                                            onChange={() =>
-                                                toggleOne(log.id)
-                                            }
+                                            onChange={() => toggleOne(log.id)}
                                         />
                                     </td>
                                     <td className="p-3 whitespace-nowrap">

@@ -1,8 +1,5 @@
 import { useMemo } from 'react';
-import {
-    buildMonthGrid,
-    WEEKDAY_HEADERS,
-} from '@/features/events/lib/calendar';
+import { WEEKDAY_HEADERS, type CalendarDay } from '@/features/events/lib/calendar';
 import { eventColor } from '@/features/events/lib/eventColors';
 import {
     formatDayLabel,
@@ -15,25 +12,20 @@ import { cn } from '@/lib/utils';
 const MAX_CHIPS = 3;
 const MAX_DOTS = 4;
 
-export function MonthCalendar({
-    year,
-    month,
-    todayKey,
+// Rejilla de semanas (una sola fila para la vista de semana, varias para la
+// de mes): el llamador decide qué cuadrícula construir (buildMonthGrid o
+// buildWeekGrid), este componente solo la dibuja.
+export function CalendarGrid({
+    weeks,
     events,
     onSelectEvent,
     onSelectDay,
 }: {
-    year: number;
-    month: number;
-    todayKey: string;
+    weeks: CalendarDay[][];
     events: EventItem[];
     onSelectEvent: (event: EventItem) => void;
     onSelectDay?: (dayKey: string) => void;
 }) {
-    const weeks = useMemo(
-        () => buildMonthGrid(year, month, todayKey),
-        [year, month, todayKey],
-    );
     const byDay = useMemo(
         () => new Map(groupByDay(events).map((g) => [g.key, g.events])),
         [events],

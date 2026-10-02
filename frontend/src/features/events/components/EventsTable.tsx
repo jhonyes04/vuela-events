@@ -30,7 +30,13 @@ import {
 const selectClass =
     'h-8 rounded-lg border border-input bg-card px-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50';
 
-type SortKey = 'title' | 'category' | 'startsAt' | 'location' | 'capacity';
+type SortKey =
+    | 'title'
+    | 'category'
+    | 'startsAt'
+    | 'location'
+    | 'capacity'
+    | 'participants';
 
 type TimeFilter = 'all' | 'past' | 'future';
 
@@ -50,6 +56,7 @@ interface EventsTableProps {
     matchesSearch: (event: EventItem, query: string) => boolean;
     defaultTimeFilter: TimeFilter;
     showCapacity?: boolean;
+    showParticipants?: boolean;
     renderActions: (event: EventItem) => ReactNode;
 }
 
@@ -65,6 +72,7 @@ export const EventsTable = ({
     matchesSearch,
     defaultTimeFilter,
     showCapacity = false,
+    showParticipants = false,
     renderActions,
 }: EventsTableProps) => {
     const [search, setSearch] = useState('');
@@ -108,6 +116,8 @@ export const EventsTable = ({
             location: (a, b) =>
                 (a.location ?? '').localeCompare(b.location ?? ''),
             capacity: (a, b) => a._count.registrations - b._count.registrations,
+            participants: (a, b) =>
+                (a.participantsCount ?? -1) - (b.participantsCount ?? -1),
         },
         { key: 'startsAt', dir: 'asc' },
     );
@@ -243,8 +253,16 @@ export const EventsTable = ({
                                 />
                                 {showCapacity && (
                                     <SortableHeader
-                                        label="Aforo"
+                                        label="Participantes"
                                         sortKey="capacity"
+                                        sort={sort}
+                                        onSort={toggleSort}
+                                    />
+                                )}
+                                {showParticipants && (
+                                    <SortableHeader
+                                        label="Usuarios"
+                                        sortKey="participants"
                                         sort={sort}
                                         onSort={toggleSort}
                                     />
@@ -288,6 +306,11 @@ export const EventsTable = ({
                                     {showCapacity && (
                                         <td className="p-3 whitespace-nowrap">
                                             {attendanceLabel(event)}
+                                        </td>
+                                    )}
+                                    {showParticipants && (
+                                        <td className="p-3 text-right whitespace-nowrap">
+                                            {event.participantsCount ?? '—'}
                                         </td>
                                     )}
                                     <td className="p-3 text-right">

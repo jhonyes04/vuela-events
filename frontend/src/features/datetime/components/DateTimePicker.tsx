@@ -46,7 +46,7 @@ export const DateTimePicker = ({
 
     return (
         <Popover open={open} onOpenChange={setOpen}>
-            <InputGroup>
+            <InputGroup className="bg-card">
                 <InputGroupInput
                     id={id}
                     type="datetime-local"

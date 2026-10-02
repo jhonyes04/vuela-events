@@ -79,7 +79,7 @@ export const EmailTemplatesPage = () => {
                             )}
                             <IconTooltip label="Editar">
                                 <Button
-                                    variant="default"
+                                    variant="secondary"
                                     size="icon"
                                     aria-label="Editar"
                                     onClick={() => openEdit(template)}

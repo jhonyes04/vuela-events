@@ -173,11 +173,13 @@ export const EmailTemplateFormDialog = ({
     onSaved,
 }: EmailTemplateFormDialogProps) => (
     <Dialog open={open} onOpenChange={onOpenChange}>
-        <EmailTemplateFormBody
-            key={template?.id ?? 'new'}
-            template={template}
-            onSaved={onSaved}
-            onClose={() => onOpenChange(false)}
-        />
+        {open && (
+            <EmailTemplateFormBody
+                key={template?.id ?? 'new'}
+                template={template}
+                onSaved={onSaved}
+                onClose={() => onOpenChange(false)}
+            />
+        )}
     </Dialog>
 );

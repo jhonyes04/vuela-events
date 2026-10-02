@@ -1,5 +1,6 @@
 import { api } from '@/lib/api';
 import type { CategoryColor } from '@/features/categories/lib/colors';
+import { addDays } from '@/features/events/lib/calendar';
 
 export interface EventItem {
     id: string;
@@ -10,6 +11,9 @@ export interface EventItem {
     startsAt: string;
     endsAt: string;
     capacity: number | null;
+    // Gente externa atendida en el taller (no son usuarios de la app); se
+    // rellena al terminar el evento, no al crearlo.
+    participantsCount: number | null;
     // Las sesiones creadas juntas comparten seriesId.
     seriesId: string | null;
     createdAt: string;
@@ -120,6 +124,64 @@ export const listMonthEvents = async (
     const prefix = monthKey(year, month);
 
     return events.filter((event) => dayKey(event.startsAt).startsWith(prefix));
+};
+
+// Los 7 días 'YYYY-MM-DD' (lunes a domingo) de la semana de `mondayKeyValue`.
+const weekDays = (mondayKeyValue: string): string[] =>
+    Array.from({ length: 7 }, (_, i) => addDays(mondayKeyValue, i));
+
+// Rango de consulta con un día de margen por lado; luego se filtra por día.
+const weekRange = (mondayKeyValue: string) => {
+    const days = weekDays(mondayKeyValue);
+
+    return {
+        from: new Date(
+            Date.parse(`${days[0]}T00:00:00Z`) - DAY_MS,
+        ).toISOString(),
+        to: new Date(
+            Date.parse(`${days[6]}T00:00:00Z`) + 2 * DAY_MS,
+        ).toISOString(),
+    };
+};
+
+export const listWeekEvents = async (
+    mondayKeyValue: string,
+): Promise<EventItem[]> => {
+    const { from, to } = weekRange(mondayKeyValue);
+    const query = new URLSearchParams({ from, to });
+
+    const { events } = await api.get<{ events: EventItem[] }>(
+        `/events?${query.toString()}`,
+    );
+    const days = new Set(weekDays(mondayKeyValue));
+
+    return events.filter((event) => days.has(dayKey(event.startsAt)));
+};
+
+const weekDayFormat = new Intl.DateTimeFormat('es-ES', {
+    timeZone: 'UTC',
+    day: 'numeric',
+});
+
+const weekMonthFormat = new Intl.DateTimeFormat('es-ES', {
+    timeZone: 'UTC',
+    month: 'short',
+});
+
+// '22 – 28 sep 2026', o '29 sep – 5 oct 2026' si la semana cruza de mes.
+export const formatWeekRangeLabel = (mondayKeyValue: string): string => {
+    const days = weekDays(mondayKeyValue);
+    const start = new Date(`${days[0]}T12:00:00Z`);
+    const end = new Date(`${days[6]}T12:00:00Z`);
+    const sameMonth =
+        start.getUTCMonth() === end.getUTCMonth() &&
+        start.getUTCFullYear() === end.getUTCFullYear();
+
+    const startLabel = sameMonth
+        ? weekDayFormat.format(start)
+        : `${weekDayFormat.format(start)} ${weekMonthFormat.format(start)}`;
+
+    return `${startLabel} – ${weekDayFormat.format(end)} ${weekMonthFormat.format(end)} ${end.getUTCFullYear()}`;
 };
 
 export const groupByDay = (
@@ -302,6 +364,12 @@ export const updateEventById = (
     id: string,
     input: EventUpdateInput,
 ): Promise<void> => api.patch(`/events/${id}`, input);
+
+export const updateEventParticipantsCount = (
+    id: string,
+    participantsCount: number | null,
+): Promise<void> =>
+    api.patch(`/events/${id}/participants-count`, { participantsCount });
 
 // Sin rango de fechas: todos los eventos, para el listado de gestión.
 export const listAllEvents = async (): Promise<EventItem[]> => {

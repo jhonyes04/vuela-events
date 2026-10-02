@@ -1,28 +1,24 @@
 import { create } from 'zustand';
 import { dayKey } from '@/features/events/lib/events';
 
-export interface MonthCursor {
-    year: number;
-    // 0-11, como Date.
-    month: number;
-}
+export type CalendarView = 'month' | 'week';
 
-// Mes actual según la hora de Madrid.
-export const currentMonth = (): MonthCursor => {
-    const [year, month] = dayKey(new Date().toISOString())
-        .split('-')
-        .map(Number);
-
-    return { year: year!, month: month! - 1 };
-};
+// 'YYYY-MM-DD' de hoy según la hora de Madrid.
+export const today = (): string => dayKey(new Date().toISOString());
 
 interface EventsState {
-    cursor: MonthCursor;
-    setCursor: (cursor: MonthCursor) => void;
+    view: CalendarView;
+    // Día de referencia: ancla tanto la vista de mes (su mes) como la de
+    // semana (su semana).
+    anchor: string;
+    setView: (view: CalendarView) => void;
+    setAnchor: (anchor: string) => void;
 }
 
-// El mes visible se conserva al salir de la agenda y volver.
+// La vista y el día visibles se conservan al salir de la agenda y volver.
 export const useEventsStore = create<EventsState>((set) => ({
-    cursor: currentMonth(),
-    setCursor: (cursor) => set({ cursor }),
+    view: 'month',
+    anchor: today(),
+    setView: (view) => set({ view }),
+    setAnchor: (anchor) => set({ anchor }),
 }));

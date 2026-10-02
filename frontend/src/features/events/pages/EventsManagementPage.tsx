@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
-import { Pencil, Trash2, Users } from 'lucide-react';
+import { ClipboardList, Pencil, Trash2, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { IconTooltip } from '@/components/IconTooltip';
 import { AttendeesDialog } from '@/features/events/components/AttendeesDialog';
 import { EventEditDialog } from '@/features/events/components/CreateEventDialog';
 import { EventsTable } from '@/features/events/components/EventsTable';
+import { ParticipantsCountDialog } from '@/features/events/components/ParticipantsCountDialog';
 import { ConfirmDeleteDialog } from '@/components/ConfirmDeleteDialog';
 import { ApiError } from '@/lib/api';
 import {
@@ -24,6 +25,9 @@ export const EventsManagementPage = () => {
     const [viewingAttendees, setViewingAttendees] = useState<EventItem | null>(
         null,
     );
+    const [participantsOpen, setParticipantsOpen] = useState(false);
+    const [editingParticipants, setEditingParticipants] =
+        useState<EventItem | null>(null);
 
     const load = async () => {
         setLoading(true);
@@ -56,6 +60,11 @@ export const EventsManagementPage = () => {
         setAttendeesOpen(true);
     };
 
+    const openParticipants = (event: EventItem) => {
+        setEditingParticipants(event);
+        setParticipantsOpen(true);
+    };
+
     return (
         <section>
             <h1 className="mb-6 text-2xl font-semibold">Eventos</h1>
@@ -72,6 +81,7 @@ export const EventsManagementPage = () => {
                 }
                 defaultTimeFilter="future"
                 showCapacity
+                showParticipants
                 renderActions={(event) => (
                     <>
                         <IconTooltip label="Ver participantes">
@@ -82,6 +92,17 @@ export const EventsManagementPage = () => {
                                 onClick={() => openAttendees(event)}
                             >
                                 <Users className="size-4" />
+                            </Button>
+                        </IconTooltip>
+                        <IconTooltip label="Usuarios totales">
+                            <Button
+                                variant="default"
+                                className="bg-green-800"
+                                size="icon"
+                                aria-label="Usuarios totales"
+                                onClick={() => openParticipants(event)}
+                            >
+                                <ClipboardList className="size-4" />
                             </Button>
                         </IconTooltip>
                         <IconTooltip label="Editar">
@@ -119,6 +140,13 @@ export const EventsManagementPage = () => {
                 open={attendeesOpen}
                 onOpenChange={setAttendeesOpen}
                 event={viewingAttendees}
+            />
+
+            <ParticipantsCountDialog
+                open={participantsOpen}
+                onOpenChange={setParticipantsOpen}
+                event={editingParticipants}
+                onSaved={() => void load()}
             />
 
             {deleting && (

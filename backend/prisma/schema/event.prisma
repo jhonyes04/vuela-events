@@ -6,7 +6,10 @@ model Event {
     location            String?         @db.VarChar(200)
     startsAt            DateTime        
     endsAt              DateTime        
-    capacity            Int?        
+    capacity            Int?
+    // Gente externa atendida en el taller (no son usuarios de la app); se
+    // rellena al terminar el evento, no al crearlo.
+    participantsCount   Int?
     createdById         String          @db.Uuid
     categoryId          String          @db.Uuid
     guideId             String          @db.Uuid

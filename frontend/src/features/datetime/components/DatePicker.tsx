@@ -35,7 +35,7 @@ export const DatePicker = ({ id, value, onChange }: DatePickerProps) => {
 
     return (
         <Popover open={open} onOpenChange={setOpen}>
-            <InputGroup>
+            <InputGroup className="bg-card">
                 <InputGroupInput
                     id={id}
                     type="date"

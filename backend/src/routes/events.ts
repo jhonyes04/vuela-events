@@ -83,6 +83,10 @@ const updateEventSchema = z
         message: 'La fecha de fin debe ser posterior a la de inicio',
     });
 
+const participantsCountSchema = z.strictObject({
+    participantsCount: z.number().int().min(0).max(100_000).nullable(),
+});
+
 const dateOnly = z.string().refine(isRealDate, 'Fecha no válida');
 const timeOfDay = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/);
 
@@ -122,6 +126,7 @@ const eventSelect = {
     startsAt: true,
     endsAt: true,
     capacity: true,
+    participantsCount: true,
     seriesId: true,
     createdAt: true,
     createdBy: { select: { id: true, name: true, puntoVuela: true } },
@@ -346,6 +351,56 @@ eventsRouter.patch(
             action: 'event_updated',
             actorId: actor.id,
             newValue: event.title.slice(0, 100),
+        });
+
+        res.json({ event });
+    },
+);
+
+// Participantes externos atendidos: se rellena aparte, una vez terminado el
+// evento (no forma parte del formulario de crear/editar).
+eventsRouter.patch(
+    '/:id/participants-count',
+    requirePermission('events:edit'),
+    async (req, res) => {
+        const actor = req.user;
+
+        if (!actor) {
+            res.status(401).json({ error: 'Autenticación requerida' });
+            return;
+        }
+
+        const params = idParamsSchema.safeParse(req.params);
+        const body = participantsCountSchema.safeParse(req.body);
+
+        if (!params.success || !body.success) {
+            res.status(400).json({ error: 'Solicitud no válida' });
+            return;
+        }
+
+        const exists = await prisma.event.findUnique({
+            where: { id: params.data.id },
+            select: { id: true },
+        });
+
+        if (!exists) {
+            res.status(404).json({ error: 'Evento no encontrado' });
+            return;
+        }
+
+        const event = await prisma.event.update({
+            where: { id: params.data.id },
+            data: { participantsCount: body.data.participantsCount },
+            select: eventSelect,
+        });
+
+        await recordAudit({
+            action: 'event_participants_updated',
+            actorId: actor.id,
+            newValue:
+                body.data.participantsCount === null
+                    ? 'sin especificar'
+                    : String(body.data.participantsCount),
         });
 
         res.json({ event });

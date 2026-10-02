@@ -27,6 +27,7 @@ const ACTION_LABELS: Record<string, string> = {
     user_deleted: 'Usuario eliminado',
     event_created: 'Evento creado',
     event_updated: 'Evento editado',
+    event_participants_updated: 'Participantes atendidos actualizados',
     event_deleted: 'Evento eliminado',
     event_series_created: 'Serie de eventos creada',
     event_series_deleted: 'Serie de eventos eliminada',

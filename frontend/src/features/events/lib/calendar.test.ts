@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildMonthGrid } from './calendar';
+import { addDays, buildMonthGrid, buildWeekGrid, mondayKeyOf } from './calendar';
 
 const keys = (weeks: ReturnType<typeof buildMonthGrid>) =>
     weeks.flat().map((d) => d.key);
@@ -90,5 +90,45 @@ describe('buildMonthGrid', () => {
                 expect(weekday(week[6]!.key)).toBe(0);
             }
         }
+    });
+});
+
+describe('mondayKeyOf', () => {
+    it('devuelve el lunes de la semana, para cualquier día de esa semana', () => {
+        expect(mondayKeyOf('2026-09-23')).toBe('2026-09-21');
+        expect(mondayKeyOf('2026-09-21')).toBe('2026-09-21');
+        expect(mondayKeyOf('2026-09-27')).toBe('2026-09-21');
+    });
+
+    it('cruza de mes y de año correctamente', () => {
+        expect(mondayKeyOf('2026-10-01')).toBe('2026-09-28');
+        expect(mondayKeyOf('2027-01-01')).toBe('2026-12-28');
+    });
+});
+
+describe('addDays', () => {
+    it('suma y resta días, cruzando meses', () => {
+        expect(addDays('2026-09-28', 7)).toBe('2026-10-05');
+        expect(addDays('2026-10-05', -7)).toBe('2026-09-28');
+    });
+});
+
+describe('buildWeekGrid', () => {
+    it('siempre 7 días, de lunes a domingo, todos inMonth', () => {
+        const week = buildWeekGrid('2026-09-23', '2000-01-01');
+
+        expect(week).toHaveLength(7);
+        expect(week[0]!.key).toBe('2026-09-21');
+        expect(week[6]!.key).toBe('2026-09-27');
+        expect(week.every((d) => d.inMonth)).toBe(true);
+    });
+
+    it('marca hoy solo si cae en esa semana', () => {
+        expect(
+            buildWeekGrid('2026-09-23', '2026-09-25').filter((d) => d.isToday),
+        ).toHaveLength(1);
+        expect(
+            buildWeekGrid('2026-09-23', '2026-10-01').some((d) => d.isToday),
+        ).toBe(false);
     });
 });

@@ -162,10 +162,13 @@ export const CategoryFormDialog = ({
     onSaved,
 }: CategoryFormDialogProps) => (
     <Dialog open={open} onOpenChange={onOpenChange}>
-        <CategoryFormBody
-            category={category}
-            onSaved={onSaved}
-            onClose={() => onOpenChange(false)}
-        />
+        {open && (
+            <CategoryFormBody
+                key={category?.id ?? 'new'}
+                category={category}
+                onSaved={onSaved}
+                onClose={() => onOpenChange(false)}
+            />
+        )}
     </Dialog>
 );

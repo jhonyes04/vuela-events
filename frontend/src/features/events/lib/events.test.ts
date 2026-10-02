@@ -21,6 +21,7 @@ const event = (id: string, startsAt: string): EventItem => ({
     startsAt,
     endsAt: startsAt,
     capacity: null,
+    participantsCount: null,
     seriesId: null,
     createdAt: startsAt,
     createdBy: { id: 'u', name: 'U', puntoVuela: null },

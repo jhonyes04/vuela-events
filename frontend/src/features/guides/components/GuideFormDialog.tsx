@@ -132,10 +132,13 @@ export const GuideFormDialog = ({
     onSaved,
 }: GuideFormDialogProps) => (
     <Dialog open={open} onOpenChange={onOpenChange}>
-        <GuideFormBody
-            guide={guide}
-            onSaved={onSaved}
-            onClose={() => onOpenChange(false)}
-        />
+        {open && (
+            <GuideFormBody
+                key={guide?.id ?? 'new'}
+                guide={guide}
+                onSaved={onSaved}
+                onClose={() => onOpenChange(false)}
+            />
+        )}
     </Dialog>
 );
