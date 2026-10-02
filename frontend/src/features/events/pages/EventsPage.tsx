@@ -7,7 +7,10 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/features/auth/hooks/context';
 import { IconTooltip } from '@/components/IconTooltip';
-import { CreateEventDialog } from '@/features/events/components/CreateEventDialog';
+import {
+    CreateEventDialog,
+    CreateEventOnDayDialog,
+} from '@/features/events/components/CreateEventDialog';
 import { EventCard } from '@/features/events/components/EventCard';
 import { EventDetailDialog } from '@/features/events/components/EventDetailDialog';
 import { MonthCalendar } from '@/features/events/components/MonthCalendar';
@@ -42,6 +45,8 @@ export function EventsPage() {
         selectedId === null
             ? null
             : (events.find((e) => e.id === selectedId) ?? snapshot);
+
+    const [newEventDay, setNewEventDay] = useState<string | null>(null);
     // Mensaje de éxito tras crear o eliminar.
     const [notice, setNotice] = useState<string | null>(null);
 
@@ -175,6 +180,7 @@ export function EventsPage() {
                         todayKey={todayKey}
                         events={events}
                         onSelectEvent={openEvent}
+                        onSelectDay={canCreate ? setNewEventDay : undefined}
                     />
 
                     {events.length === 0 && !error && (
@@ -206,6 +212,16 @@ export function EventsPage() {
                 onClose={closeEvent}
                 onChanged={reload}
                 onDeleted={handleDeleted}
+            />
+
+            <CreateEventOnDayDialog
+                open={newEventDay !== null}
+                onOpenChange={(open) => !open && setNewEventDay(null)}
+                initialDate={newEventDay}
+                onCreated={(result) => {
+                    setNewEventDay(null);
+                    handleCreated(result);
+                }}
             />
         </section>
     );

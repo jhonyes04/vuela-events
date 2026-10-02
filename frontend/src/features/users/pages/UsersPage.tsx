@@ -51,7 +51,7 @@ export const UsersPage = () => {
     );
 
     const { paged, page, pageCount, pageSize, total, setPage, setPageSize } =
-        usePagination(sortedUsers, 25);
+        usePagination(sortedUsers, 10);
 
     const load = async () => {
         setLoading(true);
@@ -182,9 +182,7 @@ export const UsersPage = () => {
                                         className="border-b last:border-0"
                                     >
                                         <td className="p-3">{u.name}</td>
-                                        <td className="p-3">
-                                            {u.lastName}
-                                        </td>
+                                        <td className="p-3">{u.lastName}</td>
                                         <td className="p-3 break-all">
                                             {u.email}
                                         </td>

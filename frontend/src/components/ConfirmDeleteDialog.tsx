@@ -78,7 +78,7 @@ export function ConfirmDeleteDialog<T>({
 
                 <DialogFooter>
                     <Button
-                        variant="outline"
+                        variant="default"
                         onClick={() => onOpenChange(false)}
                     >
                         Cancelar

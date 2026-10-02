@@ -1,5 +1,8 @@
 import { useMemo } from 'react';
-import { buildMonthGrid, WEEKDAY_HEADERS } from '@/features/events/lib/calendar';
+import {
+    buildMonthGrid,
+    WEEKDAY_HEADERS,
+} from '@/features/events/lib/calendar';
 import { eventColor } from '@/features/events/lib/eventColors';
 import {
     formatDayLabel,
@@ -18,12 +21,14 @@ export function MonthCalendar({
     todayKey,
     events,
     onSelectEvent,
+    onSelectDay,
 }: {
     year: number;
     month: number;
     todayKey: string;
     events: EventItem[];
     onSelectEvent: (event: EventItem) => void;
+    onSelectDay?: (dayKey: string) => void;
 }) {
     const weeks = useMemo(
         () => buildMonthGrid(year, month, todayKey),
@@ -43,10 +48,7 @@ export function MonthCalendar({
                         <span className="sm:hidden" aria-hidden="true">
                             {d.short}
                         </span>
-                        <span
-                            className="hidden sm:inline"
-                            aria-hidden="true"
-                        >
+                        <span className="hidden sm:inline" aria-hidden="true">
                             {d.long}
                         </span>
                     </div>
@@ -61,33 +63,50 @@ export function MonthCalendar({
                     {week.map((day) => {
                         const list = byDay.get(day.key) ?? [];
                         const count = list.length;
+                        const dayLabel = `${formatDayLabel(day.key)}, ${count === 0 ? 'sin eventos' : count === 1 ? '1 evento' : `${count} eventos`}`;
+
+                        const numberClass = cn(
+                            'flex size-7 items-center justify-center rounded-full text-sm font-medium',
+                            !day.inMonth && 'text-muted-foreground',
+                            day.isToday && 'bg-primary text-primary-foreground',
+                        );
 
                         return (
                             <div
                                 key={day.key}
+                                onClick={() => onSelectDay?.(day.key)}
                                 className={cn(
                                     'min-h-16 min-w-0 border-r p-1 last:border-r-0 md:min-h-28',
                                     !day.inMonth && 'bg-muted/40',
+                                    onSelectDay &&
+                                        'cursor-pointer hover:bg-muted/50',
                                 )}
                             >
-                                <span
-                                    aria-current={day.isToday ? 'date' : undefined}
-                                    aria-label={`${formatDayLabel(day.key)}, ${
-                                        count === 0
-                                            ? 'sin eventos'
-                                            : count === 1
-                                              ? '1 evento'
-                                              : `${count} eventos`
-                                    }`}
-                                    className={cn(
-                                        'flex size-7 items-center justify-center rounded-full text-sm font-medium',
-                                        !day.inMonth && 'text-muted-foreground',
-                                        day.isToday &&
-                                            'bg-primary text-primary-foreground',
-                                    )}
-                                >
-                                    {day.day}
-                                </span>
+                                {onSelectDay ? (
+                                    <button
+                                        type="button"
+                                        aria-current={
+                                            day.isToday ? 'date' : undefined
+                                        }
+                                        aria-label={`Crear evento el ${dayLabel}`}
+                                        className={cn(
+                                            numberClass,
+                                            'cursor-pointer',
+                                        )}
+                                    >
+                                        {day.day}
+                                    </button>
+                                ) : (
+                                    <span
+                                        aria-current={
+                                            day.isToday ? 'date' : undefined
+                                        }
+                                        aria-label={dayLabel}
+                                        className={numberClass}
+                                    >
+                                        {day.day}
+                                    </span>
+                                )}
 
                                 {/* Pantallas grandes: etiquetas con hora y título. */}
                                 <ul className="mt-1 hidden gap-0.5 md:grid">
@@ -95,7 +114,10 @@ export function MonthCalendar({
                                         <li key={event.id} className="min-w-0">
                                             <button
                                                 type="button"
-                                                onClick={() => onSelectEvent(event)}
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    onSelectEvent(event);
+                                                }}
                                                 title={`${formatTime(event.startsAt)} ${event.title}`}
                                                 className={cn(
                                                     'block w-full cursor-pointer truncate rounded px-1.5 py-0.5 text-left text-xs font-medium',
@@ -130,15 +152,17 @@ export function MonthCalendar({
                                         aria-hidden="true"
                                         className="mt-1 flex flex-wrap gap-0.5 md:hidden"
                                     >
-                                        {list.slice(0, MAX_DOTS).map((event) => (
-                                            <span
-                                                key={event.id}
-                                                className={cn(
-                                                    'size-2 rounded-full',
-                                                    eventColor(event).dot,
-                                                )}
-                                            />
-                                        ))}
+                                        {list
+                                            .slice(0, MAX_DOTS)
+                                            .map((event) => (
+                                                <span
+                                                    key={event.id}
+                                                    className={cn(
+                                                        'size-2 rounded-full',
+                                                        eventColor(event).dot,
+                                                    )}
+                                                />
+                                            ))}
                                     </div>
                                 )}
                             </div>

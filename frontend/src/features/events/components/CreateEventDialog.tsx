@@ -117,6 +117,7 @@ function Field({
 interface EventFormBodyProps {
     // null = crear; evento = editar (solo la sesión, sin recurrencia).
     event: EventItem | null;
+    initialDate?: string;
     onCreated?: (result: { startsAt: string; count: number }) => void;
     onSaved?: () => void;
     onClose: () => void;
@@ -125,6 +126,7 @@ interface EventFormBodyProps {
 // Con su propio estado: se recrea (key) al pasar de crear a editar o entre eventos.
 function EventFormBody({
     event,
+    initialDate,
     onCreated,
     onSaved,
     onClose,
@@ -134,7 +136,11 @@ function EventFormBody({
     const fieldId = (name: string) => `${idPrefix}${name}`;
 
     const [values, setValues] = useState<FormValues>(
-        event ? valuesFromEvent(event) : EMPTY,
+        event
+            ? valuesFromEvent(event)
+            : initialDate
+              ? { ...EMPTY, startsAt: `${initialDate}T09:00` }
+              : EMPTY,
     );
     const [error, setError] = useState<string | null>(null);
     const [submitting, setSubmitting] = useState(false);
@@ -291,7 +297,7 @@ function EventFormBody({
     };
 
     return (
-        <DialogContent className="sm:max-w-lg">
+        <DialogContent className="sm:max-w-2xl">
             <DialogHeader>
                 <DialogTitle>
                     {isEdit ? 'Editar evento' : 'Crear evento'}
@@ -685,6 +691,37 @@ export function EventEditDialog({
                 key={event.id}
                 event={event}
                 onSaved={onSaved}
+                onClose={() => onOpenChange(false)}
+            />
+        </Dialog>
+    );
+}
+
+interface CreateEventOnDayDialogProps {
+    open: boolean;
+    onOpenChange: (open: boolean) => void;
+    // null = nada que crear (el diálogo no se muestra).
+    initialDate: string | null;
+    onCreated: (result: { startsAt: string; count: number }) => void;
+}
+
+// Mismo formulario que "Crear evento", pero abierto desde un día del
+// calendario: precarga el inicio en ese día.
+export function CreateEventOnDayDialog({
+    open,
+    onOpenChange,
+    initialDate,
+    onCreated,
+}: CreateEventOnDayDialogProps) {
+    if (!initialDate) return null;
+
+    return (
+        <Dialog open={open} onOpenChange={onOpenChange}>
+            <EventFormBody
+                key={initialDate}
+                event={null}
+                initialDate={initialDate}
+                onCreated={onCreated}
                 onClose={() => onOpenChange(false)}
             />
         </Dialog>

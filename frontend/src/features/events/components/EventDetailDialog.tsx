@@ -108,10 +108,7 @@ const EventDetailBody = ({
                 }}
             >
                 <DialogContent
-                    className={cn(
-                        'border-t-4 sm:max-w-lg',
-                        colorStyle.border,
-                    )}
+                    className={cn('border-t-4 sm:max-w-lg', colorStyle.border)}
                 >
                     <DialogHeader
                         className={cn(
@@ -247,7 +244,7 @@ const EventDetailBody = ({
                             </p>
                         ) : isAdmin ? null : event.registered ? (
                             <Button
-                                variant="outline"
+                                variant="default"
                                 disabled={busy}
                                 onClick={() =>
                                     void run(

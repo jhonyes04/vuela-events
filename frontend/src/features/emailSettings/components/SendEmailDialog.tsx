@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { CircleAlert, CircleCheck, CircleDashed } from 'lucide-react';
+import { CircleAlert, CircleCheck } from 'lucide-react';
 import { Alert, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import {
@@ -10,6 +10,7 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
+import { Progress } from '@/components/ui/progress';
 import { ApiError } from '@/lib/api';
 import {
     getSendJobStatus,
@@ -48,14 +49,8 @@ const SendEmailBody = ({
     const recipientRegistrationIds = recipients.map((r) => r.id);
     const recipientById = new Map(recipients.map((r) => [r.id, r]));
     const [error, setError] = useState<string | null>(null);
-    const [sending, setSending] = useState(false);
+    const [starting, setStarting] = useState(true);
     const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
-
-    useEffect(() => {
-        return () => {
-            if (pollRef.current) clearInterval(pollRef.current);
-        };
-    }, []);
 
     const poll = (jobId: string) => {
         pollRef.current = setInterval(() => {
@@ -70,9 +65,6 @@ const SendEmailBody = ({
     };
 
     const handleSend = async () => {
-        setError(null);
-        setSending(true);
-
         try {
             const jobId = await startBulkSend({
                 slot,
@@ -83,8 +75,6 @@ const SendEmailBody = ({
 
             poll(jobId);
         } catch (err) {
-            setSending(false);
-
             // El acta caducó o cambiaron los destinatarios: hay que generarla de nuevo.
             if (err instanceof ApiError && isStaleDraftMessage(err.message)) {
                 onDraftRejected?.();
@@ -95,15 +85,41 @@ const SendEmailBody = ({
                     ? err.message
                     : 'No se pudo iniciar el envío',
             );
+        } finally {
+            setStarting(false);
         }
     };
+
+    const handleRetry = () => {
+        setError(null);
+        setStarting(true);
+        void handleSend();
+    };
+
+    // Arranca solo, en cuanto se abre el diálogo: no hace falta revisar la
+    // lista ni pulsar un botón aparte. Se desacopla con setTimeout para que
+    // el envío no dispare estado de forma síncrona dentro del propio efecto.
+    useEffect(() => {
+        const startId = setTimeout(() => void handleSend(), 0);
+
+        return () => {
+            clearTimeout(startId);
+
+            if (pollRef.current) clearInterval(pollRef.current);
+        };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     const finished = status?.done ?? false;
     const results = status?.results ?? [];
     const processedIds = new Set(results.map((r) => r.registrationId));
     const pending = recipients.filter((r) => !processedIds.has(r.id));
+    const current = pending[0];
     const succeeded = results.filter((r) => r.ok);
     const failed = results.filter((r) => !r.ok);
+    const total = status?.total ?? recipients.length;
+    const processed = status ? status.sent + status.failed : 0;
+    const progressPct = total > 0 ? (processed / total) * 100 : 0;
 
     return (
         <DialogContent className="sm:max-w-md">
@@ -118,63 +134,32 @@ const SendEmailBody = ({
                 </DialogDescription>
             </DialogHeader>
 
-            {!status && (
-                <div className="max-h-32 overflow-y-auto rounded-lg bg-muted/50 p-2 text-sm">
-                    <ul className="grid gap-1">
-                        {recipients.map((r) => (
-                            <li key={r.id}>{personLabel(r)}</li>
-                        ))}
-                    </ul>
-                </div>
-            )}
-
-            {status && (
-                <div className="grid gap-3">
-                    <p
-                        role="status"
-                        className="rounded-lg bg-muted px-3 py-2 text-sm"
-                    >
-                        {finished
-                            ? 'Envío terminado.'
-                            : `Enviando… ${status.sent + status.failed} de ${status.total}`}
-                    </p>
+            {!error && (
+                <div className="grid gap-4">
+                    <div className="grid gap-1.5">
+                        <div className="flex items-center justify-between text-sm">
+                            <span className="text-muted-foreground">
+                                Progreso general
+                            </span>
+                            <span className="tabular-nums">
+                                {processed} de {total}
+                            </span>
+                        </div>
+                        <Progress value={progressPct} />
+                    </div>
 
                     {!finished && (
-                        <div className="max-h-48 overflow-y-auto rounded-lg bg-muted/50 p-2 text-sm">
-                            <ul className="grid gap-1">
-                                {results.map((r) => {
-                                    const recipient = recipientById.get(
-                                        r.registrationId,
-                                    );
-
-                                    return (
-                                        <li
-                                            key={r.registrationId}
-                                            className="flex items-center gap-1.5"
-                                        >
-                                            {r.ok ? (
-                                                <CircleCheck className="size-3.5 shrink-0 text-emerald-600" />
-                                            ) : (
-                                                <CircleAlert className="size-3.5 shrink-0 text-destructive" />
-                                            )}
-                                            <span>
-                                                {recipient
-                                                    ? personLabel(recipient)
-                                                    : 'Destinatario'}
-                                            </span>
-                                        </li>
-                                    );
-                                })}
-                                {pending.map((r) => (
-                                    <li
-                                        key={r.id}
-                                        className="flex items-center gap-1.5 text-muted-foreground"
-                                    >
-                                        <CircleDashed className="size-3.5 shrink-0" />
-                                        <span>{personLabel(r)}</span>
-                                    </li>
-                                ))}
-                            </ul>
+                        <div className="grid gap-1.5">
+                            <p className="truncate text-sm text-muted-foreground">
+                                {starting
+                                    ? 'Arrancando…'
+                                    : current
+                                      ? `Enviando a ${personLabel(current)}…`
+                                      : 'Terminando…'}
+                            </p>
+                            <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
+                                <div className="h-full w-1/3 animate-[indeterminate-sweep_1.2s_ease-in-out_infinite] rounded-full bg-primary" />
+                            </div>
                         </div>
                     )}
 
@@ -257,13 +242,9 @@ const SendEmailBody = ({
             )}
 
             <DialogFooter>
-                {!status ? (
-                    <Button
-                        type="button"
-                        disabled={sending}
-                        onClick={() => void handleSend()}
-                    >
-                        {sending ? 'Enviando…' : 'Enviar'}
+                {error ? (
+                    <Button type="button" onClick={handleRetry}>
+                        Reintentar
                     </Button>
                 ) : (
                     <Button disabled={!finished} onClick={onClose}>

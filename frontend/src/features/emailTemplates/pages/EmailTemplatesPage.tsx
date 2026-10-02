@@ -41,9 +41,7 @@ export const EmailTemplatesPage = () => {
     return (
         <section>
             <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-                <h1 className="text-2xl font-semibold">
-                    Plantillas de correo
-                </h1>
+                <h1 className="text-2xl font-semibold">Plantillas de correo</h1>
                 <Button onClick={openCreate}>Nueva plantilla</Button>
             </div>
 
@@ -81,7 +79,7 @@ export const EmailTemplatesPage = () => {
                             )}
                             <IconTooltip label="Editar">
                                 <Button
-                                    variant="outline"
+                                    variant="default"
                                     size="icon"
                                     aria-label="Editar"
                                     onClick={() => openEdit(template)}

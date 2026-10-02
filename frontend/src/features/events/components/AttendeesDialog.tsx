@@ -109,7 +109,7 @@ const AttendeesBody = ({ event, onCloseAll }: AttendeesBodyProps) => {
 
             <DialogFooter>
                 <Button
-                    variant="outline"
+                    variant="default"
                     disabled={selected.size === 0}
                     onClick={() => setSendSlot('convocatoria')}
                 >
@@ -117,14 +117,14 @@ const AttendeesBody = ({ event, onCloseAll }: AttendeesBodyProps) => {
                 </Button>
                 {draft && (
                     <Button
-                        variant="outline"
+                        variant="default"
                         onClick={() => setPreviewOpen(true)}
                     >
                         Ver parte
                     </Button>
                 )}
                 <Button
-                    variant="outline"
+                    variant="default"
                     disabled={selected.size === 0 || generating}
                     onClick={() => void handleReportClick()}
                 >
