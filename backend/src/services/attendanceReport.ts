@@ -1,6 +1,12 @@
 import PDFDocument from 'pdfkit';
 import { prisma } from '../lib/prisma.js';
 import { getSignatureImage } from './profile.js';
+import {
+    DIPUTACIONES_LOGO,
+    DIPUTACIONES_LOGO_RATIO,
+    PUNTOS_VUELA_LOGO,
+    PUNTOS_VUELA_LOGO_RATIO,
+} from '../assets/logos.js';
 
 const TZ = 'Europe/Madrid';
 
@@ -134,9 +140,17 @@ const renderPdf = ({
         doc.on('end', () => resolve(Buffer.concat(chunks)));
         doc.on('error', reject);
 
+        const logoWidth = 130;
+        const logoHeight = logoWidth * PUNTOS_VUELA_LOGO_RATIO;
+
+        doc.image(PUNTOS_VUELA_LOGO, doc.page.margins.left, doc.y, {
+            width: logoWidth,
+        });
+        doc.y += logoHeight + 15;
+
         doc.font('Helvetica-Bold')
-            .fontSize(16)
-            .text(`Asistencia ${event.title}`, { align: 'center' });
+            .fontSize(20)
+            .text(`Asistencia "${event.title}"`, { align: 'right' });
         doc.moveDown(1.5);
 
         doc.fontSize(11);
@@ -170,7 +184,21 @@ const renderPdf = ({
 
         let y = doc.y;
 
-        doc.rect(col1, y, tableWidth, rowHeight).fill('#f5c518');
+        // Líneas verticales entre columnas, además del borde de cada fila.
+        const drawColumnLines = (rowY: number) => {
+            doc.moveTo(col2, rowY)
+                .lineTo(col2, rowY + rowHeight)
+                .stroke();
+            doc.moveTo(col3, rowY)
+                .lineTo(col3, rowY + rowHeight)
+                .stroke();
+        };
+
+        doc.rect(col1, y, tableWidth, rowHeight).fillAndStroke(
+            '#f5c518',
+            'black',
+        );
+        drawColumnLines(y);
         doc.fillColor('black').font('Helvetica-Bold').fontSize(10);
         doc.text('PUNTO VUELA', col1 + 5, y + 7, { width: col2 - col1 - 10 });
         doc.text('NOMBRE Y APELLIDOS', col2 + 5, y + 7, {
@@ -185,6 +213,7 @@ const renderPdf = ({
 
         for (const attendee of attendees) {
             doc.rect(col1, y, tableWidth, rowHeight).stroke();
+            drawColumnLines(y);
             doc.text(attendee.puntoVuela ?? '', col1 + 5, y + 7, {
                 width: col2 - col1 - 10,
             });
@@ -200,6 +229,9 @@ const renderPdf = ({
             y += rowHeight;
         }
 
+        // Las líneas de columna (moveTo/lineTo) dejan el cursor de texto
+        // desplazado a la derecha: hay que devolverlo al margen izquierdo.
+        doc.x = left;
         doc.y = y + 40;
         doc.font('Helvetica').fontSize(11);
         doc.text('Dinamizadora Territorial convocante:');
@@ -212,6 +244,18 @@ const renderPdf = ({
         }
 
         doc.text(`Fdo.: ${signerName}`);
+
+        // Siempre al pie de página, independientemente de cuánto ocupe lo
+        // anterior. Más ancho que el margen del contenido, casi al borde.
+        const bottomLogoWidth = doc.page.width - 2 * 20;
+        const bottomLogoHeight = bottomLogoWidth * DIPUTACIONES_LOGO_RATIO;
+
+        doc.image(
+            DIPUTACIONES_LOGO,
+            (doc.page.width - bottomLogoWidth) / 2,
+            doc.page.height - doc.page.margins.bottom - bottomLogoHeight,
+            { width: bottomLogoWidth },
+        );
 
         doc.end();
     });
