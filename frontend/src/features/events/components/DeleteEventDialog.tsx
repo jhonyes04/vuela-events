@@ -46,6 +46,7 @@ export const DeleteEventDialog = ({
             confirmLabel="Eliminar"
             deletingLabel="Eliminando…"
             errorFallback="No se pudo eliminar la sesión"
+            successLabel={`Sesión «${event.title}» eliminada.`}
             onConfirm={() => deleteEventById(event.id)}
             onDeleted={onDeleted}
         />

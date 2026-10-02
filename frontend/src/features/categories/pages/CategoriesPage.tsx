@@ -117,6 +117,7 @@ export const CategoriesPage = () => {
                     confirmLabel="Eliminar"
                     deletingLabel="Eliminando…"
                     errorFallback="No se pudo eliminar la categoría"
+                    successLabel={`Categoría «${deleting.name}» eliminada.`}
                     onConfirm={() => deleteCategory(deleting.id)}
                     onDeleted={() => {
                         remove(deleting.id);

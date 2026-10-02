@@ -48,6 +48,12 @@ export const ProfilePage = () => {
                     />
                 </div>
 
+                {user.roleId !== 'admin' && (
+                    <div className="rounded-xl border bg-card p-4 sm:p-6">
+                        <MyEventsSection />
+                    </div>
+                )}
+
                 {canSendEmail && (
                     <>
                         <div className="rounded-xl border bg-card p-4 sm:p-6">
@@ -74,9 +80,6 @@ export const ProfilePage = () => {
                         </div>
                     </>
                 )}
-            </div>
-            <div className="rounded-xl border bg-card p-4 sm:p-6">
-                <MyEventsSection />
             </div>
         </section>
     );

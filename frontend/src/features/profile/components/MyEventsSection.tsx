@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { FileDown } from 'lucide-react';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { IconTooltip } from '@/components/IconTooltip';
 import { EventsTable } from '@/features/events/components/EventsTable';
@@ -17,7 +18,6 @@ export const MyEventsSection = () => {
     const [events, setEvents] = useState<EventItem[]>([]);
     const [reports, setReports] = useState<SentReport[]>([]);
     const [downloadingId, setDownloadingId] = useState<string | null>(null);
-    const [downloadError, setDownloadError] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
@@ -59,13 +59,12 @@ export const MyEventsSection = () => {
     }
 
     const handleDownload = async (report: SentReport) => {
-        setDownloadError(null);
         setDownloadingId(report.event.id);
 
         try {
             await downloadSentReport(report);
         } catch (e) {
-            setDownloadError(
+            toast.error(
                 e instanceof ApiError
                     ? e.message
                     : 'No se pudo descargar el parte de firmas',
@@ -83,12 +82,6 @@ export const MyEventsSection = () => {
                     Eventos en los que estás inscrito.
                 </p>
             </div>
-
-            {downloadError && (
-                <p role="alert" className="text-sm text-destructive">
-                    {downloadError}
-                </p>
-            )}
 
             <EventsTable
                 events={events}

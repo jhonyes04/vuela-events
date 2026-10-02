@@ -32,9 +32,7 @@ const AttendeesBody = ({ event, onCloseAll }: AttendeesBodyProps) => {
     const [selected, setSelected] = useState<Set<string>>(new Set());
     const [sendSlot, setSendSlot] = useState<SlotId | null>(null);
     const [previewOpen, setPreviewOpen] = useState(false);
-    const { draft, generating, error, generate, clear } = useReportDraft(
-        event.id,
-    );
+    const { draft, generating, generate, clear } = useReportDraft(event.id);
 
     // Cambiar la selección invalida el parte generado: hay que volver a generarlo.
     const toggle = (id: string) => {
@@ -99,12 +97,6 @@ const AttendeesBody = ({ event, onCloseAll }: AttendeesBodyProps) => {
                         onToggle={toggle}
                     />
                 </OverlayScrollbarsComponent>
-            )}
-
-            {error && (
-                <p role="alert" className="text-sm text-destructive">
-                    {error}
-                </p>
             )}
 
             <DialogFooter>

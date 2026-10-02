@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { OverlayScrollbarsComponent } from 'overlayscrollbars-react';
+import { toast } from 'sonner';
 import { useAuth } from '@/features/auth/hooks/context';
 import { Button } from '@/components/ui/button';
 import { ListErrors } from '@/features/users/components/ListErrors';
@@ -32,7 +33,6 @@ export const UsersPage = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [busyId, setBusyId] = useState<string | null>(null);
-    const [actionError, setActionError] = useState<string | null>(null);
 
     const {
         sorted: sortedUsers,
@@ -81,13 +81,13 @@ export const UsersPage = () => {
 
     const changeRole = async (userId: string, roleId: string) => {
         setBusyId(userId);
-        setActionError(null);
 
         try {
             await api.patch(`/users/${userId}/role`, { roleId });
             await load();
+            toast.success('Rol actualizado.');
         } catch (e) {
-            setActionError(
+            toast.error(
                 e instanceof ApiError ? e.message : 'No se pudo cambiar el rol',
             );
         } finally {
@@ -97,13 +97,13 @@ export const UsersPage = () => {
 
     const toggleActive = async (userId: string, active: boolean) => {
         setBusyId(userId);
-        setActionError(null);
 
         try {
             await api.patch(`/users/${userId}/active`, { active });
             await load();
+            toast.success(active ? 'Usuario activado.' : 'Usuario desactivado.');
         } catch (e) {
-            setActionError(
+            toast.error(
                 e instanceof ApiError
                     ? e.message
                     : 'No se pudo cambiar el estado',
@@ -119,7 +119,7 @@ export const UsersPage = () => {
 
             <ListErrors
                 error={error}
-                actionError={actionError}
+                actionError={null}
                 onRetry={() => void load()}
             />
 

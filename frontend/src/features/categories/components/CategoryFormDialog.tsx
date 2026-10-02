@@ -1,6 +1,5 @@
 import { useState, type FormEvent } from 'react';
-import { CircleAlert } from 'lucide-react';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -42,12 +41,10 @@ const CategoryFormBody = ({
         category?.color ?? CATEGORY_COLORS[0],
     );
     const [active, setActive] = useState(category?.active ?? true);
-    const [error, setError] = useState<string | null>(null);
     const [submitting, setSubmitting] = useState(false);
 
     const handleSubmit = async (e: FormEvent) => {
         e.preventDefault();
-        setError(null);
         setSubmitting(true);
 
         try {
@@ -55,10 +52,13 @@ const CategoryFormBody = ({
                 ? await updateCategory(category.id, { name, color, active })
                 : await createCategory({ name, color });
 
+            toast.success(
+                category ? 'Categoría actualizada.' : 'Categoría creada.',
+            );
             onSaved(saved);
             onClose();
         } catch (err) {
-            setError(
+            toast.error(
                 err instanceof ApiError
                     ? err.message
                     : 'No se pudo guardar la categoría',
@@ -132,13 +132,6 @@ const CategoryFormBody = ({
                     </label>
                 )}
 
-                {error && (
-                    <Alert variant="destructive">
-                        <CircleAlert />
-                        <AlertTitle>No se pudo guardar</AlertTitle>
-                        <AlertDescription>{error}</AlertDescription>
-                    </Alert>
-                )}
             </form>
 
             <DialogFooter>

@@ -1,6 +1,5 @@
 import { useState, type FormEvent } from 'react';
-import { CircleAlert } from 'lucide-react';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -31,7 +30,6 @@ export function CreateRoleDialog({
 }) {
     const [open, setOpen] = useState(false);
     const [values, setValues] = useState(EMPTY);
-    const [error, setError] = useState<string | null>(null);
     const [submitting, setSubmitting] = useState(false);
 
     const handleOpenChange = (next: boolean) => {
@@ -39,7 +37,6 @@ export function CreateRoleDialog({
 
         if (next) {
             setValues(EMPTY);
-            setError(null);
         }
     };
 
@@ -53,15 +50,15 @@ export function CreateRoleDialog({
 
     const handleSubmit = async (e: FormEvent) => {
         e.preventDefault();
-        setError(null);
         setSubmitting(true);
 
         try {
             await api.post('/roles', values);
             setOpen(false);
+            toast.success('Rol creado.');
             onCreated();
         } catch (err) {
-            setError(
+            toast.error(
                 err instanceof ApiError
                     ? err.message
                     : 'No se pudo crear el rol',
@@ -135,15 +132,6 @@ export function CreateRoleDialog({
                             />
                         </div>
 
-                        {error && (
-                            <Alert variant="destructive">
-                                <CircleAlert />
-                                <AlertTitle>
-                                    No se pudo crear el rol
-                                </AlertTitle>
-                                <AlertDescription>{error}</AlertDescription>
-                            </Alert>
-                        )}
                     </form>
 
                     <DialogFooter>

@@ -121,6 +121,7 @@ export const GuidesPage = () => {
                     confirmLabel="Eliminar"
                     deletingLabel="Eliminando…"
                     errorFallback="No se pudo eliminar la guía"
+                    successLabel={`Guía «${deleting.name}» eliminada.`}
                     onConfirm={() => deleteGuide(deleting.id)}
                     onDeleted={() => {
                         remove(deleting.id);

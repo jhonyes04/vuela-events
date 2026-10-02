@@ -1,5 +1,6 @@
 import { useEffect, useState, type FormEvent } from 'react';
-import { CircleAlert, CircleCheck } from 'lucide-react';
+import { CircleAlert } from 'lucide-react';
+import { toast } from 'sonner';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -37,11 +38,7 @@ export const EmailSettingsPage = () => {
     const templates = useEmailTemplatesStore((s) => s.items);
     const loadTemplates = useEmailTemplatesStore((s) => s.load);
     const [savingSmtp, setSavingSmtp] = useState(false);
-    const [smtpNotice, setSmtpNotice] = useState<string | null>(null);
-    const [smtpError, setSmtpError] = useState<string | null>(null);
     const [savingSlot, setSavingSlot] = useState<SlotId | null>(null);
-    const [slotError, setSlotError] = useState<string | null>(null);
-    const [slotNotice, setSlotNotice] = useState<string | null>(null);
 
     const load = async () => {
         setLoading(true);
@@ -77,17 +74,15 @@ export const EmailSettingsPage = () => {
 
     const handleSmtpSubmit = async (e: FormEvent) => {
         e.preventDefault();
-        setSmtpError(null);
-        setSmtpNotice(null);
         setSavingSmtp(true);
 
         try {
             const saved = await updateSmtpConfig(smtp);
 
             setSmtp(saved);
-            setSmtpNotice('Configuración guardada.');
+            toast.success('Configuración guardada.');
         } catch (err) {
-            setSmtpError(
+            toast.error(
                 err instanceof ApiError ? err.message : 'No se pudo guardar',
             );
         } finally {
@@ -96,8 +91,6 @@ export const EmailSettingsPage = () => {
     };
 
     const handleAssignmentChange = async (slot: SlotId, templateId: string) => {
-        setSlotError(null);
-        setSlotNotice(null);
         setSavingSlot(slot);
 
         try {
@@ -110,9 +103,9 @@ export const EmailSettingsPage = () => {
                 prev.map((a) => (a.slot === slot ? updated : a)),
             );
 
-            setSlotNotice('Asignación guardada');
+            toast.success('Asignación guardada.');
         } catch (err) {
-            setSlotError(
+            toast.error(
                 err instanceof ApiError ? err.message : 'No se pudo guardar',
             );
         } finally {
@@ -208,20 +201,6 @@ export const EmailSettingsPage = () => {
                         </label>
                     </div>
 
-                    {smtpNotice && (
-                        <Alert variant="success">
-                            <CircleCheck />
-                            <AlertTitle>{smtpNotice}</AlertTitle>
-                        </Alert>
-                    )}
-
-                    {smtpError && (
-                        <Alert variant="destructive">
-                            <CircleAlert />
-                            <AlertTitle>No se pudo guardar</AlertTitle>
-                            <AlertDescription>{smtpError}</AlertDescription>
-                        </Alert>
-                    )}
                 </form>
 
                 <div className="mt-4 flex justify-end">
@@ -289,20 +268,6 @@ export const EmailSettingsPage = () => {
                     ))}
                 </div>
 
-                {slotNotice && (
-                    <Alert variant="success" className="mt-4">
-                        <CircleAlert />
-                        <AlertTitle>{slotNotice}</AlertTitle>
-                    </Alert>
-                )}
-
-                {slotError && (
-                    <Alert variant="destructive" className="mt-4">
-                        <CircleAlert />
-                        <AlertTitle>No se pudo guardar</AlertTitle>
-                        <AlertDescription>{slotError}</AlertDescription>
-                    </Alert>
-                )}
             </div>
         </section>
     );

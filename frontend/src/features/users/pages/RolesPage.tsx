@@ -186,6 +186,7 @@ export const RolesPage = () => {
                     confirmLabel="Eliminar"
                     deletingLabel="Eliminando…"
                     errorFallback="No se pudo eliminar el rol"
+                    successLabel={`Rol «${deleting.name}» eliminado.`}
                     onConfirm={() => api.delete(`/roles/${deleting.id}`)}
                     onDeleted={() => {
                         removeRole(deleting.id);

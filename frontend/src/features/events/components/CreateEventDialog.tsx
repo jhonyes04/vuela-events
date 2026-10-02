@@ -1,6 +1,5 @@
 import { useEffect, useState, type FormEvent, type ReactNode } from 'react';
-import { CircleAlert } from 'lucide-react';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -142,7 +141,6 @@ function EventFormBody({
               ? { ...EMPTY, startsAt: `${initialDate}T09:00` }
               : EMPTY,
     );
-    const [error, setError] = useState<string | null>(null);
     const [submitting, setSubmitting] = useState(false);
     const categories = useCategoriesStore((s) => s.items);
     const guides = useGuidesStore((s) => s.items);
@@ -187,15 +185,14 @@ function EventFormBody({
 
     const handleSubmit = async (e: FormEvent) => {
         e.preventDefault();
-        setError(null);
 
         if (!values.categoryId) {
-            setError('Selecciona una categoría');
+            toast.error('Selecciona una categoría');
             return;
         }
 
         if (!values.guideId) {
-            setError('Selecciona una guía');
+            toast.error('Selecciona una guía');
             return;
         }
 
@@ -216,7 +213,7 @@ function EventFormBody({
                 const endsAt = madridLocalToIso(values.endsAt);
 
                 if (new Date(endsAt) <= new Date(startsAt)) {
-                    setError(
+                    toast.error(
                         'La fecha de fin debe ser posterior a la de inicio',
                     );
                     return;
@@ -229,6 +226,7 @@ function EventFormBody({
                     endsAt,
                 });
 
+                toast.success('Evento actualizado.');
                 onSaved?.();
                 onClose();
                 return;
@@ -236,14 +234,14 @@ function EventFormBody({
 
             if (values.recurring) {
                 if (values.endTime <= values.startTime) {
-                    setError(
+                    toast.error(
                         'La hora de fin debe ser posterior a la de inicio',
                     );
                     return;
                 }
 
                 if (!preview || preview.count === 0 || preview.overLimit) {
-                    setError(
+                    toast.error(
                         preview?.overLimit
                             ? `Una serie no puede superar las ${MAX_OCCURRENCES} sesiones`
                             : 'Ninguna fecha del rango coincide con los días elegidos',
@@ -274,7 +272,7 @@ function EventFormBody({
             const endsAt = madridLocalToIso(values.endsAt);
 
             if (new Date(endsAt) <= new Date(startsAt)) {
-                setError('La fecha de fin debe ser posterior a la de inicio');
+                toast.error('La fecha de fin debe ser posterior a la de inicio');
                 return;
             }
 
@@ -284,7 +282,7 @@ function EventFormBody({
             onCreated?.({ startsAt, count: 1 });
             onClose();
         } catch (err) {
-            setError(
+            toast.error(
                 err instanceof ApiError
                     ? err.message
                     : isEdit
@@ -605,18 +603,6 @@ function EventFormBody({
                         onChange={set('description')}
                     />
                 </Field>
-
-                {error && (
-                    <Alert variant="destructive">
-                        <CircleAlert />
-                        <AlertTitle>
-                            {isEdit
-                                ? 'No se pudo guardar'
-                                : 'No se pudo crear el evento'}
-                        </AlertTitle>
-                        <AlertDescription>{error}</AlertDescription>
-                    </Alert>
-                )}
             </form>
 
             <DialogFooter>

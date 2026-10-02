@@ -1,6 +1,5 @@
 import { useState } from 'react';
-import { CircleAlert } from 'lucide-react';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { toast } from 'sonner';
 import {
     Dialog,
     DialogContent,
@@ -39,11 +38,9 @@ const RolePermissionsBody = ({
         () => new Set(role.permissions.map((p) => p.permissionId)),
     );
     const [busy, setBusy] = useState(false);
-    const [error, setError] = useState<string | null>(null);
 
     const persist = async (next: Set<string>) => {
         setBusy(true);
-        setError(null);
 
         try {
             await api.patch(`/roles/${role.id}/permissions`, {
@@ -51,7 +48,7 @@ const RolePermissionsBody = ({
             });
             onChanged();
         } catch (e) {
-            setError(
+            toast.error(
                 e instanceof ApiError
                     ? e.message
                     : 'No se pudo cambiar el permiso',
@@ -98,14 +95,6 @@ const RolePermissionsBody = ({
                 onToggle={togglePermission}
                 disabled={busy || isAdmin}
             />
-
-            {error && (
-                <Alert variant="destructive">
-                    <CircleAlert />
-                    <AlertTitle>No se pudo cambiar el permiso</AlertTitle>
-                    <AlertDescription>{error}</AlertDescription>
-                </Alert>
-            )}
 
             <DialogFooter showCloseButton />
         </DialogContent>

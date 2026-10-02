@@ -1,6 +1,5 @@
 import { useState, type FormEvent } from 'react';
-import { CircleAlert } from 'lucide-react';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -29,12 +28,10 @@ const GuideFormBody = ({ guide, onSaved, onClose }: GuideFormBodyProps) => {
     const [name, setName] = useState(guide?.name ?? '');
     const [url, setUrl] = useState(guide?.url ?? '');
     const [active, setActive] = useState(guide?.active ?? true);
-    const [error, setError] = useState<string | null>(null);
     const [submitting, setSubmitting] = useState(false);
 
     const handleSubmit = async (e: FormEvent) => {
         e.preventDefault();
-        setError(null);
         setSubmitting(true);
 
         try {
@@ -42,10 +39,11 @@ const GuideFormBody = ({ guide, onSaved, onClose }: GuideFormBodyProps) => {
                 ? await updateGuide(guide.id, { name, url, active })
                 : await createGuide({ name, url });
 
+            toast.success(guide ? 'Guía actualizada.' : 'Guía creada.');
             onSaved(saved);
             onClose();
         } catch (error) {
-            setError(
+            toast.error(
                 error instanceof ApiError
                     ? error.message
                     : 'No se pudo guardar la guía',
@@ -108,13 +106,6 @@ const GuideFormBody = ({ guide, onSaved, onClose }: GuideFormBodyProps) => {
                     </label>
                 )}
 
-                {error && (
-                    <Alert variant="destructive">
-                        <CircleAlert />
-                        <AlertTitle>No se pudo guardar</AlertTitle>
-                        <AlertDescription>{error}</AlertDescription>
-                    </Alert>
-                )}
             </form>
 
             <DialogFooter>

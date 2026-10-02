@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react';
 import { CircleAlert, CircleCheck, Eye, EyeOff } from 'lucide-react';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { toast } from 'sonner';
+import { Alert, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -21,24 +22,20 @@ export function AppPasswordSection({
 }) {
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
-    const [error, setError] = useState<string | null>(null);
-    const [saved, setSaved] = useState(false);
     const [submitting, setSubmitting] = useState(false);
 
     const handleSubmit = async (e: FormEvent) => {
         e.preventDefault();
-        setError(null);
-        setSaved(false);
         setSubmitting(true);
 
         try {
             const configured = await setAppPassword(password);
 
             setPassword('');
-            setSaved(true);
+            toast.success('Contraseña guardada.');
             onSaved(configured);
         } catch (err) {
-            setError(
+            toast.error(
                 err instanceof ApiError
                     ? err.message
                     : 'No se pudo guardar la contraseña',
@@ -49,16 +46,15 @@ export function AppPasswordSection({
     };
 
     const handleClear = async () => {
-        setError(null);
-        setSaved(false);
         setSubmitting(true);
 
         try {
             const configured = await clearAppPassword();
 
+            toast.success('Contraseña eliminada.');
             onSaved(configured);
         } catch (err) {
-            setError(
+            toast.error(
                 err instanceof ApiError
                     ? err.message
                     : 'No se pudo quitar la contraseña',
@@ -139,21 +135,6 @@ export function AppPasswordSection({
                         </button>
                     </div>
                 </div>
-
-                {error && (
-                    <Alert variant="destructive">
-                        <CircleAlert />
-                        <AlertTitle>No se pudo guardar</AlertTitle>
-                        <AlertDescription>{error}</AlertDescription>
-                    </Alert>
-                )}
-
-                {saved && (
-                    <Alert variant="success">
-                        <CircleCheck />
-                        <AlertTitle>Contraseña guardada</AlertTitle>
-                    </Alert>
-                )}
 
                 <div className="flex gap-2 ms-auto">
                     <Button type="submit" disabled={submitting}>

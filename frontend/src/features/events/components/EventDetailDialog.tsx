@@ -1,12 +1,11 @@
-import { useState } from 'react';
-import { CircleAlert, CircleCheck } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { toast } from 'sonner';
 import { OverlayScrollbarsComponent } from 'overlayscrollbars-react';
 import { useAuth } from '@/features/auth/hooks/context';
 import { DeleteEventDialog } from '@/features/events/components/DeleteEventDialog';
 import { DeleteEventSeriesDialog } from '@/features/events/components/DeleteEventSeriesDialog';
 import { EventInfoRows } from '@/features/events/components/EventInfoRows';
 import { AttendeeChips } from '@/features/events/components/AttendeeChips';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button, buttonVariants } from '@/components/ui/button';
 import {
@@ -31,16 +30,11 @@ import {
     type EventItem,
 } from '@/features/events/lib/events';
 
-interface Feedback {
-    kind: 'error' | 'success';
-    message: string;
-}
-
 interface EventDetailBodyProps {
     event: EventItem;
     onClose: () => void;
     onChanged: () => void;
-    onDeleted: (message: string) => void;
+    onDeleted: () => void;
 }
 
 // Contenido con su propio estado: se recrea al cambiar de evento (key).
@@ -51,7 +45,6 @@ const EventDetailBody = ({
     onDeleted,
 }: EventDetailBodyProps) => {
     const { user } = useAuth();
-    const [feedback, setFeedback] = useState<Feedback | null>(null);
     const [busy, setBusy] = useState(false);
     const [confirmOpen, setConfirmOpen] = useState(false);
     const [seriesConfirmOpen, setSeriesConfirmOpen] = useState(false);
@@ -71,6 +64,18 @@ const EventDetailBody = ({
         ? { border: 'border-t-red-500', tint: 'bg-red-500/10' }
         : CATEGORY_COLOR_STYLES[event.category.color];
 
+    // Al abrir la ficha de un evento completo, se avisa aunque el usuario
+    // ya esté inscrito. El ref evita el doble aviso del StrictMode en dev.
+    const notifiedFullRef = useRef(false);
+
+    useEffect(() => {
+        if (full && !notifiedFullRef.current) {
+            notifiedFullRef.current = true;
+            toast.error('Este evento está completo.');
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
     // Solo oculta el botón: el servidor comprueba de nuevo quién puede eliminar.
     const canDelete =
         (user?.permissions.includes('events:delete') ?? false) &&
@@ -78,21 +83,16 @@ const EventDetailBody = ({
 
     const run = async (action: () => Promise<void>, success: string) => {
         setBusy(true);
-        setFeedback(null);
 
         try {
             await action();
 
-            setFeedback({ kind: 'success', message: success });
+            toast.success(success);
             onChanged();
         } catch (e) {
-            setFeedback({
-                kind: 'error',
-                message:
-                    e instanceof ApiError
-                        ? e.message
-                        : 'No se pudo completar la acción',
-            });
+            toast.error(
+                e instanceof ApiError ? e.message : 'No se pudo completar la acción',
+            );
         } finally {
             setBusy(false);
         }
@@ -176,32 +176,6 @@ const EventDetailBody = ({
                         )}
                     </section>
 
-                    {feedback && (
-                        <Alert
-                            variant={
-                                feedback.kind === 'error'
-                                    ? 'destructive'
-                                    : 'success'
-                            }
-                        >
-                            {feedback.kind === 'error' ? (
-                                <CircleAlert />
-                            ) : (
-                                <CircleCheck />
-                            )}
-                            <AlertTitle>
-                                {feedback.kind === 'error'
-                                    ? 'No se pudo completar'
-                                    : feedback.message}
-                            </AlertTitle>
-                            {feedback.kind === 'error' && (
-                                <AlertDescription>
-                                    {feedback.message}
-                                </AlertDescription>
-                            )}
-                        </Alert>
-                    )}
-
                     <DialogFooter>
                         <div className="flex gap-2 sm:mr-auto">
                             {canDelete && (
@@ -260,11 +234,9 @@ const EventDetailBody = ({
                                 disabled={busy}
                                 onClick={() => {
                                     if (blockedByCapacity) {
-                                        setFeedback({
-                                            kind: 'error',
-                                            message:
-                                                'Este evento está completo.',
-                                        });
+                                        toast.error(
+                                            'Este evento está completo.',
+                                        );
                                         return;
                                     }
 
@@ -286,9 +258,7 @@ const EventDetailBody = ({
                     event={event}
                     open={confirmOpen}
                     onOpenChange={setConfirmOpen}
-                    onDeleted={() =>
-                        onDeleted(`Sesión «${event.title}» eliminada.`)
-                    }
+                    onDeleted={onDeleted}
                 />
             )}
 
@@ -297,11 +267,7 @@ const EventDetailBody = ({
                     event={event}
                     open={seriesConfirmOpen}
                     onOpenChange={setSeriesConfirmOpen}
-                    onDeleted={(count) =>
-                        onDeleted(
-                            `Se han eliminado ${count} sesión${count === 1 ? '' : 'es'} futura${count === 1 ? '' : 's'} de «${event.title}».`,
-                        )
-                    }
+                    onDeleted={() => onDeleted()}
                 />
             )}
         </>
@@ -312,7 +278,7 @@ interface EventDetailDialogProps {
     event: EventItem | null;
     onClose: () => void;
     onChanged: () => void;
-    onDeleted: (message: string) => void;
+    onDeleted: () => void;
 }
 
 export const EventDetailDialog = ({

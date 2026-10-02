@@ -1,10 +1,6 @@
 import { useState } from 'react';
-import {
-    ChevronLeft,
-    ChevronRight,
-    CircleAlert,
-    CircleCheck,
-} from 'lucide-react';
+import { ChevronLeft, ChevronRight, CircleAlert } from 'lucide-react';
+import { toast } from 'sonner';
 import { useAuth } from '@/features/auth/hooks/context';
 import { IconTooltip } from '@/components/IconTooltip';
 import {
@@ -47,8 +43,6 @@ export function EventsPage() {
             : (events.find((e) => e.id === selectedId) ?? snapshot);
 
     const [newEventDay, setNewEventDay] = useState<string | null>(null);
-    // Mensaje de éxito tras crear o eliminar.
-    const [notice, setNotice] = useState<string | null>(null);
 
     const openEvent = (event: EventItem) => {
         setSelectedId(event.id);
@@ -71,20 +65,18 @@ export function EventsPage() {
         const [year, month] = dayKey(startsAt).split('-').map(Number);
 
         setCursor({ year: year!, month: month! - 1 });
-        setNotice(
+        toast.success(
             count === 1 ? 'Evento creado.' : `Se han creado ${count} sesiones.`,
         );
         reload();
     };
 
-    const handleDeleted = (message: string) => {
+    const handleDeleted = () => {
         closeEvent();
-        setNotice(message);
         reload();
     };
 
     const goTo = (next: { year: number; month: number }) => {
-        setNotice(null);
         setCursor(next);
     };
 
@@ -138,22 +130,6 @@ export function EventsPage() {
                     )}
                 </div>
             </div>
-
-            {notice && (
-                <Alert variant="success" className="mb-6">
-                    <CircleCheck />
-                    <AlertTitle>{notice}</AlertTitle>
-                    <AlertAction>
-                        <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => setNotice(null)}
-                        >
-                            Cerrar
-                        </Button>
-                    </AlertAction>
-                </Alert>
-            )}
 
             {error && (
                 <Alert variant="destructive" className="mb-6">

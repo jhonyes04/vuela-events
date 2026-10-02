@@ -1,6 +1,5 @@
 import { useState, type FormEvent } from 'react';
-import { CircleAlert, CircleCheck } from 'lucide-react';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -38,16 +37,12 @@ export function ProfileForm({
     const [puntoVuela, setPuntoVuela] = useState(
         initial?.puntoVuela ?? user.puntoVuela ?? '',
     );
-    const [error, setError] = useState<string | null>(null);
-    const [saved, setSaved] = useState(false);
     const [submitting, setSubmitting] = useState(false);
 
     const hints = puntoVueloHints(user.roleId);
 
     const handleSubmit = async (e: FormEvent) => {
         e.preventDefault();
-        setError(null);
-        setSaved(false);
 
         const values = {
             name: cleanText(name),
@@ -60,7 +55,7 @@ export function ProfileForm({
             values.lastName.length < MIN_LENGTH ||
             values.puntoVuela.length < MIN_LENGTH
         ) {
-            setError(
+            toast.error(
                 `Escribe al menos ${MIN_LENGTH} caracteres en cada campo.`,
             );
             return;
@@ -75,10 +70,12 @@ export function ProfileForm({
             setName(updated.name);
             setLastName(updated.lastName);
             setPuntoVuela(updated.puntoVuela ?? '');
-            setSaved(true);
+
+            if (showSuccess) toast.success('Perfil actualizado.');
+
             onSaved(updated);
         } catch (err) {
-            setError(
+            toast.error(
                 err instanceof ApiError
                     ? err.message
                     : 'No se pudo guardar el perfil',
@@ -146,21 +143,6 @@ export function ProfileForm({
                     {hints.help}
                 </p>
             )} */}
-
-            {error && (
-                <Alert variant="destructive">
-                    <CircleAlert />
-                    <AlertTitle>No se pudo guardar</AlertTitle>
-                    <AlertDescription>{error}</AlertDescription>
-                </Alert>
-            )}
-
-            {showSuccess && saved && (
-                <Alert variant="success">
-                    <CircleCheck />
-                    <AlertTitle>Perfil actualizado</AlertTitle>
-                </Alert>
-            )}
         </form>
     );
 }

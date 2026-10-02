@@ -1,6 +1,5 @@
 import { useState, type ReactNode } from 'react';
-import { CircleAlert } from 'lucide-react';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -20,6 +19,8 @@ interface ConfirmDeleteDialogProps<T> {
     confirmLabel: string;
     deletingLabel: string;
     errorFallback: string;
+    // Texto del toast al eliminar; puede depender del resultado de onConfirm.
+    successLabel: string | ((result: T) => string);
     onConfirm: () => Promise<T>;
     onDeleted: (result: T) => void;
 }
@@ -32,49 +33,42 @@ export function ConfirmDeleteDialog<T>({
     confirmLabel,
     deletingLabel,
     errorFallback,
+    successLabel,
     onConfirm,
     onDeleted,
 }: ConfirmDeleteDialogProps<T>) {
-    const [error, setError] = useState<string | null>(null);
     const [deleting, setDeleting] = useState(false);
-
-    const handleOpenChange = (next: boolean) => {
-        if (next) setError(null);
-
-        onOpenChange(next);
-    };
 
     const handleDelete = async () => {
         setDeleting(true);
-        setError(null);
 
         try {
             const result = await onConfirm();
 
             onOpenChange(false);
             onDeleted(result);
+            toast.success(
+                typeof successLabel === 'function'
+                    ? successLabel(result)
+                    : successLabel,
+            );
         } catch (error) {
-            setError(error instanceof ApiError ? error.message : errorFallback);
+            toast.error('No se pudo eliminar', {
+                description:
+                    error instanceof ApiError ? error.message : errorFallback,
+            });
         } finally {
             setDeleting(false);
         }
     };
 
     return (
-        <Dialog open={open} onOpenChange={handleOpenChange}>
+        <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent>
                 <DialogHeader>
                     <DialogTitle>{title}</DialogTitle>
                     <DialogDescription>{description}</DialogDescription>
                 </DialogHeader>
-
-                {error && (
-                    <Alert variant="destructive">
-                        <CircleAlert />
-                        <AlertTitle>No se pudo eliminar</AlertTitle>
-                        <AlertDescription>{error}</AlertDescription>
-                    </Alert>
-                )}
 
                 <DialogFooter>
                     <Button

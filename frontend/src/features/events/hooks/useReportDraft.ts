@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { toast } from 'sonner';
 import { ApiError } from '@/lib/api';
 import { generateAttendanceReport } from '@/features/events/lib/attendanceReport';
 
@@ -13,7 +14,6 @@ export interface ReportDraft {
 export const useReportDraft = (eventId: string) => {
     const [draft, setDraft] = useState<ReportDraft | null>(null);
     const [generating, setGenerating] = useState(false);
-    const [error, setError] = useState<string | null>(null);
     const urlRef = useRef<string | null>(null);
 
     const revoke = () => {
@@ -31,7 +31,6 @@ export const useReportDraft = (eventId: string) => {
     }, []);
 
     const generate = async (registrationIds: string[]): Promise<boolean> => {
-        setError(null);
         setGenerating(true);
 
         try {
@@ -50,7 +49,7 @@ export const useReportDraft = (eventId: string) => {
 
             return true;
         } catch (e) {
-            setError(
+            toast.error(
                 e instanceof ApiError
                     ? e.message
                     : 'No se pudo generar el parte de firmas',
@@ -62,5 +61,5 @@ export const useReportDraft = (eventId: string) => {
         }
     };
 
-    return { draft, generating, error, generate, clear };
+    return { draft, generating, generate, clear };
 };

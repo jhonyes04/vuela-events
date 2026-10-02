@@ -118,6 +118,7 @@ export const EmailTemplatesPage = () => {
                     confirmLabel="Eliminar"
                     deletingLabel="Eliminando…"
                     errorFallback="No se pudo eliminar la plantilla"
+                    successLabel={`Plantilla «${deleting.name}» eliminada.`}
                     onConfirm={() => deleteEmailTemplate(deleting.id)}
                     onDeleted={() => {
                         remove(deleting.id);

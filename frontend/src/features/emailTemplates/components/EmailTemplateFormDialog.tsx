@@ -1,6 +1,5 @@
 import { useState, type FormEvent } from 'react';
-import { CircleAlert } from 'lucide-react';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -47,12 +46,10 @@ const EmailTemplateFormBody = ({
     const [subject, setSubject] = useState(template?.subject ?? '');
     const [body, setBody] = useState(template?.body ?? '');
     const [active, setActive] = useState(template?.active ?? true);
-    const [error, setError] = useState<string | null>(null);
     const [submitting, setSubmitting] = useState(false);
 
     const handleSubmit = async (e: FormEvent) => {
         e.preventDefault();
-        setError(null);
         setSubmitting(true);
 
         try {
@@ -65,10 +62,13 @@ const EmailTemplateFormBody = ({
                   })
                 : await createEmailTemplate({ name, subject, body });
 
+            toast.success(
+                template ? 'Plantilla actualizada.' : 'Plantilla creada.',
+            );
             onSaved(saved);
             onClose();
         } catch (error) {
-            setError(
+            toast.error(
                 error instanceof ApiError
                     ? error.message
                     : 'No se pudo guardar la plantilla',
@@ -143,13 +143,6 @@ const EmailTemplateFormBody = ({
                     </label>
                 )}
 
-                {error && (
-                    <Alert variant="destructive">
-                        <CircleAlert />
-                        <AlertTitle>No se pudo guardar</AlertTitle>
-                        <AlertDescription>{error}</AlertDescription>
-                    </Alert>
-                )}
             </form>
 
             <DialogFooter>

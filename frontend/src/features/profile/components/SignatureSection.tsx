@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react';
 import { CircleAlert, CircleCheck } from 'lucide-react';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { toast } from 'sonner';
+import { Alert, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -38,28 +39,24 @@ export function SignatureSection({
     user: User;
     onSaved: (configured: boolean) => void;
 }) {
-    const [error, setError] = useState<string | null>(null);
-    const [saved, setSaved] = useState(false);
     const [submitting, setSubmitting] = useState(false);
     const [previewVersion, setPreviewVersion] = useState(0);
     const [drawOpen, setDrawOpen] = useState(false);
     const inputRef = useRef<HTMLInputElement>(null);
 
     const handleSaveBase64 = async (imageBase64: string) => {
-        setError(null);
-        setSaved(false);
         setDrawOpen(false);
         setSubmitting(true);
 
         try {
             const configured = await setSignatureImage(imageBase64);
 
-            setSaved(true);
             setDrawOpen(false);
             setPreviewVersion((v) => v + 1);
+            toast.success('Firma guardada.');
             onSaved(configured);
         } catch (err) {
-            setError(
+            toast.error(
                 err instanceof ApiError
                     ? err.message
                     : 'No se pudo guardar la firma',
@@ -70,16 +67,13 @@ export function SignatureSection({
     };
 
     const handleFileChange = async (file: File) => {
-        setError(null);
-        setSaved(false);
-
         if (file.type !== 'image/png') {
-            setError('La imagen debe ser un PNG');
+            toast.error('La imagen debe ser un PNG');
             return;
         }
 
         if (file.size > MAX_FILE_BYTES) {
-            setError('La imagen debe pesar menos de 300KB');
+            toast.error('La imagen debe pesar menos de 300KB');
             return;
         }
 
@@ -93,16 +87,15 @@ export function SignatureSection({
     };
 
     const handleClear = async () => {
-        setError(null);
-        setSaved(false);
         setSubmitting(true);
 
         try {
             const configured = await clearSignatureImage();
 
+            toast.success('Firma eliminada.');
             onSaved(configured);
         } catch (err) {
-            setError(
+            toast.error(
                 err instanceof ApiError
                     ? err.message
                     : 'No se pudo quitar la firma',
@@ -142,21 +135,6 @@ export function SignatureSection({
                 <Alert>
                     <CircleAlert />
                     <AlertTitle>No configurada</AlertTitle>
-                </Alert>
-            )}
-
-            {error && (
-                <Alert variant="destructive">
-                    <CircleAlert />
-                    <AlertTitle>No se pudo guardar</AlertTitle>
-                    <AlertDescription>{error}</AlertDescription>
-                </Alert>
-            )}
-
-            {saved && (
-                <Alert variant="success">
-                    <CircleCheck />
-                    <AlertTitle>Firma guardada</AlertTitle>
                 </Alert>
             )}
 

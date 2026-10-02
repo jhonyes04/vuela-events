@@ -130,6 +130,7 @@ export const EventsManagementPage = () => {
                     confirmLabel="Eliminar"
                     deletingLabel="Eliminando…"
                     errorFallback="No se pudo eliminar el evento"
+                    successLabel={`Evento «${deleting.title}» eliminado.`}
                     onConfirm={() => deleteEventById(deleting.id)}
                     onDeleted={() => {
                         setEvents((prev) =>

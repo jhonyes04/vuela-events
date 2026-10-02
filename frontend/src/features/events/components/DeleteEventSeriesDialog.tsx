@@ -31,6 +31,9 @@ export const DeleteEventSeriesDialog = ({
         confirmLabel="Eliminar serie"
         deletingLabel="Eliminando…"
         errorFallback="No se pudo eliminar la serie"
+        successLabel={(deletedCount) =>
+            `Se han eliminado ${deletedCount} sesión${deletedCount === 1 ? '' : 'es'} futura${deletedCount === 1 ? '' : 's'} de «${event.title}».`
+        }
         onConfirm={async () => {
             const { deletedCount } = await deleteEventSeriesById(
                 event.seriesId!,
