@@ -90,7 +90,7 @@ export function ProfileForm({
 
     return (
         <form onSubmit={(e) => void handleSubmit(e)} className="grid gap-4">
-            <div className="grid gap-2 sm:grid-cols-2">
+            <div className="grid gap-2 sm:grid-cols-4 sm:items-end">
                 <div className="grid gap-1.5">
                     <Label htmlFor="profile-name">Nombre</Label>
                     <Input
@@ -116,31 +116,36 @@ export function ProfileForm({
                         onChange={(e) => setLastName(e.target.value)}
                     />
                 </div>
+
+                <div className="grid gap-1.5">
+                    <Label htmlFor="profile-punto">{hints.label}</Label>
+                    <Input
+                        id="profile-punto"
+                        required
+                        minLength={MIN_LENGTH}
+                        maxLength={PUNTO_VUELA_MAX}
+                        placeholder={hints.placeholder}
+                        aria-describedby={
+                            hints.help ? 'profile-punto-help' : undefined
+                        }
+                        value={puntoVuela}
+                        onChange={(e) => setPuntoVuela(e.target.value)}
+                    />
+                </div>
+
+                <Button type="submit" disabled={submitting}>
+                    {submitting ? 'Guardando…' : submitLabel}
+                </Button>
             </div>
 
-            <div className="grid gap-1.5">
-                <Label htmlFor="profile-punto">{hints.label}</Label>
-                <Input
-                    id="profile-punto"
-                    required
-                    minLength={MIN_LENGTH}
-                    maxLength={PUNTO_VUELA_MAX}
-                    placeholder={hints.placeholder}
-                    aria-describedby={
-                        hints.help ? 'profile-punto-help' : undefined
-                    }
-                    value={puntoVuela}
-                    onChange={(e) => setPuntoVuela(e.target.value)}
-                />
-                {hints.help && (
-                    <p
-                        id="profile-punto-help"
-                        className="text-sm text-muted-foreground"
-                    >
-                        {hints.help}
-                    </p>
-                )}
-            </div>
+            {/* {hints.help && (
+                <p
+                    id="profile-punto-help"
+                    className="text-sm text-muted-foreground"
+                >
+                    {hints.help}
+                </p>
+            )} */}
 
             {error && (
                 <Alert variant="destructive">
@@ -156,15 +161,6 @@ export function ProfileForm({
                     <AlertTitle>Perfil actualizado</AlertTitle>
                 </Alert>
             )}
-
-            <Button
-                type="submit"
-                size="lg"
-                className="ms-auto w-full sm:w-auto sm:justify-self-start"
-                disabled={submitting}
-            >
-                {submitting ? 'Guardando…' : submitLabel}
-            </Button>
         </form>
     );
 }

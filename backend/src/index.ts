@@ -5,8 +5,8 @@ import { createApp } from './app.js';
 
 const app = createApp();
 
-const server = app.listen(env.PORT, () => {
-    console.log(`API escuchando en http://localhost:${env.PORT}`);
+const server = app.listen(env.PORT, env.HOST, () => {
+    console.log(`API escuchando en http://${env.HOST}:${env.PORT}`);
 });
 
 server.headersTimeout = 15_000;

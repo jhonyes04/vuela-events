@@ -38,7 +38,7 @@ export const ProfilePage = () => {
                 </div>
             </div>
 
-            <div className="grid items-start gap-6 lg:grid-cols-2">
+            <div className="grid gap-6">
                 <div className="rounded-xl border bg-card p-4 sm:p-6">
                     <ProfileForm
                         user={user}
@@ -49,7 +49,7 @@ export const ProfilePage = () => {
                 </div>
 
                 {canSendEmail && (
-                    <div className="grid gap-6">
+                    <>
                         <div className="rounded-xl border bg-card p-4 sm:p-6">
                             <AppPasswordSection
                                 user={user}
@@ -72,7 +72,7 @@ export const ProfilePage = () => {
                                 }
                             />
                         </div>
-                    </div>
+                    </>
                 )}
             </div>
             <div className="rounded-xl border bg-card p-4 sm:p-6">
