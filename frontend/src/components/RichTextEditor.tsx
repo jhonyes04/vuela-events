@@ -319,7 +319,9 @@ const ResizableImageView = ({
 
         const startX = e.clientX;
         const startWidth = img.getBoundingClientRect().width;
-        const maxWidth = img.parentElement?.clientWidth ?? Infinity;
+        // El padre se ajusta a la imagen (inline-block), así que el tope es el área de edición.
+        const maxWidth =
+            img.closest('.ProseMirror')?.clientWidth ?? Infinity;
 
         const onMove = (ev: PointerEvent) => {
             const width = Math.min(
