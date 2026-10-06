@@ -10,7 +10,7 @@ export const LoginPage = () => {
                 <div className="pointer-events-none absolute -right-10 bottom-10 size-72 rounded-full bg-brand-green/30 blur-3xl" />
                 <div className="login-hero-dots pointer-events-none absolute inset-0 opacity-20" />
 
-                <img src={logo} alt="" className="size-12 rounded-xl" />
+                <img src={logo} alt="" className="relative size-12 rounded-xl" />
 
                 <div className="relative">
                     <h2 className="mb-2 text-3xl font-semibold text-white">
