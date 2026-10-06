@@ -10,6 +10,7 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
+import { config } from '@/config';
 import { ApiError, type User } from '@/lib/api';
 import {
     clearSignatureImage,
@@ -122,7 +123,7 @@ export function SignatureSection({
                 <div className="grid gap-2">
                     <img
                         key={previewVersion}
-                        src={`/api/profile/signature-image?v=${previewVersion}`}
+                        src={`${config.apiBase}/profile/signature-image?v=${previewVersion}`}
                         alt="Firma guardada"
                         className="h-16 w-fit rounded-lg border bg-white object-contain p-2"
                     />

@@ -67,7 +67,7 @@ export function identityFromPayload(
         email,
         name: name.slice(0, 200),
         lastName,
-        picture,
+        ...(picture ? { picture } : {}),
     };
 }
 

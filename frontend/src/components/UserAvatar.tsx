@@ -1,4 +1,5 @@
 import { cn } from 'cn';
+import { config } from '@/config';
 import type { User } from '@/lib/api';
 
 interface UserAvatarProps {
@@ -9,7 +10,7 @@ interface UserAvatarProps {
 export const UserAvatar = ({ user, className }: UserAvatarProps) =>
     user.avatarConfigured ? (
         <img
-            src={`/api/profile/avatar-image?u=${user.id}`}
+            src={`${config.apiBase}/profile/avatar-image?u=${user.id}`}
             alt=""
             className={cn(
                 'size-9 shrink-0 rounded-full object-cover ring-2 ring-white shadow-sm',

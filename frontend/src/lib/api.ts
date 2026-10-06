@@ -1,3 +1,5 @@
+import { config } from '@/config';
+
 export interface User {
     id: string;
     email: string;
@@ -54,14 +56,14 @@ const request = async <T>(
     let res: Response;
 
     try {
-        res = await fetch(`/api${path}`, {
+        res = await fetch(`${config.apiBase}${path}`, {
             method,
             headers:
                 body === undefined
                     ? undefined
                     : { 'Content-Type': 'application/json' },
             body: body === undefined ? undefined : JSON.stringify(body),
-            credentials: 'same-origin',
+            credentials: 'include',
             signal: AbortSignal.timeout(15_000),
         });
     } catch {
@@ -124,14 +126,14 @@ export const requestFile = async (
     let res: Response;
 
     try {
-        res = await fetch(`/api${path}`, {
+        res = await fetch(`${config.apiBase}${path}`, {
             method,
             headers:
                 body === undefined
                     ? undefined
                     : { 'Content-Type': 'application/json' },
             body: body === undefined ? undefined : JSON.stringify(body),
-            credentials: 'same-origin',
+            credentials: 'include',
             signal: AbortSignal.timeout(30_000),
         });
     } catch {

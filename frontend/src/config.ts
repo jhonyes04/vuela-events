@@ -11,4 +11,5 @@ if (
 
 export const config = {
     googleClientId,
+    apiBase: import.meta.env.VITE_API_URL || '/api',
 } as const;

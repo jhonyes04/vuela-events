@@ -61,7 +61,7 @@ const ROLE_PERMISSIONS: Record<string, string[]> = {
         'stats:view',
     ],
     // Todo menos gestión de usuarios y de roles.
-        dt: [
+    dt: [
         'events:create',
         'events:view',
         'events:edit',
@@ -83,6 +83,33 @@ const ROLE_PERMISSIONS: Record<string, string[]> = {
     ],
     ail: [],
 };
+
+const SMTP_CONFIG = {
+    id: 'default',
+    host: 'smtp.gmail.com',
+    port: 587,
+    secure: false,
+};
+
+const EMAIL_TEMPLATES: { name: string; subject: string; body: string; active: boolean }[] = [
+    {
+        name: 'Acta de asistencia',
+        subject: 'Acta de asistencia {{proyecto}} {{fecha}}',
+        body: '<p>{{saludo}} a tod@s.</p><p></p><p>En adjunto os dejo el acta de asistencia correspondiente a la sesión de <strong>{{proyecto}}</strong> del pasado día <strong>{{fecha}}</strong>.</p><p></p><p>Muchas gracias por vuestro trabajo.</p><p></p><p>Un abrazo.</p>',
+        active: true,
+    },
+    {
+        name: 'Convocatorias',
+        subject: 'Convocatoria asistencia {{proyecto}}',
+        body: '<p>{{saludo}} a tod@s:</p><p></p><p>El motivo de mi email es para comunicaros que se os convoca para el día<strong>&nbsp;{{fecha}} </strong>en horario de<strong> {{horaInicio}} a {{horaFin}} horas,</strong>&nbsp;en el<strong>&nbsp;{{lugar}}</strong>&nbsp;para que impartáis&nbsp;los talleres propuestos dentro del proyecto "Vuela con Salud".</p><p></p><p>Muchas gracias por vuestra implicación y buen hacer.</p><p></p><p>Un abrazo.</p>',
+        active: true,
+    },
+];
+
+const EMAIL_ASSIGNMENTS = [
+    { slot: 'convocatoria', templateName: 'Convocatorias' },
+    { slot: 'parte_firmas', templateName: 'Acta de asistencia' },
+];
 
 const main = async () => {
     for (const role of ROLES) {
@@ -111,7 +138,33 @@ const main = async () => {
         }
     }
 
-    console.log('Seed de roles/permisos completado.');
+    await prisma.smtpConfig.upsert({
+        where: { id: SMTP_CONFIG.id },
+        update: {},
+        create: SMTP_CONFIG,
+    });
+
+    for (const template of EMAIL_TEMPLATES) {
+        await prisma.emailTemplate.upsert({
+            where: { name: template.name },
+            update: {},
+            create: template,
+        });
+    }
+
+    for (const assignment of EMAIL_ASSIGNMENTS) {
+        const template = await prisma.emailTemplate.findUniqueOrThrow({
+            where: { name: assignment.templateName },
+        });
+
+        await prisma.emailTemplateAssignment.upsert({
+            where: { slot: assignment.slot },
+            update: {},
+            create: { slot: assignment.slot, templateId: template.id },
+        });
+    }
+
+    console.log('Seed completado.');
 };
 
 main()
