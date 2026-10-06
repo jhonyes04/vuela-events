@@ -308,6 +308,19 @@ const resolveImageSrc = (src: string): string =>
         ? `${config.apiBase.replace(/\/api$/, '')}${src}`
         : src;
 
+// Al pegar, el tamaño del HTML de origen (suele ser pequeño) no se conserva:
+// la imagen toma su tamaño natural. El contenido ya guardado sí conserva su tamaño.
+const stripPastedImageSize = (html: string): string => {
+    const doc = new DOMParser().parseFromString(html, 'text/html');
+
+    doc.querySelectorAll('img').forEach((img) => {
+        img.removeAttribute('width');
+        img.removeAttribute('height');
+    });
+
+    return doc.body.innerHTML;
+};
+
 // Ancho natural de una imagen (null si no carga). No usa Image: en este archivo
 // Image es la extensión de Tiptap.
 const loadNaturalWidth = (src: string): Promise<number | null> =>
@@ -388,17 +401,6 @@ const ResizableImageView = ({
 };
 
 const ResizableImage = Image.extend({
-    addAttributes() {
-        const parent: Record<string, object> = this.parent?.() ?? {};
-
-        return {
-            ...parent,
-            // Al pegar no se hereda el tamaño del HTML de origen (suele ser pequeño):
-            // la imagen toma su tamaño natural.
-            width: { ...parent.width, parseHTML: () => null },
-            height: { ...parent.height, parseHTML: () => null },
-        };
-    },
     addNodeView() {
         return ReactNodeViewRenderer(ResizableImageView);
     },
@@ -431,6 +433,9 @@ export const RichTextEditor = ({
             ResizableImage.configure({ inline: false, allowBase64: true }),
         ],
         content: value,
+        editorProps: {
+            transformPastedHTML: stripPastedImageSize,
+        },
         onUpdate: ({ editor }) => onChange(editor.getHTML()),
     });
 
