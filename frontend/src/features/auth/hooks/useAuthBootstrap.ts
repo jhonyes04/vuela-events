@@ -1,5 +1,4 @@
 import { useEffect } from 'react';
-import { useNavigate } from 'react-router';
 import { api, setUnauthorizedHandler, type User } from '@/lib/api';
 import { useAuthStore } from '@/features/auth/store';
 
@@ -7,18 +6,19 @@ import { useAuthStore } from '@/features/auth/store';
 export const useAuthBootstrap = () => {
     const setUser = useAuthStore((s) => s.setUser);
     const setLoading = useAuthStore((s) => s.setLoading);
-    const navigate = useNavigate();
 
-    // Cualquier 401 del servidor (sesión caducada, usuario desactivado)
-    // cierra la sesión en pantalla.
+    // Un 401 con sesión abierta (caducada o usuario desactivado) recarga la
+    // página, igual que el logout. Sin sesión no hace nada: si no, el arranque
+    // (/auth/me) o un login fallido provocarían recargas en bucle.
     useEffect(() => {
         setUnauthorizedHandler(() => {
-            setUser(null);
-            navigate('/');
+            if (useAuthStore.getState().user) {
+                window.location.replace('/');
+            }
         });
 
         return () => setUnauthorizedHandler(null);
-    }, [navigate, setUser]);
+    }, []);
 
     // Al arrancar, pregunta al servidor si ya hay una sesión válida.
     useEffect(() => {

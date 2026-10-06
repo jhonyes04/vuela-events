@@ -1,5 +1,4 @@
 import { useCallback } from 'react';
-import { useNavigate } from 'react-router';
 import { api, type User } from '@/lib/api';
 import { useAuthStore } from '@/features/auth/store';
 
@@ -14,16 +13,15 @@ export const useAuth = (): AuthValue => {
     const user = useAuthStore((s) => s.user);
     const loading = useAuthStore((s) => s.loading);
     const setUser = useAuthStore((s) => s.setUser);
-    const navigate = useNavigate();
 
     const logout = useCallback(async () => {
         try {
             await api.post('/auth/logout');
         } finally {
-            setUser(null);
-            navigate('/');
+            // Recarga completa: Google Sign-In se inicializa de nuevo con un nonce nuevo.
+            window.location.replace('/');
         }
-    }, [navigate, setUser]);
+    }, []);
 
     return { user, loading, setUser, logout };
 };
