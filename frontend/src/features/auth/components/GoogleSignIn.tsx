@@ -15,6 +15,8 @@ export function GoogleSignIn({ otherAccount }: { otherAccount: boolean }) {
     const buttonRef = useRef<HTMLDivElement>(null);
     const [error, setError] = useState<string | null>(null);
     const [attempt, setAttempt] = useState(0);
+    // Valor de otherAccount con el que ya se llamó a initialize(): evita repetirla.
+    const initializedFor = useRef<boolean | null>(null);
 
     const handleCredential = useCallback(
         async (credential: string) => {
@@ -54,15 +56,19 @@ export function GoogleSignIn({ otherAccount }: { otherAccount: boolean }) {
 
                 if (cancelled || !google || !container) return;
 
-                google.accounts.id.initialize({
-                    client_id: config.googleClientId,
-                    nonce,
-                    ...(otherAccount ? {} : { hd: DOMAIN_HINT }),
-                    auto_select: false,
-                    callback: (response) => {
-                        void handleCredential(response.credential);
-                    },
-                });
+                if (initializedFor.current !== otherAccount) {
+                    google.accounts.id.initialize({
+                        client_id: config.googleClientId,
+                        nonce,
+                        ...(otherAccount ? {} : { hd: DOMAIN_HINT }),
+                        auto_select: false,
+                        callback: (response) => {
+                            void handleCredential(response.credential);
+                        },
+                    });
+
+                    initializedFor.current = otherAccount;
+                }
 
                 container.replaceChildren();
                 google.accounts.id.renderButton(container, {
