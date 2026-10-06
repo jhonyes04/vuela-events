@@ -36,6 +36,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { IconTooltip } from '@/components/IconTooltip';
 import { cn } from '@/lib/utils';
+import { config } from '@/config';
 
 interface ToolbarButtonProps {
     label: string;
@@ -300,6 +301,24 @@ const PlaceholderPalette = ({
 
 const MIN_IMAGE_WIDTH = 40;
 
+// Las imágenes propias se guardan con ruta relativa (/api/...). En producción la API
+// está en otro dominio, así que el editor las pide a config.apiBase.
+const resolveImageSrc = (src: string): string =>
+    src.startsWith('/api/')
+        ? `${config.apiBase.replace(/\/api$/, '')}${src}`
+        : src;
+
+// Ancho natural de una imagen (null si no carga). No usa Image: en este archivo
+// Image es la extensión de Tiptap.
+const loadNaturalWidth = (src: string): Promise<number | null> =>
+    new Promise((resolve) => {
+        const img = document.createElement('img');
+
+        img.onload = () => resolve(img.naturalWidth);
+        img.onerror = () => resolve(null);
+        img.src = src;
+    });
+
 // Imagen con asa en la esquina inferior derecha. El tamaño va en el atributo width
 // (permitido por el sanitizador del backend), no en style: la proporción la da h-auto.
 const ResizableImageView = ({
@@ -332,7 +351,8 @@ const ResizableImageView = ({
                 ),
             );
 
-            updateAttributes({ width });
+            // height a null: la proporción la mantiene el navegador (h-auto).
+            updateAttributes({ width, height: null });
         };
 
         const onUp = () => {
@@ -348,7 +368,7 @@ const ResizableImageView = ({
         <NodeViewWrapper className="relative inline-block max-w-full">
             <img
                 ref={imgRef}
-                src={node.attrs.src}
+                src={resolveImageSrc(node.attrs.src)}
                 alt={node.attrs.alt ?? ''}
                 width={node.attrs.width ?? undefined}
                 className={cn(
@@ -368,6 +388,17 @@ const ResizableImageView = ({
 };
 
 const ResizableImage = Image.extend({
+    addAttributes() {
+        const parent: Record<string, object> = this.parent?.() ?? {};
+
+        return {
+            ...parent,
+            // Al pegar no se hereda el tamaño del HTML de origen (suele ser pequeño):
+            // la imagen toma su tamaño natural.
+            width: { ...parent.width, parseHTML: () => null },
+            height: { ...parent.height, parseHTML: () => null },
+        };
+    },
     addNodeView() {
         return ReactNodeViewRenderer(ResizableImageView);
     },
@@ -397,7 +428,7 @@ export const RichTextEditor = ({
             Underline,
             Link.configure({ openOnClick: false, autolink: true }),
             TextAlign.configure({ types: ['heading', 'paragraph'] }),
-            ResizableImage.configure({ inline: false, allowBase64: false }),
+            ResizableImage.configure({ inline: false, allowBase64: true }),
         ],
         content: value,
         onUpdate: ({ editor }) => onChange(editor.getHTML()),
@@ -412,7 +443,17 @@ export const RichTextEditor = ({
 
         const src = await onImageUpload(file);
 
-        if (src) editor.chain().focus().setImage({ src }).run();
+        if (!src) return;
+
+        // Tamaño natural, como mucho el ancho del editor (la proporción la da h-auto).
+        const naturalWidth = await loadNaturalWidth(resolveImageSrc(src));
+        const editorWidth = editor.view.dom.clientWidth;
+        const width =
+            naturalWidth === null
+                ? undefined
+                : Math.min(naturalWidth, editorWidth);
+
+        editor.chain().focus().setImage({ src, width }).run();
     };
 
     return (

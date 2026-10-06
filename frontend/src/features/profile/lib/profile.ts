@@ -128,3 +128,81 @@ export const uploadEmailSignatureImage = async (
 
     return url;
 };
+
+// Deben coincidir con los límites del servidor (que es quien manda).
+export const SIGNATURE_IMAGE_TYPES = ['image/png', 'image/jpeg', 'image/webp'];
+export const SIGNATURE_IMAGE_MAX_BYTES = 300 * 1024;
+
+const SIGNATURE_IMAGE_PATH = '/api/profile/email-signature-images/';
+// Ancho máximo de una imagen pegada (sin tamaño propio) al guardarla.
+const PASTED_IMAGE_MAX_WIDTH = 600;
+
+// Descarga una imagen pegada (data: o URL remota). Null si no es válida o no se puede leer.
+const fetchAsImageFile = async (src: string): Promise<File | null> => {
+    try {
+        const res = await fetch(src);
+
+        if (!res.ok) return null;
+
+        const blob = await res.blob();
+
+        if (
+            !SIGNATURE_IMAGE_TYPES.includes(blob.type) ||
+            blob.size > SIGNATURE_IMAGE_MAX_BYTES
+        ) {
+            return null;
+        }
+
+        return new File([blob], 'firma', { type: blob.type });
+    } catch {
+        return null;
+    }
+};
+
+export interface ResolvedSignature {
+    html: string;
+    skipped: number;
+}
+
+// Antes de guardar: sube las imágenes que no son propias (pegadas) y las sustituye
+// por su ruta del servidor. Las que no se pueden subir se quitan y se cuentan.
+export const resolveSignatureImages = async (
+    html: string,
+): Promise<ResolvedSignature> => {
+    const doc = new DOMParser().parseFromString(html, 'text/html');
+    let skipped = 0;
+
+    for (const img of [...doc.querySelectorAll('img')]) {
+        const src = img.getAttribute('src') ?? '';
+
+        if (src.startsWith(SIGNATURE_IMAGE_PATH)) continue;
+
+        const file = await fetchAsImageFile(src);
+
+        if (!file) {
+            img.remove();
+            skipped++;
+            continue;
+        }
+
+        try {
+            img.setAttribute('src', await uploadEmailSignatureImage(file));
+        } catch {
+            img.remove();
+            skipped++;
+            continue;
+        }
+
+        if (!img.hasAttribute('width')) {
+            const bitmap = await createImageBitmap(file);
+
+            img.setAttribute(
+                'width',
+                String(Math.min(bitmap.width, PASTED_IMAGE_MAX_WIDTH)),
+            );
+            bitmap.close();
+        }
+    }
+
+    return { html: doc.body.innerHTML, skipped };
+};

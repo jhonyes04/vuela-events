@@ -5,12 +5,13 @@ import { RichTextEditor } from '@/components/RichTextEditor';
 import { ApiError } from '@/lib/api';
 import {
     getEmailSignature,
+    resolveSignatureImages,
     saveEmailSignature,
+    SIGNATURE_IMAGE_MAX_BYTES,
+    SIGNATURE_IMAGE_TYPES,
     uploadEmailSignatureImage,
 } from '@/features/profile/lib/profile';
 
-const ALLOWED_IMAGE_TYPES = ['image/png', 'image/jpeg', 'image/webp'];
-const MAX_IMAGE_BYTES = 300 * 1024;
 // Lo que deja el editor vacío; el servidor guarda la firma vacía como null.
 const EMPTY_EDITOR_HTML = '<p></p>';
 
@@ -30,12 +31,12 @@ export const EmailSignatureSection = () => {
     }, []);
 
     const uploadImage = async (file: File): Promise<string | null> => {
-        if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
+        if (!SIGNATURE_IMAGE_TYPES.includes(file.type)) {
             toast.error('La imagen debe ser PNG, JPG o WebP');
             return null;
         }
 
-        if (file.size > MAX_IMAGE_BYTES) {
+        if (file.size > SIGNATURE_IMAGE_MAX_BYTES) {
             toast.error('La imagen debe pesar menos de 300KB');
             return null;
         }
@@ -56,13 +57,22 @@ export const EmailSignatureSection = () => {
         setSaving(true);
 
         try {
-            const html = await saveEmailSignature(
+            // Sube las imágenes pegadas antes de guardar: el servidor descarta las que no son propias.
+            const resolved = await resolveSignatureImages(
                 draft === EMPTY_EDITOR_HTML ? '' : draft,
             );
+            const html = await saveEmailSignature(resolved.html);
 
             setSavedHtml(html);
             setDraft(html);
-            toast.success('Firma de correo guardada.');
+
+            if (resolved.skipped > 0) {
+                toast.error(
+                    `${resolved.skipped} imagen(es) no se pudieron guardar. Súbelas con el botón de imagen.`,
+                );
+            } else {
+                toast.success('Firma de correo guardada.');
+            }
         } catch (err) {
             toast.error(
                 err instanceof ApiError
@@ -101,7 +111,9 @@ export const EmailSignatureSection = () => {
                 </p>
             </div>
 
+            {/* key: tras guardar, el editor se recrea con el HTML ya saneado y con las rutas del servidor. */}
             <RichTextEditor
+                key={savedHtml}
                 value={savedHtml}
                 onChange={setDraft}
                 onImageUpload={uploadImage}
