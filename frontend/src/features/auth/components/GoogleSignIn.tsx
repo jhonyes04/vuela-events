@@ -7,14 +7,17 @@ import { loadGoogleScript } from '@/features/auth/lib/googleScript';
 import { CircleAlert } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
-export function GoogleSignIn() {
+const DOMAIN_HINT = 'puntosvuela.es';
+
+export function GoogleSignIn({ otherAccount }: { otherAccount: boolean }) {
     const { setUser } = useAuth();
     const navigate = useNavigate();
     const buttonRef = useRef<HTMLDivElement>(null);
     const [error, setError] = useState<string | null>(null);
     const [attempt, setAttempt] = useState(0);
-    // initialize() solo una vez por montaje: los reintentos no lo repiten.
-    const initialized = useRef(false);
+    // Valor de otherAccount con el que ya se llamó a initialize(). Cambiar de modo
+    // lo vuelve a llamar (hace falta para cambiar hd); los reintentos no.
+    const initializedFor = useRef<boolean | null>(null);
 
     const handleCredential = useCallback(
         async (credential: string) => {
@@ -54,17 +57,18 @@ export function GoogleSignIn() {
 
                 if (cancelled || !google || !container) return;
 
-                if (!initialized.current) {
+                if (initializedFor.current !== otherAccount) {
                     google.accounts.id.initialize({
                         client_id: config.googleClientId,
                         nonce,
+                        ...(otherAccount ? {} : { hd: DOMAIN_HINT }),
                         auto_select: false,
                         callback: (response) => {
                             void handleCredential(response.credential);
                         },
                     });
 
-                    initialized.current = true;
+                    initializedFor.current = otherAccount;
                 }
 
                 container.replaceChildren();
@@ -92,7 +96,7 @@ export function GoogleSignIn() {
         return () => {
             cancelled = true;
         };
-    }, [attempt, handleCredential]);
+    }, [attempt, otherAccount, handleCredential]);
 
     return (
         <div className="flex flex-col items-center gap-3">
