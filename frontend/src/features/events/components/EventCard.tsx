@@ -85,7 +85,7 @@ export const EventCard = ({ event, onOpen }: EventCardProps) => {
                         </button>
                     </h3>
                     {ended && (
-                        <Badge variant="outline" className="shrink-0">
+                        <Badge className="shrink-0 bg-gray-400 text-white">
                             Finalizado
                         </Badge>
                     )}

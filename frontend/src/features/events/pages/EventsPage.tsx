@@ -5,6 +5,7 @@ import { useAuth } from '@/features/auth/hooks/context';
 import { IconTooltip } from '@/components/IconTooltip';
 import { CreateEventDialog } from '@/features/events/components/CreateEventDialog';
 import { CalendarGrid } from '@/features/events/components/CalendarGrid';
+import { CalendarLegend } from '@/features/events/components/CalendarLegend';
 import { EventCard } from '@/features/events/components/EventCard';
 import { EventDetailDialog } from '@/features/events/components/EventDetailDialog';
 import {
@@ -228,6 +229,7 @@ export function EventsPage() {
                         events={events}
                         onSelectEvent={openEvent}
                     />
+                    <CalendarLegend events={events} />
 
                     {events.length === 0 && !error && (
                         <p className="mt-4 text-muted-foreground">

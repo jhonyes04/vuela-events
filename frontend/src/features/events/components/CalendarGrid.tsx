@@ -97,11 +97,11 @@ export function CalendarGrid({
                                                 title={`${formatTime(event.startsAt)} ${event.title}`}
                                                 className={cn(
                                                     'block w-full cursor-pointer truncate rounded px-1.5 py-0.5 text-left text-xs font-medium',
-                                                    eventColor(event).chip,
+                                                    hasEnded(event)
+                                                        ? 'bg-gray-400 text-white'
+                                                        : eventColor(event).chip,
                                                     event.registered &&
                                                         'ring-2 ring-brand-green',
-                                                    hasEnded(event) &&
-                                                        'opacity-60',
                                                 )}
                                             >
                                                 <span className="tabular-nums">
@@ -155,10 +155,10 @@ export function CalendarGrid({
                                                     <span
                                                         className={cn(
                                                             'size-4 rounded-full',
-                                                            eventColor(event)
-                                                                .dot,
-                                                            hasEnded(event) &&
-                                                                'opacity-40',
+                                                            hasEnded(event)
+                                                                ? 'bg-gray-400'
+                                                                : eventColor(event)
+                                                                      .dot,
                                                         )}
                                                     />
                                                 </button>

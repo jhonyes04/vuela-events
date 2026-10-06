@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import {
     Area,
     AreaChart,
@@ -40,6 +40,11 @@ import {
     type CategoryColor,
 } from '@/features/categories/lib/colors';
 import { ChartCard } from '@/features/stats/components/ChartCard';
+import {
+    ParticipantsCountDialog,
+    type ParticipantsEvent,
+} from '@/features/events/components/ParticipantsCountDialog';
+import { Button } from '@/components/ui/button';
 import {
     formatStatsDate,
     getStats,
@@ -431,6 +436,7 @@ interface RankRow {
     value?: string;
     progress?: number;
     leading?: string;
+    action?: ReactNode;
 }
 
 // Lista limpia: avatar opcional, título, detalle y una píldora con el valor.
@@ -463,6 +469,7 @@ const RankList = ({ rows }: { rows: RankRow[] }) => (
                             {r.value}
                         </span>
                     )}
+                    {r.action}
                 </div>
             </li>
         ))}
@@ -486,10 +493,16 @@ export const StatsPage = () => {
         if (first) setSection(first.id);
     };
 
-    useEffect(() => {
+    const [participantsEvent, setParticipantsEvent] =
+        useState<ParticipantsEvent | null>(null);
+
+    const loadStats = () =>
         getStats()
             .then(setStats)
             .catch(() => setFailed(true));
+
+    useEffect(() => {
+        void loadStats();
     }, []);
 
     if (failed) {
@@ -895,8 +908,30 @@ export const StatsPage = () => {
                                     id: e.id,
                                     title: e.title,
                                     meta: formatStatsDate(e.startsAt),
+                                    action: (
+                                        <Button
+                                            size="sm"
+                                            onClick={() =>
+                                                setParticipantsEvent({
+                                                    id: e.id,
+                                                    title: e.title,
+                                                    participantsCount: null,
+                                                })
+                                            }
+                                        >
+                                            Añadir atendidos
+                                        </Button>
+                                    ),
                                 }),
                             )}
+                        />
+                        <ParticipantsCountDialog
+                            open={participantsEvent !== null}
+                            onOpenChange={(open) =>
+                                !open && setParticipantsEvent(null)
+                            }
+                            event={participantsEvent}
+                            onSaved={() => void loadStats()}
                         />
                     </ChartCard>
                 )}

@@ -17,8 +17,14 @@ import {
     type EventItem,
 } from '@/features/events/lib/events';
 
+// Solo lo necesario para editar: así también se usa desde estadísticas.
+export type ParticipantsEvent = Pick<
+    EventItem,
+    'id' | 'title' | 'participantsCount'
+>;
+
 interface ParticipantsCountBodyProps {
-    event: EventItem;
+    event: ParticipantsEvent;
     onOpenChange: (open: boolean) => void;
     onSaved: () => void;
 }
@@ -95,7 +101,7 @@ interface ParticipantsCountDialogProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
     // null = nada que editar (el diálogo no se muestra).
-    event: EventItem | null;
+    event: ParticipantsEvent | null;
     onSaved: () => void;
 }
 

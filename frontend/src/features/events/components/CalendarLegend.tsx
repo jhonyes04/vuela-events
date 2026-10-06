@@ -1,0 +1,49 @@
+import { useMemo } from 'react';
+import { Badge } from '@/components/ui/badge';
+import { CATEGORY_COLOR_STYLES } from '@/features/categories/lib/colors';
+import {
+    hasEnded,
+    isFull,
+    type EventItem,
+} from '@/features/events/lib/events';
+
+interface CalendarLegendProps {
+    events: EventItem[];
+}
+
+// Leyenda de lo que se ve: categorías de los eventos visibles, y completo/finalizado si los hay.
+export const CalendarLegend = ({ events }: CalendarLegendProps) => {
+    const categories = useMemo(() => {
+        const byId = new Map(events.map((e) => [e.category.id, e.category]));
+
+        return [...byId.values()].sort((a, b) => a.name.localeCompare(b.name));
+    }, [events]);
+
+    if (events.length === 0) return null;
+
+    const anyFull = events.some((event) => isFull(event));
+    const anyEnded = events.some((event) => hasEnded(event));
+
+    return (
+        <div
+            aria-label="Leyenda"
+            className="mt-4 flex flex-wrap items-center gap-2 rounded-xl bg-card p-3 ring-1 ring-foreground/10"
+        >
+            <span className="text-xs font-medium text-muted-foreground">
+                Leyenda:
+            </span>
+            {categories.map((category) => (
+                <Badge
+                    key={category.id}
+                    className={CATEGORY_COLOR_STYLES[category.color].chip}
+                >
+                    {category.name}
+                </Badge>
+            ))}
+            {anyFull && <Badge className="bg-red-500 text-white">Completo</Badge>}
+            {anyEnded && (
+                <Badge className="bg-gray-400 text-white">Finalizado</Badge>
+            )}
+        </div>
+    );
+};
