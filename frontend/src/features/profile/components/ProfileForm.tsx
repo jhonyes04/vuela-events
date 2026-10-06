@@ -107,7 +107,10 @@ export function ProfileForm({
     };
 
     return (
-        <form onSubmit={(e) => void handleSubmit(e)} className="grid gap-6">
+        <form
+            onSubmit={(e) => void handleSubmit(e)}
+            className="grid grid-cols-1 gap-6"
+        >
             <section className="grid gap-4">
                 <h3 className="text-sm font-medium text-muted-foreground">
                     Datos personales
@@ -206,7 +209,7 @@ export function ProfileForm({
                 </section>
             )}
 
-            <div className="flex justify-end">
+            <div className="flex justify-center sm:justify-end">
                 <Button
                     type="submit"
                     disabled={submitting}

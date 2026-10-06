@@ -119,7 +119,7 @@ export const EmailSignatureSection = () => {
                 onImageUpload={uploadImage}
             />
 
-            <div className="flex justify-end">
+            <div className="flex justify-center sm:justify-end">
                 <Button
                     type="button"
                     disabled={saving || draft === savedHtml}

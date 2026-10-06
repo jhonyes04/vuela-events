@@ -125,7 +125,7 @@ export function SignatureSection({
                         key={previewVersion}
                         src={`${config.apiBase}/profile/signature-image?v=${previewVersion}`}
                         alt="Firma guardada"
-                        className="h-16 w-fit rounded-lg border bg-white object-contain p-2"
+                        className="mx-auto block h-16 w-fit rounded-lg border bg-white object-contain p-2"
                     />
                     <Alert>
                         <CircleCheck />
@@ -151,7 +151,7 @@ export function SignatureSection({
                 }}
             />
 
-            <div className="flex gap-2 ms-auto">
+            <div className="flex flex-wrap justify-center gap-2 sm:justify-end">
                 <Button
                     type="button"
                     disabled={submitting}

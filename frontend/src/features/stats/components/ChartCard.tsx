@@ -30,7 +30,7 @@ export const ChartCard = ({
             className,
         )}
     >
-        <CardHeader className="gap-1 px-6 pt-6">
+        <CardHeader className="gap-1 px-5 pt-5 sm:px-6 sm:pt-6">
             <CardTitle className="text-base font-semibold">{title}</CardTitle>
             {description && (
                 <CardDescription className="text-sm">
@@ -38,7 +38,7 @@ export const ChartCard = ({
                 </CardDescription>
             )}
         </CardHeader>
-        <CardContent className="px-6 pt-4 pb-6">
+        <CardContent className="px-5 pt-4 pb-5 sm:px-6 sm:pb-6">
             {empty ? (
                 <div className="grid place-items-center py-10 text-sm text-muted-foreground">
                     Sin datos todavía.

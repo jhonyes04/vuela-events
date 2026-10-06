@@ -60,43 +60,47 @@ export const EmailTemplatesPage = () => {
                     Todavía no hay plantillas.
                 </p>
             ) : (
-                <ul className="grid gap-3 sm:grid-cols-2">
+                <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                     {templates.map((template) => (
                         <li
                             key={template.id}
-                            className="flex items-center gap-3 rounded-xl border bg-card p-4"
+                            className="grid min-w-0 gap-3 rounded-xl border bg-card p-4 sm:flex sm:items-center"
                         >
                             <div className="min-w-0 flex-1">
-                                <p className="truncate font-medium">
+                                <p className="font-medium break-words">
                                     {template.name}
                                 </p>
-                                <p className="truncate text-sm text-muted-foreground">
+                                <p className="text-sm break-words text-muted-foreground">
                                     {template.subject}
                                 </p>
                             </div>
-                            {!template.active && (
-                                <Badge variant="secondary">Inactiva</Badge>
-                            )}
-                            <IconTooltip label="Editar">
-                                <Button
-                                    variant="secondary"
-                                    size="icon"
-                                    aria-label="Editar"
-                                    onClick={() => openEdit(template)}
-                                >
-                                    <Pencil className="size-4" />
-                                </Button>
-                            </IconTooltip>
-                            <IconTooltip label="Eliminar">
-                                <Button
-                                    variant="destructive"
-                                    size="icon"
-                                    aria-label="Eliminar"
-                                    onClick={() => setDeleting(template)}
-                                >
-                                    <Trash2 className="size-4" />
-                                </Button>
-                            </IconTooltip>
+                            <div className="flex items-center gap-2 sm:shrink-0">
+                                {!template.active && (
+                                    <Badge variant="secondary">Inactiva</Badge>
+                                )}
+                                <div className="ml-auto flex gap-2">
+                                    <IconTooltip label="Editar">
+                                        <Button
+                                            variant="secondary"
+                                            size="icon"
+                                            aria-label="Editar"
+                                            onClick={() => openEdit(template)}
+                                        >
+                                            <Pencil className="size-4" />
+                                        </Button>
+                                    </IconTooltip>
+                                    <IconTooltip label="Eliminar">
+                                        <Button
+                                            variant="destructive"
+                                            size="icon"
+                                            aria-label="Eliminar"
+                                            onClick={() => setDeleting(template)}
+                                        >
+                                            <Trash2 className="size-4" />
+                                        </Button>
+                                    </IconTooltip>
+                                </div>
+                            </div>
                         </li>
                     ))}
                 </ul>

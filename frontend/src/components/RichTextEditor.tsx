@@ -58,6 +58,7 @@ const ToolbarButton = ({
             type="button"
             variant={active ? 'secondary' : 'ghost'}
             size="icon-sm"
+            className="size-9 sm:size-7"
             aria-label={label}
             aria-pressed={active}
             disabled={disabled}
@@ -111,7 +112,7 @@ const Toolbar = ({ editor, onImageClick }: ToolbarProps) => (
     <div
         role="toolbar"
         aria-label="Formato de texto"
-        className="flex flex-wrap items-center gap-0.5 rounded-t-lg border border-b-0 border-input bg-muted/50 p-1"
+        className="flex min-w-0 max-w-full flex-wrap items-center gap-1 rounded-t-lg border border-b-0 border-input bg-muted/50 p-1 sm:gap-0.5"
     >
         <ToolbarButton
             label="Título grande"
@@ -148,7 +149,7 @@ const Toolbar = ({ editor, onImageClick }: ToolbarProps) => (
                     editor.chain().focus().unsetMark('textStyle').run();
                 }
             }}
-            className="h-8 rounded-md border border-input bg-background px-1.5 text-xs"
+            className="h-9 rounded-md border border-input bg-background px-1.5 text-xs sm:h-8"
         >
             <option value="">Normal</option>
             {FONT_SIZES.map((size) => (
@@ -462,7 +463,7 @@ export const RichTextEditor = ({
     };
 
     return (
-        <div className={cn('grid', className)}>
+        <div className={cn('grid min-w-0 grid-cols-1', className)}>
             <Toolbar
                 editor={editor}
                 onImageClick={
@@ -497,6 +498,7 @@ export const RichTextEditor = ({
                     '[&_ul]:list-disc [&_ul]:pl-5',
                     '[&_ol]:list-decimal [&_ol]:pl-5',
                     '[&_a]:text-primary [&_a]:underline',
+                    'min-w-0 break-words',
                     '[&_img]:my-2 [&_img]:h-auto [&_img]:max-w-full',
                 )}
             />

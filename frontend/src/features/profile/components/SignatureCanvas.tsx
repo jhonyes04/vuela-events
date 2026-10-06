@@ -92,7 +92,7 @@ export function SignatureCanvas({
                 onPointerUp={handlePointerUp}
                 onPointerLeave={handlePointerUp}
             />
-            <div className="flex gap-2 justify-between">
+            <div className="flex flex-wrap justify-center gap-2 sm:justify-between">
                 <Button
                     type="button"
                     variant="outline"

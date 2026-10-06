@@ -187,7 +187,7 @@ const Kpi = ({
                 <Icon className="size-4" />
                 {label}
             </span>
-            <p className="text-3xl font-semibold tracking-tight tabular-nums">
+            <p className="text-2xl font-semibold tracking-tight tabular-nums sm:text-3xl">
                 {value}
             </p>
         </div>
@@ -233,7 +233,7 @@ const AreaSeries = ({
                 dataKey="label"
                 tickLine={false}
                 axisLine={false}
-                tickMargin={8}
+                tickMargin={8} minTickGap={12}
             />
             <YAxis
                 allowDecimals={false}
@@ -276,7 +276,7 @@ const BarSeries = ({
                 dataKey="label"
                 tickLine={false}
                 axisLine={false}
-                tickMargin={8}
+                tickMargin={8} minTickGap={12}
             />
             <YAxis
                 allowDecimals={false}
@@ -325,7 +325,7 @@ const HorizontalBars = ({
             <YAxis
                 dataKey="label"
                 type="category"
-                width={140}
+                width={120}
                 tickLine={false}
                 axisLine={false}
             />
@@ -397,7 +397,7 @@ const StatusDonut = ({ stats }: { stats: StatsSummary }) => {
                 </ChartContainer>
                 <div className="pointer-events-none absolute inset-0 grid place-items-center text-center">
                     <div>
-                        <p className="text-3xl font-semibold tabular-nums">
+                        <p className="text-2xl font-semibold tabular-nums sm:text-3xl">
                             {total}
                         </p>
                         <p className="text-xs text-muted-foreground">eventos</p>
@@ -462,7 +462,7 @@ const RankList = ({ rows }: { rows: RankRow[] }) => (
                 </div>
                 <div className="flex items-center gap-3">
                     {r.progress !== undefined && (
-                        <Progress value={r.progress} className="w-32" />
+                        <Progress value={r.progress} className="w-24 sm:w-32" />
                     )}
                     {r.value !== undefined && (
                         <span className="rounded-full bg-muted px-2.5 py-0.5 text-sm font-semibold tabular-nums">
@@ -527,17 +527,17 @@ export const StatsPage = () => {
             : `${stats.occupancy.averageRate} %`;
 
     return (
-        <section className="mx-auto grid w-full max-w-6xl gap-8">
+        <section className="mx-auto grid w-full min-w-0 max-w-6xl grid-cols-1 gap-8">
             <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
                 <div className="grid gap-1">
-                    <h1 className="text-3xl font-semibold tracking-tight">
+                    <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
                         Estadísticas
                     </h1>
                     <p className="text-sm text-muted-foreground">
                         Eventos, inscripciones y personas atendidas.
                     </p>
                 </div>
-                <div className="grid gap-3 sm:w-[28rem] sm:grid-cols-2">
+                <div className="grid w-full grid-cols-1 gap-3 sm:w-[28rem] sm:grid-cols-2">
                     <div className="grid gap-1.5">
                         <Label
                             htmlFor="stats-group"
@@ -637,7 +637,7 @@ export const StatsPage = () => {
                 <Kpi icon={Gauge} label="Ocupación media" value={averageRate} />
             </div>
 
-            <div className="grid gap-6">
+            <div className="grid min-w-0 grid-cols-1 gap-6">
                 {section === 'events-month' && (
                     <ChartCard
                         title="Eventos por mes"
@@ -769,8 +769,8 @@ export const StatsPage = () => {
                         description="Inscritos frente al aforo, de más a menos llenos."
                         empty={stats.occupancyEvents.length === 0}
                     >
-                        <div className="grid gap-6">
-                            <div className="grid grid-cols-2 gap-4">
+                        <div className="grid min-w-0 grid-cols-1 gap-6">
+                            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                                 <Kpi
                                     icon={Gauge}
                                     label="Ocupación media"
@@ -886,7 +886,7 @@ export const StatsPage = () => {
                         empty={stats.totals.attended === 0}
                     >
                         <div className="grid place-items-center gap-2 py-8">
-                            <p className="text-6xl font-semibold tracking-tight tabular-nums">
+                            <p className="text-5xl font-semibold tracking-tight tabular-nums sm:text-6xl">
                                 {stats.totals.attended}
                             </p>
                             <p className="text-sm text-muted-foreground">

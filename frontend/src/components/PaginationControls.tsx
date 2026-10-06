@@ -61,8 +61,8 @@ export function PaginationControls({
     };
 
     return (
-        <div className="grid grid-cols-3 items-center gap-3">
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+        <div className="grid grid-cols-1 items-center justify-items-center gap-3 sm:grid-cols-3 sm:justify-items-stretch">
+            <div className="order-2 flex items-center gap-2 text-sm text-muted-foreground justify-self-center sm:order-none sm:justify-self-start">
                 <span>Mostrar</span>
                 <select
                     className={selectClass}
@@ -79,11 +79,11 @@ export function PaginationControls({
                 </select>
             </div>
 
-            <p className="justify-self-center text-sm text-muted-foreground">
+            <p className="order-1 justify-self-center text-sm text-muted-foreground sm:order-none">
                 Mostrando {from}–{to} de {total}
             </p>
 
-            <div className="justify-self-end">
+            <div className="order-3 justify-self-center sm:order-none sm:justify-self-end">
                 <Pagination className="mx-0 w-auto">
                     <PaginationContent>
                         <PaginationItem>

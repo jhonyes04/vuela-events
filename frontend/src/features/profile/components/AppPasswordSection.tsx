@@ -136,7 +136,7 @@ export function AppPasswordSection({
                     </div>
                 </div>
 
-                <div className="flex gap-2 ms-auto">
+                <div className="flex flex-wrap justify-center gap-2 sm:justify-end">
                     <Button type="submit" disabled={submitting}>
                         {submitting ? 'Guardando…' : 'Guardar'}
                     </Button>
