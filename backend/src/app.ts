@@ -34,7 +34,11 @@ export function createApp(options: AppOptions = {}) {
         app.set('trust proxy', env.TRUST_PROXY_HOPS);
     }
 
-    app.use(helmet());
+    app.use(
+        helmet({
+            crossOriginResourcePolicy: { policy: 'same-site' },
+        }),
+    );
     app.use(
         cors({
             origin: env.FRONTEND_ORIGIN,
