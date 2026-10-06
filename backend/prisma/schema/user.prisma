@@ -1,26 +1,29 @@
 model User {
-    id                  String          @id @default(uuid()) @db.Uuid
-    email               String          @unique @db.VarChar(254)
-    googleSub           String          @unique @db.VarChar(255)
-    name                String          @db.VarChar(200)
-    lastName            String          @default("") @db.VarChar(200)
-    puntoVuela          String?         @db.VarChar(120)
-    profileCompletedAt  DateTime?   
-    roleId              String          @default("ail") @db.VarChar(40)             
-    active              Boolean         @default(true)
-    smtpAppPassword     String?         @db.Text
-    avatarImage         Bytes?
-    avatarImageType     String?         @db.VarChar(40)
-    signatureImage      Bytes?
-    createdAt           DateTime        @default(now())
-    updatedAt           DateTime        @updatedAt
+    id                      String          @id @default(uuid()) @db.Uuid
+    email                   String          @unique @db.VarChar(254)
+    googleSub               String          @unique @db.VarChar(255)
+    name                    String          @db.VarChar(200)
+    lastName                String          @default("") @db.VarChar(200)
+    puntoVuela              String?         @db.VarChar(120)
+    dinamizadorTitle        String?         @db.VarChar(20)
+    profileCompletedAt      DateTime?   
+    roleId                  String          @default("ail") @db.VarChar(40)             
+    active                  Boolean         @default(true)
+    smtpAppPassword         String?         @db.Text
+    avatarImage             Bytes?
+    avatarImageType         String?         @db.VarChar(40)
+    emailSignature          String?         @db.Text
+    signatureImage          Bytes?
+    createdAt               DateTime        @default(now())
+    updatedAt               DateTime        @updatedAt
 
-    role                Role            @relation(fields: [roleId], references: [id], onDelete: Restrict)
-    createdEvents       Event[]         @relation("EventCreator")
-    registrations       Registration[]
-    sentReports         SentReport[]    @relation("ReportSender")
-    auditAsActor        AuditLog[]      @relation("AuditActor")
-    auditAsTarget       AuditLog[]      @relation("AuditTarget")
+    role                    Role            @relation(fields: [roleId], references: [id], onDelete: Restrict)
+    createdEvents           Event[]         @relation("EventCreator")
+    registrations           Registration[]
+    sentReports             SentReport[]    @relation("ReportSender")
+    auditAsActor            AuditLog[]      @relation("AuditActor")
+    auditAsTarget           AuditLog[]      @relation("AuditTarget")
+    emailSignatureImages    EmailSignatureImage[]
 
     @@map("users")
 }

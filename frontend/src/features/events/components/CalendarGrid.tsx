@@ -1,10 +1,12 @@
 import { useMemo } from 'react';
+import { CircleCheck } from 'lucide-react';
 import { WEEKDAY_HEADERS, type CalendarDay } from '@/features/events/lib/calendar';
 import { eventColor } from '@/features/events/lib/eventColors';
 import {
     formatDayLabel,
     formatTime,
     groupByDay,
+    hasEnded,
     type EventItem,
 } from '@/features/events/lib/events';
 import { cn } from '@/lib/utils';
@@ -116,12 +118,26 @@ export function CalendarGrid({
                                                     eventColor(event).chip,
                                                     event.registered &&
                                                         'ring-2 ring-brand-green',
+                                                    hasEnded(event) &&
+                                                        'opacity-60',
                                                 )}
                                             >
                                                 <span className="tabular-nums">
                                                     {formatTime(event.startsAt)}
                                                 </span>{' '}
                                                 {event.title}
+                                                {hasEnded(event) && (
+                                                    <>
+                                                        <CircleCheck
+                                                            aria-hidden="true"
+                                                            className="ml-1 inline size-3"
+                                                        />
+                                                        <span className="sr-only">
+                                                            {' '}
+                                                            (finalizado)
+                                                        </span>
+                                                    </>
+                                                )}
                                                 {event.registered && (
                                                     <span className="sr-only">
                                                         {' '}
@@ -152,6 +168,8 @@ export function CalendarGrid({
                                                     className={cn(
                                                         'size-2 rounded-full',
                                                         eventColor(event).dot,
+                                                        hasEnded(event) &&
+                                                            'opacity-40',
                                                     )}
                                                 />
                                             ))}

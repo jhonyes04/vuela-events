@@ -16,6 +16,7 @@ const validProfile = {
     name: 'Ana Vanesa',
     lastName: 'García López',
     puntoVuela: 'Pueblo Nuevo Axarquía',
+    dinamizadorTitle: 'dinamizadora',
 };
 
 describe('perfil: primer acceso y edición', () => {

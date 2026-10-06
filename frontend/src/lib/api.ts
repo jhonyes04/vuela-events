@@ -4,6 +4,7 @@ export interface User {
     name: string;
     lastName: string;
     puntoVuela: string | null;
+    dinamizadorTitle: 'dinamizador' | 'dinamizadora' | null;
     profileCompleted: boolean;
     roleId: string;
     roleName: string;

@@ -6,6 +6,10 @@ import { getDecryptedAppPassword } from './profile.js';
 import { deleteReportDraft, getReportDraft } from './reportDrafts.js';
 import { saveSentReport } from './sentReports.js';
 import { type SlotId } from './emailSending.js';
+import {
+    getEmailSignatureForSend,
+    type SignatureInlineImage,
+} from './emailSignature.js';
 
 const BATCH_SIZE = 15;
 const PAUSE_MS = 5_000;
@@ -164,6 +168,18 @@ export const startBulkSend = async (
     const template = assignment.template;
     const { subject, body } = renderEmail(template, event);
 
+    // Se resuelve antes de cualquier efecto: si falla, no se consume el borrador.
+    const signature = await getEmailSignatureForSend(input.actorId);
+
+    const sender = await prisma.user.findUnique({
+        where: { id: input.actorId },
+        select: { name: true, lastName: true },
+    });
+    const senderName = [sender?.name, sender?.lastName]
+        .filter(Boolean)
+        .join(' ');
+    const html = signature ? `${body}<br><br>${signature.html}` : body;
+
     // Un borrador se usa una sola vez, y solo si ya no puede fallar nada antes del envío.
     if (attachment && input.reportDraftId) {
         deleteReportDraft(input.reportDraftId);
@@ -185,9 +201,11 @@ export const startBulkSend = async (
     void runSendJob(job, {
         smtpConfig,
         actorEmail: input.actorEmail,
+        senderName,
         smtpPassword,
         subject,
-        body,
+        html,
+        inlineImages: signature?.inlineImages ?? [],
         attachment,
         recipients,
         report: { eventId: input.eventId, senderId: input.actorId },
@@ -201,9 +219,11 @@ const runSendJob = async (
     ctx: {
         smtpConfig: { host: string; port: number; secure: boolean };
         actorEmail: string;
+        senderName: string;
         smtpPassword: string;
         subject: string;
-        body: string;
+        html: string;
+        inlineImages: SignatureInlineImage[];
         attachment?: { filename: string; content: Buffer };
         recipients: { registrationId: string; userId: string; email: string }[];
         // Si hay adjunto, se guarda una copia del acta enviada.
@@ -226,11 +246,14 @@ const runSendJob = async (
             for (const recipient of batch) {
                 try {
                     await transporter.sendMail({
-                        from: ctx.actorEmail,
+                        from: { name: ctx.senderName, address: ctx.actorEmail },
                         to: recipient.email,
                         subject: ctx.subject,
-                        html: ctx.body,
-                        attachments: ctx.attachment ? [ctx.attachment] : [],
+                        html: ctx.html,
+                        attachments: [
+                            ...(ctx.attachment ? [ctx.attachment] : []),
+                            ...ctx.inlineImages,
+                        ],
                     });
 
                     job.sent += 1;

@@ -4,7 +4,11 @@ import { AttendeeChips } from '@/features/events/components/AttendeeChips';
 import { EventInfoRows } from '@/features/events/components/EventInfoRows';
 import { CATEGORY_COLOR_STYLES } from '@/features/categories/lib/colors';
 import { cn } from '@/lib/utils';
-import { isFull, type EventItem } from '@/features/events/lib/events';
+import {
+    hasEnded,
+    isFull,
+    type EventItem,
+} from '@/features/events/lib/events';
 
 import { useAttendees } from '@/features/events/hooks/useAttendees';
 
@@ -57,6 +61,7 @@ interface EventCardProps {
 
 export const EventCard = ({ event, onOpen }: EventCardProps) => {
     const full = isFull(event);
+    const ended = hasEnded(event);
     const colorStyle = full
         ? { border: 'border-t-red-500', tint: 'bg-red-500/10' }
         : CATEGORY_COLOR_STYLES[event.category.color];
@@ -79,6 +84,11 @@ export const EventCard = ({ event, onOpen }: EventCardProps) => {
                             {event.title}
                         </button>
                     </h3>
+                    {ended && (
+                        <Badge variant="outline" className="shrink-0">
+                            Finalizado
+                        </Badge>
+                    )}
                     {event.registered && (
                         <Badge className="shrink-0 bg-brand-green text-white">
                             Inscrito
@@ -102,6 +112,14 @@ export const EventCard = ({ event, onOpen }: EventCardProps) => {
                         )
                     }
                 />
+                {ended && (
+                    <p className="text-sm text-muted-foreground">
+                        Usuarios atendidos:{' '}
+                        <strong className="text-foreground">
+                            {event.participantsCount ?? 'sin indicar'}
+                        </strong>
+                    </p>
+                )}
                 <AttendeeList event={event} />
             </CardContent>
         </Card>

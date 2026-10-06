@@ -1,0 +1,12 @@
+model EmailSignatureImage {
+    id                  String      @id @default(uuid()) @db.Uuid
+    userId              String      @db.Uuid
+    contentType         String      @db.VarChar(40)
+    data                Bytes
+    createdAt           DateTime    @default(now())
+
+    user                User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+    @@index([userId])
+    @@map("email_signature_images")
+}

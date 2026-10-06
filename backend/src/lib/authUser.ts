@@ -1,3 +1,12 @@
+export const DINAMIZADOR_TITLES = ['dinamizador', 'dinamizadora'] as const;
+
+export type DinamizadorTitle = (typeof DINAMIZADOR_TITLES)[number];
+
+export const isDinamizadorTitle = (
+    value: string | null,
+): value is DinamizadorTitle =>
+    value !== null && (DINAMIZADOR_TITLES as readonly string[]).includes(value);
+
 // Lo que la aplicación sabe de quien está autenticado. Nunca incluye googleSub ni los datos cifrados/binarios en sí (contraseña de aplicación, firma, avatar), solo si están configurados.
 export interface AuthUser {
     id: string;
@@ -5,6 +14,7 @@ export interface AuthUser {
     name: string;
     lastName: string;
     puntoVuela: string | null;
+    dinamizadorTitle: DinamizadorTitle | null;
     profileCompleted: boolean;
     roleId: string;
     roleName: string;
@@ -21,6 +31,7 @@ export const authUserSelect = {
     name: true,
     lastName: true,
     puntoVuela: true,
+    dinamizadorTitle: true,
     profileCompletedAt: true,
     active: true,
     smtpAppPassword: true,
@@ -41,6 +52,7 @@ export const toAuthUser = (row: {
     name: string;
     lastName: string;
     puntoVuela: string | null;
+    dinamizadorTitle: string | null;
     profileCompletedAt: Date | null;
     smtpAppPassword: string | null;
     signatureImage: unknown | null;
@@ -52,6 +64,9 @@ export const toAuthUser = (row: {
     name: row.name,
     lastName: row.lastName,
     puntoVuela: row.puntoVuela,
+    dinamizadorTitle: isDinamizadorTitle(row.dinamizadorTitle)
+        ? row.dinamizadorTitle
+        : null,
     profileCompleted: row.profileCompletedAt !== null,
     roleId: row.role.id,
     roleName: row.role.name,

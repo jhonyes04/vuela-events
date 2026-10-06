@@ -5,6 +5,7 @@ import { useAuth } from '@/features/auth/hooks/context';
 import { ProfileForm } from '@/features/profile/components/ProfileForm';
 import { AppPasswordSection } from '@/features/profile/components/AppPasswordSection';
 import { SignatureSection } from '@/features/profile/components/SignatureSection';
+import { EmailSignatureSection } from '@/features/profile/components/EmailSignatureSection';
 import { MyEventsSection } from '@/features/profile/components/MyEventsSection';
 
 export const ProfilePage = () => {
@@ -77,6 +78,9 @@ export const ProfilePage = () => {
                                     })
                                 }
                             />
+                        </div>
+                        <div className="rounded-xl border bg-card p-4 sm:p-6">
+                            <EmailSignatureSection />
                         </div>
                     </>
                 )}

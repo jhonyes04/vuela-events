@@ -25,10 +25,18 @@ export const puntoVueloHints = (roleId: string): PuntoVueloHints =>
               help: 'Indica tu rol y zona de trabajo; no hace falta un Punto Vuela concreto',
           };
 
+export type DinamizadorTitle = 'dinamizador' | 'dinamizadora';
+
+export const DINAMIZADOR_OPTIONS: { value: DinamizadorTitle; label: string }[] = [
+    { value: 'dinamizador', label: 'Dinamizador' },
+    { value: 'dinamizadora', label: 'Dinamizadora' },
+];
+
 export interface ProfileValues {
     name: string;
     lastName: string;
     puntoVuela: string;
+    dinamizadorTitle: DinamizadorTitle | null;
 }
 
 // Igual que el servidor: recorta y colapsa los espacios internos.
@@ -75,4 +83,48 @@ export const clearSignatureImage = async (): Promise<boolean> => {
     );
 
     return configured;
+};
+
+export const getEmailSignature = async (): Promise<string> => {
+    const { html } = await api.get<{ html: string }>(
+        '/profile/email-signature',
+    );
+
+    return html;
+};
+
+export const saveEmailSignature = async (html: string): Promise<string> => {
+    const saved = await api.patch<{ html: string }>(
+        '/profile/email-signature',
+        { html },
+    );
+
+    return saved.html;
+};
+
+const fileToBase64 = (file: File): Promise<string> =>
+    new Promise((resolve, reject) => {
+        const reader = new FileReader();
+
+        reader.onload = () => {
+            const result = reader.result as string;
+
+            resolve(result.slice(result.indexOf(',') + 1));
+        };
+
+        reader.onerror = () => reject(reader.error);
+        reader.readAsDataURL(file);
+    });
+
+// Devuelve la URL de la imagen
+export const uploadEmailSignatureImage = async (
+    file: File,
+): Promise<string> => {
+    const dataBase64 = await fileToBase64(file);
+    const { url } = await api.post<{ id: string; url: string }>(
+        '/profile/email-signature/images',
+        { contentType: file.type, dataBase64 },
+    );
+
+    return url;
 };

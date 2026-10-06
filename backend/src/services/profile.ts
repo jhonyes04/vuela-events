@@ -1,11 +1,17 @@
 import { prisma } from '../lib/prisma.js';
 import { encrypt, decrypt } from '../lib/crypto.js';
-import { authUserSelect, toAuthUser, type AuthUser } from '../lib/authUser.js';
+import {
+    authUserSelect,
+    toAuthUser,
+    type AuthUser,
+    type DinamizadorTitle,
+} from '../lib/authUser.js';
 
 export interface ProfileInput {
     name: string;
     lastName: string;
     puntoVuela: string;
+    dinamizadorTitle: DinamizadorTitle | null;
 }
 
 // Actualiza el perfil de la propia persona. El id sale siempre de la sesión.
@@ -22,6 +28,7 @@ export const updateProfile = async (
                 name: true,
                 lastName: true,
                 puntoVuela: true,
+                dinamizadorTitle: true,
                 profileCompletedAt: true,
             },
         });
@@ -30,6 +37,9 @@ export const updateProfile = async (
             current.name !== input.name ? 'name' : null,
             current.lastName !== input.lastName ? 'lastName' : null,
             current.puntoVuela !== input.puntoVuela ? 'puntoVuela' : null,
+            current.dinamizadorTitle !== input.dinamizadorTitle
+                ? 'dinamizadorTitle'
+                : null,
         ].filter((field): field is string => field !== null);
 
         const firstTime = current.profileCompletedAt === null;
@@ -40,6 +50,7 @@ export const updateProfile = async (
                 name: input.name,
                 lastName: input.lastName,
                 puntoVuela: input.puntoVuela,
+                dinamizadorTitle: input.dinamizadorTitle,
                 ...(firstTime && { profileCompletedAt: new Date() }),
             },
             select: authUserSelect,

@@ -23,6 +23,7 @@ export function OnboardingPage() {
                     name: '',
                     lastName: '',
                     puntoVuela: user.name.slice(0, PUNTO_VUELA_MAX),
+                    dinamizadorTitle: null,
                 }}
                 submitLabel="Continuar"
                 showSuccess={false}

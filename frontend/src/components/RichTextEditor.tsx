@@ -1,9 +1,22 @@
-import type { ReactNode } from 'react';
-import { EditorContent, useEditor, type Editor } from '@tiptap/react';
+import {
+    useRef,
+    type PointerEvent as ReactPointerEvent,
+    type ReactNode,
+} from 'react';
+import {
+    EditorContent,
+    NodeViewWrapper,
+    ReactNodeViewRenderer,
+    useEditor,
+    type Editor,
+    type NodeViewProps,
+} from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Underline from '@tiptap/extension-underline';
+import { TextStyle } from '@tiptap/extension-text-style';
 import Link from '@tiptap/extension-link';
 import TextAlign from '@tiptap/extension-text-align';
+import Image from '@tiptap/extension-image';
 import {
     AlignCenter,
     AlignJustify,
@@ -12,6 +25,7 @@ import {
     Bold,
     Heading2,
     Heading3,
+    Image as ImageIcon,
     Italic,
     Link as LinkIcon,
     List,
@@ -56,9 +70,7 @@ const ToolbarButton = ({
 const Divider = () => <div className="mx-0.5 w-px self-stretch bg-border" />;
 
 const setLink = (editor: Editor) => {
-    const previousUrl = editor.getAttributes('link').href as
-        | string
-        | undefined;
+    const previousUrl = editor.getAttributes('link').href as string | undefined;
     const url = window.prompt('URL del enlace', previousUrl ?? '');
 
     if (url === null) return;
@@ -71,11 +83,30 @@ const setLink = (editor: Editor) => {
     editor.chain().focus().extendMarkRange('link').setLink({ href: url }).run();
 };
 
+const FONT_SIZES = ['10px', '12px', '14px', '16px', '18px', '24px', '32px'];
+
+// Guarda el tamaño como style="font-size: …" en el span (el correo no admite clases).
+const FontSize = TextStyle.extend({
+    addAttributes() {
+        return {
+            fontSize: {
+                default: null,
+                parseHTML: (el) => el.style.fontSize || null,
+                renderHTML: (attrs) =>
+                    attrs.fontSize
+                        ? { style: `font-size: ${attrs.fontSize}` }
+                        : {},
+            },
+        };
+    },
+});
+
 interface ToolbarProps {
     editor: Editor;
+    onImageClick?: () => void;
 }
 
-const Toolbar = ({ editor }: ToolbarProps) => (
+const Toolbar = ({ editor, onImageClick }: ToolbarProps) => (
     <div
         role="toolbar"
         aria-label="Formato de texto"
@@ -99,6 +130,32 @@ const Toolbar = ({ editor }: ToolbarProps) => (
         >
             <Heading3 className="size-4" />
         </ToolbarButton>
+
+        <select
+            aria-label="Tamaño del texto"
+            value={editor.getAttributes('textStyle').fontSize ?? ''}
+            onChange={(e) => {
+                const size = e.target.value;
+
+                if (size) {
+                    editor
+                        .chain()
+                        .focus()
+                        .setMark('textStyle', { fontSize: size })
+                        .run();
+                } else {
+                    editor.chain().focus().unsetMark('textStyle').run();
+                }
+            }}
+            className="h-8 rounded-md border border-input bg-background px-1.5 text-xs"
+        >
+            <option value="">Normal</option>
+            {FONT_SIZES.map((size) => (
+                <option key={size} value={size}>
+                    {size}
+                </option>
+            ))}
+        </select>
 
         <Divider />
 
@@ -160,9 +217,7 @@ const Toolbar = ({ editor }: ToolbarProps) => (
         <ToolbarButton
             label="Centrar"
             active={editor.isActive({ textAlign: 'center' })}
-            onClick={() =>
-                editor.chain().focus().setTextAlign('center').run()
-            }
+            onClick={() => editor.chain().focus().setTextAlign('center').run()}
         >
             <AlignCenter className="size-4" />
         </ToolbarButton>
@@ -176,9 +231,7 @@ const Toolbar = ({ editor }: ToolbarProps) => (
         <ToolbarButton
             label="Justificar"
             active={editor.isActive({ textAlign: 'justify' })}
-            onClick={() =>
-                editor.chain().focus().setTextAlign('justify').run()
-            }
+            onClick={() => editor.chain().focus().setTextAlign('justify').run()}
         >
             <AlignJustify className="size-4" />
         </ToolbarButton>
@@ -192,6 +245,18 @@ const Toolbar = ({ editor }: ToolbarProps) => (
         >
             <LinkIcon className="size-4" />
         </ToolbarButton>
+        {onImageClick && (
+            <>
+                <Divider />
+                <ToolbarButton
+                    label="Insertar imagen"
+                    active={false}
+                    onClick={onImageClick}
+                >
+                    <ImageIcon className="size-4" />
+                </ToolbarButton>
+            </>
+        )}
     </div>
 );
 
@@ -221,9 +286,7 @@ const PlaceholderPalette = ({
                 key={token}
                 type="button"
                 draggable
-                onDragStart={(e) =>
-                    e.dataTransfer.setData('text/plain', token)
-                }
+                onDragStart={(e) => e.dataTransfer.setData('text/plain', token)}
                 onClick={() =>
                     editor.chain().focus().insertContent(token).run()
                 }
@@ -235,12 +298,85 @@ const PlaceholderPalette = ({
     </div>
 );
 
+const MIN_IMAGE_WIDTH = 40;
+
+// Imagen con asa en la esquina inferior derecha. El tamaño va en el atributo width
+// (permitido por el sanitizador del backend), no en style: la proporción la da h-auto.
+const ResizableImageView = ({
+    node,
+    updateAttributes,
+    selected,
+}: NodeViewProps) => {
+    const imgRef = useRef<HTMLImageElement>(null);
+
+    const startResize = (e: ReactPointerEvent<HTMLDivElement>) => {
+        e.preventDefault();
+        e.stopPropagation();
+
+        const img = imgRef.current;
+
+        if (!img) return;
+
+        const startX = e.clientX;
+        const startWidth = img.getBoundingClientRect().width;
+        const maxWidth = img.parentElement?.clientWidth ?? Infinity;
+
+        const onMove = (ev: PointerEvent) => {
+            const width = Math.min(
+                maxWidth,
+                Math.max(
+                    MIN_IMAGE_WIDTH,
+                    Math.round(startWidth + ev.clientX - startX),
+                ),
+            );
+
+            updateAttributes({ width });
+        };
+
+        const onUp = () => {
+            window.removeEventListener('pointermove', onMove);
+            window.removeEventListener('pointerup', onUp);
+        };
+
+        window.addEventListener('pointermove', onMove);
+        window.addEventListener('pointerup', onUp);
+    };
+
+    return (
+        <NodeViewWrapper className="relative inline-block max-w-full">
+            <img
+                ref={imgRef}
+                src={node.attrs.src}
+                alt={node.attrs.alt ?? ''}
+                width={node.attrs.width ?? undefined}
+                className={cn(
+                    'block h-auto max-w-full rounded',
+                    selected && 'outline-2 outline-ring',
+                )}
+            />
+            {selected && (
+                <div
+                    role="presentation"
+                    onPointerDown={startResize}
+                    className="absolute -right-1 -bottom-1 size-3 cursor-nwse-resize rounded-sm bg-primary"
+                />
+            )}
+        </NodeViewWrapper>
+    );
+};
+
+const ResizableImage = Image.extend({
+    addNodeView() {
+        return ReactNodeViewRenderer(ResizableImageView);
+    },
+});
+
 interface RichTextEditorProps {
     value: string;
     onChange: (html: string) => void;
     className?: string;
-    // Chips de inserción rápida (arrastrar o clic) para tokens dinámicos.
     placeholders?: EditorPlaceholder[];
+    onImageUpload?: (file: File) => Promise<string | null>;
 }
 
 // Editor de texto enriquecido reutilizable; el valor entra y sale como HTML.
@@ -249,13 +385,17 @@ export const RichTextEditor = ({
     onChange,
     className,
     placeholders,
+    onImageUpload,
 }: RichTextEditorProps) => {
+    const fileInputRef = useRef<HTMLInputElement>(null);
     const editor = useEditor({
         extensions: [
             StarterKit.configure({ heading: { levels: [2, 3] } }),
+            FontSize,
             Underline,
             Link.configure({ openOnClick: false, autolink: true }),
             TextAlign.configure({ types: ['heading', 'paragraph'] }),
+            ResizableImage.configure({ inline: false, allowBase64: false }),
         ],
         content: value,
         onUpdate: ({ editor }) => onChange(editor.getHTML()),
@@ -265,9 +405,38 @@ export const RichTextEditor = ({
 
     const hasPlaceholders = placeholders && placeholders.length > 0;
 
+    const handleImageFile = async (file: File) => {
+        if (!onImageUpload) return;
+
+        const src = await onImageUpload(file);
+
+        if (src) editor.chain().focus().setImage({ src }).run();
+    };
+
     return (
         <div className={cn('grid', className)}>
-            <Toolbar editor={editor} />
+            <Toolbar
+                editor={editor}
+                onImageClick={
+                    onImageUpload
+                        ? () => fileInputRef.current?.click()
+                        : undefined
+                }
+            />
+            {onImageUpload && (
+                <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/png,image/jpeg,image/webp"
+                    className="hidden"
+                    onChange={(e) => {
+                        const file = e.target.files?.[0];
+
+                        e.target.value = '';
+                        if (file) void handleImageFile(file);
+                    }}
+                />
+            )}
             <EditorContent
                 editor={editor}
                 className={cn(
@@ -280,10 +449,14 @@ export const RichTextEditor = ({
                     '[&_ul]:list-disc [&_ul]:pl-5',
                     '[&_ol]:list-decimal [&_ol]:pl-5',
                     '[&_a]:text-primary [&_a]:underline',
+                    '[&_img]:my-2 [&_img]:h-auto [&_img]:max-w-full',
                 )}
             />
             {hasPlaceholders && (
-                <PlaceholderPalette editor={editor} placeholders={placeholders} />
+                <PlaceholderPalette
+                    editor={editor}
+                    placeholders={placeholders}
+                />
             )}
         </div>
     );

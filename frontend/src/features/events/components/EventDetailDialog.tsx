@@ -6,6 +6,7 @@ import { DeleteEventDialog } from '@/features/events/components/DeleteEventDialo
 import { DeleteEventSeriesDialog } from '@/features/events/components/DeleteEventSeriesDialog';
 import { EventInfoRows } from '@/features/events/components/EventInfoRows';
 import { AttendeeChips } from '@/features/events/components/AttendeeChips';
+import { ParticipantsCountDialog } from '@/features/events/components/ParticipantsCountDialog';
 import { Badge } from '@/components/ui/badge';
 import { Button, buttonVariants } from '@/components/ui/button';
 import {
@@ -48,6 +49,7 @@ const EventDetailBody = ({
     const [busy, setBusy] = useState(false);
     const [confirmOpen, setConfirmOpen] = useState(false);
     const [seriesConfirmOpen, setSeriesConfirmOpen] = useState(false);
+    const [participantsOpen, setParticipantsOpen] = useState(false);
     // Se refresca cuando cambia el número de inscritos o la inscripción propia.
     const { attendees, failed, loading } = useAttendees(
         event.id,
@@ -102,7 +104,9 @@ const EventDetailBody = ({
         <>
             {/* Mientras se confirma la eliminación se oculta la ficha. */}
             <Dialog
-                open={!confirmOpen && !seriesConfirmOpen}
+                open={
+                    !confirmOpen && !seriesConfirmOpen && !participantsOpen
+                }
                 onOpenChange={(open) => {
                     if (!open) onClose();
                 }}
@@ -133,6 +137,15 @@ const EventDetailBody = ({
                     </div>
 
                     <EventInfoRows event={event} />
+
+                    {ended && (
+                        <p className="text-sm text-muted-foreground">
+                            Usuarios atendidos:{' '}
+                            <strong className="text-foreground">
+                                {event.participantsCount ?? 'sin indicar'}
+                            </strong>
+                        </p>
+                    )}
 
                     {event.description && (
                         <p className="text-sm whitespace-pre-line">
@@ -212,6 +225,16 @@ const EventDetailBody = ({
                             </a>
                         )}
 
+                        {ended && (
+                            <Button
+                                variant="default"
+                                className="bg-green-800"
+                                onClick={() => setParticipantsOpen(true)}
+                            >
+                                Usuarios atendidos
+                            </Button>
+                        )}
+
                         {ended ? (
                             <p className="self-center text-sm text-muted-foreground">
                                 Este evento ya ha finalizado.
@@ -270,6 +293,12 @@ const EventDetailBody = ({
                     onDeleted={() => onDeleted()}
                 />
             )}
+            <ParticipantsCountDialog
+                open={participantsOpen}
+                onOpenChange={setParticipantsOpen}
+                event={event}
+                onSaved={onChanged}
+            />
         </>
     );
 };

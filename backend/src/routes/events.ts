@@ -157,6 +157,10 @@ const attendanceReportErrors = {
     event_not_found: [404, 'Evento no encontrado'],
     no_recipients: [400, 'Selecciona al menos un destinatario'],
     event_not_ended: [409, 'El evento todavía no ha finalizado'],
+    signer_title_missing: [
+        409,
+        'Elige en tu perfil si eres Dinamizador o Dinamizadora',
+    ],
 } as const;
 
 const attendanceReportSchema = z.strictObject({
@@ -359,10 +363,10 @@ eventsRouter.patch(
 );
 
 // Participantes externos atendidos: se rellena aparte, una vez terminado el
-// evento (no forma parte del formulario de crear/editar).
+// evento (no forma parte del formulario de crear/editar). Tras el fin lo puede
+// hacer cualquier persona autenticada; antes, solo quien puede editar eventos.
 eventsRouter.patch(
     '/:id/participants-count',
-    requirePermission('events:edit'),
     async (req, res) => {
         const actor = req.user;
 
@@ -379,13 +383,22 @@ eventsRouter.patch(
             return;
         }
 
-        const exists = await prisma.event.findUnique({
+        const existing = await prisma.event.findUnique({
             where: { id: params.data.id },
-            select: { id: true },
+            select: { id: true, endsAt: true },
         });
 
-        if (!exists) {
+        if (!existing) {
             res.status(404).json({ error: 'Evento no encontrado' });
+            return;
+        }
+
+        const canEdit = actor.permissions.includes('events:edit');
+
+        if (!canEdit && existing.endsAt > new Date()) {
+            res.status(409).json({
+                error: 'El evento todavía no ha finalizado',
+            });
             return;
         }
 

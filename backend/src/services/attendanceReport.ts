@@ -2,6 +2,10 @@ import PDFDocument from 'pdfkit';
 import { prisma } from '../lib/prisma.js';
 import { getSignatureImage } from './profile.js';
 import {
+    isDinamizadorTitle,
+    type DinamizadorTitle,
+} from '../lib/authUser.js';
+import {
     DIPUTACIONES_LOGO,
     DIPUTACIONES_LOGO_RATIO,
     PUNTOS_VUELA_LOGO,
@@ -35,7 +39,16 @@ const fileDateFormat = new Intl.DateTimeFormat('en-CA', {
 export type AttendanceReportFailure =
     | 'event_not_found'
     | 'no_recipients'
-    | 'event_not_ended';
+    | 'event_not_ended'
+    | 'signer_title_missing';
+
+const CONVOCANTE_LABEL: Record<DinamizadorTitle, string> = {
+    dinamizador: 'Dinamizador Territorial convocante:',
+    dinamizadora: 'Dinamizadora Territorial convocante:',
+};
+
+// Admin no tiene cargo: el acta usa el texto genérico.
+const CONVOCANTE_LABEL_ADMIN = 'Dinamización Territorial convocante:';
 
 export class AttendanceReportError extends Error {
     readonly reason: AttendanceReportFailure;
@@ -102,15 +115,36 @@ export const generateAttendanceReport = async (
 
     const signer = await prisma.user.findUnique({
         where: { id: input.signerUserId },
-        select: { name: true, lastName: true },
+        select: {
+            name: true,
+            lastName: true,
+            roleId: true,
+            dinamizadorTitle: true,
+        },
     });
+
+    if (!signer) {
+        throw new AttendanceReportError('signer_title_missing');
+    }
+
+    // Sin cargo elegido en el perfil no se genera un acta con el texto equivocado.
+    let convocanteLabel: string;
+
+    if (isDinamizadorTitle(signer.dinamizadorTitle)) {
+        convocanteLabel = CONVOCANTE_LABEL[signer.dinamizadorTitle];
+    } else if (signer.roleId === 'admin') {
+        convocanteLabel = CONVOCANTE_LABEL_ADMIN;
+    } else {
+        throw new AttendanceReportError('signer_title_missing');
+    }
 
     const signatureImage = await getSignatureImage(input.signerUserId);
 
     const pdf = await renderPdf({
         event,
         attendees: registrations.map((r) => r.user),
-        signerName: signer ? `${signer.name} ${signer.lastName}`.trim() : '',
+        signerName: `${signer.name} ${signer.lastName}`.trim(),
+        convocanteLabel,
         signatureImage,
     });
 
@@ -130,6 +164,7 @@ interface RenderInput {
     };
     attendees: { name: string; lastName: string; puntoVuela: string | null }[];
     signerName: string;
+    convocanteLabel: string;
     signatureImage: Buffer | null;
 }
 
@@ -137,6 +172,7 @@ const renderPdf = ({
     event,
     attendees,
     signerName,
+    convocanteLabel,
     signatureImage,
 }: RenderInput): Promise<Buffer> => {
     return new Promise((resolve, reject) => {
@@ -241,7 +277,7 @@ const renderPdf = ({
         doc.x = left;
         doc.y = y + 40;
         doc.font('Helvetica').fontSize(11);
-        doc.text('Dinamizadora Territorial convocante:');
+        doc.text(convocanteLabel);
 
         if (signatureImage) {
             doc.image(signatureImage, doc.x, doc.y + 10, { fit: [150, 60] });
