@@ -183,3 +183,17 @@ export const CATEGORY_COLOR_STYLES: Record<CategoryColor, CategoryColorStyle> =
             tint: 'bg-fuchsia-500/10',
         },
     };
+
+// Mismos colores en hex para las gráficas (Recharts no entiende clases de Tailwind).
+export const CATEGORY_HEX: Record<CategoryColor, string> = {
+    yellow: '#f4d64e',
+    amber: '#f59e0b',
+    emerald: '#10b981',
+    sky: '#0ea5e9',
+    rose: '#f43f5e',
+    violet: '#8b5cf6',
+    orange: '#f97316',
+    pink: '#ec4899',
+    lime: '#84cc16',
+    fuchsia: '#d946ef',
+};

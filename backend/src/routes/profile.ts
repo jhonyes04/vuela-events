@@ -111,11 +111,13 @@ profileRouter.patch('/', requireAuth, async (req, res) => {
         return;
     }
 
-    // Admin no firma actas: nunca guarda cargo. El resto debe elegir uno.
-    const isAdmin = actor.roleId === 'admin';
-    const dinamizadorTitle = isAdmin ? null : body.data.dinamizadorTitle;
+    // Solo quien envía correos firma actas: el cargo es obligatorio para ellos
+    // (salvo admin) y en el resto nunca se guarda.
+    const needsTitle =
+        actor.roleId !== 'admin' && actor.permissions.includes('email:send');
+    const dinamizadorTitle = needsTitle ? body.data.dinamizadorTitle : null;
 
-    if (!isAdmin && dinamizadorTitle === null) {
+    if (needsTitle && dinamizadorTitle === null) {
         res.status(400).json({ error: 'Solicitud no válida' });
         return;
     }

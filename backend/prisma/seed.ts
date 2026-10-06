@@ -31,6 +31,7 @@ const PERMISSIONS: { id: string; description: string }[] = [
     { id: 'users:manage', description: 'Gestionar usuarios (rol, alta/baja)' },
     { id: 'roles:manage', description: 'Gestionar roles y permisos' },
     { id: 'audit:manage', description: 'Ver y gestionar auditoría' },
+    { id: 'stats:view', description: 'Ver estadísticas' },
 ];
 
 // Permisos que cada rol tiene hoy, acumulados de todas las migraciones
@@ -57,6 +58,7 @@ const ROLE_PERMISSIONS: Record<string, string[]> = {
         'users:manage',
         'roles:manage',
         'audit:manage',
+        'stats:view',
     ],
     // Todo menos gestión de usuarios y de roles.
         dt: [
@@ -77,6 +79,7 @@ const ROLE_PERMISSIONS: Record<string, string[]> = {
         'email:edit',
         'email:delete',
         'email:send',
+        'stats:view',
     ],
     ail: [],
 };

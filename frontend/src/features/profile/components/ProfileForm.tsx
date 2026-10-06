@@ -49,8 +49,9 @@ export function ProfileForm({
     const [submitting, setSubmitting] = useState(false);
 
     const hints = puntoVueloHints(user.roleId);
-    // Admin no firma actas: no necesita cargo.
-    const needsTitle = user.roleId !== 'admin';
+    // Solo quien envía correos firma actas: admin y el resto sin email:send no necesitan cargo.
+    const needsTitle =
+        user.roleId !== 'admin' && user.permissions.includes('email:send');
 
     const handleSubmit = async (e: FormEvent) => {
         e.preventDefault();
@@ -146,14 +147,8 @@ export function ProfileForm({
                 </div>
             </section>
 
-            <section className="grid gap-4">
-                <h3 className="text-sm font-medium text-muted-foreground">
-                    {hints.label}
-                </h3>
-                <div className="grid gap-1.5">
-                    <Label htmlFor="profile-punto" className="sr-only">
-                        {hints.label}
-                    </Label>
+            <div className="grid gap-1.5">
+                <Label htmlFor="profile-punto">{hints.label}</Label>
                     <Input
                         id="profile-punto"
                         required
@@ -175,41 +170,40 @@ export function ProfileForm({
                         {hints.help}
                     </p>
                 )} */}
-            </section>
 
             {needsTitle && (
-            <section className="grid gap-4">
-                <div className="grid gap-1">
-                    <h3 className="text-sm font-medium text-muted-foreground">
-                        Cargo en el acta de asistencia
-                    </h3>
-                    <p className="text-xs text-muted-foreground">
-                        Aparece en el acta que generas al enviar el parte de
-                        firmas.
-                    </p>
-                </div>
-                <RadioGroup
-                    className="grid gap-3 sm:grid-cols-2"
-                    value={dinamizadorTitle ?? ''}
-                    onValueChange={(value) =>
-                        setDinamizadorTitle(value as DinamizadorTitle)
-                    }
-                >
-                    {DINAMIZADOR_OPTIONS.map((option) => (
-                        <Label
-                            key={option.value}
-                            htmlFor={`dinamizador-${option.value}`}
-                            className="flex cursor-pointer items-center gap-3 rounded-lg border p-3 font-medium has-[[data-checked]]:border-primary has-[[data-checked]]:bg-primary/5"
-                        >
-                            <RadioGroupItem
-                                id={`dinamizador-${option.value}`}
-                                value={option.value}
-                            />
-                            {option.label}
-                        </Label>
-                    ))}
-                </RadioGroup>
-            </section>
+                <section className="grid gap-4">
+                    <div className="grid gap-1">
+                        <h3 className="text-sm font-medium text-muted-foreground">
+                            Cargo en el acta de asistencia
+                        </h3>
+                        <p className="text-xs text-muted-foreground">
+                            Aparece en el acta que generas al enviar el parte de
+                            firmas.
+                        </p>
+                    </div>
+                    <RadioGroup
+                        className="grid gap-3 sm:grid-cols-2"
+                        value={dinamizadorTitle ?? ''}
+                        onValueChange={(value) =>
+                            setDinamizadorTitle(value as DinamizadorTitle)
+                        }
+                    >
+                        {DINAMIZADOR_OPTIONS.map((option) => (
+                            <Label
+                                key={option.value}
+                                htmlFor={`dinamizador-${option.value}`}
+                                className="flex cursor-pointer items-center gap-3 rounded-lg border p-3 font-medium has-[[data-checked]]:border-primary has-[[data-checked]]:bg-primary/5"
+                            >
+                                <RadioGroupItem
+                                    id={`dinamizador-${option.value}`}
+                                    value={option.value}
+                                />
+                                {option.label}
+                            </Label>
+                        ))}
+                    </RadioGroup>
+                </section>
             )}
 
             <div className="flex justify-end">

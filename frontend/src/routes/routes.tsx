@@ -9,13 +9,14 @@ import { GuidesPage } from '@/features/guides/pages/GuidesPage';
 import { EmailTemplatesPage } from '@/features/emailTemplates/pages/EmailTemplatesPage';
 import { EmailSettingsPage } from '@/features/emailSettings/pages/EmailSettingsPage';
 import { AuditPage } from '@/features/audit/pages/AuditPage';
+import { StatsPage } from '@/features/stats/pages/StatsPage';
 
 export interface AppRoute {
     path: string;
     label: string;
     element: ReactNode;
     permissions?: string[];
-    group?: 'admin' | 'gestion';
+    group?: 'admin' | 'gestion' | 'estadisticas';
 }
 
 export const appRoutes: AppRoute[] = [
@@ -68,6 +69,13 @@ export const appRoutes: AppRoute[] = [
             'email:delete',
         ],
         group: 'gestion',
+    },
+    {
+        path: '/estadisticas',
+        label: 'Estadísticas',
+        element: <StatsPage />,
+        permissions: ['stats:view'],
+        group: 'estadisticas',
     },
     {
         path: '/admin/usuarios',

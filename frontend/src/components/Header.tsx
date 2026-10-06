@@ -81,6 +81,14 @@ export const Header = () => {
             canAccess(route, user.permissions),
     );
 
+    // Estadísticas va aparte, justo debajo de Gestión.
+    const estadisticasRoutes = appRoutes.filter(
+        (route) =>
+            route.group === 'estadisticas' &&
+            user &&
+            canAccess(route, user.permissions),
+    );
+
     const adminRoutes = appRoutes.filter(
         (route) =>
             route.group === 'admin' &&
@@ -159,6 +167,20 @@ export const Header = () => {
                                     label="Gestión"
                                     routes={gestionRoutes}
                                 />
+                                {estadisticasRoutes.map((route) => (
+                                    <SheetClose
+                                        key={route.path}
+                                        nativeButton={false}
+                                        render={
+                                            <NavLink
+                                                to={route.path}
+                                                className={navClass}
+                                            >
+                                                {route.label}
+                                            </NavLink>
+                                        }
+                                    />
+                                ))}
                                 <MobileRouteGroup
                                     label="Administración"
                                     routes={adminRoutes}
@@ -221,6 +243,17 @@ export const Header = () => {
                                     </DropdownMenuSubContent>
                                 </DropdownMenuSub>
                             )}
+                            {estadisticasRoutes.map((route) => (
+                                <DropdownMenuItem
+                                    key={route.path}
+                                    className="cursor-pointer"
+                                    render={
+                                        <NavLink to={route.path}>
+                                            {route.label}
+                                        </NavLink>
+                                    }
+                                />
+                            ))}
                             {adminRoutes.length > 0 && (
                                 <DropdownMenuSub>
                                     <DropdownMenuSubTrigger className="cursor-pointer">
