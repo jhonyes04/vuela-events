@@ -3,10 +3,7 @@ import { ChevronLeft, ChevronRight, CircleAlert } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '@/features/auth/hooks/context';
 import { IconTooltip } from '@/components/IconTooltip';
-import {
-    CreateEventDialog,
-    CreateEventOnDayDialog,
-} from '@/features/events/components/CreateEventDialog';
+import { CreateEventDialog } from '@/features/events/components/CreateEventDialog';
 import { CalendarGrid } from '@/features/events/components/CalendarGrid';
 import { EventCard } from '@/features/events/components/EventCard';
 import { EventDetailDialog } from '@/features/events/components/EventDetailDialog';
@@ -70,8 +67,6 @@ export function EventsPage() {
             ? null
             : (events.find((e) => e.id === selectedId) ?? snapshot);
 
-    const [newEventDay, setNewEventDay] = useState<string | null>(null);
-
     const openEvent = (event: EventItem) => {
         setSelectedId(event.id);
         setSnapshot(event);
@@ -122,61 +117,90 @@ export function EventsPage() {
     const prevLabel = view === 'month' ? 'Mes anterior' : 'Semana anterior';
     const nextLabel = view === 'month' ? 'Mes siguiente' : 'Semana siguiente';
 
+    // Controles compartidos: en móvil se colocan en dos filas, en escritorio en una.
+    const viewToggle = (
+        <div className="flex rounded-lg border p-0.5">
+            <Button
+                variant={view === 'month' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => setView('month')}
+            >
+                Mes
+            </Button>
+            <Button
+                variant={view === 'week' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => setView('week')}
+            >
+                Semana
+            </Button>
+        </div>
+    );
+
+    const navControls = (
+        <>
+            <IconTooltip label={prevLabel}>
+                <Button
+                    variant="outline"
+                    size="icon"
+                    aria-label={prevLabel}
+                    onClick={() => shift(-1)}
+                >
+                    <ChevronLeft />
+                </Button>
+            </IconTooltip>
+            <span
+                className="min-w-40 text-center font-medium"
+                aria-live="polite"
+            >
+                {view === 'month'
+                    ? formatMonthLabel(year, monthIndex)
+                    : formatWeekRangeLabel(weekMondayKey)}
+            </span>
+            <IconTooltip label={nextLabel}>
+                <Button
+                    variant="outline"
+                    size="icon"
+                    aria-label={nextLabel}
+                    onClick={() => shift(1)}
+                >
+                    <ChevronRight />
+                </Button>
+            </IconTooltip>
+        </>
+    );
+
+    const todayButton = (
+        <Button variant="secondary" onClick={() => setAnchor(today())}>
+            Hoy
+        </Button>
+    );
+
+    const createButton = canCreate && (
+        <CreateEventDialog onCreated={handleCreated} />
+    );
+
     return (
         <section>
             <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
                 <h1 className="text-2xl font-semibold">Eventos</h1>
-                <div className="flex flex-wrap items-center gap-2">
-                    <div className="flex rounded-lg border p-0.5">
-                        <Button
-                            variant={view === 'month' ? 'default' : 'ghost'}
-                            size="sm"
-                            onClick={() => setView('month')}
-                        >
-                            Mes
-                        </Button>
-                        <Button
-                            variant={view === 'week' ? 'default' : 'ghost'}
-                            size="sm"
-                            onClick={() => setView('week')}
-                        >
-                            Semana
-                        </Button>
-                    </div>
-                    <IconTooltip label={prevLabel}>
-                        <Button
-                            variant="outline"
-                            size="icon"
-                            aria-label={prevLabel}
-                            onClick={() => shift(-1)}
-                        >
-                            <ChevronLeft />
-                        </Button>
-                    </IconTooltip>
-                    <span
-                        className="min-w-40 text-center font-medium"
-                        aria-live="polite"
-                    >
-                        {view === 'month'
-                            ? formatMonthLabel(year, monthIndex)
-                            : formatWeekRangeLabel(weekMondayKey)}
-                    </span>
-                    <IconTooltip label={nextLabel}>
-                        <Button
-                            variant="outline"
-                            size="icon"
-                            aria-label={nextLabel}
-                            onClick={() => shift(1)}
-                        >
-                            <ChevronRight />
-                        </Button>
-                    </IconTooltip>
-                    <Button variant="secondary" onClick={() => setAnchor(today())}>
-                        Hoy
-                    </Button>
-                    {canCreate && (
-                        <CreateEventDialog onCreated={handleCreated} />
-                    )}
+
+                {/* Móvil: fila 1 con vista y crear; fila 2 con el mes y sus flechas. */}
+                <div className="flex w-full items-center justify-between gap-2 sm:hidden">
+                    {viewToggle}
+                    {createButton}
+                </div>
+                <div className="flex w-full items-center justify-center gap-2 sm:hidden">
+                    {navControls}
+                    {todayButton}
+                </div>
+
+                {/* Escritorio: todo en una sola fila. */}
+                <div className="hidden flex-wrap items-center gap-2 sm:flex">
+                    {viewToggle}
+                    {navControls}
+                    {todayButton}
+                    {createButton}
                 </div>
             </div>
 
@@ -203,7 +227,6 @@ export function EventsPage() {
                         weeks={weeks}
                         events={events}
                         onSelectEvent={openEvent}
-                        onSelectDay={canCreate ? setNewEventDay : undefined}
                     />
 
                     {events.length === 0 && !error && (
@@ -236,16 +259,6 @@ export function EventsPage() {
                 onClose={closeEvent}
                 onChanged={reload}
                 onDeleted={handleDeleted}
-            />
-
-            <CreateEventOnDayDialog
-                open={newEventDay !== null}
-                onOpenChange={(open) => !open && setNewEventDay(null)}
-                initialDate={newEventDay}
-                onCreated={(result) => {
-                    setNewEventDay(null);
-                    handleCreated(result);
-                }}
             />
         </section>
     );

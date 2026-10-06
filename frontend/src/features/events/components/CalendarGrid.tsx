@@ -1,6 +1,9 @@
 import { useMemo } from 'react';
 import { CircleCheck } from 'lucide-react';
-import { WEEKDAY_HEADERS, type CalendarDay } from '@/features/events/lib/calendar';
+import {
+    WEEKDAY_HEADERS,
+    type CalendarDay,
+} from '@/features/events/lib/calendar';
 import { eventColor } from '@/features/events/lib/eventColors';
 import {
     formatDayLabel,
@@ -21,12 +24,10 @@ export function CalendarGrid({
     weeks,
     events,
     onSelectEvent,
-    onSelectDay,
 }: {
     weeks: CalendarDay[][];
     events: EventItem[];
     onSelectEvent: (event: EventItem) => void;
-    onSelectDay?: (dayKey: string) => void;
 }) {
     const byDay = useMemo(
         () => new Map(groupByDay(events).map((g) => [g.key, g.events])),
@@ -68,39 +69,20 @@ export function CalendarGrid({
                         return (
                             <div
                                 key={day.key}
-                                onClick={() => onSelectDay?.(day.key)}
                                 className={cn(
                                     'min-h-16 min-w-0 border-r p-1 last:border-r-0 md:min-h-28',
                                     !day.inMonth && 'bg-muted/40',
-                                    onSelectDay &&
-                                        'cursor-pointer hover:bg-muted/50',
                                 )}
                             >
-                                {onSelectDay ? (
-                                    <button
-                                        type="button"
-                                        aria-current={
-                                            day.isToday ? 'date' : undefined
-                                        }
-                                        aria-label={`Crear evento el ${dayLabel}`}
-                                        className={cn(
-                                            numberClass,
-                                            'cursor-pointer',
-                                        )}
-                                    >
-                                        {day.day}
-                                    </button>
-                                ) : (
-                                    <span
-                                        aria-current={
-                                            day.isToday ? 'date' : undefined
-                                        }
-                                        aria-label={dayLabel}
-                                        className={numberClass}
-                                    >
-                                        {day.day}
-                                    </span>
-                                )}
+                                <span
+                                    aria-current={
+                                        day.isToday ? 'date' : undefined
+                                    }
+                                    aria-label={dayLabel}
+                                    className={numberClass}
+                                >
+                                    {day.day}
+                                </span>
 
                                 {/* Pantallas grandes: etiquetas con hora y título. */}
                                 <ul className="mt-1 hidden gap-0.5 md:grid">
@@ -156,22 +138,30 @@ export function CalendarGrid({
 
                                 {/* Móvil: puntos de color; el detalle sale al tocar el día. */}
                                 {count > 0 && (
-                                    <div
-                                        aria-hidden="true"
-                                        className="mt-1 flex flex-wrap gap-0.5 md:hidden"
-                                    >
+                                    <div className="mt-1 flex flex-wrap gap-0.5 md:hidden">
                                         {list
                                             .slice(0, MAX_DOTS)
                                             .map((event) => (
-                                                <span
+                                                <button
                                                     key={event.id}
-                                                    className={cn(
-                                                        'size-2 rounded-full',
-                                                        eventColor(event).dot,
-                                                        hasEnded(event) &&
-                                                            'opacity-40',
-                                                    )}
-                                                />
+                                                    type="button"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        onSelectEvent(event);
+                                                    }}
+                                                    aria-label={`${formatTime(event.startsAt)} ${event.title}`}
+                                                    className="grid size-9 cursor-pointer place-items-center rounded-full"
+                                                >
+                                                    <span
+                                                        className={cn(
+                                                            'size-4 rounded-full',
+                                                            eventColor(event)
+                                                                .dot,
+                                                            hasEnded(event) &&
+                                                                'opacity-40',
+                                                        )}
+                                                    />
+                                                </button>
                                             ))}
                                     </div>
                                 )}
