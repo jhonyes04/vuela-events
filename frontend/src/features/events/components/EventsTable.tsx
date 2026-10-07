@@ -261,7 +261,7 @@ export const EventsTable = ({
                                 )}
                                 {showParticipants && (
                                     <SortableHeader
-                                        label="Usuarios"
+                                        label="Atendidos"
                                         sortKey="participants"
                                         sort={sort}
                                         onSort={toggleSort}

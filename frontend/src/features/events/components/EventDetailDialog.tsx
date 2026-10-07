@@ -30,6 +30,8 @@ import {
     unregisterFromEventById,
     type EventItem,
 } from '@/features/events/lib/events';
+import { Alert, AlertTitle } from '@/components/ui/alert';
+import { AlertCircle } from 'lucide-react';
 
 interface EventDetailBodyProps {
     event: EventItem;
@@ -64,7 +66,9 @@ const EventDetailBody = ({
     const blockedByCapacity = full && !isDt && !event.registered;
     const colorStyle = full
         ? { border: 'border-t-red-500', tint: 'bg-red-500/10' }
-        : CATEGORY_COLOR_STYLES[event.category.color];
+        : ended
+          ? { border: 'border-t-gray-400', tint: 'bg-gray-400/10' }
+          : CATEGORY_COLOR_STYLES[event.category.color];
 
     // Al abrir la ficha de un evento completo, se avisa aunque el usuario
     // ya esté inscrito. El ref evita el doble aviso del StrictMode en dev.
@@ -93,7 +97,9 @@ const EventDetailBody = ({
             onChanged();
         } catch (e) {
             toast.error(
-                e instanceof ApiError ? e.message : 'No se pudo completar la acción',
+                e instanceof ApiError
+                    ? e.message
+                    : 'No se pudo completar la acción',
             );
         } finally {
             setBusy(false);
@@ -104,9 +110,7 @@ const EventDetailBody = ({
         <>
             {/* Mientras se confirma la eliminación se oculta la ficha. */}
             <Dialog
-                open={
-                    !confirmOpen && !seriesConfirmOpen && !participantsOpen
-                }
+                open={!confirmOpen && !seriesConfirmOpen && !participantsOpen}
                 onOpenChange={(open) => {
                     if (!open) onClose();
                 }}
@@ -188,7 +192,15 @@ const EventDetailBody = ({
                             </OverlayScrollbarsComponent>
                         )}
                     </section>
-
+                    {ended && (
+                        // <p className="self-center text-sm text-muted-foreground">
+                        //     Este evento ya ha finalizado.
+                        // </p>
+                        <Alert variant="destructive" className="bg-red-100">
+                            <AlertCircle />
+                            <AlertTitle>Evento finalizado</AlertTitle>
+                        </Alert>
+                    )}
                     <DialogFooter>
                         <div className="flex gap-2 sm:mr-auto">
                             {canDelete && (
@@ -235,11 +247,7 @@ const EventDetailBody = ({
                             </Button>
                         )}
 
-                        {ended ? (
-                            <p className="self-center text-sm text-muted-foreground">
-                                Este evento ya ha finalizado.
-                            </p>
-                        ) : isAdmin ? null : event.registered ? (
+                        {isAdmin ? null : event.registered ? (
                             <Button
                                 variant="default"
                                 disabled={busy}

@@ -94,12 +94,12 @@ export const EventsManagementPage = () => {
                                 <Users className="size-4" />
                             </Button>
                         </IconTooltip>
-                        <IconTooltip label="Usuarios totales">
+                        <IconTooltip label="Usuarios atendidos">
                             <Button
                                 variant="default"
                                 className="bg-green-800"
                                 size="icon"
-                                aria-label="Usuarios totales"
+                                aria-label="Usuarios atendidos"
                                 onClick={() => openParticipants(event)}
                             >
                                 <ClipboardList className="size-4" />

@@ -64,7 +64,9 @@ export const EventCard = ({ event, onOpen }: EventCardProps) => {
     const ended = hasEnded(event);
     const colorStyle = full
         ? { border: 'border-t-red-500', tint: 'bg-red-500/10' }
-        : CATEGORY_COLOR_STYLES[event.category.color];
+        : ended
+          ? { border: 'border-t-gray-400', tint: 'bg-gray-400/10' }
+          : CATEGORY_COLOR_STYLES[event.category.color];
 
     return (
         <Card
