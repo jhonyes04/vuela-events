@@ -44,7 +44,7 @@ const cleaned = (min: number, max: number) =>
         );
 
 // strictObject: solo estos dos campos. No se puede colar role, active, email...
-const profileSchema = z.strictObject({
+export const profileSchema = z.strictObject({
     name: cleaned(2, 200),
     lastName: cleaned(2, 200),
     puntoVuela: cleaned(2, 120),

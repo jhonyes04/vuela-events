@@ -4,11 +4,13 @@ import { prisma } from '../lib/prisma.js';
 import { Prisma } from '../generated/prisma/client.js';
 import { requireAuth, requirePermission } from '../middleware/auth.js';
 import {
+    adminUpdateUser,
     changeUserRole,
     deleteUser,
     RoleChangeError,
     setUserActive,
 } from '../services/roles.js';
+import { profileSchema } from './profile.js';
 
 const paramsSchema = z.object({ id: z.uuid() });
 const roleBodySchema = z.strictObject({
@@ -28,6 +30,10 @@ const adminErrors = {
     has_events: [
         409,
         'No puedes eliminar un usuario que ha creado eventos. Desactívalo en su lugar.',
+    ],
+    title_required: [
+        400,
+        'Elige si este usuario es Dinamizador o Dinamizadora',
     ],
 } as const;
 
@@ -65,6 +71,8 @@ usersRouter.get('/', async (_req, res) => {
             email: true,
             name: true,
             lastName: true,
+            puntoVuela: true,
+            dinamizadorTitle: true,
             active: true,
             createdAt: true,
             role: { select: { id: true, name: true } },
@@ -129,6 +137,33 @@ usersRouter.patch('/:id/active', async (req, res) => {
             params.data.id,
             body.data.active,
         );
+
+        res.json({ user });
+    } catch (e) {
+        if (handleAdminError(e, res)) return;
+
+        throw e;
+    }
+});
+
+usersRouter.patch('/:id/profile', async (req, res) => {
+    const actor = req.user;
+
+    if (!actor) {
+        res.status(401).json({ error: 'Autenticación requerida' });
+        return;
+    }
+
+    const params = paramsSchema.safeParse(req.params);
+    const body = profileSchema.safeParse(req.body);
+
+    if (!params.success || !body.success) {
+        res.status(400).json({ error: 'Solicitud no válida' });
+        return;
+    }
+
+    try {
+        const user = await adminUpdateUser(actor.id, params.data.id, body.data);
 
         res.json({ user });
     } catch (e) {

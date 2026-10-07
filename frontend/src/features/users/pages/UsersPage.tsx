@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
-import { Trash2 } from 'lucide-react';
+import { Pencil, Trash2 } from 'lucide-react';
 import { OverlayScrollbarsComponent } from 'overlayscrollbars-react';
 import { toast } from 'sonner';
 import { useAuth } from '@/features/auth/hooks/context';
 import { Button } from '@/components/ui/button';
 import { ConfirmDeleteDialog } from '@/components/ConfirmDeleteDialog';
 import { IconTooltip } from '@/components/IconTooltip';
+import { EditUserDialog } from '@/features/users/components/EditUserDialog';
 import { ListErrors } from '@/features/users/components/ListErrors';
 import { PaginationControls } from '@/components/PaginationControls';
 import { SortableHeader } from '@/components/SortableHeader';
@@ -14,12 +15,15 @@ import { useSort } from '@/hooks/useSort';
 import { scrollbarOptions } from '@/lib/overlayScrollbarsOptions';
 import { useRolesStore } from '@/features/users/store';
 import { api, ApiError } from '@/lib/api';
+import type { DinamizadorTitle } from '@/features/profile/lib/profile';
 
 interface AdminUser {
     id: string;
     email: string;
     name: string;
     lastName: string;
+    puntoVuela: string | null;
+    dinamizadorTitle: DinamizadorTitle | null;
     active: boolean;
     createdAt: string;
     role: { id: string; name: string };
@@ -36,6 +40,7 @@ export const UsersPage = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [busyId, setBusyId] = useState<string | null>(null);
+    const [editing, setEditing] = useState<AdminUser | null>(null);
     const [deleting, setDeleting] = useState<AdminUser | null>(null);
 
     const {
@@ -221,6 +226,27 @@ export const UsersPage = () => {
                                         </td>
                                         <td className="p-3 text-right">
                                             <div className="flex justify-end gap-2">
+                                                <IconTooltip
+                                                    label={
+                                                        isSelf
+                                                            ? 'Edítate desde Mi perfil'
+                                                            : 'Editar'
+                                                    }
+                                                >
+                                                    <Button
+                                                        variant="secondary"
+                                                        size="icon"
+                                                        aria-label="Editar"
+                                                        disabled={
+                                                            isSelf || busy
+                                                        }
+                                                        onClick={() =>
+                                                            setEditing(u)
+                                                        }
+                                                    >
+                                                        <Pencil className="size-4" />
+                                                    </Button>
+                                                </IconTooltip>
                                                 <Button
                                                     variant="outline"
                                                     size="sm"
@@ -241,7 +267,9 @@ export const UsersPage = () => {
                                                         variant="destructive"
                                                         size="icon"
                                                         aria-label="Eliminar"
-                                                        disabled={isSelf || busy}
+                                                        disabled={
+                                                            isSelf || busy
+                                                        }
                                                         onClick={() =>
                                                             setDeleting(u)
                                                         }
@@ -271,6 +299,14 @@ export const UsersPage = () => {
                     />
                 </div>
             )}
+
+            <EditUserDialog
+                open={editing !== null}
+                onOpenChange={(open) => !open && setEditing(null)}
+                user={editing}
+                roles={roles}
+                onSaved={() => void load()}
+            />
 
             {deleting && (
                 <ConfirmDeleteDialog

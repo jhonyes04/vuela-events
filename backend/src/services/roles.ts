@@ -1,5 +1,6 @@
 import { prisma } from '../lib/prisma.js';
 import { Prisma } from '../generated/prisma/client.js';
+import type { DinamizadorTitle } from '../lib/authUser.js';
 
 const MANAGE_USERS = 'users:manage';
 const MANAGE_ROLES = 'roles:manage';
@@ -13,7 +14,8 @@ export type RoleChangeFailure =
     | 'not_found'
     | 'self_change'
     | 'last_manager'
-    | 'has_events';
+    | 'has_events'
+    | 'title_required';
 
 export class RoleChangeError extends Error {
     readonly reason: RoleChangeFailure;
@@ -277,6 +279,102 @@ export const deleteUser = async (actorId: string, targetId: string) => {
             });
 
             await tx.user.delete({ where: { id: targetId } });
+        },
+        { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
+    );
+};
+
+export interface AdminProfileInput {
+    name: string;
+    lastName: string;
+    puntoVuela: string;
+    dinamizadorTitle: DinamizadorTitle | null;
+}
+
+export const adminUpdateUser = async (
+    actorId: string,
+    targetId: string,
+    input: AdminProfileInput,
+) => {
+    if (actorId === targetId) {
+        throw new RoleChangeError('self_change');
+    }
+
+    return prisma.$transaction(
+        async (tx) => {
+            await assertCanManageUsers(tx, actorId);
+
+            const target = await tx.user.findUnique({
+                where: { id: targetId },
+                select: {
+                    id: true,
+                    name: true,
+                    lastName: true,
+                    puntoVuela: true,
+                    dinamizadorTitle: true,
+                    roleId: true,
+                    role: {
+                        select: {
+                            permissions: { select: { permissionId: true } },
+                        },
+                    },
+                },
+            });
+
+            if (!target) {
+                throw new RoleChangeError('not_found');
+            }
+
+            const needsTitle =
+                target.roleId !== 'admin' &&
+                target.role.permissions.some(
+                    (permission) => permission.permissionId === 'email:send',
+                );
+
+            const dinamizadorTitle = needsTitle ? input.dinamizadorTitle : null;
+
+            if (needsTitle && dinamizadorTitle === null) {
+                throw new RoleChangeError('title_required');
+            }
+
+            const changed = [
+                target.name !== input.name ? 'name' : null,
+                target.lastName !== input.lastName ? 'lastName' : null,
+                target.puntoVuela !== input.puntoVuela ? 'puntoVuela' : null,
+                target.dinamizadorTitle !== dinamizadorTitle
+                    ? 'dinamizadorTitle'
+                    : null,
+            ].filter((field): field is string => field !== null);
+
+            const updated = await tx.user.update({
+                where: { id: targetId },
+                data: {
+                    name: input.name,
+                    lastName: input.lastName,
+                    puntoVuela: input.puntoVuela,
+                    dinamizadorTitle,
+                },
+                select: {
+                    id: true,
+                    name: true,
+                    lastName: true,
+                    puntoVuela: true,
+                    dinamizadorTitle: true,
+                },
+            });
+
+            if (changed.length > 0) {
+                await tx.auditLog.create({
+                    data: {
+                        actorId,
+                        targetId,
+                        action: 'user_profile_updated',
+                        newValue: changed.join(','),
+                    },
+                });
+            }
+
+            return updated;
         },
         { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
     );
