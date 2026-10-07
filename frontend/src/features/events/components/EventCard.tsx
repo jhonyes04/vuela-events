@@ -48,7 +48,7 @@ const AttendeeList = ({ event }: AttendeeListProps) => {
                 Inscritos
             </p>
             <div className="max-h-40 overflow-y-auto rounded-lg bg-muted/50">
-                <AttendeeChips eventId={event.id} attendees={attendees} />
+                <AttendeeChips attendees={attendees} />
             </div>
         </div>
     );

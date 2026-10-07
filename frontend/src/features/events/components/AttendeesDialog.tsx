@@ -93,7 +93,6 @@ const AttendeesBody = ({ event, onCloseAll }: AttendeesBodyProps) => {
                     defer
                 >
                     <AttendeeChips
-                        eventId={event.id}
                         attendees={attendees}
                         selected={selected}
                         onToggle={toggle}
