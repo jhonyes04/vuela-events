@@ -11,14 +11,25 @@ import {
 
 const idParamsSchema = z.object({ id: z.uuid() });
 
+// Solo http(s): se usa como href en el frontend, y un esquema como
+// javascript: ejecutaría código en el origen autenticado al hacer clic.
+const urlSchema = z
+    .string()
+    .trim()
+    .max(2048)
+    .refine(
+        (u) => u.startsWith('http://') || u.startsWith('https://'),
+        'La URL debe empezar por http:// o https://',
+    );
+
 const createGuideSchema = z.strictObject({
     name: z.string().trim().min(2).max(100),
-    url: z.string().trim().max(2048),
+    url: urlSchema,
 });
 
 const updateGuideSchema = z.strictObject({
     name: z.string().trim().min(2).max(100),
-    url: z.string().max(2048),
+    url: urlSchema,
     active: z.boolean(),
 });
 
@@ -40,7 +51,6 @@ guidesRouter.get(
         'guides:delete',
         // El formulario de eventos necesita elegir guía.
         'events:create',
-        'events:create_recurring',
         'events:edit',
     ),
     async (_req, res) => {

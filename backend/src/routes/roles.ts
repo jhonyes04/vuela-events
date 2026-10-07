@@ -31,6 +31,7 @@ const PERMISSION_IDS = [
     'users:manage',
     'roles:manage',
     'audit:manage',
+    'stats:view',
 ] as const;
 
 const permissionIdsSchema = z

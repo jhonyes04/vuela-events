@@ -25,6 +25,10 @@ const startSendErrors = {
     ],
     event_not_found: [404, 'Evento no encontrado'],
     no_recipients: [400, 'Selecciona al menos un destinatario'],
+    too_many_recipients: [
+        400,
+        'Hay demasiados destinatarios seleccionados para un solo envío',
+    ],
     app_password_not_configured: [
         409,
         'No tienes una contraseña de aplicación configurada en tu perfil',
@@ -86,6 +90,13 @@ emailSendsRouter.post('/', async (req, res) => {
 });
 
 emailSendsRouter.get('/:jobId', (req, res) => {
+    const actor = req.user;
+
+    if (!actor) {
+        res.status(401).json({ error: 'Autenticación requerida' });
+        return;
+    }
+
     const params = jobIdParamsSchema.safeParse(req.params);
 
     if (!params.success) {
@@ -93,7 +104,7 @@ emailSendsRouter.get('/:jobId', (req, res) => {
         return;
     }
 
-    const job = getSendJob(params.data.jobId);
+    const job = getSendJob(params.data.jobId, actor.id);
 
     if (!job) {
         res.status(404).json({ error: 'Envío no encontrado' });

@@ -1,0 +1,1 @@
+CREATE INDEX sent_reports_recipient_user_ids_gin_idx ON sent_reports USING GIN ("recipientUserIds");

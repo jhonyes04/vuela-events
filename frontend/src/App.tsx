@@ -14,8 +14,7 @@ export default function App() {
 
     return (
         <OverlayScrollbarsComponent
-            className="text-foreground"
-            style={{ height: '100svh' }}
+            className="h-[100svh] text-foreground"
             options={scrollbarOptions}
             defer
         >

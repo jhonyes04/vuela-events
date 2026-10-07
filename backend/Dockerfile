@@ -16,4 +16,4 @@ RUN pnpm run db:generate && pnpm run build
 
 EXPOSE 3001
 
-CMD ["node", "--env-file-if-exists=.env", "dist/index.js"]
+CMD ["sh", "-c", "pnpm exec prisma migrate deploy && node --env-file-if-exists=.env dist/index.js"]

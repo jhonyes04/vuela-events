@@ -23,6 +23,7 @@ export type StartSendFailure =
     | 'template_not_assigned'
     | 'event_not_found'
     | 'no_recipients'
+    | 'too_many_recipients'
     | 'app_password_not_configured'
     | 'report_draft_required'
     | 'report_draft_not_found'
@@ -47,6 +48,7 @@ interface RecipientResult {
 
 interface SendJob {
     id: string;
+    actorId: string;
     total: number;
     sent: number;
     failed: number;
@@ -65,8 +67,15 @@ const scheduleCleanup = (jobId: string) => {
     setTimeout(() => jobs.delete(jobId), JOB_TTL_MS).unref();
 };
 
-export const getSendJob = (jobId: string): SendJob | undefined =>
-    jobs.get(jobId);
+// Solo el actor que inició el envío puede consultar su progreso.
+export const getSendJob = (
+    jobId: string,
+    actorId: string,
+): SendJob | undefined => {
+    const job = jobs.get(jobId);
+
+    return job?.actorId === actorId ? job : undefined;
+};
 
 interface StartSendInput {
     actorId: string;
@@ -85,10 +94,11 @@ export const startBulkSend = async (
         throw new StartSendError('no_recipients');
     }
 
-    const registrationIds = input.recipientRegistrationIds.slice(
-        0,
-        MAX_RECIPIENTS,
-    );
+    if (input.recipientRegistrationIds.length > MAX_RECIPIENTS) {
+        throw new StartSendError('too_many_recipients');
+    }
+
+    const registrationIds = input.recipientRegistrationIds;
 
     // El parte de firmas adjunta exactamente el acta que la persona generó y
     // revisó antes de enviar, y solo si los destinatarios no han cambiado.
@@ -188,6 +198,7 @@ export const startBulkSend = async (
     const jobId = randomUUID();
     const job: SendJob = {
         id: jobId,
+        actorId: input.actorId,
         total: recipients.length,
         sent: 0,
         failed: 0,

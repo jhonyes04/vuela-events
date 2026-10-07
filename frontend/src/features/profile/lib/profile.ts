@@ -1,4 +1,5 @@
 import { api, type User } from '@/lib/api';
+import { ROLE_IDS } from '@/features/users/lib/roles';
 
 // Deben coincidir con los límites del servidor (que es quien manda).
 export const NAME_MAX = 200;
@@ -13,7 +14,7 @@ export interface PuntoVueloHints {
 
 // El DT no pertenece a un Punto Vuela concreto: indica su zona.
 export const puntoVueloHints = (roleId: string): PuntoVueloHints =>
-    roleId === 'ail'
+    roleId === ROLE_IDS.AIL
         ? {
               label: 'Punto Vuela',
               placeholder: 'Localidad de Punto Vuela',

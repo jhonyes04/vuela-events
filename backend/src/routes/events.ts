@@ -30,12 +30,22 @@ import {
 import { createReportDraft } from '../services/reportDrafts.js';
 import { recordAudit } from '../services/audit.js';
 
+// Sin caracteres de control ni < > : evita que title/location (insertados sin
+// escapar en el HTML de los correos vía {{proyecto}}/{{lugar}}) cuelen markup.
+const NO_CONTROL_OR_TAGS = /^[^\p{C}<>]+$/u;
+
 // Campos comunes a un evento suelto y a una serie.
 const eventFields = {
-    title: z.string().trim().min(1).max(120),
-    subtitle: z.string().trim().min(1).max(200).optional(),
+    title: z.string().trim().min(1).max(120).regex(NO_CONTROL_OR_TAGS),
+    subtitle: z
+        .string()
+        .trim()
+        .min(1)
+        .max(200)
+        .regex(NO_CONTROL_OR_TAGS)
+        .optional(),
     description: z.string().trim().max(2000).optional(),
-    location: z.string().trim().min(1).max(200),
+    location: z.string().trim().min(1).max(200).regex(NO_CONTROL_OR_TAGS),
     capacity: z.number().int().positive().max(100_000).optional(),
     categoryId: z.uuid(),
     guideId: z.uuid(),

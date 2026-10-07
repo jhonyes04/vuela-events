@@ -1,6 +1,7 @@
 import { ChevronDown, Menu } from 'lucide-react';
 import { NavLink } from 'react-router';
 import { useAuth } from '@/features/auth/hooks/context';
+import { ROLE_IDS } from '@/features/users/lib/roles';
 import { Button } from '@/components/ui/button';
 import {
     DropdownMenu,
@@ -64,7 +65,6 @@ const MobileRouteGroup = ({ label, routes }: RouteDropdownProps) => {
 export const Header = () => {
     const { user, logout } = useAuth();
     const showNav = user?.profileCompleted === true;
-    const isAdmin = user?.roleId === 'admin';
 
     const mainRoutes = appRoutes.filter(
         (route) =>
@@ -92,7 +92,6 @@ export const Header = () => {
     const adminRoutes = appRoutes.filter(
         (route) =>
             route.group === 'admin' &&
-            isAdmin &&
             user &&
             canAccess(route, user.permissions),
     );
@@ -220,7 +219,7 @@ export const Header = () => {
                             />
                             {(gestionRoutes.length > 0 ||
                                 adminRoutes.length > 0 ||
-                                user.roleId === 'ail') && (
+                                user.roleId === ROLE_IDS.AIL) && (
                                 <DropdownMenuSeparator />
                             )}
                             {gestionRoutes.length > 0 && (

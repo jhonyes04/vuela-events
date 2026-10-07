@@ -21,7 +21,7 @@ import {
     PUNTO_VUELA_MAX,
     type DinamizadorTitle,
 } from '@/features/profile/lib/profile';
-import type { Role } from '@/features/users/lib/roles';
+import { ROLE_IDS, type Role } from '@/features/users/lib/roles';
 import { updateUserProfile } from '@/features/users/lib/users';
 
 export interface EditableUser {
@@ -58,7 +58,7 @@ const EditUserBody = ({
     // Igual que en "Mi perfil": solo lo necesita quien envía correos y no es admin.
     const role = roles.find((r) => r.id === user.role.id);
     const needsTitle =
-        user.role.id !== 'admin' &&
+        user.role.id !== ROLE_IDS.ADMIN &&
         (role?.permissions.some((p) => p.permissionId === 'email:send') ??
             false);
 

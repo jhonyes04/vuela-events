@@ -152,27 +152,27 @@ export function ProfileForm({
 
             <div className="grid gap-1.5">
                 <Label htmlFor="profile-punto">{hints.label}</Label>
-                    <Input
-                        id="profile-punto"
-                        required
-                        minLength={MIN_LENGTH}
-                        maxLength={PUNTO_VUELA_MAX}
-                        placeholder={hints.placeholder}
-                        aria-describedby={
-                            hints.help ? 'profile-punto-help' : undefined
-                        }
-                        value={puntoVuela}
-                        onChange={(e) => setPuntoVuela(e.target.value)}
-                    />
-                </div>
-                {/* {hints.help && (
+                <Input
+                    id="profile-punto"
+                    required
+                    minLength={MIN_LENGTH}
+                    maxLength={PUNTO_VUELA_MAX}
+                    placeholder={hints.placeholder}
+                    aria-describedby={
+                        hints.help ? 'profile-punto-help' : undefined
+                    }
+                    value={puntoVuela}
+                    onChange={(e) => setPuntoVuela(e.target.value)}
+                />
+                {hints.help && (
                     <p
                         id="profile-punto-help"
                         className="text-sm text-muted-foreground"
                     >
                         {hints.help}
                     </p>
-                )} */}
+                )}
+            </div>
 
             {needsTitle && (
                 <section className="grid gap-4">

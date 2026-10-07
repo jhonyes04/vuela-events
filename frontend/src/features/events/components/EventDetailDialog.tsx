@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { OverlayScrollbarsComponent } from 'overlayscrollbars-react';
 import { useAuth } from '@/features/auth/hooks/context';
+import { ROLE_IDS } from '@/features/users/lib/roles';
 import { DeleteEventDialog } from '@/features/events/components/DeleteEventDialog';
 import { DeleteEventSeriesDialog } from '@/features/events/components/DeleteEventSeriesDialog';
 import { EventInfoRows } from '@/features/events/components/EventInfoRows';
@@ -60,8 +61,8 @@ const EventDetailBody = ({
 
     const ended = hasEnded(event);
     const full = isFull(event);
-    const isDt = user?.roleId === 'dt';
-    const isAdmin = user?.roleId === 'admin';
+    const isDt = user?.roleId === ROLE_IDS.DT;
+    const isAdmin = user?.roleId === ROLE_IDS.ADMIN;
     // Un DT puede inscribirse aunque esté completo: no ocupa plaza.
     const blockedByCapacity = full && !isDt && !event.registered;
     const colorStyle = full
@@ -85,7 +86,7 @@ const EventDetailBody = ({
     // Solo oculta el botón: el servidor comprueba de nuevo quién puede eliminar.
     const canDelete =
         (user?.permissions.includes('events:delete') ?? false) &&
-        (user?.roleId === 'admin' || event.createdBy.id === user?.id);
+        (user?.roleId === ROLE_IDS.ADMIN || event.createdBy.id === user?.id);
 
     const run = async (action: () => Promise<void>, success: string) => {
         setBusy(true);
@@ -193,9 +194,6 @@ const EventDetailBody = ({
                         )}
                     </section>
                     {ended && (
-                        // <p className="self-center text-sm text-muted-foreground">
-                        //     Este evento ya ha finalizado.
-                        // </p>
                         <Alert variant="destructive" className="bg-red-100">
                             <AlertCircle />
                             <AlertTitle>Evento finalizado</AlertTitle>

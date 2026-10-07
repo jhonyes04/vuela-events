@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { CircleAlert, CircleCheck } from 'lucide-react';
 import { Alert, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
@@ -46,8 +46,14 @@ const SendEmailBody = ({
     setStatus,
     onClose,
 }: SendEmailBodyProps) => {
-    const recipientRegistrationIds = recipients.map((r) => r.id);
-    const recipientById = new Map(recipients.map((r) => [r.id, r]));
+    const recipientRegistrationIds = useMemo(
+        () => recipients.map((r) => r.id),
+        [recipients],
+    );
+    const recipientById = useMemo(
+        () => new Map(recipients.map((r) => [r.id, r])),
+        [recipients],
+    );
     const [error, setError] = useState<string | null>(null);
     const [starting, setStarting] = useState(true);
     const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);

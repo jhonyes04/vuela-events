@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent, type ReactNode } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import {
@@ -10,108 +10,27 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { DatePicker } from '@/features/datetime/components/DatePicker';
-import { DateTimePicker } from '@/features/datetime/components/DateTimePicker';
+import { EventBasicFields, Field } from '@/features/events/components/EventBasicFields';
+import { RecurringEventFields } from '@/features/events/components/RecurringEventFields';
+import { SingleSessionFields } from '@/features/events/components/SingleSessionFields';
 import { api, ApiError } from '@/lib/api';
-import { cn } from '@/lib/utils';
 import { useCategoriesStore } from '@/features/categories/store';
 import { useGuidesStore } from '@/features/guides/store';
-import { CATEGORY_COLOR_STYLES } from '@/features/categories/lib/colors';
 import {
     createRecurringEvents,
-    formatFullDate,
-    isoToMadridLocal,
     madridLocalToIso,
     MAX_OCCURRENCES,
     previewRecurrence,
     updateEventById,
-    WEEKDAYS,
     type EventItem,
 } from '@/features/events/lib/events';
-
-interface FormValues {
-    title: string;
-    subtitle: string;
-    location: string;
-    description: string;
-    capacity: string;
-    categoryId: string;
-    guideId: string;
-    // Evento suelto
-    startsAt: string;
-    endsAt: string;
-    // Serie recurrente (solo al crear; al editar no se usa)
-    recurring: boolean;
-    from: string;
-    to: string;
-    weekdays: number[];
-    startTime: string;
-    endTime: string;
-}
-
-type TextField = Exclude<keyof FormValues, 'recurring' | 'weekdays'>;
-
-const EMPTY: FormValues = {
-    title: '',
-    subtitle: '',
-    location: '',
-    description: '',
-    capacity: '',
-    categoryId: '',
-    guideId: '',
-    startsAt: '',
-    endsAt: '',
-    recurring: false,
-    from: '',
-    to: '',
-    weekdays: [],
-    startTime: '',
-    endTime: '',
-};
-
-const valuesFromEvent = (event: EventItem): FormValues => ({
-    title: event.title,
-    subtitle: event.subtitle ?? '',
-    location: event.location ?? '',
-    description: event.description ?? '',
-    capacity: event.capacity ? String(event.capacity) : '',
-    categoryId: event.category.id,
-    guideId: event.guide.id,
-    startsAt: isoToMadridLocal(event.startsAt),
-    endsAt: isoToMadridLocal(event.endsAt),
-    recurring: false,
-    from: '',
-    to: '',
-    weekdays: [],
-    startTime: '',
-    endTime: '',
-});
-
-function Field({
-    id,
-    label,
-    children,
-}: {
-    id: string;
-    label: string;
-    children: ReactNode;
-}) {
-    return (
-        <div className="grid gap-1.5">
-            <Label htmlFor={id}>{label}</Label>
-            {children}
-        </div>
-    );
-}
+import {
+    EMPTY_FORM_VALUES,
+    valuesFromEvent,
+    type FormValues,
+    type TextField,
+} from '@/features/events/lib/eventForm';
 
 interface EventFormBodyProps {
     // null = crear; evento = editar (solo la sesión, sin recurrencia).
@@ -138,8 +57,8 @@ function EventFormBody({
         event
             ? valuesFromEvent(event)
             : initialDate
-              ? { ...EMPTY, startsAt: `${initialDate}T09:00` }
-              : EMPTY,
+              ? { ...EMPTY_FORM_VALUES, startsAt: `${initialDate}T09:00` }
+              : EMPTY_FORM_VALUES,
     );
     const [submitting, setSubmitting] = useState(false);
     const categories = useCategoriesStore((s) => s.items);
@@ -164,14 +83,6 @@ function EventFormBody({
 
     const set = (name: TextField) => (e: { target: { value: string } }) =>
         setValues((v) => ({ ...v, [name]: e.target.value }));
-
-    const toggleWeekday = (day: number) =>
-        setValues((v) => ({
-            ...v,
-            weekdays: v.weekdays.includes(day)
-                ? v.weekdays.filter((d) => d !== day)
-                : [...v.weekdays, day],
-        }));
 
     const preview = values.recurring
         ? previewRecurrence(values.from, values.to, values.weekdays)
@@ -312,125 +223,19 @@ function EventFormBody({
                 onSubmit={(e) => void handleSubmit(e)}
                 className="grid gap-4"
             >
-                <Field id={fieldId('title')} label="Título *">
-                    <Input
-                        id={fieldId('title')}
-                        required
-                        maxLength={120}
-                        value={values.title}
-                        onChange={set('title')}
-                    />
-                </Field>
-                <Field id={fieldId('subtitle')} label="Subtítulo">
-                    <Input
-                        id={fieldId('subtitle')}
-                        maxLength={200}
-                        value={values.subtitle}
-                        onChange={set('subtitle')}
-                    />
-                </Field>
-                <Field id={fieldId('location')} label="Lugar *">
-                    <Input
-                        id={fieldId('location')}
-                        required
-                        maxLength={200}
-                        value={values.location}
-                        onChange={set('location')}
-                    />
-                </Field>
-                <Field id={fieldId('category')} label="Categoría *">
-                    <Select
-                        value={values.categoryId}
-                        items={activeCategories.map((c) => ({
-                            value: c.id,
-                            label: c.name,
-                        }))}
-                        onValueChange={(value) =>
-                            setValues((v) => ({
-                                ...v,
-                                categoryId: value ?? '',
-                            }))
-                        }
-                    >
-                        <SelectTrigger
-                            id={fieldId('category')}
-                            className="w-full"
-                        >
-                            <SelectValue placeholder="Selecciona una categoría">
-                                {(value: string | null) => {
-                                    const selected = activeCategories.find(
-                                        (c) => c.id === value,
-                                    );
-
-                                    if (!selected) return null;
-
-                                    return (
-                                        <>
-                                            <span
-                                                className={cn(
-                                                    'size-3 shrink-0 rounded-full',
-                                                    CATEGORY_COLOR_STYLES[
-                                                        selected.color
-                                                    ].swatch,
-                                                )}
-                                            />
-                                            {selected.name}
-                                        </>
-                                    );
-                                }}
-                            </SelectValue>
-                        </SelectTrigger>
-                        <SelectContent>
-                            {activeCategories.map((c) => (
-                                <SelectItem
-                                    key={c.id}
-                                    value={c.id}
-                                    label={c.name}
-                                >
-                                    <span
-                                        className={cn(
-                                            'size-3 shrink-0 rounded-full',
-                                            CATEGORY_COLOR_STYLES[c.color]
-                                                .swatch,
-                                        )}
-                                    />
-                                    {c.name}
-                                </SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
-                </Field>
-
-                <Field id={fieldId('guide')} label="Guía *">
-                    <Select
-                        value={values.guideId}
-                        items={activeGuides.map((g) => ({
-                            value: g.id,
-                            label: g.name,
-                        }))}
-                        onValueChange={(value) =>
-                            setValues((v) => ({
-                                ...v,
-                                guideId: value ?? '',
-                            }))
-                        }
-                    >
-                        <SelectTrigger id={fieldId('guide')} className="w-full">
-                            <SelectValue placeholder="Selecciona una guía" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            {activeGuides.map((g) => (
-                                <SelectItem
-                                    key={g.id}
-                                    value={g.id}
-                                    label={g.name}
-                                >
-                                    {g.name}
-                                </SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
-                </Field>
+                <EventBasicFields
+                    fieldId={fieldId}
+                    values={values}
+                    onChange={set}
+                    onCategoryChange={(categoryId) =>
+                        setValues((v) => ({ ...v, categoryId }))
+                    }
+                    onGuideChange={(guideId) =>
+                        setValues((v) => ({ ...v, guideId }))
+                    }
+                    activeCategories={activeCategories}
+                    activeGuides={activeGuides}
+                />
 
                 {!isEdit && (
                     <label className="flex cursor-pointer items-center gap-2 text-sm font-medium">
@@ -450,133 +255,20 @@ function EventFormBody({
                 )}
 
                 {values.recurring ? (
-                    <>
-                        <div className="grid gap-4 sm:grid-cols-2">
-                            <Field id={fieldId('from')} label="Desde *">
-                                <DatePicker
-                                    id={fieldId('from')}
-                                    value={values.from}
-                                    onChange={(v) =>
-                                        setValues((val) => ({
-                                            ...val,
-                                            from: v,
-                                        }))
-                                    }
-                                />
-                            </Field>
-                            <Field id={fieldId('to')} label="Hasta *">
-                                <DatePicker
-                                    id={fieldId('to')}
-                                    value={values.to}
-                                    onChange={(v) =>
-                                        setValues((val) => ({
-                                            ...val,
-                                            to: v,
-                                        }))
-                                    }
-                                />
-                            </Field>
-                        </div>
-
-                        <fieldset className="grid gap-1.5">
-                            <legend className="mb-1.5 text-sm font-medium">
-                                Días de la semana *
-                            </legend>
-                            <div className="flex flex-wrap gap-2">
-                                {WEEKDAYS.map((day) => (
-                                    <label
-                                        key={day.value}
-                                        className="cursor-pointer"
-                                    >
-                                        <input
-                                            type="checkbox"
-                                            className="peer sr-only"
-                                            aria-label={day.label}
-                                            checked={values.weekdays.includes(
-                                                day.value,
-                                            )}
-                                            onChange={() =>
-                                                toggleWeekday(day.value)
-                                            }
-                                        />
-                                        <span
-                                            aria-hidden="true"
-                                            className="flex size-9 items-center justify-center rounded-lg border border-input text-sm font-medium peer-checked:border-primary peer-checked:bg-primary peer-checked:text-primary-foreground peer-focus-visible:border-ring peer-focus-visible:ring-3 peer-focus-visible:ring-ring/50"
-                                        >
-                                            {day.short}
-                                        </span>
-                                    </label>
-                                ))}
-                            </div>
-                        </fieldset>
-
-                        <div className="grid gap-4 sm:grid-cols-2">
-                            <Field
-                                id={fieldId('start-time')}
-                                label="Hora de inicio *"
-                            >
-                                <Input
-                                    id={fieldId('start-time')}
-                                    type="time"
-                                    required
-                                    value={values.startTime}
-                                    onChange={set('startTime')}
-                                />
-                            </Field>
-                            <Field
-                                id={fieldId('end-time')}
-                                label="Hora de fin *"
-                            >
-                                <Input
-                                    id={fieldId('end-time')}
-                                    type="time"
-                                    required
-                                    value={values.endTime}
-                                    onChange={set('endTime')}
-                                />
-                            </Field>
-                        </div>
-
-                        <p
-                            role="status"
-                            className="rounded-lg bg-muted px-3 py-2 text-sm"
-                        >
-                            {!preview
-                                ? 'Elige fechas y días para ver cuántas sesiones se crearán.'
-                                : preview.overLimit
-                                  ? `Una serie no puede superar las ${MAX_OCCURRENCES} sesiones ni abarcar más de dos años.`
-                                  : preview.count === 0
-                                    ? 'Ningún día del rango coincide con los días elegidos.'
-                                    : `Se crearán ${sessionsLabel}, del ${formatFullDate(preview.first!)} al ${formatFullDate(preview.last!)}.`}
-                        </p>
-                    </>
+                    <RecurringEventFields
+                        fieldId={fieldId}
+                        values={values}
+                        setValues={setValues}
+                        onChangeText={set}
+                        preview={preview}
+                        sessionsLabel={sessionsLabel}
+                    />
                 ) : (
-                    <div className="grid gap-4 sm:grid-cols-2">
-                        <Field id={fieldId('starts')} label="Inicio *">
-                            <DateTimePicker
-                                id={fieldId('starts')}
-                                value={values.startsAt}
-                                onChange={(v) =>
-                                    setValues((val) => ({
-                                        ...val,
-                                        startsAt: v,
-                                    }))
-                                }
-                            />
-                        </Field>
-                        <Field id={fieldId('ends')} label="Fin *">
-                            <DateTimePicker
-                                id={fieldId('ends')}
-                                value={values.endsAt}
-                                onChange={(v) =>
-                                    setValues((val) => ({
-                                        ...val,
-                                        endsAt: v,
-                                    }))
-                                }
-                            />
-                        </Field>
-                    </div>
+                    <SingleSessionFields
+                        fieldId={fieldId}
+                        values={values}
+                        setValues={setValues}
+                    />
                 )}
 
                 <Field
