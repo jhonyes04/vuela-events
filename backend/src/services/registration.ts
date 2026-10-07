@@ -118,6 +118,7 @@ export interface Attendee {
     id: string;
     name: string;
     puntoVuela: string | null;
+    avatarConfigured: boolean;
 }
 
 // Personas inscritas, para mostrarlas en la ficha del evento. Devuelve solo lo
@@ -137,7 +138,9 @@ export const listAttendees = async (eventId: string): Promise<Attendee[]> => {
         where: { eventId, user: { roleId: { not: 'dt' } } },
         select: {
             id: true,
-            user: { select: { name: true, puntoVuela: true } },
+            user: {
+                select: { name: true, puntoVuela: true, avatarImage: true },
+            },
         },
         orderBy: [
             { user: { puntoVuela: 'asc' } },
@@ -149,5 +152,27 @@ export const listAttendees = async (eventId: string): Promise<Attendee[]> => {
         id: row.id,
         name: row.user.name,
         puntoVuela: row.user.puntoVuela,
+        avatarConfigured: row.user.avatarImage !== null,
     }));
+};
+
+// La clave pública sigue siendo el id del registro, nunca el del usuario:
+// mismo criterio de privacidad que listAttendees.
+export const getAttendeeAvatar = async (
+    eventId: string,
+    registrationId: string,
+): Promise<{ data: Buffer; contentType: string } | null> => {
+    const row = await prisma.registration.findFirst({
+        where: { id: registrationId, eventId },
+        select: {
+            user: { select: { avatarImage: true, avatarImageType: true } },
+        },
+    });
+
+    if (!row?.user.avatarImage) return null;
+
+    return {
+        data: Buffer.from(row.user.avatarImage),
+        contentType: row.user.avatarImageType ?? 'image/jpeg',
+    };
 };

@@ -18,6 +18,7 @@ import {
 } from '../services/eventDeletion.js';
 import { createEventSeries } from '../services/eventSeries.js';
 import {
+    getAttendeeAvatar,
     listAttendees,
     registerForEvent,
     RegistrationError,
@@ -151,6 +152,10 @@ const eventSelect = {
 
 const idParamsSchema = z.object({ id: z.uuid() });
 const seriesParamsSchema = z.object({ seriesId: z.uuid() });
+const attendeeParamsSchema = z.object({
+    id: z.uuid(),
+    registrationId: z.uuid(),
+});
 
 const registrationErrors = {
     not_found: [404, 'Evento o inscripción no encontrados'],
@@ -580,6 +585,33 @@ eventsRouter.get('/:id/registrations', async (req, res) => {
         throw e;
     }
 });
+
+// Foto de quien se inscribió; la clave es el id del registro, no el del usuario.
+eventsRouter.get(
+    '/:id/registrations/:registrationId/avatar-image',
+    async (req, res) => {
+        const params = attendeeParamsSchema.safeParse(req.params);
+
+        if (!params.success) {
+            res.status(400).json({ error: 'Solicitud no válida' });
+            return;
+        }
+
+        const avatar = await getAttendeeAvatar(
+            params.data.id,
+            params.data.registrationId,
+        );
+
+        if (!avatar) {
+            res.status(404).json({ error: 'No hay foto para este inscrito' });
+            return;
+        }
+
+        res.setHeader('Cache-Control', 'private, max-age=86400');
+        res.setHeader('Content-Type', avatar.contentType);
+        res.send(avatar.data);
+    },
+);
 
 // Inscribirse: cualquier usuario autenticado, una vez por evento.
 eventsRouter.post(

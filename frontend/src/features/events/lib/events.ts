@@ -430,7 +430,13 @@ export interface Attendee {
     id: string;
     name: string;
     puntoVuela: string | null;
+    avatarConfigured: boolean;
 }
+
+export const attendeeAvatarUrl = (
+    eventId: string,
+    attendeeId: string,
+): string => `/api/events/${eventId}/registrations/${attendeeId}/avatar-image`;
 
 // Personas inscritas en un evento (el servidor excluye a los DT).
 export const listAttendees = async (eventId: string): Promise<Attendee[]> => {

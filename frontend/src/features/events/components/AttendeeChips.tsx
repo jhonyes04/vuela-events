@@ -1,6 +1,12 @@
-import { personLabel, type Attendee } from '@/features/events/lib/events';
+import {
+    attendeeAvatarUrl,
+    personLabel,
+    type Attendee,
+} from '@/features/events/lib/events';
 
 interface AttendeeChipsProps {
+    // Para construir la URL de cada foto.
+    eventId: string;
     attendees: Attendee[];
     // Solo se muestran checkboxes cuando se pasa onToggle (p. ej. gestión).
     selected?: Set<string>;
@@ -8,6 +14,7 @@ interface AttendeeChipsProps {
 }
 
 export const AttendeeChips = ({
+    eventId,
     attendees,
     selected,
     onToggle,
@@ -26,6 +33,17 @@ export const AttendeeChips = ({
                         onChange={() => onToggle(person.id)}
                         aria-label={`Seleccionar a ${personLabel(person)}`}
                     />
+                )}
+                {person.avatarConfigured ? (
+                    <img
+                        src={attendeeAvatarUrl(eventId, person.id)}
+                        alt=""
+                        className="size-6 shrink-0 rounded-full object-cover"
+                    />
+                ) : (
+                    <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-brand-ink text-[10px] font-semibold text-white">
+                        {person.name[0]}
+                    </span>
                 )}
                 <span className="break-words">{personLabel(person)}</span>
             </li>

@@ -189,7 +189,10 @@ const EventDetailBody = ({
                                 options={scrollbarOptions}
                                 defer
                             >
-                                <AttendeeChips attendees={attendees} />
+                                <AttendeeChips
+                                    eventId={event.id}
+                                    attendees={attendees}
+                                />
                             </OverlayScrollbarsComponent>
                         )}
                     </section>
