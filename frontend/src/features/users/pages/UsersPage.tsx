@@ -86,6 +86,7 @@ export const UsersPage = () => {
 
     useEffect(() => {
         void Promise.resolve().then(load);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     const changeRole = async (userId: string, roleId: string) => {
