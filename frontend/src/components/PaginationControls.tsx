@@ -11,7 +11,7 @@ import { IconTooltip } from '@/components/IconTooltip';
 import { PAGE_SIZES, type PageSize } from '@/hooks/usePagination';
 
 const selectClass =
-    'h-8 rounded-lg border border-input bg-transparent px-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50';
+    'h-8 rounded-lg border border-input bg-card px-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50';
 
 // Primero, último, la actual y sus vecinas; el resto se resume con "…".
 const pageNumbers = (
