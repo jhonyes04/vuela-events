@@ -49,6 +49,12 @@ export interface StatsSummary {
         registrations: number;
     }[];
     usersWithoutRegistrations: number;
+    registrationsByUser: {
+        id: string;
+        name: string;
+        puntoVuela: string | null;
+        registrations: number;
+    }[];
     attendedByMonth: SeriesPoint[];
     attendedByQuarter: SeriesPoint[];
     attendedByYear: SeriesPoint[];

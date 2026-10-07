@@ -80,6 +80,7 @@ const SECTIONS = [
     },
     { id: 'occupancy', label: 'Ocupación', group: 'Ocupación' },
     { id: 'users-top', label: 'Usuarios más activos', group: 'Usuarios' },
+    { id: 'users-all', label: 'Todos los usuarios', group: 'Usuarios' },
     { id: 'attended-month', label: 'Atendidos por mes', group: 'Atendidos' },
     {
         id: 'attended-quarter',
@@ -823,6 +824,24 @@ export const StatsPage = () => {
                                 {stats.usersWithoutRegistrations}
                             </strong>
                         </p>
+                    </ChartCard>
+                )}
+
+                {section === 'users-all' && (
+                    <ChartCard
+                        title="Todos los usuarios"
+                        description="Ranking completo por número de inscripciones."
+                        empty={stats.registrationsByUser.length === 0}
+                    >
+                        <RankList
+                            rows={stats.registrationsByUser.map((u) => ({
+                                id: u.id,
+                                title: u.name,
+                                meta: u.puntoVuela ?? 'Sin Punto Vuela',
+                                value: String(u.registrations),
+                                leading: initials(u.name),
+                            }))}
+                        />
                     </ChartCard>
                 )}
 

@@ -220,6 +220,7 @@ export const getStats = async (now: Date = new Date()) => {
 
     const registrationGroups = await prisma.registration.groupBy({
         by: ['userId'],
+        where: { user: { roleId: 'ail' } },
         _count: { userId: true },
         orderBy: { _count: { userId: 'desc' } },
         take: 10,
@@ -242,8 +243,34 @@ export const getStats = async (now: Date = new Date()) => {
     });
 
     const usersWithoutRegistrations = await prisma.user.count({
-        where: { active: true, registrations: { none: {} } },
+        where: { active: true, roleId: 'ail', registrations: { none: {} } },
     });
+
+    const registrationsByUserRows = await prisma.$queryRaw<
+        { id: string; name: string; lastName: string; puntoVuela: string | null; registrations: number }[]
+    >`
+        SELECT
+            u.id,
+            u.name,
+            u."lastName",
+            u."puntoVuela",
+            coalesce(rc.cnt, 0)::int AS registrations
+        FROM users u
+        LEFT JOIN (
+            SELECT "userId", count(*)::int AS cnt
+            FROM registrations
+            GROUP BY "userId"
+        ) rc ON rc."userId" = u.id
+        WHERE u.active = true AND u."roleId" = 'ail'
+        ORDER BY registrations DESC, u.name ASC, u."lastName" ASC
+    `;
+
+    const registrationsByUser = registrationsByUserRows.map((row) => ({
+        id: row.id,
+        name: `${row.name} ${row.lastName}`.trim(),
+        puntoVuela: row.puntoVuela,
+        registrations: row.registrations,
+    }));
 
     return {
         totals: {
@@ -275,6 +302,7 @@ export const getStats = async (now: Date = new Date()) => {
         occupancyEvents: occupancyEventRows,
         topUsers,
         usersWithoutRegistrations,
+        registrationsByUser,
         attendedByMonth,
         attendedByCategory: byCategory,
         attendedByQuarter: attendedRollup.byQuarter,
