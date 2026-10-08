@@ -16,6 +16,8 @@ const PgStore = connectPgSimple(session);
 export const sessionPool = new pg.Pool({
     connectionString: env.DATABASE_URL,
     max: 3,
+    keepAlive: true,
+    idleTimeoutMillis: 30_000,
 });
 
 // En producción el prefijo __Host- exige Secure, Path=/ y ausencia de Domain
