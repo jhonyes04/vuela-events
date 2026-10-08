@@ -23,6 +23,10 @@ const PERMISSIONS: { id: string; description: string }[] = [
     { id: 'guides:create', description: 'Crear guías' },
     { id: 'guides:edit', description: 'Editar guías' },
     { id: 'guides:delete', description: 'Eliminar guías' },
+    { id: 'resources:view', description: 'Ver recursos' },
+    { id: 'resources:create', description: 'Crear recursos' },
+    { id: 'resources:edit', description: 'Editar recursos' },
+    { id: 'resources:delete', description: 'Eliminar recursos' },
     { id: 'email:view', description: 'Ver plantillas de correo' },
     { id: 'email:create', description: 'Crear plantillas de correo' },
     { id: 'email:edit', description: 'Editar plantillas de correo' },
@@ -50,6 +54,10 @@ const ROLE_PERMISSIONS: Record<string, string[]> = {
         'guides:create',
         'guides:edit',
         'guides:delete',
+        'resources:view',
+        'resources:create',
+        'resources:edit',
+        'resources:delete',
         'email:view',
         'email:create',
         'email:edit',
@@ -74,6 +82,10 @@ const ROLE_PERMISSIONS: Record<string, string[]> = {
         'guides:create',
         'guides:edit',
         'guides:delete',
+        'resources:view',
+        'resources:create',
+        'resources:edit',
+        'resources:delete',
         'email:view',
         'email:create',
         'email:edit',
@@ -81,7 +93,9 @@ const ROLE_PERMISSIONS: Record<string, string[]> = {
         'email:send',
         'stats:view',
     ],
-    ail: [],
+    ail: [
+        'resources:view'
+    ],
 };
 
 const SMTP_CONFIG = {

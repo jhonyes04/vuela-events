@@ -10,6 +10,7 @@ import { EmailTemplatesPage } from '@/features/emailTemplates/pages/EmailTemplat
 import { EmailSettingsPage } from '@/features/emailSettings/pages/EmailSettingsPage';
 import { AuditPage } from '@/features/audit/pages/AuditPage';
 import { StatsPage } from '@/features/stats/pages/StatsPage';
+import { ResourcesPage } from '@/features/resources/pages/ResourcesPage';
 
 export interface AppRoute {
     path: string;
@@ -21,6 +22,17 @@ export interface AppRoute {
 
 export const appRoutes: AppRoute[] = [
     { path: '/', label: 'Eventos', element: <EventsPage /> },
+    {
+        path: '/recursos',
+        label: 'Recursos',
+        element: <ResourcesPage />,
+        permissions: [
+            'resources:view',
+            'resources:create',
+            'resources:edit',
+            'resources:delete',
+        ],
+    },
     { path: '/perfil', label: 'Mi perfil', element: <ProfilePage /> },
     {
         path: '/gestion/eventos',

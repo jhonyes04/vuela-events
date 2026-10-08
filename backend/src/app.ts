@@ -15,6 +15,7 @@ import { profileRouter } from './routes/profile.js';
 import { rolesRouter } from './routes/roles.js';
 import { categoriesRouter } from './routes/categories.js';
 import { guidesRouter } from './routes/guides.js';
+import { resourceLinkRouter } from './routes/resourceLinks.js';
 import { emailTemplatesRouter } from './routes/emailTemplates.js';
 import { emailSettingsRouter } from './routes/emailSettings.js';
 import { emailSendsRouter } from './routes/emailSends.js';
@@ -65,6 +66,7 @@ export function createApp(options: AppOptions = {}) {
     app.use('/api/roles', rolesRouter);
     app.use('/api/categories', categoriesRouter);
     app.use('/api/guides', guidesRouter);
+    app.use('/api/resource-links', resourceLinkRouter);
     app.use('/api/email-templates', emailTemplatesRouter);
     app.use('/api/email-settings', emailSettingsRouter);
     app.use('/api/email-sends', emailSendsRouter);

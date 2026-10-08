@@ -25,6 +25,12 @@ export const resetCatalogStores = () => {
     resetters.forEach((reset) => reset());
 };
 
+// Para stores de catálogo que no encajan en createCatalogStore (p. ej. porque
+// no tienen un campo "name"), pero deben vaciarse igual al cerrar sesión.
+export const registerCatalogResetter = (reset: () => void) => {
+    resetters.add(reset);
+};
+
 const byName = (a: CatalogItem, b: CatalogItem) =>
     a.name.localeCompare(b.name);
 
