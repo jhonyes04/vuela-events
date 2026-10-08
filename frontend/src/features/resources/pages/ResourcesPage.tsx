@@ -1,11 +1,13 @@
 import { FileText, Link2 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Separator } from '@/components/ui/separator';
 import { ResourceLinksTab } from '@/features/resources/components/ResourceLinksTab';
 import { DocumentsTab } from '@/features/resources/components/DocumentsTab';
+import { PageTitle } from '@/components/PageTitle';
 
 export const ResourcesPage = () => (
     <section>
-        <h1 className="mb-6 text-2xl font-semibold">Recursos</h1>
+        <PageTitle>Recursos</PageTitle>
 
         <Tabs defaultValue="enlaces">
             <TabsList className="flex h-auto w-full gap-2 bg-transparent p-0 sm:w-auto">
@@ -25,11 +27,13 @@ export const ResourcesPage = () => (
                 </TabsTrigger>
             </TabsList>
 
-            <TabsContent value="enlaces" className="mt-6">
+            <Separator className="data-horizontal:h-1 bg-yellow-400/30 rounded-full" />
+
+            <TabsContent value="enlaces" className="mt-2">
                 <ResourceLinksTab />
             </TabsContent>
 
-            <TabsContent value="documentos" className="mt-6">
+            <TabsContent value="documentos" className="mt-2">
                 <DocumentsTab />
             </TabsContent>
         </Tabs>

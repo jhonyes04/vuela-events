@@ -11,6 +11,7 @@ import {
     type EmailTemplate,
 } from '@/features/emailTemplates/lib/emailTemplates';
 import { useEmailTemplatesStore } from '@/features/emailTemplates/store';
+import { PageTitle } from '@/components/PageTitle';
 
 export const EmailTemplatesPage = () => {
     const templates = useEmailTemplatesStore((s) => s.items);
@@ -41,7 +42,7 @@ export const EmailTemplatesPage = () => {
     return (
         <section>
             <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-                <h1 className="text-2xl font-semibold">Plantillas de correo</h1>
+                <PageTitle>Gestionar Plantillas de correo</PageTitle>
                 <Button onClick={openCreate}>Nueva plantilla</Button>
             </div>
 
@@ -94,7 +95,9 @@ export const EmailTemplatesPage = () => {
                                             variant="destructive"
                                             size="icon"
                                             aria-label="Eliminar"
-                                            onClick={() => setDeleting(template)}
+                                            onClick={() =>
+                                                setDeleting(template)
+                                            }
                                         >
                                             <Trash2 className="size-4" />
                                         </Button>

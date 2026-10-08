@@ -22,6 +22,7 @@ import {
     type GroupId,
     type SectionId,
 } from '@/features/stats/lib/sections';
+import { PageTitle } from '@/components/PageTitle';
 
 export const StatsPage = () => {
     const [stats, setStats] = useState<StatsSummary | null>(null);
@@ -74,9 +75,7 @@ export const StatsPage = () => {
         <section className="mx-auto grid w-full min-w-0 max-w-6xl grid-cols-1 gap-8">
             <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
                 <div className="grid gap-1">
-                    <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
-                        Estadísticas
-                    </h1>
+                    <PageTitle>Estadísticas</PageTitle>
                     <p className="text-sm text-muted-foreground">
                         Eventos, inscripciones y personas atendidas.
                     </p>

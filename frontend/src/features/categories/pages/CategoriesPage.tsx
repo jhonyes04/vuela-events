@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { IconTooltip } from '@/components/IconTooltip';
 import { ConfirmDeleteDialog } from '@/components/ConfirmDeleteDialog';
+import { PageTitle } from '@/components/PageTitle';
 import { ListErrors } from '@/features/users/components/ListErrors';
 import { CategoryFormDialog } from '@/features/categories/components/CategoryFormDialog';
 import {
@@ -45,7 +46,7 @@ export const CategoriesPage = () => {
     return (
         <section>
             <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-                <h1 className="text-2xl font-semibold">Categorías</h1>
+                <PageTitle>Gestionar Cagegorías</PageTitle>
                 <Button onClick={openCreate}>Nueva categoría</Button>
             </div>
 

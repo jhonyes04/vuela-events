@@ -12,6 +12,7 @@ import { scrollbarOptions } from '@/lib/overlayScrollbarsOptions';
 import { useRolesStore } from '@/features/users/store';
 import type { Role } from '@/features/users/lib/roles';
 import { api, ApiError } from '@/lib/api';
+import { PageTitle } from '@/components/PageTitle';
 
 interface PermissionOption {
     id: string;
@@ -77,7 +78,7 @@ export const RolesPage = () => {
     return (
         <section>
             <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-                <h1 className="text-2xl font-semibold">Roles</h1>
+                <PageTitle>Gestionar Roles</PageTitle>
                 <CreateRoleDialog
                     permissions={permissions}
                     onCreated={() => void load()}
@@ -104,9 +105,7 @@ export const RolesPage = () => {
                         <thead>
                             <tr className="border-b bg-muted/50 text-left">
                                 <th className="p-3 font-bold">Nombre</th>
-                                <th className="p-3 font-bold">
-                                    Identificador
-                                </th>
+                                <th className="p-3 font-bold">Identificador</th>
                                 <th className="p-3 font-bold">Estado</th>
                                 <th className="p-3 font-bold">
                                     <span className="sr-only">Acciones</span>
@@ -138,9 +137,7 @@ export const RolesPage = () => {
                                                     size="icon"
                                                     aria-label="Editar permisos"
                                                     onClick={() =>
-                                                        openPermissions(
-                                                            role.id,
-                                                        )
+                                                        openPermissions(role.id)
                                                     }
                                                 >
                                                     <ShieldCheck className="size-4" />

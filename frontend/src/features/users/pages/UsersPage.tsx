@@ -16,6 +16,7 @@ import { scrollbarOptions } from '@/lib/overlayScrollbarsOptions';
 import { useRolesStore } from '@/features/users/store';
 import { api, ApiError } from '@/lib/api';
 import type { DinamizadorTitle } from '@/features/profile/lib/profile';
+import { PageTitle } from '@/components/PageTitle';
 
 interface AdminUser {
     id: string;
@@ -127,7 +128,7 @@ export const UsersPage = () => {
 
     return (
         <section>
-            <h1 className="mb-6 text-2xl font-semibold">Usuarios</h1>
+            <PageTitle>Gestionar Usuarios</PageTitle>
 
             <ListErrors
                 error={error}

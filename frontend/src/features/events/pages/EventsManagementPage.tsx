@@ -13,6 +13,7 @@ import {
     listAllEvents,
     type EventItem,
 } from '@/features/events/lib/events';
+import { PageTitle } from '@/components/PageTitle';
 
 export const EventsManagementPage = () => {
     const [events, setEvents] = useState<EventItem[]>([]);
@@ -67,7 +68,7 @@ export const EventsManagementPage = () => {
 
     return (
         <section>
-            <h1 className="mb-6 text-2xl font-semibold">Eventos</h1>
+            <PageTitle>Gestionar Eventos</PageTitle>
 
             <EventsTable
                 events={events}

@@ -22,6 +22,7 @@ import {
 } from '@/features/emailSettings/lib/emailSettings';
 import { useEmailTemplatesStore } from '@/features/emailTemplates/store';
 import { ApiError } from '@/lib/api';
+import { PageTitle } from '@/components/PageTitle';
 
 const SLOT_LABELS: Record<SlotId, string> = {
     convocatoria: 'Convocatoria',
@@ -124,9 +125,7 @@ export const EmailSettingsPage = () => {
     return (
         <section className="grid max-w-xl mx-auto gap-8">
             <div>
-                <h1 className="mb-2 text-2xl font-semibold">
-                    Configuración de Correo
-                </h1>
+                <PageTitle>Configuración de Correo</PageTitle>
 
                 {error && (
                     <Alert variant="destructive" className="mb-4">
@@ -200,7 +199,6 @@ export const EmailSettingsPage = () => {
                             TLS
                         </label>
                     </div>
-
                 </form>
 
                 <div className="mt-4 flex justify-end">
@@ -267,7 +265,6 @@ export const EmailSettingsPage = () => {
                         </div>
                     ))}
                 </div>
-
             </div>
         </section>
     );

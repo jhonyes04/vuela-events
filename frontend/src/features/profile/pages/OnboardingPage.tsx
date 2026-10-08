@@ -1,3 +1,4 @@
+import { PageTitle } from '@/components/PageTitle';
 import { useAuth } from '@/features/auth/hooks/context';
 import { ProfileForm } from '@/features/profile/components/ProfileForm';
 import { PUNTO_VUELA_MAX } from '@/features/profile/lib/profile';
@@ -10,7 +11,7 @@ export function OnboardingPage() {
 
     return (
         <section className="mx-auto w-full max-w-md rounded-xl border bg-white p-5 sm:p-8">
-            <h1 className="mb-2 text-2xl font-semibold">Completa tu perfil</h1>
+            <PageTitle>Copleta tu perfil</PageTitle>
             <p className="mb-6 text-muted-foreground">
                 Es tu primer acceso. Escribe tu nombre y apellidos y confirma tu
                 Punto Vuela. Podrás cambiarlos cuando quieras desde «Mi perfil».

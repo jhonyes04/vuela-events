@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { ConfirmDeleteDialog } from '@/components/ConfirmDeleteDialog';
 import { IconTooltip } from '@/components/IconTooltip';
 import { ListErrors } from '@/features/users/components/ListErrors';
+import { PageTitle } from '@/components/PageTitle';
 import { PaginationControls } from '@/components/PaginationControls';
 import { SortableHeader } from '@/components/SortableHeader';
 import { usePagination } from '@/hooks/usePagination';
@@ -162,7 +163,7 @@ export const AuditPage = () => {
 
     return (
         <section>
-            <h1 className="mb-6 text-2xl font-semibold">Auditoría</h1>
+            <PageTitle>Auditoría</PageTitle>
 
             <ListErrors
                 error={error}

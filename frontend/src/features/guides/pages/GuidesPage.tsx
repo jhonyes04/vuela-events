@@ -8,6 +8,7 @@ import { ListErrors } from '@/features/users/components/ListErrors';
 import { GuideFormDialog } from '@/features/guides/components/GuideFormDialog';
 import { deleteGuide, type Guide } from '@/features/guides/lib/guides';
 import { useGuidesStore } from '@/features/guides/store';
+import { PageTitle } from '@/components/PageTitle';
 
 export const GuidesPage = () => {
     const guides = useGuidesStore((s) => s.items);
@@ -41,7 +42,7 @@ export const GuidesPage = () => {
     return (
         <section>
             <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-                <h1 className="text-2xl font-semibold">Guías</h1>
+                <PageTitle>Gestionar Guías</PageTitle>
                 <Button onClick={openCreate}>Nueva guía</Button>
             </div>
 

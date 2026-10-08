@@ -15,6 +15,7 @@ import {
     AlertTitle,
 } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
+import { PageTitle } from '@/components/PageTitle';
 import { useRangeEvents } from '@/features/events/hooks/useRangeEvents';
 import { today, useEventsStore } from '@/features/events/store';
 import {
@@ -184,7 +185,7 @@ export function EventsPage() {
     return (
         <section>
             <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-                <h1 className="text-2xl font-semibold">Eventos</h1>
+                <PageTitle className="mb-0">Eventos</PageTitle>
 
                 {/* Móvil: fila 1 con vista y crear; fila 2 con el mes y sus flechas. */}
                 <div className="flex w-full items-center justify-between gap-2 sm:hidden">
