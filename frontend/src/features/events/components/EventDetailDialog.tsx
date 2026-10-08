@@ -65,10 +65,10 @@ const EventDetailBody = ({
     const isAdmin = user?.roleId === ROLE_IDS.ADMIN;
     // Un DT puede inscribirse aunque esté completo: no ocupa plaza.
     const blockedByCapacity = full && !isDt && !event.registered;
-    const colorStyle = full
-        ? { border: 'border-t-red-500', tint: 'bg-red-500/10' }
-        : ended
-          ? { border: 'border-t-gray-400', tint: 'bg-gray-400/10' }
+    const colorStyle = ended
+        ? { border: 'border-t-gray-400', tint: 'bg-gray-400/10' }
+        : full
+          ? { border: 'border-t-red-500', tint: 'bg-red-500/10' }
           : CATEGORY_COLOR_STYLES[event.category.color];
 
     // Al abrir la ficha de un evento completo, se avisa aunque el usuario
@@ -137,7 +137,9 @@ const EventDetailBody = ({
                                 Inscrito
                             </Badge>
                         )}
-                        {full && <Badge variant="destructive">Completo</Badge>}
+                        {full && !ended && (
+                            <Badge variant="destructive">Completo</Badge>
+                        )}
                         {ended && <Badge variant="outline">Finalizado</Badge>}
                     </div>
 

@@ -44,6 +44,11 @@ const sanitizeOptions: sanitizeHtml.IOptions = {
         frame.tag === 'img' && !IMAGE_SRC_RE.test(frame.attribs['src'] ?? ''),
 };
 
+// Mismo saneado para cualquier HTML del editor enriquecido que acabe en un
+// correo real (firma o plantilla): nada de scripts, iframes ni estilos libres.
+export const sanitizeEmailHtml = (html: string): string =>
+    sanitizeHtml(html, sanitizeOptions);
+
 const referencedImageIds = (html: string): string[] =>
     [...html.matchAll(IMAGE_SRC_RE_GLOBAL)].map((m) => m[1]!);
 
@@ -61,7 +66,7 @@ export const saveEmailSignature = async (
     userId: string,
     rawHtml: string,
 ): Promise<string> => {
-    const html = sanitizeHtml(rawHtml, sanitizeOptions);
+    const html = sanitizeEmailHtml(rawHtml);
     const keepIds = referencedImageIds(html);
 
     await prisma.$transaction(async (tx) => {

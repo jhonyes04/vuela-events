@@ -11,6 +11,9 @@ const envSchema = z
         SESSION_SECRET: z
             .string()
             .min(32, 'SESSION_SECRET debe tener al menos 32 caracteres'),
+        APP_PASSWORD_ENC_KEY: z
+            .string()
+            .min(32, 'APP_PASSWORD_ENC_KEY debe tener al menos 32 caracteres'),
         GOOGLE_CLIENT_ID: z.string().endsWith('.apps.googleusercontent.com'),
         ALLOWED_EMAIL_DOMAIN: z
             .string()
@@ -51,6 +54,15 @@ const envSchema = z
                 path: ['SESSION_SECRET'],
                 message:
                     'En producción SESSION_SECRET no puede ser el valor de ejemplo',
+            });
+        }
+
+        if (env.APP_PASSWORD_ENC_KEY.includes('change-me')) {
+            ctx.addIssue({
+                code: 'custom',
+                path: ['APP_PASSWORD_ENC_KEY'],
+                message:
+                    'En producción APP_PASSWORD_ENC_KEY no puede ser el valor de ejemplo',
             });
         }
     });

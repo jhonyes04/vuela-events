@@ -58,10 +58,10 @@ interface EventCardProps {
 export const EventCard = ({ event, onOpen }: EventCardProps) => {
     const full = isFull(event);
     const ended = hasEnded(event);
-    const colorStyle = full
-        ? { border: 'border-t-red-500', tint: 'bg-red-500/10' }
-        : ended
-          ? { border: 'border-t-gray-400', tint: 'bg-gray-400/10' }
+    const colorStyle = ended
+        ? { border: 'border-t-gray-400', tint: 'bg-gray-400/10' }
+        : full
+          ? { border: 'border-t-red-500', tint: 'bg-red-500/10' }
           : CATEGORY_COLOR_STYLES[event.category.color];
 
     return (
@@ -103,7 +103,8 @@ export const EventCard = ({ event, onOpen }: EventCardProps) => {
                 <EventInfoRows
                     event={event}
                     trailing={
-                        full && (
+                        full &&
+                        !ended && (
                             <Badge variant="destructive" className="ml-1">
                                 Completo
                             </Badge>

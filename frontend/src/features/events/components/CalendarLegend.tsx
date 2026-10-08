@@ -21,8 +21,11 @@ export const CalendarLegend = ({ events }: CalendarLegendProps) => {
 
     if (events.length === 0) return null;
 
-    const anyFull = events.some((event) => isFull(event));
     const anyEnded = events.some((event) => hasEnded(event));
+    // Un evento finalizado ya no cuenta como "Completo": prioridad a finalizado.
+    const anyFull = events.some(
+        (event) => isFull(event) && !hasEnded(event),
+    );
 
     return (
         <div

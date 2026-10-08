@@ -1,5 +1,6 @@
 import { prisma } from '../lib/prisma.js';
 import { recordAudit } from './audit.js';
+import { sanitizeEmailHtml } from './emailSignature.js';
 
 export type EmailTemplateManageFailure = 'duplicate' | 'not_found';
 
@@ -41,7 +42,7 @@ export const createEmailTemplate = async (
     }
 
     const template = await prisma.emailTemplate.create({
-        data: { name, subject, body },
+        data: { name, subject, body: sanitizeEmailHtml(body) },
         select: emailTemplateSelect,
     });
 
@@ -77,7 +78,7 @@ export const updateEmailTemplate = async (
 
     const updated = await prisma.emailTemplate.update({
         where: { id },
-        data: input,
+        data: { ...input, body: sanitizeEmailHtml(input.body) },
         select: emailTemplateSelect,
     });
 

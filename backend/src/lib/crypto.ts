@@ -4,20 +4,13 @@ import {
     randomBytes,
     scryptSync,
 } from 'node:crypto';
+import { env } from '../config/env.js';
 
 const ALGORITHM = 'aes-256-gcm' as const;
 const IV_LENGTH = 12;
 const SALT = 'vuela-events-app-password';
 
-const getKey = (): Buffer => {
-    const secret = process.env.APP_PASSWORD_ENC_KEY;
-
-    if (!secret) {
-        throw new Error('APP_PASSWORD_ENC_KEY no configurada');
-    }
-
-    return scryptSync(secret, SALT, 32);
-};
+const getKey = (): Buffer => scryptSync(env.APP_PASSWORD_ENC_KEY, SALT, 32);
 
 // Formato de almacenamiento: iv:authTag:ciphertext, en hexadecimal.
 export const encrypt = (plain: string): string => {
