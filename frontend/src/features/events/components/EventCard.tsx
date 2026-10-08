@@ -4,11 +4,7 @@ import { AttendeeChips } from '@/features/events/components/AttendeeChips';
 import { EventInfoRows } from '@/features/events/components/EventInfoRows';
 import { CATEGORY_COLOR_STYLES } from '@/features/categories/lib/colors';
 import { cn } from '@/lib/utils';
-import {
-    hasEnded,
-    isFull,
-    type EventItem,
-} from '@/features/events/lib/events';
+import { hasEnded, isFull, type EventItem } from '@/features/events/lib/events';
 
 import { useAttendees } from '@/features/events/hooks/useAttendees';
 
@@ -120,6 +116,12 @@ export const EventCard = ({ event, onOpen }: EventCardProps) => {
                         <strong className="text-foreground">
                             {event.participantsCount ?? 'sin indicar'}
                         </strong>
+                        {event.participantsObservations && (
+                            <>
+                                {' — '}
+                                {event.participantsObservations}
+                            </>
+                        )}
                     </p>
                 )}
                 <AttendeeList event={event} />

@@ -14,6 +14,7 @@ export interface EventItem {
     // Gente externa atendida en el taller (no son usuarios de la app); se
     // rellena al terminar el evento, no al crearlo.
     participantsCount: number | null;
+    participantsObservations: string | null;
     // Las sesiones creadas juntas comparten seriesId.
     seriesId: string | null;
     createdAt: string;
@@ -368,8 +369,12 @@ export const updateEventById = (
 export const updateEventParticipantsCount = (
     id: string,
     participantsCount: number | null,
+    participantsObservations: string | null,
 ): Promise<void> =>
-    api.patch(`/events/${id}/participants-count`, { participantsCount });
+    api.patch(`/events/${id}/participants-count`, {
+        participantsCount,
+        participantsObservations,
+    });
 
 // Sin rango de fechas: todos los eventos, para el listado de gestión.
 export const listAllEvents = async (): Promise<EventItem[]> => {

@@ -10,6 +10,7 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { ApiError } from '@/lib/api';
 import {
@@ -20,7 +21,7 @@ import {
 // Solo lo necesario para editar: así también se usa desde estadísticas.
 export type ParticipantsEvent = Pick<
     EventItem,
-    'id' | 'title' | 'participantsCount'
+    'id' | 'title' | 'participantsCount' | 'participantsObservations'
 >;
 
 interface ParticipantsCountBodyProps {
@@ -38,6 +39,9 @@ const ParticipantsCountBody = ({
     const [value, setValue] = useState(
         event.participantsCount?.toString() ?? '',
     );
+    const [observations, setObservations] = useState(
+        event.participantsObservations ?? '',
+    );
     const [submitting, setSubmitting] = useState(false);
 
     const handleSave = async () => {
@@ -47,6 +51,7 @@ const ParticipantsCountBody = ({
             await updateEventParticipantsCount(
                 event.id,
                 value === '' ? null : Number(value),
+                observations.trim() === '' ? null : observations.trim(),
             );
 
             toast.success('Participantes guardados.');
@@ -81,6 +86,18 @@ const ParticipantsCountBody = ({
                     autoFocus
                     value={value}
                     onChange={(e) => setValue(e.target.value)}
+                />
+            </div>
+            <div className="grid gap-1 5">
+                <Label htmlFor="participants-observations">
+                    Observaciones (opcional)
+                </Label>
+                <Textarea
+                    id="participants-observations"
+                    maxLength={500}
+                    rows={3}
+                    value={observations}
+                    onChange={(e) => setObservations(e.target.value)}
                 />
             </div>
 

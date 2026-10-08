@@ -1,27 +1,28 @@
 model Event {
-    id                  String          @id @default(uuid()) @db.Uuid
-    title               String          @db.VarChar(120)
-    subtitle            String?         @db.VarChar(200)
-    description         String?         @db.VarChar(2000)
-    location            String?         @db.VarChar(200)
-    startsAt            DateTime        
-    endsAt              DateTime        
-    capacity            Int?
+    id                          String          @id @default(uuid()) @db.Uuid
+    title                       String          @db.VarChar(120)
+    subtitle                    String?         @db.VarChar(200)
+    description                 String?         @db.VarChar(2000)
+    location                    String?         @db.VarChar(200)
+    startsAt                    DateTime        
+    endsAt                      DateTime        
+    capacity                    Int?
     // Gente externa atendida en el taller (no son usuarios de la app); se
     // rellena al terminar el evento, no al crearlo.
-    participantsCount   Int?
-    createdById         String          @db.Uuid
-    categoryId          String          @db.Uuid
-    guideId             String          @db.Uuid
-    seriesId            String?         @db.Uuid
-    createdAt           DateTime        @default(now())
-    updatedAt           DateTime        @updatedAt
+    participantsCount           Int?
+    participantsObservations    String?         @db.VarChar(500)
+    createdById                 String          @db.Uuid
+    categoryId                  String          @db.Uuid
+    guideId                     String          @db.Uuid
+    seriesId                    String?         @db.Uuid
+    createdAt                   DateTime        @default(now())
+    updatedAt                   DateTime        @updatedAt
 
-    createdBy           User            @relation("EventCreator", fields: [createdById], references: [id], onDelete: Restrict)
-    category            Category        @relation(fields: [categoryId], references: [id], onDelete: Restrict)
-    guide               Guide           @relation(fields: [guideId], references: [id], onDelete: Restrict)
-    registrations       Registration[]
-    sentReports         SentReport[]
+    createdBy                   User            @relation("EventCreator", fields: [createdById], references: [id], onDelete: Restrict)
+    category                    Category        @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+    guide                       Guide           @relation(fields: [guideId], references: [id], onDelete: Restrict)
+    registrations               Registration[]
+    sentReports                 SentReport[]
 
     @@index([startsAt])
     @@index([seriesId])
@@ -31,13 +32,13 @@ model Event {
 }
 
 model Registration {
-    id                  String      @id @default(uuid()) @db.Uuid
-    eventId             String      @db.Uuid
-    userId              String      @db.Uuid
-    createdAt           DateTime    @default(now())
+    id                          String          @id @default(uuid()) @db.Uuid
+    eventId                     String          @db.Uuid
+    userId                      String          @db.Uuid
+    createdAt                   DateTime        @default(now())
 
-    event               Event       @relation(fields: [eventId], references: [id], onDelete: Cascade)
-    user                User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+    event                       Event           @relation(fields: [eventId], references: [id], onDelete: Cascade)
+    user                        User            @relation(fields: [userId], references: [id], onDelete: Cascade)
 
     @@unique([eventId, userId])
     @@index([userId])

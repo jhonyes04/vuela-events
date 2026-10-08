@@ -149,6 +149,12 @@ const EventDetailBody = ({
                             <strong className="text-foreground">
                                 {event.participantsCount ?? 'sin indicar'}
                             </strong>
+                            {event.participantsObservations && (
+                                <>
+                                    {' — '}
+                                    {event.participantsObservations}
+                                </>
+                            )}
                         </p>
                     )}
 

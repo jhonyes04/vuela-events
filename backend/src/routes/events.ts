@@ -95,6 +95,7 @@ const updateEventSchema = z
 
 const participantsCountSchema = z.strictObject({
     participantsCount: z.number().int().min(0).max(100_000).nullable(),
+    participantsObservations: z.string().trim().max(500).nullable(),
 });
 
 const dateOnly = z.string().refine(isRealDate, 'Fecha no válida');
@@ -137,6 +138,7 @@ const eventSelect = {
     endsAt: true,
     capacity: true,
     participantsCount: true,
+    participantsObservations: true,
     seriesId: true,
     createdAt: true,
     createdBy: { select: { id: true, name: true, puntoVuela: true } },
@@ -375,61 +377,61 @@ eventsRouter.patch(
 // Participantes externos atendidos: se rellena aparte, una vez terminado el
 // evento (no forma parte del formulario de crear/editar). Tras el fin lo puede
 // hacer cualquier persona autenticada; antes, solo quien puede editar eventos.
-eventsRouter.patch(
-    '/:id/participants-count',
-    async (req, res) => {
-        const actor = req.user;
+eventsRouter.patch('/:id/participants-count', async (req, res) => {
+    const actor = req.user;
 
-        if (!actor) {
-            res.status(401).json({ error: 'Autenticación requerida' });
-            return;
-        }
+    if (!actor) {
+        res.status(401).json({ error: 'Autenticación requerida' });
+        return;
+    }
 
-        const params = idParamsSchema.safeParse(req.params);
-        const body = participantsCountSchema.safeParse(req.body);
+    const params = idParamsSchema.safeParse(req.params);
+    const body = participantsCountSchema.safeParse(req.body);
 
-        if (!params.success || !body.success) {
-            res.status(400).json({ error: 'Solicitud no válida' });
-            return;
-        }
+    if (!params.success || !body.success) {
+        res.status(400).json({ error: 'Solicitud no válida' });
+        return;
+    }
 
-        const existing = await prisma.event.findUnique({
-            where: { id: params.data.id },
-            select: { id: true, endsAt: true },
+    const existing = await prisma.event.findUnique({
+        where: { id: params.data.id },
+        select: { id: true, endsAt: true },
+    });
+
+    if (!existing) {
+        res.status(404).json({ error: 'Evento no encontrado' });
+        return;
+    }
+
+    const canEdit = actor.permissions.includes('events:edit');
+
+    if (!canEdit && existing.endsAt > new Date()) {
+        res.status(409).json({
+            error: 'El evento todavía no ha finalizado',
         });
+        return;
+    }
 
-        if (!existing) {
-            res.status(404).json({ error: 'Evento no encontrado' });
-            return;
-        }
+    const event = await prisma.event.update({
+        where: { id: params.data.id },
+        data: {
+            participantsCount: body.data.participantsCount,
+            participantsObservations: body.data.participantsObservations,
+        },
+        select: eventSelect,
+    });
 
-        const canEdit = actor.permissions.includes('events:edit');
+    await recordAudit({
+        action: 'event_participants_updated',
+        actorId: actor.id,
+        newValue:
+            body.data.participantsCount === null
+                ? 'sin especificar'
+                : String(body.data.participantsCount),
+    });
 
-        if (!canEdit && existing.endsAt > new Date()) {
-            res.status(409).json({
-                error: 'El evento todavía no ha finalizado',
-            });
-            return;
-        }
-
-        const event = await prisma.event.update({
-            where: { id: params.data.id },
-            data: { participantsCount: body.data.participantsCount },
-            select: eventSelect,
-        });
-
-        await recordAudit({
-            action: 'event_participants_updated',
-            actorId: actor.id,
-            newValue:
-                body.data.participantsCount === null
-                    ? 'sin especificar'
-                    : String(body.data.participantsCount),
-        });
-
-        res.json({ event });
-    },
-);
+    res.json({ event });
+});
 
 // Crear una serie recurrente (mismos días de la semana entre dos fechas): admin y dt.
 // El servidor calcula las fechas; nunca se confía en una lista enviada por el cliente.
