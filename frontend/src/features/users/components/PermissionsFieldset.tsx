@@ -1,6 +1,8 @@
 import {
+    BarChart3,
     BookOpen,
     CalendarDays,
+    FolderOpen,
     Mail,
     ShieldCheck,
     Tag,
@@ -36,6 +38,8 @@ const CATEGORY_STYLES: Record<string, CategoryStyle> = {
     email: { label: 'Correo', icon: Mail },
     users: { label: 'Usuarios', icon: Users },
     roles: { label: 'Roles', icon: ShieldCheck },
+    resources: { label: 'Recursos', icon: FolderOpen },
+    stats: { label: 'Estadísticas', icon: BarChart3 },
 };
 
 const FALLBACK_STYLE: CategoryStyle = {
