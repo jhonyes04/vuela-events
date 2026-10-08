@@ -18,6 +18,14 @@ export function GoogleSignIn({ otherAccount }: { otherAccount: boolean }) {
     // Valor de otherAccount con el que ya se llamó a initialize(). Cambiar de modo
     // lo vuelve a llamar (hace falta para cambiar hd); los reintentos no.
     const initializedFor = useRef<boolean | null>(null);
+    // Dedupe del fetch de nonce por (attempt, otherAccount): evita que el doble
+    // montaje de efectos de StrictMode dispare dos GET /auth/nonce en paralelo
+    // (cada uno crearía su propia sesión anónima y pisaría el Set-Cookie del
+    // otro, descuadrando el nonce). Solo cachea la red; init/render del botón
+    // los hace cada invocación del efecto con su propio flag `cancelled`.
+    const nonceRef = useRef<{ key: string; promise: Promise<string> } | null>(
+        null,
+    );
 
     const handleCredential = useCallback(
         async (credential: string) => {
@@ -45,10 +53,25 @@ export function GoogleSignIn({ otherAccount }: { otherAccount: boolean }) {
     useEffect(() => {
         let cancelled = false;
 
+        const key = `${attempt}:${otherAccount}`;
+
+        const fetchNonce = () => {
+            if (nonceRef.current?.key === key) {
+                return nonceRef.current.promise;
+            }
+
+            const promise = api
+                .get<{ nonce: string }>('/auth/nonce')
+                .then(({ nonce }) => nonce);
+
+            nonceRef.current = { key, promise };
+            return promise;
+        };
+
         const setup = async () => {
             try {
-                const [{ nonce }] = await Promise.all([
-                    api.get<{ nonce: string }>('/auth/nonce'),
+                const [nonce] = await Promise.all([
+                    fetchNonce(),
                     loadGoogleScript(),
                 ]);
 
