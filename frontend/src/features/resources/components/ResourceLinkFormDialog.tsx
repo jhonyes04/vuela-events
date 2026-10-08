@@ -71,7 +71,7 @@ const ResourceLinkFormBody = ({
             <form
                 id="resource-link-form"
                 onSubmit={(e) => void handleSubmit(e)}
-                className="grid gap-4"
+                className="grid grid-cols-1 gap-4"
             >
                 <div className="grid gap-1.5">
                     <Label htmlFor="resource-link-title">Título *</Label>

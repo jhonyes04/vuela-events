@@ -76,63 +76,71 @@ export const DocumentsTab = () => {
                     Todavía no hay documentos.
                 </p>
             ) : (
-                <ul className="grid gap-3 sm:grid-cols-2">
+                <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                     {visibleDocuments.map((doc) => (
                         <li
                             key={doc.id}
-                            className="flex items-center gap-3 rounded-xl border bg-card p-4"
+                            className="flex flex-col gap-3 rounded-xl border bg-card p-4 sm:flex-row sm:items-center"
                         >
-                            <FileText className="size-4 shrink-0 text-muted-foreground" />
-                            <div className="min-w-0 flex-1">
-                                <p className="truncate font-medium">
-                                    {doc.title}
-                                </p>
-                                <p className="truncate text-sm text-muted-foreground">
-                                    {doc.fileName} · {formatSize(doc.size)}
-                                </p>
+                            <div className="flex min-w-0 flex-1 items-start gap-3">
+                                <FileText className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
+                                <div className="min-w-0 flex-1">
+                                    <p className="truncate font-medium">
+                                        {doc.title}
+                                    </p>
+                                    <p className="truncate text-sm text-muted-foreground">
+                                        {doc.fileName} · {formatSize(doc.size)}
+                                    </p>
+                                </div>
                             </div>
-                            {!doc.active && (
-                                <Badge variant="secondary">Inactivo</Badge>
-                            )}
-                            <IconTooltip label="Descargar">
-                                <Button
-                                    variant="secondary"
-                                    size="icon"
-                                    aria-label="Descargar"
-                                    onClick={() =>
-                                        void downloadDocument(
-                                            doc.id,
-                                            doc.fileName,
-                                        )
-                                    }
-                                >
-                                    <Download className="size-4" />
-                                </Button>
-                            </IconTooltip>
-                            {canManage && (
-                                <>
-                                    <IconTooltip label="Editar">
-                                        <Button
-                                            variant="secondary"
-                                            size="icon"
-                                            aria-label="Editar"
-                                            onClick={() => openEdit(doc)}
-                                        >
-                                            <Pencil className="size-4" />
-                                        </Button>
-                                    </IconTooltip>
-                                    <IconTooltip label="Eliminar">
-                                        <Button
-                                            variant="destructive"
-                                            size="icon"
-                                            aria-label="Eliminar"
-                                            onClick={() => setDeleting(doc)}
-                                        >
-                                            <Trash2 className="size-4" />
-                                        </Button>
-                                    </IconTooltip>
-                                </>
-                            )}
+                            <div className="flex flex-wrap items-center gap-2 sm:shrink-0">
+                                {!doc.active && (
+                                    <Badge variant="secondary">
+                                        Inactivo
+                                    </Badge>
+                                )}
+                                <IconTooltip label="Descargar">
+                                    <Button
+                                        variant="secondary"
+                                        size="icon"
+                                        aria-label="Descargar"
+                                        onClick={() =>
+                                            void downloadDocument(
+                                                doc.id,
+                                                doc.fileName,
+                                            )
+                                        }
+                                    >
+                                        <Download className="size-4" />
+                                    </Button>
+                                </IconTooltip>
+                                {canManage && (
+                                    <>
+                                        <IconTooltip label="Editar">
+                                            <Button
+                                                variant="secondary"
+                                                size="icon"
+                                                aria-label="Editar"
+                                                onClick={() => openEdit(doc)}
+                                            >
+                                                <Pencil className="size-4" />
+                                            </Button>
+                                        </IconTooltip>
+                                        <IconTooltip label="Eliminar">
+                                            <Button
+                                                variant="destructive"
+                                                size="icon"
+                                                aria-label="Eliminar"
+                                                onClick={() =>
+                                                    setDeleting(doc)
+                                                }
+                                            >
+                                                <Trash2 className="size-4" />
+                                            </Button>
+                                        </IconTooltip>
+                                    </>
+                                )}
+                            </div>
                         </li>
                     ))}
                 </ul>

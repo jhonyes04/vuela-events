@@ -69,11 +69,11 @@ export const ResourceLinksTab = () => {
                     Todavía no hay enlaces.
                 </p>
             ) : (
-                <ul className="grid gap-3 sm:grid-cols-2">
+                <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                     {visibleLinks.map((link) => (
                         <li
                             key={link.id}
-                            className="flex items-center gap-3 rounded-xl border bg-card p-4"
+                            className="flex flex-col gap-3 rounded-xl border bg-card p-4 sm:flex-row sm:items-center"
                         >
                             <div className="min-w-0 flex-1">
                                 <p className="truncate font-medium">
@@ -91,33 +91,39 @@ export const ResourceLinksTab = () => {
                                     </span>
                                 </a>
                             </div>
-                            {!link.active && (
-                                <Badge variant="secondary">Inactivo</Badge>
-                            )}
-                            {canManage && (
-                                <>
-                                    <IconTooltip label="Editar">
-                                        <Button
-                                            variant="secondary"
-                                            size="icon"
-                                            aria-label="Editar"
-                                            onClick={() => openEdit(link)}
-                                        >
-                                            <Pencil className="size-4" />
-                                        </Button>
-                                    </IconTooltip>
-                                    <IconTooltip label="Eliminar">
-                                        <Button
-                                            variant="destructive"
-                                            size="icon"
-                                            aria-label="Eliminar"
-                                            onClick={() => setDeleting(link)}
-                                        >
-                                            <Trash2 className="size-4" />
-                                        </Button>
-                                    </IconTooltip>
-                                </>
-                            )}
+                            <div className="flex flex-wrap items-center gap-2 sm:shrink-0">
+                                {!link.active && (
+                                    <Badge variant="secondary">
+                                        Inactivo
+                                    </Badge>
+                                )}
+                                {canManage && (
+                                    <>
+                                        <IconTooltip label="Editar">
+                                            <Button
+                                                variant="secondary"
+                                                size="icon"
+                                                aria-label="Editar"
+                                                onClick={() => openEdit(link)}
+                                            >
+                                                <Pencil className="size-4" />
+                                            </Button>
+                                        </IconTooltip>
+                                        <IconTooltip label="Eliminar">
+                                            <Button
+                                                variant="destructive"
+                                                size="icon"
+                                                aria-label="Eliminar"
+                                                onClick={() =>
+                                                    setDeleting(link)
+                                                }
+                                            >
+                                                <Trash2 className="size-4" />
+                                            </Button>
+                                        </IconTooltip>
+                                    </>
+                                )}
+                            </div>
                         </li>
                     ))}
                 </ul>
