@@ -69,6 +69,7 @@ export const EmailSettingsPage = () => {
 
     useEffect(() => {
         void Promise.resolve().then(load);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     const activeTemplates = templates.filter((t) => t.active);

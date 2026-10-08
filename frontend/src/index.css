@@ -179,6 +179,12 @@
     }
 }
 
+@keyframes draw-underline {
+    to {
+        clip-path: inset(0 0 0 0);
+    }
+}
+
 @keyframes indeterminate-sweep {
     0% {
         transform: translateX(-100%);
