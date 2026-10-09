@@ -13,6 +13,7 @@ import { Input } from '@/components/ui/input';
 import {
     adminRegisterUser,
     listRegistrationCandidates,
+    personLabel,
     type RegistrationCandidate,
 } from '@/features/events/lib/events';
 
@@ -129,16 +130,10 @@ const AddParticipantsBody = ({
                                 className="size-4 shrink-0 accent-primary"
                                 checked={selected.has(c.id)}
                                 onChange={() => toggle(c.id)}
-                                aria-label={`Seleccionar a ${c.name} ${c.lastName}`}
+                                aria-label={`Seleccionar a ${personLabel(c)}`}
                             />
                             <span className="min-w-0 flex-1 break-words">
-                                {c.name} {c.lastName}
-                                {c.puntoVuela && (
-                                    <span className="text-muted-foreground">
-                                        {' '}
-                                        · {c.puntoVuela}
-                                    </span>
-                                )}
+                                {personLabel(c)}
                             </span>
                         </li>
                     ))}

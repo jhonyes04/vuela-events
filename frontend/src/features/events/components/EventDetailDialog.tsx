@@ -103,11 +103,13 @@ const EventDetailBody = ({
         (user?.permissions.includes('events:delete') ?? false) &&
         (user?.roleId === ROLE_IDS.ADMIN || event.createdBy.id === user?.id);
 
-    const canManageAttendees =
-        user?.permissions.includes('events:create') ||
-        user?.permissions.includes('events:edit') ||
-        user?.permissions.includes('events:delete') ||
-        false;
+    // "Agregar" exige poder ver candidatos y poder inscribirlos (la misma
+    // llamada que carga el diálogo requiere attendees:view).
+    const canAddAttendees =
+        (user?.permissions.includes('attendees:view') ?? false) &&
+        (user?.permissions.includes('attendees:add') ?? false);
+    const canDeleteAttendees =
+        user?.permissions.includes('attendees:delete') ?? false;
 
     const run = async (action: () => Promise<void>, success: string) => {
         setBusy(true);
@@ -204,7 +206,7 @@ const EventDetailBody = ({
                             >
                                 Inscritos ({event._count.registrations})
                             </h3>
-                            {canManageAttendees && (
+                            {canAddAttendees && (
                                 <IconTooltip label="Agregar participantes">
                                     <Button
                                         variant="secondary"
@@ -241,7 +243,7 @@ const EventDetailBody = ({
                                 <AttendeeChips
                                     attendees={attendees}
                                     onDelete={
-                                        canManageAttendees
+                                        canDeleteAttendees
                                             ? setDeletingAttendee
                                             : undefined
                                     }
@@ -373,7 +375,7 @@ const EventDetailBody = ({
                 onSaved={onChanged}
             />
 
-            {canManageAttendees && (
+            {canAddAttendees && (
                 <AddParticipantsDialog
                     open={addOpen}
                     onOpenChange={setAddOpen}

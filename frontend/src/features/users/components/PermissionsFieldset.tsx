@@ -3,9 +3,11 @@ import {
     BookOpen,
     CalendarDays,
     FolderOpen,
+    History,
     Mail,
     ShieldCheck,
     Tag,
+    UserPlus,
     Users,
     type LucideIcon,
 } from 'lucide-react';
@@ -33,6 +35,7 @@ interface CategoryStyle {
 // Mismo estilo neutro para todas las categorías: solo cambian el icono y la etiqueta.
 const CATEGORY_STYLES: Record<string, CategoryStyle> = {
     events: { label: 'Eventos', icon: CalendarDays },
+    attendees: { label: 'Asistencia', icon: UserPlus },
     categories: { label: 'Categorías', icon: Tag },
     guides: { label: 'Guías', icon: BookOpen },
     email: { label: 'Correo', icon: Mail },
@@ -40,6 +43,7 @@ const CATEGORY_STYLES: Record<string, CategoryStyle> = {
     roles: { label: 'Roles', icon: ShieldCheck },
     resources: { label: 'Recursos', icon: FolderOpen },
     stats: { label: 'Estadísticas', icon: BarChart3 },
+    audit: { label: 'Auditoría', icon: History },
 };
 
 const FALLBACK_STYLE: CategoryStyle = {
@@ -78,7 +82,7 @@ export const PermissionsFieldset = ({
                 </Badge>
             </div>
 
-            <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+            <div className="grid grid-cols-1 gap-3">
                 {[...groups.entries()].map(([category, items]) => {
                     const style = CATEGORY_STYLES[category] ?? {
                         ...FALLBACK_STYLE,

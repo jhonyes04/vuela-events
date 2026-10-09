@@ -33,7 +33,8 @@ export type RoleManageFailure =
     | 'not_found'
     | 'protected'
     | 'has_users'
-    | 'last_manager';
+    | 'last_manager'
+    | 'invalid_permission';
 
 export class RoleManageError extends Error {
     readonly reason: RoleManageFailure;
@@ -386,6 +387,24 @@ export const listRoles = () =>
 export const listPermissions = () =>
     prisma.permission.findMany({ orderBy: { id: 'asc' } });
 
+// Valida contra el catálogo real de la tabla Permission, no una lista
+// hardcodeada: así un permiso nuevo no hace falta añadirlo en dos sitios.
+const assertValidPermissionIds = async (
+    permissionIds: string[],
+): Promise<void> => {
+    const unique = [...new Set(permissionIds)];
+
+    if (unique.length === 0) return;
+
+    const count = await prisma.permission.count({
+        where: { id: { in: unique } },
+    });
+
+    if (count !== unique.length) {
+        throw new RoleManageError('invalid_permission');
+    }
+};
+
 export const createRole = async (
     actorId: string,
     id: string,
@@ -397,6 +416,8 @@ export const createRole = async (
     if (exists) {
         throw new RoleManageError('duplicate');
     }
+
+    await assertValidPermissionIds(permissionIds);
 
     return prisma.$transaction(async (tx) => {
         const role = await tx.role.create({
@@ -437,6 +458,8 @@ export const setRolePermissions = async (
     if (!role) {
         throw new RoleManageError('not_found');
     }
+
+    await assertValidPermissionIds(permissionIds);
 
     // El admin siempre tiene todos los permisos: se ignora lo que se pida y
     // se guarda el catálogo completo (incluye los que se añadan más adelante).

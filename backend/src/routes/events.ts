@@ -660,10 +660,10 @@ eventsRouter.delete('/:id/registrations', async (req, res) => {
     }
 });
 
-// Candidatos para añadir manualmente (sólo quien gestiona eventos)
+// Candidatos para añadir manualmente (sólo quien gestiona asistencia)
 eventsRouter.get(
     '/:id/registration-candidates',
-    requirePermission('events:create', 'events:edit', 'events:delete'),
+    requirePermission('attendees:view'),
     async (req, res) => {
         const params = idParamsSchema.safeParse(req.params);
 
@@ -692,7 +692,7 @@ eventsRouter.get(
 // Inscribir a otra persona
 eventsRouter.post(
     '/:id/attendees/:userId',
-    requirePermission('events:create', 'events:edit', 'events:delete'),
+    requirePermission('attendees:add'),
     async (req, res) => {
         const actor = req.user;
         const params = eventUserParamsSchema.safeParse(req.params);
@@ -731,7 +731,7 @@ eventsRouter.post(
 // Quitar a alguien (por id de inscripción, no de usuario)
 eventsRouter.delete(
     '/:id/attendees/:registrationId',
-    requirePermission('events:create', 'events:edit', 'events:delete'),
+    requirePermission('attendees:delete'),
     async (req, res) => {
         const actor = req.user;
         const params = eventRegistrationParamsSchema.safeParse(req.params);

@@ -10,33 +10,11 @@ import {
     setRolePermissions,
 } from '../services/roles.js';
 
-const PERMISSION_IDS = [
-    'events:view',
-    'events:create',
-    'events:edit',
-    'events:delete',
-    'categories:view',
-    'categories:create',
-    'categories:edit',
-    'categories:delete',
-    'guides:view',
-    'guides:create',
-    'guides:edit',
-    'guides:delete',
-    'email:view',
-    'email:create',
-    'email:edit',
-    'email:delete',
-    'email:send',
-    'users:manage',
-    'roles:manage',
-    'audit:manage',
-    'stats:view',
-] as const;
-
+// Solo valida la forma (array de ids con pinta razonable); que existan de
+// verdad se comprueba contra la tabla Permission en el servicio.
 const permissionIdsSchema = z
-    .array(z.enum(PERMISSION_IDS))
-    .max(PERMISSION_IDS.length);
+    .array(z.string().trim().min(2).max(60))
+    .max(200);
 
 const idParamSchema = z.object({
     id: z
@@ -70,6 +48,7 @@ const roleManageErrors = {
         409,
         'No puedes dejar el sistema sin nadie que pueda gestionar usuarios o roles',
     ],
+    invalid_permission: [400, 'Uno o más permisos no existen'],
 } as const;
 
 const handleRoleManageError = (e: unknown, res: Response) => {

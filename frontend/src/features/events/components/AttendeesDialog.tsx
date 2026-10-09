@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { UserPlus } from 'lucide-react';
 import { OverlayScrollbarsComponent } from 'overlayscrollbars-react';
+import { useAuth } from '@/features/auth/hooks/context';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -33,7 +34,15 @@ interface AttendeesBodyProps {
 }
 
 const AttendeesBody = ({ event, onCloseAll }: AttendeesBodyProps) => {
+    const { user } = useAuth();
     const ended = hasEnded(event);
+    // "Agregar" exige poder ver candidatos y poder inscribirlos (la misma
+    // llamada que carga el diálogo requiere attendees:view).
+    const canAddAttendees =
+        (user?.permissions.includes('attendees:view') ?? false) &&
+        (user?.permissions.includes('attendees:add') ?? false);
+    const canDeleteAttendees =
+        user?.permissions.includes('attendees:delete') ?? false;
     const [refreshNonce, setRefreshNonce] = useState(0);
     const { attendees, failed, loading } = useAttendees(
         event.id,
@@ -87,6 +96,20 @@ const AttendeesBody = ({ event, onCloseAll }: AttendeesBodyProps) => {
                         : 'inscritos'}
                 </DialogDescription>
             </DialogHeader>
+            {canAddAttendees && (
+                <div className="ms-auto">
+                    <IconTooltip label="Agregar participantes">
+                        <Button
+                            variant="secondary"
+                            size="icon"
+                            aria-label="Agregar participantes"
+                            onClick={() => setAddOpen(true)}
+                        >
+                            <UserPlus className="size-4" />
+                        </Button>
+                    </IconTooltip>
+                </div>
+            )}
 
             {loading ? (
                 <p role="status" className="text-sm text-muted-foreground">
@@ -110,57 +133,46 @@ const AttendeesBody = ({ event, onCloseAll }: AttendeesBodyProps) => {
                         attendees={attendees}
                         selected={selected}
                         onToggle={toggle}
-                        onDelete={setDeletingAttendee}
+                        onDelete={
+                            canDeleteAttendees ? setDeletingAttendee : undefined
+                        }
                     />
                 </OverlayScrollbarsComponent>
             )}
 
             <DialogFooter>
                 <div className="grid w-full gap-2">
-                    <div className="flex flex-wrap items-center gap-2">
-                        <IconTooltip label="Agregar participantes">
-                            <Button
-                                variant="secondary"
-                                size="icon"
-                                aria-label="Agregar participantes"
-                                onClick={() => setAddOpen(true)}
-                            >
-                                <UserPlus className="size-4" />
-                            </Button>
-                        </IconTooltip>
-                        <div className="flex flex-1 flex-wrap justify-end gap-2">
+                    <div className="flex flex-1 flex-wrap justify-end gap-2">
+                        <Button
+                            variant="default"
+                            disabled={selected.size === 0}
+                            onClick={() => setSendSlot('convocatoria')}
+                        >
+                            Enviar convocatoria
+                        </Button>
+                        {draft && (
                             <Button
                                 variant="default"
-                                disabled={selected.size === 0}
-                                onClick={() => setSendSlot('convocatoria')}
+                                onClick={() => setPreviewOpen(true)}
                             >
-                                Enviar convocatoria
+                                Ver parte
                             </Button>
-                            {draft && (
-                                <Button
-                                    variant="default"
-                                    onClick={() => setPreviewOpen(true)}
-                                >
-                                    Ver parte
-                                </Button>
-                            )}
-                            <Button
-                                variant="default"
-                                disabled={
-                                    selected.size === 0 ||
-                                    generating ||
-                                    !ended
-                                }
-                                onClick={() => void handleReportClick()}
-                            >
-                                {generating
-                                    ? 'Generando…'
-                                    : draft
-                                      ? 'Enviar parte de firmas'
-                                      : 'Generar parte de firmas'}
-                            </Button>
-                        </div>
+                        )}
+                        <Button
+                            variant="default"
+                            disabled={
+                                selected.size === 0 || generating || !ended
+                            }
+                            onClick={() => void handleReportClick()}
+                        >
+                            {generating
+                                ? 'Generando…'
+                                : draft
+                                  ? 'Enviar parte de firmas'
+                                  : 'Generar parte de firmas'}
+                        </Button>
                     </div>
+
                     {!ended && (
                         <p className="text-xs text-destructive sm:text-right">
                             El parte de firmas solo se puede generar una vez
@@ -202,12 +214,14 @@ const AttendeesBody = ({ event, onCloseAll }: AttendeesBodyProps) => {
                 />
             )}
 
-            <AddParticipantsDialog
-                open={addOpen}
-                onOpenChange={setAddOpen}
-                eventId={event.id}
-                onAdded={() => setRefreshNonce((n) => n + 1)}
-            />
+            {canAddAttendees && (
+                <AddParticipantsDialog
+                    open={addOpen}
+                    onOpenChange={setAddOpen}
+                    eventId={event.id}
+                    onAdded={() => setRefreshNonce((n) => n + 1)}
+                />
+            )}
 
             {deletingAttendee && (
                 <ConfirmDeleteDialog
