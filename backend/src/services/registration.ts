@@ -20,7 +20,11 @@ export class RegistrationError extends Error {
     }
 }
 
-export const registerForEvent = async (userId: string, eventId: string) => {
+export const registerForEvent = async (
+    userId: string,
+    eventId: string,
+    opts?: { actorId?: string; bypassCapacity?: boolean },
+) => {
     try {
         return await prisma.$transaction(async (tx) => {
             await tx.$queryRaw`SELECT 1 FROM "events" WHERE "id" = ${eventId}::uuid FOR UPDATE`;
@@ -38,7 +42,6 @@ export const registerForEvent = async (userId: string, eventId: string) => {
                 throw new RegistrationError('event_ended');
             }
 
-            // Un admin nunca se inscribe: solo organiza.
             const registrant = await tx.user.findUnique({
                 where: { id: userId },
                 select: { roleId: true },
@@ -57,8 +60,11 @@ export const registerForEvent = async (userId: string, eventId: string) => {
                 throw new RegistrationError('already_registered');
             }
 
-            // Un DT nunca cuenta como inscrito ni ocupa plaza.
-            if (event.capacity !== null && registrant?.roleId !== 'dt') {
+            if (
+                !opts?.bypassCapacity &&
+                event.capacity !== null &&
+                registrant?.roleId !== 'dt'
+            ) {
                 const taken = await tx.registration.count({
                     where: { eventId, user: { roleId: { not: 'dt' } } },
                 });
@@ -73,9 +79,13 @@ export const registerForEvent = async (userId: string, eventId: string) => {
                 select: { id: true, eventId: true, createdAt: true },
             });
 
+            const actorId = opts?.actorId ?? userId;
+
             await tx.auditLog.create({
                 data: {
-                    actorId: userId,
+                    actorId,
+                    // Solo se registra el objetivo cuando lo da de alta otra persona (admin).
+                    ...(actorId !== userId && { targetId: userId }),
                     action: 'event_registered',
                     newValue: event.title.slice(0, 100),
                 },
@@ -114,6 +124,30 @@ export const unregisterFromEvent = async (
     });
 };
 
+export const unregisterRegistration = async (
+    actorId: string,
+    eventId: string,
+    registrationId: string,
+): Promise<void> => {
+    const registration = await prisma.registration.findFirst({
+        where: { id: registrationId, eventId },
+        select: { userId: true },
+    });
+
+    if (!registration) {
+        throw new RegistrationError('not_found');
+    }
+
+    await prisma.registration.delete({ where: { id: registrationId } });
+
+    await recordAudit({
+        action: 'event_unregistered',
+        actorId,
+        targetId: registration.userId,
+        newValue: eventId,
+    });
+};
+
 export interface Attendee {
     id: string;
     name: string;
@@ -139,15 +173,57 @@ export const listAttendees = async (eventId: string): Promise<Attendee[]> => {
             id: true,
             user: { select: { name: true, puntoVuela: true } },
         },
-        orderBy: [
-            { user: { puntoVuela: 'asc' } },
-            { user: { name: 'asc' } },
-        ],
+        orderBy: [{ user: { puntoVuela: 'asc' } }, { user: { name: 'asc' } }],
     });
 
     return rows.map((row) => ({
         id: row.id,
         name: row.user.name,
         puntoVuela: row.user.puntoVuela,
+    }));
+};
+
+export interface RegistrationCandidate {
+    id: string;
+    name: string;
+    lastName: string;
+    puntoVuela: string | null;
+    registered: boolean;
+}
+
+export const listRegistrationCandidates = async (
+    eventId: string,
+): Promise<RegistrationCandidate[]> => {
+    const event = await prisma.event.findUnique({
+        where: { id: eventId },
+        select: { id: true },
+    });
+
+    if (!event) {
+        throw new RegistrationError('not_found');
+    }
+
+    const users = await prisma.user.findMany({
+        where: { active: true, roleId: 'ail' },
+        select: {
+            id: true,
+            name: true,
+            lastName: true,
+            puntoVuela: true,
+            registrations: {
+                where: { eventId },
+                select: { id: true },
+                take: 1,
+            },
+        },
+        orderBy: [{ name: 'asc' }, { lastName: 'asc' }],
+    });
+
+    return users.map((user) => ({
+        id: user.id,
+        name: user.name,
+        lastName: user.lastName,
+        puntoVuela: user.puntoVuela,
+        registered: user.registrations.length > 0,
     }));
 };

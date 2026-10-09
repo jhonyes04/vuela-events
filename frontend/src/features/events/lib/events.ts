@@ -445,3 +445,32 @@ export const listAttendees = async (eventId: string): Promise<Attendee[]> => {
 
     return registrations;
 };
+
+export interface RegistrationCandidate {
+    id: string;
+    name: string;
+    lastName: string;
+    puntoVuela: string | null;
+    registered: boolean;
+}
+
+export const listRegistrationCandidates = async (
+    eventId: string,
+): Promise<RegistrationCandidate[]> => {
+    const { candidates } = await api.get<{
+        candidates: RegistrationCandidate[];
+    }>(`/events/${eventId}/registration-candidates`);
+
+    return candidates;
+};
+
+export const adminRegisterUser = (
+    eventId: string,
+    userId: string,
+): Promise<void> => api.post(`/events/${eventId}/attendees/${userId}`);
+
+export const adminUnregisterAttendee = (
+    eventId: string,
+    registrationId: string,
+): Promise<void> =>
+    api.delete(`/events/${eventId}/attendees/${registrationId}`);

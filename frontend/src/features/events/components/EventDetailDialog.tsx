@@ -7,6 +7,7 @@ import { DeleteEventDialog } from '@/features/events/components/DeleteEventDialo
 import { DeleteEventSeriesDialog } from '@/features/events/components/DeleteEventSeriesDialog';
 import { EventInfoRows } from '@/features/events/components/EventInfoRows';
 import { AttendeeChips } from '@/features/events/components/AttendeeChips';
+import { AddParticipantsDialog } from '@/features/events/components/AddParticipantsDialog';
 import { ParticipantsCountDialog } from '@/features/events/components/ParticipantsCountDialog';
 import { Badge } from '@/components/ui/badge';
 import { Button, buttonVariants } from '@/components/ui/button';
@@ -18,21 +19,25 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
+import { ConfirmDeleteDialog } from '@/components/ConfirmDeleteDialog';
+import { IconTooltip } from '@/components/IconTooltip';
 import { useAttendees } from '@/features/events/hooks/useAttendees';
 import { CATEGORY_COLOR_STYLES } from '@/features/categories/lib/colors';
 import { ApiError } from '@/lib/api';
 import { cn } from '@/lib/utils';
 import { scrollbarOptions } from '@/lib/overlayScrollbarsOptions';
 import {
+    adminUnregisterAttendee,
     googleCalendarUrl,
     hasEnded,
     isFull,
     registerForEventById,
     unregisterFromEventById,
+    type Attendee,
     type EventItem,
 } from '@/features/events/lib/events';
 import { Alert, AlertTitle } from '@/components/ui/alert';
-import { AlertCircle } from 'lucide-react';
+import { AlertCircle, UserPlus } from 'lucide-react';
 
 interface EventDetailBodyProps {
     event: EventItem;
@@ -53,10 +58,16 @@ const EventDetailBody = ({
     const [confirmOpen, setConfirmOpen] = useState(false);
     const [seriesConfirmOpen, setSeriesConfirmOpen] = useState(false);
     const [participantsOpen, setParticipantsOpen] = useState(false);
-    // Se refresca cuando cambia el número de inscritos o la inscripción propia.
+    const [addOpen, setAddOpen] = useState(false);
+    const [deletingAttendee, setDeletingAttendee] = useState<Attendee | null>(
+        null,
+    );
+    const [refreshNonce, setRefreshNonce] = useState(0);
+    // Se refresca cuando cambia el número de inscritos, la inscripción propia,
+    // o tras agregar/quitar a alguien manualmente.
     const { attendees, failed, loading } = useAttendees(
         event.id,
-        `${event._count.registrations}|${event.registered}`,
+        `${event._count.registrations}|${event.registered}|${refreshNonce}`,
     );
 
     const ended = hasEnded(event);
@@ -88,6 +99,12 @@ const EventDetailBody = ({
         (user?.permissions.includes('events:delete') ?? false) &&
         (user?.roleId === ROLE_IDS.ADMIN || event.createdBy.id === user?.id);
 
+    const canManageAttendees =
+        user?.permissions.includes('events:create') ||
+        user?.permissions.includes('events:edit') ||
+        user?.permissions.includes('events:delete') ||
+        false;
+
     const run = async (action: () => Promise<void>, success: string) => {
         setBusy(true);
 
@@ -111,7 +128,13 @@ const EventDetailBody = ({
         <>
             {/* Mientras se confirma la eliminación se oculta la ficha. */}
             <Dialog
-                open={!confirmOpen && !seriesConfirmOpen && !participantsOpen}
+                open={
+                    !confirmOpen &&
+                    !seriesConfirmOpen &&
+                    !participantsOpen &&
+                    !addOpen &&
+                    !deletingAttendee
+                }
                 onOpenChange={(open) => {
                     if (!open) onClose();
                 }}
@@ -170,12 +193,26 @@ const EventDetailBody = ({
                         aria-labelledby="attendees-title"
                         className="grid gap-1.5"
                     >
-                        <h3
-                            id="attendees-title"
-                            className="text-xs font-bold tracking-wide text-muted-foreground uppercase"
-                        >
-                            Inscritos ({event._count.registrations})
-                        </h3>
+                        <div className="flex items-center justify-between gap-2">
+                            <h3
+                                id="attendees-title"
+                                className="text-xs font-bold tracking-wide text-muted-foreground uppercase"
+                            >
+                                Inscritos ({event._count.registrations})
+                            </h3>
+                            {canManageAttendees && (
+                                <IconTooltip label="Agregar participantes">
+                                    <Button
+                                        variant="secondary"
+                                        size="icon-sm"
+                                        aria-label="Agregar participantes"
+                                        onClick={() => setAddOpen(true)}
+                                    >
+                                        <UserPlus className="size-3.5" />
+                                    </Button>
+                                </IconTooltip>
+                            )}
+                        </div>
                         {loading ? (
                             <p
                                 role="status"
@@ -197,7 +234,14 @@ const EventDetailBody = ({
                                 options={scrollbarOptions}
                                 defer
                             >
-                                <AttendeeChips attendees={attendees} />
+                                <AttendeeChips
+                                    attendees={attendees}
+                                    onDelete={
+                                        canManageAttendees
+                                            ? setDeletingAttendee
+                                            : undefined
+                                    }
+                                />
                             </OverlayScrollbarsComponent>
                         )}
                     </section>
@@ -313,6 +357,39 @@ const EventDetailBody = ({
                 event={event}
                 onSaved={onChanged}
             />
+
+            {canManageAttendees && (
+                <AddParticipantsDialog
+                    open={addOpen}
+                    onOpenChange={setAddOpen}
+                    eventId={event.id}
+                    onAdded={() => {
+                        setRefreshNonce((n) => n + 1);
+                        onChanged();
+                    }}
+                />
+            )}
+
+            {deletingAttendee && (
+                <ConfirmDeleteDialog
+                    open={deletingAttendee !== null}
+                    onOpenChange={(open) => !open && setDeletingAttendee(null)}
+                    title="Quitar del evento"
+                    description={`¿Quitar a «${deletingAttendee.name}» de este evento? Esta acción no se puede deshacer.`}
+                    confirmLabel="Quitar"
+                    deletingLabel="Quitando…"
+                    errorFallback="No se pudo quitar al participante"
+                    successLabel="Participante quitado."
+                    onConfirm={() =>
+                        adminUnregisterAttendee(event.id, deletingAttendee.id)
+                    }
+                    onDeleted={() => {
+                        setRefreshNonce((n) => n + 1);
+                        setDeletingAttendee(null);
+                        onChanged();
+                    }}
+                />
+            )}
         </>
     );
 };

@@ -1,3 +1,6 @@
+import { Trash2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { IconTooltip } from '@/components/IconTooltip';
 import { personLabel, type Attendee } from '@/features/events/lib/events';
 
 interface AttendeeChipsProps {
@@ -5,12 +8,14 @@ interface AttendeeChipsProps {
     // Solo se muestran checkboxes cuando se pasa onToggle (p. ej. gestión).
     selected?: Set<string>;
     onToggle?: (id: string) => void;
+    onDelete?: (attendee: Attendee) => void;
 }
 
 export const AttendeeChips = ({
     attendees,
     selected,
     onToggle,
+    onDelete,
 }: AttendeeChipsProps) => (
     <ul className="grid gap-1 p-2 text-sm">
         {attendees.map((person) => (
@@ -27,7 +32,21 @@ export const AttendeeChips = ({
                         aria-label={`Seleccionar a ${personLabel(person)}`}
                     />
                 )}
-                <span className="break-words">{personLabel(person)}</span>
+                <span className="min-w-0 flex-1 break-words">
+                    {personLabel(person)}
+                </span>
+                {onDelete && (
+                    <IconTooltip label="Quitar del evento">
+                        <Button
+                            variant="destructive"
+                            size="icon-sm"
+                            aria-label={`Quitar a ${personLabel(person)}`}
+                            onClick={() => onDelete(person)}
+                        >
+                            <Trash2 className="size-3.5" />
+                        </Button>
+                    </IconTooltip>
+                )}
             </li>
         ))}
     </ul>

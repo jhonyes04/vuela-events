@@ -19,9 +19,11 @@ import {
 import { createEventSeries } from '../services/eventSeries.js';
 import {
     listAttendees,
+    listRegistrationCandidates,
     registerForEvent,
     RegistrationError,
     unregisterFromEvent,
+    unregisterRegistration,
 } from '../services/registration.js';
 import {
     generateAttendanceReport,
@@ -150,6 +152,12 @@ const eventSelect = {
         },
     },
 } as const;
+
+const eventUserParamsSchema = z.object({ id: z.uuid(), userId: z.uuid() });
+const eventRegistrationParamsSchema = z.object({
+    id: z.uuid(),
+    registrationId: z.uuid(),
+});
 
 const idParamsSchema = z.object({ id: z.uuid() });
 const seriesParamsSchema = z.object({ seriesId: z.uuid() });
@@ -651,6 +659,113 @@ eventsRouter.delete('/:id/registrations', async (req, res) => {
         throw e;
     }
 });
+
+// Candidatos para añadir manualmente (sólo quien gestiona eventos)
+eventsRouter.get(
+    '/:id/registration-candidates',
+    requirePermission('events:create', 'events:edit', 'events:delete'),
+    async (req, res) => {
+        const params = idParamsSchema.safeParse(req.params);
+
+        if (!params.success) {
+            res.status(400).json({ error: 'Solicitud no válida' });
+            return;
+        }
+
+        try {
+            res.json({
+                candidates: await listRegistrationCandidates(params.data.id),
+            });
+        } catch (e) {
+            if (e instanceof RegistrationError) {
+                const [status, error] = registrationErrors[e.reason];
+
+                res.status(status).json({ error });
+                return;
+            }
+
+            throw e;
+        }
+    },
+);
+
+// Inscribir a otra persona
+eventsRouter.post(
+    '/:id/attendees/:userId',
+    requirePermission('events:create', 'events:edit', 'events:delete'),
+    async (req, res) => {
+        const actor = req.user;
+        const params = eventUserParamsSchema.safeParse(req.params);
+
+        if (!actor) {
+            res.status(401).json({ error: 'Autenticación requerida' });
+            return;
+        }
+
+        if (!params.success) {
+            res.status(400).json({ error: 'Solicitud no válida' });
+            return;
+        }
+
+        try {
+            const registration = await registerForEvent(
+                params.data.userId,
+                params.data.id,
+                { actorId: actor.id, bypassCapacity: true },
+            );
+
+            res.status(201).json({ registration });
+        } catch (e) {
+            if (e instanceof RegistrationError) {
+                const [status, error] = registrationErrors[e.reason];
+
+                res.status(status).json({ error });
+                return;
+            }
+
+            throw e;
+        }
+    },
+);
+
+// Quitar a alguien (por id de inscripción, no de usuario)
+eventsRouter.delete(
+    '/:id/attendees/:registrationId',
+    requirePermission('events:create', 'events:edit', 'events:delete'),
+    async (req, res) => {
+        const actor = req.user;
+        const params = eventRegistrationParamsSchema.safeParse(req.params);
+
+        if (!actor) {
+            res.status(401).json({ error: 'Autenticación requerida' });
+            return;
+        }
+
+        if (!params.success) {
+            res.status(400).json({ error: 'Solicitud no válida' });
+            return;
+        }
+
+        try {
+            await unregisterRegistration(
+                actor.id,
+                params.data.id,
+                params.data.registrationId,
+            );
+
+            res.status(204).end();
+        } catch (e) {
+            if (e instanceof RegistrationError) {
+                const [status, error] = registrationErrors[e.reason];
+
+                res.status(status).json({ error });
+                return;
+            }
+
+            throw e;
+        }
+    },
+);
 
 // Genera el acta de asistencia en PDF de los seleccionados (borrador para revisar y enviar).
 eventsRouter.post(
