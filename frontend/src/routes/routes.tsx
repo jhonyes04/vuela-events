@@ -12,6 +12,7 @@ import { EmailSettingsPage } from '@/features/emailSettings/pages/EmailSettingsP
 import { AuditPage } from '@/features/audit/pages/AuditPage';
 import { StatsPage } from '@/features/stats/pages/StatsPage';
 import { ResourcesPage } from '@/features/resources/pages/ResourcesPage';
+import { AppSettingsPage } from '@/features/appSettings/pages/AppSettingsPage';
 
 export interface AppRoute {
     path: string;
@@ -123,6 +124,13 @@ export const appRoutes: AppRoute[] = [
         label: 'Auditoría',
         element: <AuditPage />,
         permissions: ['audit:manage'],
+        group: 'admin',
+    },
+    {
+        path: '/admin/ajustes',
+        label: 'Ajustes de la app',
+        element: <AppSettingsPage />,
+        permissions: ['settings:manage'],
         group: 'admin',
     },
 ];

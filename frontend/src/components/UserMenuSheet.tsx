@@ -7,6 +7,7 @@ import {
     Mail,
     Settings,
     ShieldCheck,
+    SlidersHorizontal,
     Tag,
     User as UserIcon,
     UserCog,
@@ -41,6 +42,7 @@ const ROUTE_ICONS: Record<string, LucideIcon> = {
     '/admin/roles': ShieldCheck,
     '/admin/correo': Settings,
     '/admin/auditoria': History,
+    '/admin/ajustes': SlidersHorizontal,
 };
 
 const navClass = ({ isActive }: { isActive: boolean }) =>
@@ -111,7 +113,7 @@ export const UserMenuSheet = () => {
                 render={
                     <button
                         type="button"
-                        className="ml-auto flex cursor-pointer items-center gap-2 rounded-md px-2 py-1 hover:bg-black/10"
+                        className="ml-auto flex cursor-pointer items-center gap-2 rounded-md px-2 py-1 hover:bg-black/10 hover:text-white"
                     >
                         <UserAvatar user={user} />
                         <div className="hidden max-w-56 text-right text-sm leading-tight sm:block">
@@ -135,7 +137,7 @@ export const UserMenuSheet = () => {
                         <Button
                             variant="ghost"
                             size="icon-sm"
-                            className="absolute top-3 right-3 z-10 rounded-full text-white hover:bg-white/10"
+                            className="absolute top-3 right-3 z-10 rounded-full text-white hover:bg-white/10 hover:text-white"
                         />
                     }
                 >

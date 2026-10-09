@@ -6,6 +6,7 @@ import {
     History,
     Mail,
     ShieldCheck,
+    SlidersHorizontal,
     Tag,
     UserPlus,
     Users,
@@ -44,6 +45,7 @@ const CATEGORY_STYLES: Record<string, CategoryStyle> = {
     resources: { label: 'Recursos', icon: FolderOpen },
     stats: { label: 'Estadísticas', icon: BarChart3 },
     audit: { label: 'Auditoría', icon: History },
+    settings: { label: 'Configuración', icon: SlidersHorizontal },
 };
 
 const FALLBACK_STYLE: CategoryStyle = {

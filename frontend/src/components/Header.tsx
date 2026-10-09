@@ -1,9 +1,12 @@
+import { useEffect } from 'react';
 import { NavLink } from 'react-router';
 import { useAuth } from '@/features/auth/hooks/context';
 import logo from '@/assets/logo.svg';
 import { cn } from '@/lib/utils';
 import { appRoutes, canAccess } from '@/routes/routes';
+import { UserMenuDropdown } from '@/components/UserMenuDropdown';
 import { UserMenuSheet } from '@/components/UserMenuSheet';
+import { useAppSettingsStore } from '@/features/appSettings/store';
 
 const navClass = ({ isActive }: { isActive: boolean }) =>
     cn(
@@ -14,6 +17,12 @@ const navClass = ({ isActive }: { isActive: boolean }) =>
 export const Header = () => {
     const { user } = useAuth();
     const showNav = user?.profileCompleted === true;
+    const userMenuStyle = useAppSettingsStore((s) => s.userMenuStyle);
+    const loadAppSettings = useAppSettingsStore((s) => s.load);
+
+    useEffect(() => {
+        if (user) void loadAppSettings();
+    }, [user, loadAppSettings]);
 
     const mainRoutes = appRoutes.filter(
         (route) =>
@@ -54,7 +63,11 @@ export const Header = () => {
                         </nav>
                     )}
 
-                    <UserMenuSheet />
+                    {userMenuStyle === 'sheet' ? (
+                        <UserMenuSheet />
+                    ) : (
+                        <UserMenuDropdown />
+                    )}
                 </div>
 
                 {user && showNav && mainRoutes.length > 0 && (

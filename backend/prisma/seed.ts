@@ -39,6 +39,7 @@ const PERMISSIONS: { id: string; description: string }[] = [
     { id: 'roles:manage', description: 'Gestionar roles y permisos' },
     { id: 'audit:manage', description: 'Ver y gestionar auditoría' },
     { id: 'stats:view', description: 'Ver estadísticas' },
+    { id: 'settings:manage', description: 'Gestionar ajustes globales de la app' },
 ];
 
 // Permisos que cada rol tiene hoy, acumulados de todas las migraciones
@@ -73,6 +74,7 @@ const ROLE_PERMISSIONS: Record<string, string[]> = {
         'roles:manage',
         'audit:manage',
         'stats:view',
+        'settings:manage',
     ],
     // Todo menos gestión de usuarios y de roles.
     dt: [

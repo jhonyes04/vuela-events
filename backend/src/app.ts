@@ -22,6 +22,7 @@ import { emailSettingsRouter } from './routes/emailSettings.js';
 import { emailSendsRouter } from './routes/emailSends.js';
 import { auditRouter } from './routes/audit.js';
 import { statsRouter } from './routes/stats.js';
+import { appSettingsRouter } from './routes/appSettings.js';
 import { apiLimiter } from './middleware/rateLimit.js';
 
 export interface AppOptions {
@@ -80,6 +81,7 @@ export function createApp(options: AppOptions = {}) {
     app.use('/api/events', eventsRouter);
     app.use('/api/audit', auditRouter);
     app.use('/api/stats', statsRouter);
+    app.use('/api/app-settings', appSettingsRouter);
 
     app.get('/api/health', (_req, res) => {
         res.json({ status: 'ok' });
