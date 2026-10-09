@@ -67,6 +67,12 @@ export const UserMenuDropdown = () => {
                     className="cursor-pointer"
                     render={<NavLink to="/perfil">Mi perfil</NavLink>}
                 />
+                {user.roleId === ROLE_IDS.AIL && (
+                    <DropdownMenuItem
+                        className="cursor-pointer"
+                        render={<NavLink to="/mis-eventos">Mis eventos</NavLink>}
+                    />
+                )}
                 {(gestionRoutes.length > 0 ||
                     adminRoutes.length > 0 ||
                     user.roleId === ROLE_IDS.AIL) && <DropdownMenuSeparator />}

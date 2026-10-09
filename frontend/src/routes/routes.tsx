@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import { EventsPage } from '@/features/events/pages/EventsPage';
 import { EventsManagementPage } from '@/features/events/pages/EventsManagementPage';
 import { ProfilePage } from '@/features/profile/pages/ProfilePage';
+import { MyEventsPage } from '@/features/profile/pages/MyEventsPage';
 import { RolesPage } from '@/features/users/pages/RolesPage';
 import { UsersPage } from '@/features/users/pages/UsersPage';
 import { CategoriesPage } from '@/features/categories/pages/CategoriesPage';
@@ -36,6 +37,13 @@ export const appRoutes: AppRoute[] = [
         ],
     },
     { path: '/perfil', label: 'Mi perfil', element: <ProfilePage /> },
+    // Visibilidad (no admin) se controla donde se usa, no vía permissions: es
+    // un rol, no un permiso, igual que /perfil nunca lo ha sido.
+    {
+        path: '/mis-eventos',
+        label: 'Mis eventos',
+        element: <MyEventsPage />,
+    },
     {
         path: '/gestion/eventos',
         label: 'Eventos',
@@ -116,7 +124,7 @@ export const appRoutes: AppRoute[] = [
         path: '/admin/correo',
         label: 'Configuración correo',
         element: <EmailSettingsPage />,
-        permissions: ['email:send'],
+        permissions: ['settings:manage'],
         group: 'admin',
     },
     {

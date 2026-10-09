@@ -75,14 +75,7 @@ export const MyEventsSection = () => {
     };
 
     return (
-        <div className="grid gap-4">
-            <div className="grid gap-1">
-                <h2 className="text-sm font-medium">Mis eventos</h2>
-                <p className="text-sm text-muted-foreground">
-                    Eventos en los que estás inscrito.
-                </p>
-            </div>
-
+        <>
             <EventsTable
                 events={events}
                 loading={loading}
@@ -129,6 +122,6 @@ export const MyEventsSection = () => {
                     );
                 }}
             />
-        </div>
+        </>
     );
 };

@@ -2,6 +2,7 @@ import {
     BarChart3,
     BookOpen,
     Calendar,
+    CalendarCheck,
     History,
     LogOut,
     Mail,
@@ -18,6 +19,7 @@ import {
 import { NavLink } from 'react-router';
 import { OverlayScrollbarsComponent } from 'overlayscrollbars-react';
 import { useAuth } from '@/features/auth/hooks/context';
+import { ROLE_IDS } from '@/features/users/lib/roles';
 import { Button } from '@/components/ui/button';
 import {
     Sheet,
@@ -165,6 +167,20 @@ export const UserMenuSheet = () => {
                                         </NavLink>
                                     }
                                 />
+                                {user.roleId === ROLE_IDS.AIL && (
+                                    <SheetClose
+                                        nativeButton={false}
+                                        render={
+                                            <NavLink
+                                                to="/mis-eventos"
+                                                className={navClass}
+                                            >
+                                                <CalendarCheck className="size-4" />
+                                                Mis eventos
+                                            </NavLink>
+                                        }
+                                    />
+                                )}
                             </div>
 
                             <RouteGroup
@@ -205,7 +221,7 @@ export const UserMenuSheet = () => {
                         </nav>
 
                         <Button
-                            className="mt-2 justify-start gap-2 rounded-xl bg-red-600 text-white hover:bg-red-700"
+                            className="mt-2 justify-start gap-2 rounded-xl bg-red-400 text-black hover:bg-red-700 hover:text-white"
                             onClick={() => void logout()}
                         >
                             <LogOut className="size-4" />

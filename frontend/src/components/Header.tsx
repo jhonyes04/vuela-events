@@ -28,6 +28,7 @@ export const Header = () => {
         (route) =>
             !route.group &&
             route.path !== '/perfil' &&
+            route.path !== '/mis-eventos' &&
             user &&
             canAccess(route, user.permissions),
     );

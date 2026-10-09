@@ -28,7 +28,7 @@ const emailSettingsErrors = {
 
 export const emailSettingsRouter = Router();
 
-emailSettingsRouter.use(requireAuth, requirePermission('email:send'));
+emailSettingsRouter.use(requireAuth, requirePermission('settings:manage'));
 
 emailSettingsRouter.get('/', async (_req, res) => {
     const [smtpConfig, templateAssignments] = await Promise.all([
