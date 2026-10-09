@@ -47,6 +47,9 @@ export function createApp(options: AppOptions = {}) {
             credentials: true,
             methods: ['GET', 'POST', 'PATCH', 'DELETE'],
             allowedHeaders: ['Content-Type'],
+            // Sin esto el navegador no puede leer estas cabeceras en peticiones
+            // cross-origin (fetch las devuelve como null aunque el servidor las envíe).
+            exposedHeaders: ['X-Report-Draft-Id', 'Content-Disposition'],
         }),
     );
 

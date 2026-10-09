@@ -19,9 +19,13 @@ export const generateAttendanceReport = async (
         { recipientRegistrationIds: registrationIds },
     );
 
-    return {
-        draftId: headers.get('X-Report-Draft-Id') ?? '',
-        filename,
-        blob,
-    };
+    const draftId = headers.get('X-Report-Draft-Id');
+
+    if (!draftId) {
+        throw new Error(
+            'El servidor no devolvió el identificador del borrador',
+        );
+    }
+
+    return { draftId, filename, blob };
 };
