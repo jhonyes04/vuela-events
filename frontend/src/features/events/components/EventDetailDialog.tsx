@@ -87,9 +87,13 @@ const EventDetailBody = ({
     const notifiedFullRef = useRef(false);
 
     useEffect(() => {
-        if (full && !notifiedFullRef.current) {
+        if ((full || ended) && !notifiedFullRef.current) {
             notifiedFullRef.current = true;
-            toast.error('Este evento está completo.');
+            toast.error(
+                ended
+                    ? 'Este evento ha finalizado.'
+                    : 'Este evento está completo.',
+            );
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
@@ -314,6 +318,13 @@ const EventDetailBody = ({
                             <Button
                                 disabled={busy}
                                 onClick={() => {
+                                    if (ended) {
+                                        toast.error(
+                                            'Este evento ha finalizado.',
+                                        );
+                                        return;
+                                    }
+
                                     if (blockedByCapacity) {
                                         toast.error(
                                             'Este evento está completo.',
@@ -327,7 +338,11 @@ const EventDetailBody = ({
                                     );
                                 }}
                             >
-                                {blockedByCapacity ? 'Completo' : 'Inscribirme'}
+                                {ended
+                                    ? 'Finalizado'
+                                    : blockedByCapacity
+                                      ? 'Completo'
+                                      : 'Inscribirme'}
                             </Button>
                         )}
                     </DialogFooter>
