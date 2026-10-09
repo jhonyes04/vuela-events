@@ -229,6 +229,7 @@ interface NamedGroup {
 }
 
 // Barras horizontales finas por grupo, con el color de la categoría y el valor al final.
+// Altura según nº de filas: con pocas categorías, h-72 fijo dejaba huecos enormes entre barras.
 export const HorizontalBars = <T extends NamedGroup>({
     data,
     metric,
@@ -238,7 +239,11 @@ export const HorizontalBars = <T extends NamedGroup>({
     metric: keyof Omit<T, 'id' | 'name' | 'color'>;
     config: ChartConfig;
 }) => (
-    <ChartContainer config={config} className="h-72 w-full">
+    <ChartContainer
+        config={config}
+        className="w-full"
+        style={{ height: Math.min(288, Math.max(120, data.length * 44)) }}
+    >
         <BarChart
             data={data.map((g) => ({ label: g.name, value: Number(g[metric]) }))}
             layout="vertical"
