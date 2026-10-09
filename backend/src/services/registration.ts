@@ -31,7 +31,12 @@ export const registerForEvent = async (
 
             const event = await tx.event.findUnique({
                 where: { id: eventId },
-                select: { capacity: true, endsAt: true, title: true },
+                select: {
+                    capacity: true,
+                    endsAt: true,
+                    title: true,
+                    categoryId: true,
+                },
             });
 
             if (!event) {
@@ -78,6 +83,21 @@ export const registerForEvent = async (
                 data: { eventId, userId },
                 select: { id: true, eventId: true, createdAt: true },
             });
+
+            // Al inscribirse (por su cuenta o de la mano de un admin/DT) a una
+            // categoría que no tenía marcada como interés, se marca sola.
+            if (registrant?.roleId === 'ail') {
+                await tx.userCategoryPreference.upsert({
+                    where: {
+                        userId_categoryId: {
+                            userId,
+                            categoryId: event.categoryId,
+                        },
+                    },
+                    create: { userId, categoryId: event.categoryId },
+                    update: {},
+                });
+            }
 
             const actorId = opts?.actorId ?? userId;
 
@@ -189,6 +209,7 @@ export interface RegistrationCandidate {
     lastName: string;
     puntoVuela: string | null;
     registered: boolean;
+    categoryPreferences: { id: string; name: string; color: string }[];
 }
 
 export const listRegistrationCandidates = async (
@@ -215,6 +236,11 @@ export const listRegistrationCandidates = async (
                 select: { id: true },
                 take: 1,
             },
+            categoryPreferences: {
+                select: {
+                    category: { select: { id: true, name: true, color: true } },
+                },
+            },
         },
         orderBy: [{ name: 'asc' }, { lastName: 'asc' }],
     });
@@ -225,5 +251,6 @@ export const listRegistrationCandidates = async (
         lastName: user.lastName,
         puntoVuela: user.puntoVuela,
         registered: user.registrations.length > 0,
+        categoryPreferences: user.categoryPreferences.map((p) => p.category),
     }));
 };

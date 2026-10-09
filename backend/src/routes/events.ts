@@ -209,6 +209,25 @@ eventsRouter.get('/', async (req, res) => {
 
     const { from, to, registered } = query.data;
 
+    // Un AIL solo ve eventos de categorías que marcó como interés, más los
+    // que ya tiene (o tuvo) marcados por estar inscrito en ellos: así nunca
+    // desaparece de su calendario algo a lo que ya se apuntó.
+    const visibleToAil =
+        actor.roleId === 'ail'
+            ? {
+                  OR: [
+                      {
+                          category: {
+                              userPreferences: {
+                                  some: { userId: actor.id },
+                              },
+                          },
+                      },
+                      { registrations: { some: { userId: actor.id } } },
+                  ],
+              }
+            : {};
+
     const rows = await prisma.event.findMany({
         where: {
             ...(from && { endsAt: { gte: new Date(from) } }),
@@ -216,6 +235,7 @@ eventsRouter.get('/', async (req, res) => {
             ...(registered && {
                 registrations: { some: { userId: actor.id } },
             }),
+            ...visibleToAil,
         },
         select: {
             ...eventSelect,

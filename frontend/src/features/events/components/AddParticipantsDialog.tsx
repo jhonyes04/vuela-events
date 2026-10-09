@@ -10,6 +10,7 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
+import { categoryChipClass } from '@/features/categories/lib/colors';
 import {
     adminRegisterUser,
     listRegistrationCandidates,
@@ -123,18 +124,32 @@ const AddParticipantsBody = ({
                     {filtered.map((c) => (
                         <li
                             key={c.id}
-                            className="flex items-center gap-2 rounded-md bg-card px-2 py-1 ring-1 ring-border"
+                            className="flex items-start gap-2 rounded-md bg-card px-2 py-1.5 ring-1 ring-border"
                         >
                             <input
                                 type="checkbox"
-                                className="size-4 shrink-0 accent-primary"
+                                className="mt-0.5 size-4 shrink-0 accent-primary"
                                 checked={selected.has(c.id)}
                                 onChange={() => toggle(c.id)}
                                 aria-label={`Seleccionar a ${personLabel(c)}`}
                             />
-                            <span className="min-w-0 flex-1 break-words">
-                                {personLabel(c)}
-                            </span>
+                            <div className="min-w-0 flex-1">
+                                <p className="break-words">
+                                    {personLabel(c)}
+                                </p>
+                                {c.categoryPreferences.length > 0 && (
+                                    <div className="mt-1 flex flex-wrap gap-1">
+                                        {c.categoryPreferences.map((cat) => (
+                                            <span
+                                                key={cat.id}
+                                                className={`rounded px-1.5 py-0.5 text-xs font-medium ${categoryChipClass(cat.color)}`}
+                                            >
+                                                {cat.name}
+                                            </span>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
                         </li>
                     ))}
                 </ul>

@@ -1,0 +1,14 @@
+// Categorías de evento en las que un usuario (normalmente AIL) dice estar
+// interesado en participar. Solo una preferencia visible, sin lógica de
+// filtrado ni envío asociada por ahora.
+model UserCategoryPreference {
+    userId      String   @db.Uuid
+    categoryId  String   @db.Uuid
+    createdAt   DateTime @default(now())
+
+    user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+    category    Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+    @@id([userId, categoryId])
+    @@map("user_category_preferences")
+}

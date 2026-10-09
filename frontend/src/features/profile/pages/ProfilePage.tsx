@@ -7,6 +7,7 @@ import { AppPasswordSection } from '@/features/profile/components/AppPasswordSec
 import { SignatureSection } from '@/features/profile/components/SignatureSection';
 import { EmailSignatureSection } from '@/features/profile/components/EmailSignatureSection';
 import { MyEventsSection } from '@/features/profile/components/MyEventsSection';
+import { CategoryPreferencesSection } from '@/features/profile/components/CategoryPreferencesSection';
 
 export const ProfilePage = () => {
     const { user, setUser } = useAuth();
@@ -48,6 +49,12 @@ export const ProfilePage = () => {
                         onSaved={setUser}
                     />
                 </div>
+
+                {user.roleId === 'ail' && (
+                    <div className="rounded-xl border bg-card p-4 sm:p-6">
+                        <CategoryPreferencesSection />
+                    </div>
+                )}
 
                 {user.roleId !== 'admin' && (
                     <div className="rounded-xl border bg-card p-4 sm:p-6">

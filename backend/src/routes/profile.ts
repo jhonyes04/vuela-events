@@ -17,6 +17,12 @@ import {
     getEmailSignatureImage,
 } from '../services/emailSignature.js';
 import { getSentReportPdf, listSentReports } from '../services/sentReports.js';
+import {
+    CategoryPreferenceError,
+    getCategoryPreferences,
+    listCategoryOptions,
+    setCategoryPreferences,
+} from '../services/categoryPreferences.js';
 import { DINAMIZADOR_TITLES } from '../lib/authUser.js';
 
 // Firma la genera cualquier lector de imágenes normal: cabe de sobra en 300KB.
@@ -92,6 +98,10 @@ const reportsQuerySchema = z.object({
 });
 
 const reportParamsSchema = z.object({ id: z.uuid() });
+
+const categoryPreferencesSchema = z.strictObject({
+    categoryIds: z.array(z.uuid()).max(100),
+});
 
 export const profileRouter = Router();
 
@@ -452,4 +462,53 @@ profileRouter.get('/reports/:id/pdf', requireAuth, async (req, res) => {
         "attachment; filename*=UTF-8''" + encodeURIComponent(report.filename),
     );
     res.send(report.pdf);
+});
+
+// Categorías activas, para el selector de preferencias: cualquier usuario
+// autenticado (no exige categories:view, que es de gestión).
+profileRouter.get('/category-options', requireAuth, async (_req, res) => {
+    res.json({ categories: await listCategoryOptions() });
+});
+
+profileRouter.get('/category-preferences', requireAuth, async (req, res) => {
+    const actor = req.user;
+
+    if (!actor) {
+        res.status(401).json({ error: 'Autenticación requerida' });
+        return;
+    }
+
+    res.json({ categories: await getCategoryPreferences(actor.id) });
+});
+
+profileRouter.patch('/category-preferences', requireAuth, async (req, res) => {
+    const actor = req.user;
+
+    if (!actor) {
+        res.status(401).json({ error: 'Autenticación requerida' });
+        return;
+    }
+
+    const body = categoryPreferencesSchema.safeParse(req.body);
+
+    if (!body.success) {
+        res.status(400).json({ error: 'Solicitud no válida' });
+        return;
+    }
+
+    try {
+        const categories = await setCategoryPreferences(
+            actor.id,
+            body.data.categoryIds,
+        );
+
+        res.json({ categories });
+    } catch (e) {
+        if (e instanceof CategoryPreferenceError) {
+            res.status(400).json({ error: 'Una o más categorías no existen' });
+            return;
+        }
+
+        throw e;
+    }
 });

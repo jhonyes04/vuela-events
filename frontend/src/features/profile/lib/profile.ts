@@ -44,6 +44,39 @@ export interface ProfileValues {
 export const cleanText = (value: string): string =>
     value.trim().replace(/\s+/g, ' ');
 
+export interface CategoryOption {
+    id: string;
+    name: string;
+    color: string;
+}
+
+export const listCategoryOptions = async (): Promise<CategoryOption[]> => {
+    const { categories } = await api.get<{ categories: CategoryOption[] }>(
+        '/profile/category-options',
+    );
+
+    return categories;
+};
+
+export const getCategoryPreferences = async (): Promise<CategoryOption[]> => {
+    const { categories } = await api.get<{ categories: CategoryOption[] }>(
+        '/profile/category-preferences',
+    );
+
+    return categories;
+};
+
+export const setCategoryPreferences = async (
+    categoryIds: string[],
+): Promise<CategoryOption[]> => {
+    const { categories } = await api.patch<{ categories: CategoryOption[] }>(
+        '/profile/category-preferences',
+        { categoryIds },
+    );
+
+    return categories;
+};
+
 export const updateProfile = async (values: ProfileValues): Promise<User> => {
     const { user } = await api.patch<{ user: User }>('/profile', values);
 

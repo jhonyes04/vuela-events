@@ -184,6 +184,13 @@ export const CATEGORY_COLOR_STYLES: Record<CategoryColor, CategoryColorStyle> =
         },
     };
 
+// Para datos que no garantizan que el color siga en la paleta actual
+// (p. ej. categorías guardadas antes de quitar un color de CATEGORY_COLORS).
+export const categoryChipClass = (color: string): string =>
+    color in CATEGORY_COLOR_STYLES
+        ? CATEGORY_COLOR_STYLES[color as CategoryColor].chip
+        : 'bg-muted text-foreground';
+
 // Mismos colores en hex para las gráficas (Recharts no entiende clases de Tailwind).
 export const CATEGORY_HEX: Record<CategoryColor, string> = {
     yellow: '#f4d64e',
