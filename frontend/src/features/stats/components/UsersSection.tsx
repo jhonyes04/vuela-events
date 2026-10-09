@@ -1,7 +1,9 @@
 import { ChartCard } from '@/features/stats/components/ChartCard';
 import {
+    HorizontalBars,
     initials,
     RankList,
+    valueConfig,
 } from '@/features/stats/components/StatsChartKit';
 import type { StatsSummary } from '@/features/stats/lib/stats';
 import type { SectionId } from '@/features/stats/lib/sections';
@@ -51,6 +53,20 @@ export const UsersSection = ({ section, stats }: UsersSectionProps) => (
                         value: String(u.registrations),
                         leading: initials(u.name),
                     }))}
+                />
+            </ChartCard>
+        )}
+
+        {section === 'users-interest-category' && (
+            <ChartCard
+                title="Usuarios por categoría"
+                description="Usuarios AIL activos que marcaron cada categoría como interés."
+                empty={stats.interestByCategory.length === 0}
+            >
+                <HorizontalBars
+                    data={stats.interestByCategory}
+                    metric="interestedUsers"
+                    config={valueConfig('Usuarios', 'var(--chart-3)')}
                 />
             </ChartCard>
         )}

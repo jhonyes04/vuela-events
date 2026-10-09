@@ -25,11 +25,7 @@ import {
     CATEGORY_HEX,
     type CategoryColor,
 } from '@/features/categories/lib/colors';
-import type {
-    SeriesPoint,
-    StatsGroup,
-    StatsSummary,
-} from '@/features/stats/lib/stats';
+import type { SeriesPoint, StatsSummary } from '@/features/stats/lib/stats';
 
 export const countConfig = (label: string, color: string): ChartConfig => ({
     count: { label, color },
@@ -226,19 +222,25 @@ export const BarSeries = ({
     </ChartContainer>
 );
 
+interface NamedGroup {
+    id: string;
+    name: string;
+    color: string | null;
+}
+
 // Barras horizontales finas por grupo, con el color de la categoría y el valor al final.
-export const HorizontalBars = ({
+export const HorizontalBars = <T extends NamedGroup>({
     data,
     metric,
     config,
 }: {
-    data: StatsGroup[];
-    metric: 'events' | 'registrations' | 'attended';
+    data: T[];
+    metric: keyof Omit<T, 'id' | 'name' | 'color'>;
     config: ChartConfig;
 }) => (
     <ChartContainer config={config} className="h-72 w-full">
         <BarChart
-            data={data.map((g) => ({ label: g.name, value: g[metric] }))}
+            data={data.map((g) => ({ label: g.name, value: Number(g[metric]) }))}
             layout="vertical"
             margin={{ left: 8, right: 32 }}
         >

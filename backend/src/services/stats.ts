@@ -1,5 +1,6 @@
 import { prisma } from '../lib/prisma.js';
 import { Prisma } from '../generated/prisma/client.js';
+import { listCategoryInterestedUsers } from './categoryPreferences.js';
 
 const quarterKey = (key: string): string => {
     const [year, month] = key.split('-');
@@ -272,6 +273,19 @@ export const getStats = async (now: Date = new Date()) => {
         registrations: row.registrations,
     }));
 
+    const interestByCategory = (await listCategoryInterestedUsers())
+        .map((category) => ({
+            id: category.id,
+            name: category.name,
+            color: category.color,
+            interestedUsers: category.users.length,
+        }))
+        .sort(
+            (a, b) =>
+                b.interestedUsers - a.interestedUsers ||
+                a.name.localeCompare(b.name),
+        );
+
     return {
         totals: {
             events: totalsRow.eventsTotal,
@@ -307,6 +321,7 @@ export const getStats = async (now: Date = new Date()) => {
         attendedByCategory: byCategory,
         attendedByQuarter: attendedRollup.byQuarter,
         attendedByYear: attendedRollup.byYear,
+        interestByCategory,
         finishedWithoutAttended: {
             count: finishedWithoutAttendedCount,
             events: finishedWithoutAttendedRows,

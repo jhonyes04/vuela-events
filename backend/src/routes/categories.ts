@@ -9,8 +9,20 @@ import {
     listCategories,
     updateCategory,
 } from '../services/categories.js';
+import {
+    addCategoryPreference,
+    CategoryPreferenceError,
+    listAilUsers,
+    listCategoryInterestedUsers,
+    removeCategoryPreference,
+} from '../services/categoryPreferences.js';
 
 const idParamSchema = z.object({ id: z.uuid() });
+const categoryUserParamsSchema = z.object({
+    id: z.uuid(),
+    userId: z.uuid(),
+});
+const addInterestedUserSchema = z.strictObject({ userId: z.uuid() });
 
 const createCategorySchema = z.strictObject({
     name: z.string().trim().min(2).max(80),
@@ -48,6 +60,66 @@ categoriesRouter.get(
         const categories = await listCategories();
 
         res.json({ categories });
+    },
+);
+
+categoriesRouter.get(
+    '/interested-users',
+    requirePermission('categories:view'),
+    async (_req, res) => {
+        res.json({ categories: await listCategoryInterestedUsers() });
+    },
+);
+
+categoriesRouter.get(
+    '/ail-users',
+    requirePermission('categories:edit'),
+    async (_req, res) => {
+        res.json({ users: await listAilUsers() });
+    },
+);
+
+categoriesRouter.post(
+    '/:id/interested-users',
+    requirePermission('categories:edit'),
+    async (req, res) => {
+        const params = idParamSchema.safeParse(req.params);
+        const body = addInterestedUserSchema.safeParse(req.body);
+
+        if (!params.success || !body.success) {
+            res.status(400).json({ error: 'Solicitud no válida' });
+            return;
+        }
+
+        try {
+            await addCategoryPreference(body.data.userId, params.data.id);
+            res.json({ categories: await listCategoryInterestedUsers() });
+        } catch (e) {
+            if (e instanceof CategoryPreferenceError) {
+                res.status(400).json({
+                    error: 'Usuario o categoría no válidos',
+                });
+                return;
+            }
+
+            throw e;
+        }
+    },
+);
+
+categoriesRouter.delete(
+    '/:id/interested-users/:userId',
+    requirePermission('categories:delete'),
+    async (req, res) => {
+        const params = categoryUserParamsSchema.safeParse(req.params);
+
+        if (!params.success) {
+            res.status(400).json({ error: 'Solicitud no válida' });
+            return;
+        }
+
+        await removeCategoryPreference(params.data.userId, params.data.id);
+        res.json({ categories: await listCategoryInterestedUsers() });
     },
 );
 

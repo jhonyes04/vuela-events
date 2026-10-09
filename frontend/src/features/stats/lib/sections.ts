@@ -24,6 +24,11 @@ export const SECTIONS = [
     { id: 'occupancy', label: 'Ocupación', group: 'Ocupación' },
     { id: 'users-top', label: 'Usuarios más activos', group: 'Usuarios' },
     { id: 'users-all', label: 'Todos los usuarios', group: 'Usuarios' },
+    {
+        id: 'users-interest-category',
+        label: 'Usuarios por categoría',
+        group: 'Usuarios',
+    },
     { id: 'attended-month', label: 'Atendidos por mes', group: 'Atendidos' },
     {
         id: 'attended-quarter',

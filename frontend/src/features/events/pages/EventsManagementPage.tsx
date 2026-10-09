@@ -10,6 +10,7 @@ import { ConfirmDeleteDialog } from '@/components/ConfirmDeleteDialog';
 import { ApiError } from '@/lib/api';
 import {
     deleteEventById,
+    hasEnded,
     listAllEvents,
     type EventItem,
 } from '@/features/events/lib/events';
@@ -95,12 +96,19 @@ export const EventsManagementPage = () => {
                                 <Users className="size-4" />
                             </Button>
                         </IconTooltip>
-                        <IconTooltip label="Usuarios atendidos">
+                        <IconTooltip
+                            label={
+                                hasEnded(event)
+                                    ? 'Usuarios atendidos'
+                                    : 'Disponible al finalizar el evento'
+                            }
+                        >
                             <Button
                                 variant="default"
                                 className="bg-green-800"
                                 size="icon"
                                 aria-label="Usuarios atendidos"
+                                disabled={!hasEnded(event)}
                                 onClick={() => openParticipants(event)}
                             >
                                 <ClipboardList className="size-4" />
@@ -160,6 +168,9 @@ export const EventsManagementPage = () => {
                     deletingLabel="Eliminando…"
                     errorFallback="No se pudo eliminar el evento"
                     successLabel={`Evento «${deleting.title}» eliminado.`}
+                    confirmText={
+                        hasEnded(deleting) ? deleting.title : undefined
+                    }
                     onConfirm={() => deleteEventById(deleting.id)}
                     onDeleted={() => {
                         setEvents((prev) =>

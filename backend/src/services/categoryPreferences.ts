@@ -62,3 +62,93 @@ export const setCategoryPreferences = async (
 
     return getCategoryPreferences(userId);
 };
+
+export interface CategoryInterestedUser {
+    id: string;
+    name: string;
+    lastName: string;
+    puntoVuela: string | null;
+}
+
+export interface CategoryWithInterestedUsers {
+    id: string;
+    name: string;
+    color: string;
+    users: CategoryInterestedUser[];
+}
+
+export const listCategoryInterestedUsers = async (): Promise<
+    CategoryWithInterestedUsers[]
+> => {
+    const rows = await prisma.category.findMany({
+        where: { active: true },
+        select: {
+            id: true,
+            name: true,
+            color: true,
+            userPreferences: {
+                where: { user: { roleId: 'ail', active: true } },
+                select: {
+                    user: {
+                        select: {
+                            id: true,
+                            name: true,
+                            lastName: true,
+                            puntoVuela: true,
+                        },
+                    },
+                },
+                orderBy: { user: { name: 'asc' } },
+            },
+        },
+        orderBy: { name: 'asc' },
+    });
+
+    return rows.map((category) => ({
+        id: category.id,
+        name: category.name,
+        color: category.color,
+        users: category.userPreferences.map((p) => p.user),
+    }));
+};
+
+export interface AilUserOption {
+    id: string;
+    name: string;
+    lastName: string;
+    puntoVuela: string | null;
+}
+
+export const listAilUsers = (): Promise<AilUserOption[]> =>
+    prisma.user.findMany({
+        where: { active: true, roleId: 'ail' },
+        select: { id: true, name: true, lastName: true, puntoVuela: true },
+        orderBy: [{ name: 'asc' }, { lastName: 'asc' }],
+    });
+
+export const addCategoryPreference = async (
+    userId: string,
+    categoryId: string,
+): Promise<void> => {
+    const userExists = await prisma.user.count({ where: { id: userId } });
+
+    if (!userExists) {
+        throw new CategoryPreferenceError('invalid_category');
+    }
+
+    const current = await getCategoryPreferences(userId);
+    const ids = new Set(current.map((c) => c.id));
+    ids.add(categoryId);
+
+    await setCategoryPreferences(userId, [...ids]);
+};
+
+export const removeCategoryPreference = async (
+    userId: string,
+    categoryId: string,
+): Promise<void> => {
+    const current = await getCategoryPreferences(userId);
+    const ids = current.map((c) => c.id).filter((id) => id !== categoryId);
+
+    await setCategoryPreferences(userId, ids);
+};

@@ -14,6 +14,13 @@ export interface StatsGroup {
     attended: number;
 }
 
+export interface CategoryInterestGroup {
+    id: string;
+    name: string;
+    color: string | null;
+    interestedUsers: number;
+}
+
 export interface StatsSummary {
     totals: { events: number; registrations: number; attended: number };
     eventsByStatus: { past: number; ongoing: number; future: number };
@@ -59,6 +66,7 @@ export interface StatsSummary {
     attendedByQuarter: SeriesPoint[];
     attendedByYear: SeriesPoint[];
     attendedByCategory: StatsGroup[];
+    interestByCategory: CategoryInterestGroup[];
     finishedWithoutAttended: {
         count: number;
         events: { id: string; title: string; startsAt: string }[];

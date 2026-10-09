@@ -9,6 +9,8 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { ApiError } from '@/lib/api';
 
 interface ConfirmDeleteDialogProps<T> {
@@ -23,6 +25,8 @@ interface ConfirmDeleteDialogProps<T> {
     successLabel: string | ((result: T) => string);
     onConfirm: () => Promise<T>;
     onDeleted: (result: T) => void;
+    // Si se da, hay que escribir este texto exacto para poder confirmar.
+    confirmText?: string;
 }
 
 export function ConfirmDeleteDialog<T>({
@@ -36,8 +40,10 @@ export function ConfirmDeleteDialog<T>({
     successLabel,
     onConfirm,
     onDeleted,
+    confirmText,
 }: ConfirmDeleteDialogProps<T>) {
     const [deleting, setDeleting] = useState(false);
+    const [typed, setTyped] = useState('');
 
     const handleDelete = async () => {
         setDeleting(true);
@@ -70,6 +76,20 @@ export function ConfirmDeleteDialog<T>({
                     <DialogDescription>{description}</DialogDescription>
                 </DialogHeader>
 
+                {confirmText !== undefined && (
+                    <div className="grid gap-1.5">
+                        <Label htmlFor="confirm-delete-text">
+                            Escribe «{confirmText}» para confirmar
+                        </Label>
+                        <Input
+                            id="confirm-delete-text"
+                            autoComplete="off"
+                            value={typed}
+                            onChange={(e) => setTyped(e.target.value)}
+                        />
+                    </div>
+                )}
+
                 <DialogFooter>
                     <Button
                         variant="default"
@@ -79,7 +99,11 @@ export function ConfirmDeleteDialog<T>({
                     </Button>
                     <Button
                         variant="destructive"
-                        disabled={deleting}
+                        disabled={
+                            deleting ||
+                            (confirmText !== undefined &&
+                                typed !== confirmText)
+                        }
                         onClick={() => void handleDelete()}
                     >
                         {deleting ? deletingLabel : confirmLabel}
