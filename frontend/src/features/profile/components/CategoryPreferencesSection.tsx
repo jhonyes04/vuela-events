@@ -8,17 +8,23 @@ import {
     setCategoryPreferences,
     type CategoryOption,
 } from '@/features/profile/lib/profile';
+import {
+    getUserCategoryPreferences,
+    setUserCategoryPreferences,
+} from '@/features/users/lib/users';
 import { categoryChipClass } from '@/features/categories/lib/colors';
 
 interface CategoryPreferencesSectionProps {
     submitLabel?: string;
     // Se llama tras guardar con éxito (p. ej. para avanzar al siguiente paso del onboarding).
     onSaved?: () => void;
+    userId?: string;
 }
 
 export const CategoryPreferencesSection = ({
     submitLabel = 'Guardar',
     onSaved,
+    userId,
 }: CategoryPreferencesSectionProps = {}) => {
     const [options, setOptions] = useState<CategoryOption[]>([]);
     const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -27,14 +33,17 @@ export const CategoryPreferencesSection = ({
     const [submitting, setSubmitting] = useState(false);
 
     useEffect(() => {
-        Promise.all([listCategoryOptions(), getCategoryPreferences()])
+        const loadMine = userId
+            ? getUserCategoryPreferences(userId)
+            : getCategoryPreferences();
+        Promise.all([listCategoryOptions(), loadMine])
             .then(([all, mine]) => {
                 setOptions(all);
                 setSelected(new Set(mine.map((c) => c.id)));
             })
             .catch(() => setFailed(true))
             .finally(() => setLoading(false));
-    }, []);
+    }, [userId]);
 
     const toggle = (id: string) => {
         setSelected((prev) => {
@@ -51,7 +60,12 @@ export const CategoryPreferencesSection = ({
         setSubmitting(true);
 
         try {
-            await setCategoryPreferences([...selected]);
+            if (userId) {
+                await setUserCategoryPreferences(userId, [...selected]);
+            } else {
+                await setCategoryPreferences([...selected]);
+            }
+
             toast.success('Preferencias guardadas.');
             onSaved?.();
         } catch (e) {
@@ -95,22 +109,19 @@ export const CategoryPreferencesSection = ({
                         const isChecked = selected.has(option.id);
 
                         return (
-                            <label
+                            <button
                                 key={option.id}
-                                className="flex cursor-pointer items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-sm"
+                                type="button"
+                                aria-pressed={isChecked}
+                                onClick={() => toggle(option.id)}
+                                className={`cursor-pointer rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors ${
+                                    isChecked
+                                        ? categoryChipClass(option.color)
+                                        : 'border text-muted-foreground hover:bg-muted'
+                                }`}
                             >
-                                <input
-                                    type="checkbox"
-                                    className="size-4 accent-brand-yellow"
-                                    checked={isChecked}
-                                    onChange={() => toggle(option.id)}
-                                />
-                                <span
-                                    className={`rounded-md px-2 py-0.5 text-xs font-medium ${categoryChipClass(option.color)}`}
-                                >
-                                    {option.name}
-                                </span>
-                            </label>
+                                {option.name}
+                            </button>
                         );
                     })}
                 </div>

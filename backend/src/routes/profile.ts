@@ -99,7 +99,7 @@ const reportsQuerySchema = z.object({
 
 const reportParamsSchema = z.object({ id: z.uuid() });
 
-const categoryPreferencesSchema = z.strictObject({
+export const categoryPreferencesSchema = z.strictObject({
     categoryIds: z.array(z.uuid()).max(100),
 });
 

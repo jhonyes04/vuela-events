@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Pencil, Trash2 } from 'lucide-react';
+import { Pencil, Tags, Trash2 } from 'lucide-react';
 import { OverlayScrollbarsComponent } from 'overlayscrollbars-react';
 import { toast } from 'sonner';
 import { useAuth } from '@/features/auth/hooks/context';
@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { ConfirmDeleteDialog } from '@/components/ConfirmDeleteDialog';
 import { IconTooltip } from '@/components/IconTooltip';
 import { EditUserDialog } from '@/features/users/components/EditUserDialog';
+import { EditUserCategoriesDialog } from '@/features/users/components/EditUserCategoriesDialog';
 import { ListErrors } from '@/features/users/components/ListErrors';
 import { PaginationControls } from '@/components/PaginationControls';
 import { SortableHeader } from '@/components/SortableHeader';
@@ -14,6 +15,7 @@ import { usePagination } from '@/hooks/usePagination';
 import { useSort } from '@/hooks/useSort';
 import { scrollbarOptions } from '@/lib/overlayScrollbarsOptions';
 import { useRolesStore } from '@/features/users/store';
+import { ROLE_IDS } from '@/features/users/lib/roles';
 import { api, ApiError } from '@/lib/api';
 import type { DinamizadorTitle } from '@/features/profile/lib/profile';
 import { PageTitle } from '@/components/PageTitle';
@@ -42,6 +44,8 @@ export const UsersPage = () => {
     const [error, setError] = useState<string | null>(null);
     const [busyId, setBusyId] = useState<string | null>(null);
     const [editing, setEditing] = useState<AdminUser | null>(null);
+    const [editingCategories, setEditingCategories] =
+        useState<AdminUser | null>(null);
     const [deleting, setDeleting] = useState<AdminUser | null>(null);
 
     const {
@@ -249,6 +253,24 @@ export const UsersPage = () => {
                                                         <Pencil className="size-4" />
                                                     </Button>
                                                 </IconTooltip>
+                                                {u.role.id ===
+                                                    ROLE_IDS.AIL && (
+                                                    <IconTooltip label="Categorías de interés">
+                                                        <Button
+                                                            variant="secondary"
+                                                            size="icon"
+                                                            aria-label="Categorías de interés"
+                                                            disabled={busy}
+                                                            onClick={() =>
+                                                                setEditingCategories(
+                                                                    u,
+                                                                )
+                                                            }
+                                                        >
+                                                            <Tags className="size-4" />
+                                                        </Button>
+                                                    </IconTooltip>
+                                                )}
                                                 <Button
                                                     variant="outline"
                                                     size="sm"
@@ -308,6 +330,12 @@ export const UsersPage = () => {
                 user={editing}
                 roles={roles}
                 onSaved={() => void load()}
+            />
+
+            <EditUserCategoriesDialog
+                open={editingCategories !== null}
+                onOpenChange={(open) => !open && setEditingCategories(null)}
+                user={editingCategories}
             />
 
             {deleting && (

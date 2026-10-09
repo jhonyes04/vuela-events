@@ -1,5 +1,8 @@
 import { api } from '@/lib/api';
-import type { DinamizadorTitle } from '@/features/profile/lib/profile';
+import {
+    type CategoryOption,
+    type DinamizadorTitle,
+} from '@/features/profile/lib/profile';
 
 export interface AdminUserProfileValues {
     name: string;
@@ -26,4 +29,26 @@ export const updateUserProfile = async (
     );
 
     return user;
+};
+
+export const getUserCategoryPreferences = async (
+    userId: string,
+): Promise<CategoryOption[]> => {
+    const { categories } = await api.get<{ categories: CategoryOption[] }>(
+        `/users/${userId}/category-preferences`,
+    );
+
+    return categories;
+};
+
+export const setUserCategoryPreferences = async (
+    userId: string,
+    categoryIds: string[],
+): Promise<CategoryOption[]> => {
+    const { categories } = await api.patch<{ categories: CategoryOption[] }>(
+        `/users/${userId}/category-preferences`,
+        { categoryIds },
+    );
+
+    return categories;
 };

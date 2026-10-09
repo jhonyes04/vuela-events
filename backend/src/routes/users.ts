@@ -10,7 +10,12 @@ import {
     RoleChangeError,
     setUserActive,
 } from '../services/roles.js';
-import { profileSchema } from './profile.js';
+import {
+    CategoryPreferenceError,
+    getCategoryPreferences,
+    setCategoryPreferences,
+} from '../services/categoryPreferences.js';
+import { categoryPreferencesSchema, profileSchema } from './profile.js';
 
 const paramsSchema = z.object({ id: z.uuid() });
 const roleBodySchema = z.strictObject({
@@ -194,6 +199,43 @@ usersRouter.delete('/:id', async (req, res) => {
         res.status(204).end();
     } catch (e) {
         if (handleAdminError(e, res)) return;
+
+        throw e;
+    }
+});
+
+usersRouter.get('/:id/category-preferences', async (req, res) => {
+    const params = paramsSchema.safeParse(req.params);
+
+    if (!params.success) {
+        res.status(400).json({ error: 'Solicitud no válida' });
+        return;
+    }
+
+    res.json({ categories: await getCategoryPreferences(params.data.id) });
+});
+
+usersRouter.patch('/:id/category-preferences', async (req, res) => {
+    const params = paramsSchema.safeParse(req.params);
+    const body = categoryPreferencesSchema.safeParse(req.body);
+
+    if (!params.success || !body.success) {
+        res.status(400).json({ error: 'Solicitud no válida' });
+        return;
+    }
+
+    try {
+        const categories = await setCategoryPreferences(
+            params.data.id,
+            body.data.categoryIds,
+        );
+
+        res.json({ categories });
+    } catch (e) {
+        if (e instanceof CategoryPreferenceError) {
+            res.status(400).json({ error: 'Una o más categorías no exiten' });
+            return;
+        }
 
         throw e;
     }
