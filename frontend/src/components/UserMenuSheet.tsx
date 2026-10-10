@@ -7,6 +7,7 @@ import {
     LogOut,
     Mail,
     Settings,
+    Monitor,
     ShieldCheck,
     SlidersHorizontal,
     FolderKanban,
@@ -45,6 +46,7 @@ const ROUTE_ICONS: Record<string, LucideIcon> = {
     '/admin/correo': Settings,
     '/admin/auditoria': History,
     '/admin/ajustes': SlidersHorizontal,
+    '/admin/sesiones': Monitor,
 };
 
 const navClass = ({ isActive }: { isActive: boolean }) =>

@@ -14,6 +14,7 @@ import { AuditPage } from '@/features/audit/pages/AuditPage';
 import { StatsPage } from '@/features/stats/pages/StatsPage';
 import { ResourcesPage } from '@/features/resources/pages/ResourcesPage';
 import { AppSettingsPage } from '@/features/appSettings/pages/AppSettingsPage';
+import { SessionsPage } from '@/features/sessions/pages/SessionsPage';
 
 export interface AppRoute {
     path: string;
@@ -128,6 +129,13 @@ export const appRoutes: AppRoute[] = [
         group: 'admin',
     },
     {
+        path: '/admin/ajustes',
+        label: 'Ajustes de la app',
+        element: <AppSettingsPage />,
+        permissions: ['settings:manage'],
+        group: 'admin',
+    },
+    {
         path: '/admin/auditoria',
         label: 'Auditoría',
         element: <AuditPage />,
@@ -135,10 +143,10 @@ export const appRoutes: AppRoute[] = [
         group: 'admin',
     },
     {
-        path: '/admin/ajustes',
-        label: 'Ajustes de la app',
-        element: <AppSettingsPage />,
-        permissions: ['settings:manage'],
+        path: '/admin/sesiones',
+        label: 'Sesiones activas',
+        element: <SessionsPage />,
+        permissions: ['sessions:manage'],
         group: 'admin',
     },
 ];

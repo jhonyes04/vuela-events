@@ -7,6 +7,7 @@ import {
     Mail,
     ShieldCheck,
     SlidersHorizontal,
+    Monitor,
     FolderKanban,
     UserPlus,
     Users,
@@ -46,6 +47,7 @@ const CATEGORY_STYLES: Record<string, CategoryStyle> = {
     stats: { label: 'Estadísticas', icon: BarChart3 },
     audit: { label: 'Auditoría', icon: History },
     settings: { label: 'Configuración', icon: SlidersHorizontal },
+    sessions: { label: 'Sesiones', icon: Monitor },
 };
 
 const FALLBACK_STYLE: CategoryStyle = {
