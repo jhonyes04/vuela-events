@@ -23,8 +23,8 @@ export function OnboardingPage() {
                     Un último paso: elige qué tipos de eventos te interesan.
                 </p>
                 <CategoryPreferencesSection
-                    submitLabel="Continuar"
-                    onSaved={() => setUser(pendingUser)}
+                    continueLabel="Continuar"
+                    onContinue={() => setUser(pendingUser)}
                 />
             </section>
         );

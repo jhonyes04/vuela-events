@@ -15,22 +15,21 @@ import {
 import { categoryChipClass } from '@/features/categories/lib/colors';
 
 interface CategoryPreferencesSectionProps {
-    submitLabel?: string;
-    // Se llama tras guardar con éxito (p. ej. para avanzar al siguiente paso del onboarding).
-    onSaved?: () => void;
+    continueLabel?: string;
+    onContinue?: () => void;
     userId?: string;
 }
 
 export const CategoryPreferencesSection = ({
-    submitLabel = 'Guardar',
-    onSaved,
+    continueLabel = 'Continuar',
+    onContinue,
     userId,
 }: CategoryPreferencesSectionProps = {}) => {
     const [options, setOptions] = useState<CategoryOption[]>([]);
     const [selected, setSelected] = useState<Set<string>>(new Set());
     const [loading, setLoading] = useState(true);
     const [failed, setFailed] = useState(false);
-    const [submitting, setSubmitting] = useState(false);
+    const [savingId, setSavingId] = useState<string | null>(null);
 
     useEffect(() => {
         const loadMine = userId
@@ -45,37 +44,31 @@ export const CategoryPreferencesSection = ({
             .finally(() => setLoading(false));
     }, [userId]);
 
-    const toggle = (id: string) => {
-        setSelected((prev) => {
-            const next = new Set(prev);
+    const toggle = async (id: string) => {
+        const previous = selected;
+        const next = new Set(selected);
 
-            if (next.has(id)) next.delete(id);
-            else next.add(id);
+        if (next.has(id)) next.delete(id);
+        else next.add(id);
 
-            return next;
-        });
-    };
-
-    const handleSave = async () => {
-        setSubmitting(true);
+        setSelected(next);
+        setSavingId(id);
 
         try {
             if (userId) {
-                await setUserCategoryPreferences(userId, [...selected]);
+                await setUserCategoryPreferences(userId, [...next]);
             } else {
-                await setCategoryPreferences([...selected]);
+                await setCategoryPreferences([...next]);
             }
-
-            toast.success('Preferencias guardadas.');
-            onSaved?.();
         } catch (e) {
+            setSelected(previous);
             toast.error(
                 e instanceof ApiError
                     ? e.message
-                    : 'No se pudieron guardar las preferencias',
+                    : 'No se pudo guardar la preferencia',
             );
         } finally {
-            setSubmitting(false);
+            setSavingId(null);
         }
     };
 
@@ -113,8 +106,9 @@ export const CategoryPreferencesSection = ({
                                 key={option.id}
                                 type="button"
                                 aria-pressed={isChecked}
-                                onClick={() => toggle(option.id)}
-                                className={`cursor-pointer rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors ${
+                                disabled={savingId === option.id}
+                                onClick={() => void toggle(option.id)}
+                                className={`cursor-pointer rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${
                                     isChecked
                                         ? categoryChipClass(option.color)
                                         : 'border text-muted-foreground hover:bg-muted'
@@ -127,15 +121,13 @@ export const CategoryPreferencesSection = ({
                 </div>
             )}
 
-            <div className="flex justify-center sm:justify-end">
-                <Button
-                    type="button"
-                    disabled={loading || failed || submitting}
-                    onClick={() => void handleSave()}
-                >
-                    {submitting ? 'Guardando…' : submitLabel}
-                </Button>
-            </div>
+            {onContinue && (
+                <div className="flex justify-center sm:justify-end">
+                    <Button type="button" onClick={onContinue}>
+                        {continueLabel}
+                    </Button>
+                </div>
+            )}
         </div>
     );
 };
