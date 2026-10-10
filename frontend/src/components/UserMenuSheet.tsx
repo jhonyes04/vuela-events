@@ -139,7 +139,7 @@ export const UserMenuSheet = () => {
                         <Button
                             variant="ghost"
                             size="icon-sm"
-                            className="absolute top-3 right-3 z-10 rounded-full text-white hover:bg-white/10 hover:text-white"
+                            className="absolute top-3 right-3 z-10 rounded-full bg-yellow-300 text-black shadow-md transition-all duration-200 hover:scale-110 active:scale-95 hover:bg-yellow-200 hover:text-black"
                         />
                     }
                 >
