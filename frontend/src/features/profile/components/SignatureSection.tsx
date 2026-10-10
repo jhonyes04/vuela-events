@@ -181,20 +181,22 @@ export function SignatureSection({
             </div>
 
             <Dialog open={drawOpen} onOpenChange={setDrawOpen}>
-                <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle>Crear firma</DialogTitle>
-                        <DialogDescription>
-                            Dibuja tu firma con el ratón o el dedo.
-                        </DialogDescription>
-                    </DialogHeader>
-                    <SignatureCanvas
-                        onSave={(imageBase64) =>
-                            void handleSaveBase64(imageBase64)
-                        }
-                        saving={submitting}
-                    />
-                </DialogContent>
+                {drawOpen && (
+                    <DialogContent>
+                        <DialogHeader>
+                            <DialogTitle>Crear firma</DialogTitle>
+                            <DialogDescription>
+                                Dibuja tu firma con el ratón o el dedo.
+                            </DialogDescription>
+                        </DialogHeader>
+                        <SignatureCanvas
+                            onSave={(imageBase64) =>
+                                void handleSaveBase64(imageBase64)
+                            }
+                            saving={submitting}
+                        />
+                    </DialogContent>
+                )}
             </Dialog>
         </div>
     );
