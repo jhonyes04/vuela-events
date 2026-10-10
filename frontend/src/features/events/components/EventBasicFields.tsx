@@ -82,7 +82,7 @@ export function EventBasicFields({
             </Field>
             <Field id={fieldId('category')} label="Proyecto *">
                 <Select
-                    value={values.categoryId}
+                    value={values.projectId}
                     items={activeProjects.map((c) => ({
                         value: c.id,
                         label: c.name,

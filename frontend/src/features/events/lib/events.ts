@@ -19,7 +19,7 @@ export interface EventItem {
     seriesId: string | null;
     createdAt: string;
     createdBy: { id: string; name: string; puntoVuela: string | null };
-    category: { id: string; name: string; color: ProjectColor };
+    project: { id: string; name: string; color: ProjectColor };
     guide: { id: string; name: string; url: string };
     _count: { registrations: number };
     registered: boolean;
@@ -327,7 +327,7 @@ export interface RecurringPayload {
     description?: string | undefined;
     location: string;
     capacity?: number | undefined;
-    categoryId: string;
+    projectId: string;
     guideId: string;
     from: string;
     to: string;
@@ -353,7 +353,7 @@ export interface EventUpdateInput {
     description?: string | undefined;
     location: string;
     capacity?: number | undefined;
-    categoryId: string;
+    projectId: string;
     guideId: string;
     startsAt: string;
     endsAt: string;

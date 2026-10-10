@@ -35,7 +35,7 @@ export const registerForEvent = async (
                     capacity: true,
                     endsAt: true,
                     title: true,
-                    categoryId: true,
+                    projectId: true,
                 },
             });
 
@@ -84,17 +84,17 @@ export const registerForEvent = async (
                 select: { id: true, eventId: true, createdAt: true },
             });
 
-            // Al inscribirse (por su cuenta o de la mano de un admin/DT) a una
-            // categoría que no tenía marcada como interés, se marca sola.
+            // Al inscribirse (por su cuenta o de la mano de un admin/DT) a un
+            // proyecto que no tenía marcado como interés, se marca solo.
             if (registrant?.roleId === 'ail') {
-                await tx.userCategoryPreference.upsert({
+                await tx.userProjectPreference.upsert({
                     where: {
-                        userId_categoryId: {
+                        userId_projectId: {
                             userId,
-                            categoryId: event.categoryId,
+                            projectId: event.projectId,
                         },
                     },
-                    create: { userId, categoryId: event.categoryId },
+                    create: { userId, projectId: event.projectId },
                     update: {},
                 });
             }
@@ -217,7 +217,7 @@ export const listRegistrationCandidates = async (
 ): Promise<RegistrationCandidate[]> => {
     const event = await prisma.event.findUnique({
         where: { id: eventId },
-        select: { id: true },
+        select: { id: true, projectId: true },
     });
 
     if (!event) {
@@ -225,7 +225,11 @@ export const listRegistrationCandidates = async (
     }
 
     const users = await prisma.user.findMany({
-        where: { active: true, roleId: 'ail' },
+        where: {
+            active: true,
+            roleId: 'ail',
+            projectPreferences: { some: { projectId: event.projectId } },
+        },
         select: {
             id: true,
             name: true,
@@ -236,9 +240,9 @@ export const listRegistrationCandidates = async (
                 select: { id: true },
                 take: 1,
             },
-            categoryPreferences: {
+            projectPreferences: {
                 select: {
-                    category: { select: { id: true, name: true, color: true } },
+                    project: { select: { id: true, name: true, color: true } },
                 },
             },
         },
@@ -251,6 +255,6 @@ export const listRegistrationCandidates = async (
         lastName: user.lastName,
         puntoVuela: user.puntoVuela,
         registered: user.registrations.length > 0,
-        projectPreferences: user.categoryPreferences.map((p) => p.category),
+        projectPreferences: user.projectPreferences.map((p) => p.project),
     }));
 };

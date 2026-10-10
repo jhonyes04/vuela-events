@@ -82,14 +82,14 @@ export const EventsTable = ({
 
     // Opciones de los filtros: solo los proyectos/meses que aparecen en la lista.
     const projects = [
-        ...new Map(events.map((e) => [e.category.id, e.category])).values(),
+        ...new Map(events.map((e) => [e.project.id, e.project])).values(),
     ].sort((a, b) => a.name.localeCompare(b.name));
     const months = [
         ...new Set(events.map((e) => dayKey(e.startsAt).slice(0, 7))),
     ].sort((a, b) => b.localeCompare(a));
 
     const filtered = events.filter((event) => {
-        if (projectFilter && event.category.id !== projectFilter) {
+        if (projectFilter && event.project.id !== projectFilter) {
             return false;
         }
 
@@ -111,7 +111,7 @@ export const EventsTable = ({
         filtered,
         {
             title: (a, b) => a.title.localeCompare(b.title),
-            category: (a, b) => a.category.name.localeCompare(b.category.name),
+            category: (a, b) => a.project.name.localeCompare(b.project.name),
             startsAt: (a, b) => a.startsAt.localeCompare(b.startsAt),
             location: (a, b) =>
                 (a.location ?? '').localeCompare(b.location ?? ''),
@@ -288,11 +288,11 @@ export const EventsTable = ({
                                         <Badge
                                             className={
                                                 PROJECT_COLOR_STYLES[
-                                                    event.category.color
+                                                    event.project.color
                                                 ].chip
                                             }
                                         >
-                                            {event.category.name}
+                                            {event.project.name}
                                         </Badge>
                                     </td>
                                     <td className="p-3 whitespace-nowrap">

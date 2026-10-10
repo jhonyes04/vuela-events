@@ -49,14 +49,14 @@ const eventFields = {
     description: z.string().trim().max(2000).optional(),
     location: z.string().trim().min(1).max(200).regex(NO_CONTROL_OR_TAGS),
     capacity: z.number().int().positive().max(100_000).optional(),
-    categoryId: z.uuid(),
+    projectId: z.uuid(),
     guideId: z.uuid(),
 };
 
-// La categoría debe existir y estar activa: una inactiva no admite eventos nuevos.
-const isActiveProject = async (categoryId: string): Promise<boolean> => {
-    const project = await prisma.category.findUnique({
-        where: { id: categoryId },
+// El proyecto debe existir y estar activo: uno inactivo no admite eventos nuevos.
+const isActiveProject = async (projectId: string): Promise<boolean> => {
+    const project = await prisma.project.findUnique({
+        where: { id: projectId },
         select: { active: true },
     });
 
@@ -144,7 +144,7 @@ const eventSelect = {
     seriesId: true,
     createdAt: true,
     createdBy: { select: { id: true, name: true, puntoVuela: true } },
-    category: { select: { id: true, name: true, color: true } },
+    project: { select: { id: true, name: true, color: true } },
     guide: { select: { id: true, name: true, url: true } },
     _count: {
         select: {
@@ -209,7 +209,7 @@ eventsRouter.get('/', async (req, res) => {
 
     const { from, to, registered } = query.data;
 
-    // Un AIL solo ve eventos de categorías que marcó como interés, más los
+    // Un AIL solo ve eventos de proyectos que marcó como interés, más los
     // que ya tiene (o tuvo) marcados por estar inscrito en ellos: así nunca
     // desaparece de su calendario algo a lo que ya se apuntó.
     const visibleToAil =
@@ -217,7 +217,7 @@ eventsRouter.get('/', async (req, res) => {
             ? {
                   OR: [
                       {
-                          category: {
+                          project: {
                               userPreferences: {
                                   some: { userId: actor.id },
                               },
@@ -284,11 +284,11 @@ eventsRouter.post(
             startsAt,
             endsAt,
             capacity,
-            categoryId,
+            projectId,
             guideId,
         } = body.data;
 
-        if (!(await isActiveProject(categoryId))) {
+        if (!(await isActiveProject(projectId))) {
             res.status(400).json({ error: 'Proyecto no válido' });
             return;
         }
@@ -307,7 +307,7 @@ eventsRouter.post(
                 startsAt: new Date(startsAt),
                 endsAt: new Date(endsAt),
                 capacity,
-                categoryId,
+                projectId,
                 guideId,
                 createdById: actor.id,
             },
@@ -352,11 +352,11 @@ eventsRouter.patch(
             startsAt,
             endsAt,
             capacity,
-            categoryId,
+            projectId,
             guideId,
         } = body.data;
 
-        if (!(await isActiveProject(categoryId))) {
+        if (!(await isActiveProject(projectId))) {
             res.status(400).json({ error: 'Proyecto no válido' });
             return;
         }
@@ -386,7 +386,7 @@ eventsRouter.patch(
                 startsAt: new Date(startsAt),
                 endsAt: new Date(endsAt),
                 capacity,
-                categoryId,
+                projectId,
                 guideId,
             },
             select: eventSelect,
@@ -484,7 +484,7 @@ eventsRouter.post(
 
         const { from, to, weekdays, startTime, endTime, ...fields } = body.data;
 
-        if (!(await isActiveProject(fields.categoryId))) {
+        if (!(await isActiveProject(fields.projectId))) {
             res.status(400).json({ error: 'Proyecto no válido' });
             return;
         }

@@ -48,7 +48,7 @@ const projectSelect = {
 } as const;
 
 export const listProjects = () =>
-    prisma.category.findMany({
+    prisma.project.findMany({
         orderBy: { name: 'asc' },
         select: projectSelect,
     });
@@ -58,19 +58,19 @@ export const createProject = async (
     name: string,
     color: ProjectColor,
 ) => {
-    const exists = await prisma.category.findUnique({ where: { name } });
+    const exists = await prisma.project.findUnique({ where: { name } });
 
     if (exists) {
         throw new ProjectManageError('duplicate');
     }
 
-    const project = await prisma.category.create({
+    const project = await prisma.project.create({
         data: { name, color },
         select: projectSelect,
     });
 
     await recordAudit({
-        action: 'category_created',
+        action: 'project_created',
         actorId,
         newValue: project.name.slice(0, 100),
     });
@@ -83,14 +83,14 @@ export const updateProject = async (
     id: string,
     input: { name: string; color: ProjectColor; active: boolean },
 ) => {
-    const project = await prisma.category.findUnique({ where: { id } });
+    const project = await prisma.project.findUnique({ where: { id } });
 
     if (!project) {
         throw new ProjectManageError('not_found');
     }
 
     if (input.name !== project.name) {
-        const clash = await prisma.category.findUnique({
+        const clash = await prisma.project.findUnique({
             where: { name: input.name },
         });
 
@@ -99,14 +99,14 @@ export const updateProject = async (
         }
     }
 
-    const updated = await prisma.category.update({
+    const updated = await prisma.project.update({
         where: { id },
         data: input,
         select: projectSelect,
     });
 
     await recordAudit({
-        action: 'category_updated',
+        action: 'project_updated',
         actorId,
         oldValue: project.name.slice(0, 100),
         newValue: updated.name.slice(0, 100),
@@ -116,24 +116,24 @@ export const updateProject = async (
 };
 
 export const deleteProject = async (actorId: string, id: string) => {
-    const project = await prisma.category.findUnique({ where: { id } });
+    const project = await prisma.project.findUnique({ where: { id } });
 
     if (!project) {
         throw new ProjectManageError('not_found');
     }
 
     const eventsCount = await prisma.event.count({
-        where: { categoryId: id },
+        where: { projectId: id },
     });
 
     if (eventsCount > 0) {
         throw new ProjectManageError('has_events');
     }
 
-    await prisma.category.delete({ where: { id } });
+    await prisma.project.delete({ where: { id } });
 
     await recordAudit({
-        action: 'category_deleted',
+        action: 'project_deleted',
         actorId,
         oldValue: project.name.slice(0, 100),
     });

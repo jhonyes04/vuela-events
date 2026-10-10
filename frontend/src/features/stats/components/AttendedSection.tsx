@@ -47,7 +47,7 @@ export const AttendedSection = ({ section, stats }: AttendedSectionProps) => (
             </ChartCard>
         )}
 
-        {section === 'attended-category' && (
+        {section === 'attended-project' && (
             <ChartCard
                 title="Atendidos por proyecto"
                 empty={stats.attendedByProject.length === 0}

@@ -31,7 +31,7 @@ const makeEvent = async (
             endsAt: new Date(start + HOUR),
             capacity: opts.capacity,
             createdById,
-            categoryId: project.id,
+            projectId: project.id,
             guideId: guide.id,
         },
     });

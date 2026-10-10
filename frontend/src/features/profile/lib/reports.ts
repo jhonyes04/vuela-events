@@ -13,7 +13,7 @@ export interface SentReport {
         startsAt: string;
         endsAt: string;
         location: string | null;
-        category: { id: string; name: string; color: ProjectColor };
+        project: { id: string; name: string; color: ProjectColor };
     };
 }
 

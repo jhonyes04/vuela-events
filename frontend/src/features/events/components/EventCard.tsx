@@ -62,7 +62,7 @@ export const EventCard = ({ event, onOpen }: EventCardProps) => {
         ? { border: 'border-t-gray-400', tint: 'bg-gray-400/10' }
         : full
           ? { border: 'border-t-red-500', tint: 'bg-red-500/10' }
-          : PROJECT_COLOR_STYLES[event.category.color];
+          : PROJECT_COLOR_STYLES[event.project.color];
 
     return (
         <Card

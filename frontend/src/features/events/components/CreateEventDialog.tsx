@@ -75,7 +75,7 @@ function EventFormBody({
     // El proyecto/guía actuales del evento siguen disponibles al editar
     // aunque se hayan desactivado después de crearlo.
     const activeProjects = projects.filter(
-        (c) => c.active || c.id === event?.category.id,
+        (c) => c.active || c.id === event?.project.id,
     );
     const activeGuides = guides.filter(
         (g) => g.active || g.id === event?.guide.id,
@@ -97,7 +97,7 @@ function EventFormBody({
     const handleSubmit = async (e: FormEvent) => {
         e.preventDefault();
 
-        if (!values.categoryId) {
+        if (!values.projectId) {
             toast.error('Selecciona un proyecto');
             return;
         }
@@ -114,7 +114,7 @@ function EventFormBody({
             location: values.location,
             description: values.description || undefined,
             capacity: values.capacity ? Number(values.capacity) : undefined,
-            categoryId: values.categoryId,
+            projectId: values.projectId,
             guideId: values.guideId,
         };
 
@@ -227,8 +227,8 @@ function EventFormBody({
                     fieldId={fieldId}
                     values={values}
                     onChange={set}
-                    onProjectChange={(categoryId) =>
-                        setValues((v) => ({ ...v, categoryId }))
+                    onProjectChange={(projectId) =>
+                        setValues((v) => ({ ...v, projectId }))
                     }
                     onGuideChange={(guideId) =>
                         setValues((v) => ({ ...v, guideId }))
@@ -330,18 +330,28 @@ export function CreateEventDialog({
     onCreated: (result: { startsAt: string; count: number }) => void;
 }) {
     const [open, setOpen] = useState(false);
+    const [formKey, setFormKey] = useState(0);
 
     return (
         <>
-            <Button onClick={() => setOpen(true)}>Crear evento</Button>
+            <Button
+                onClick={() => {
+                    setFormKey((k) => k + 1);
+                    setOpen(true);
+                }}
+            >
+                Crear evento
+            </Button>
 
             <Dialog open={open} onOpenChange={setOpen}>
-                <EventFormBody
-                    key="new"
-                    event={null}
-                    onCreated={onCreated}
-                    onClose={() => setOpen(false)}
-                />
+                {open && (
+                    <EventFormBody
+                        key={formKey}
+                        event={null}
+                        onCreated={onCreated}
+                        onClose={() => setOpen(false)}
+                    />
+                )}
             </Dialog>
         </>
     );

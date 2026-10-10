@@ -21,7 +21,7 @@ const validProfile = {
 
 describe('perfil: primer acceso y edición', () => {
     let server: Awaited<ReturnType<typeof startServer>>;
-    let categoryId: string;
+    let projectId: string;
     let guideId: string;
 
     before(async () => {
@@ -30,7 +30,7 @@ describe('perfil: primer acceso y edición', () => {
 
     beforeEach(async () => {
         await resetDb();
-        categoryId = (await createProject()).id;
+        projectId = (await createProject()).id;
         guideId = (await createGuide()).id;
     });
 
@@ -52,13 +52,13 @@ describe('perfil: primer acceso y edición', () => {
             })
         ).body.user;
 
-    // Función porque categoryId cambia cada test (resetDb borra las categorías).
+    // Función porque projectId cambia cada test (resetDb borra los proyectos).
     const newEvent = () => ({
         title: 'Evento',
         location: 'Sala',
         startsAt: '2030-01-10T10:00:00.000Z',
         endsAt: '2030-01-10T12:00:00.000Z',
-        categoryId,
+        projectId,
         guideId,
     });
 
@@ -116,7 +116,7 @@ describe('perfil: primer acceso y edición', () => {
                     startsAt: new Date(Date.now() + 86_400_000),
                     endsAt: new Date(Date.now() + 90_000_000),
                     createdById: owner.id,
-                    categoryId,
+                    projectId,
                     guideId,
                 },
             });
@@ -167,7 +167,7 @@ describe('perfil: primer acceso y edición', () => {
                     startsAt: new Date(Date.now() + 86_400_000),
                     endsAt: new Date(Date.now() + 90_000_000),
                     createdById: owner.id,
-                    categoryId,
+                    projectId,
                     guideId,
                 },
             });

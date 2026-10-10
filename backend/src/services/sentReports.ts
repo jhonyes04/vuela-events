@@ -46,7 +46,7 @@ export const listSentReports = async (userId: string, query?: string) => {
                     startsAt: true,
                     endsAt: true,
                     location: true,
-                    category: { select: { id: true, name: true, color: true } },
+                    project: { select: { id: true, name: true, color: true } },
                 },
             },
         },

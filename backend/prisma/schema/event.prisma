@@ -12,21 +12,21 @@ model Event {
     participantsCount           Int?
     participantsObservations    String?         @db.VarChar(500)
     createdById                 String          @db.Uuid
-    categoryId                  String          @db.Uuid
+    projectId                   String          @db.Uuid
     guideId                     String          @db.Uuid
     seriesId                    String?         @db.Uuid
     createdAt                   DateTime        @default(now())
     updatedAt                   DateTime        @updatedAt
 
     createdBy                   User            @relation("EventCreator", fields: [createdById], references: [id], onDelete: Restrict)
-    category                    Category        @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+    project                     Project         @relation(fields: [projectId], references: [id], onDelete: Restrict)
     guide                       Guide           @relation(fields: [guideId], references: [id], onDelete: Restrict)
     registrations               Registration[]
     sentReports                 SentReport[]
 
     @@index([startsAt])
     @@index([seriesId])
-    @@index([categoryId])
+    @@index([projectId])
     @@index([guideId])
     @@map("events")
 }

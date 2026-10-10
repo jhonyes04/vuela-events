@@ -36,7 +36,7 @@ export const AttendeeChips = ({
                     {personLabel(person)}
                 </span>
                 {onDelete && (
-                    <IconTooltip label="Eliminar participante">
+                    <IconTooltip label="Quitar participante">
                         <Button
                             variant="destructive"
                             size="icon-sm"

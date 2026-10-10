@@ -10,7 +10,7 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
-import { projectChipClass } from '@/features/projects/lib/colors';
+// import { projectChipClass } from '@/features/projects/lib/colors';
 import {
     adminRegisterUser,
     listRegistrationCandidates,
@@ -134,10 +134,8 @@ const AddParticipantsBody = ({
                                 aria-label={`Seleccionar a ${personLabel(c)}`}
                             />
                             <div className="min-w-0 flex-1">
-                                <p className="break-words">
-                                    {personLabel(c)}
-                                </p>
-                                {c.projectPreferences.length > 0 && (
+                                <p className="break-words">{personLabel(c)}</p>
+                                {/* {c.projectPreferences.length > 0 && (
                                     <div className="mt-1 flex flex-wrap gap-1">
                                         {c.projectPreferences.map((cat) => (
                                             <span
@@ -148,7 +146,7 @@ const AddParticipantsBody = ({
                                             </span>
                                         ))}
                                     </div>
-                                )}
+                                )} */}
                             </div>
                         </li>
                     ))}

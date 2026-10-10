@@ -37,7 +37,7 @@ interface CategoryStyle {
 const CATEGORY_STYLES: Record<string, CategoryStyle> = {
     events: { label: 'Eventos', icon: CalendarDays },
     attendees: { label: 'Asistencia', icon: UserPlus },
-    categories: { label: 'Proyectos', icon: FolderKanban },
+    projects: { label: 'Proyectos', icon: FolderKanban },
     guides: { label: 'Guías', icon: BookOpen },
     email: { label: 'Correo', icon: Mail },
     users: { label: 'Usuarios', icon: Users },
@@ -54,7 +54,7 @@ const FALLBACK_STYLE: CategoryStyle = {
 };
 
 // 'events:edit' -> 'events'
-const categoryOf = (permissionId: string): string =>
+const projectOf = (permissionId: string): string =>
     permissionId.split(':')[0] ?? permissionId;
 
 export const PermissionsFieldset = ({
@@ -66,7 +66,7 @@ export const PermissionsFieldset = ({
     const groups = new Map<string, PermissionOption[]>();
 
     for (const p of permissions) {
-        const category = categoryOf(p.id);
+        const category = projectOf(p.id);
 
         groups.set(category, [...(groups.get(category) ?? []), p]);
     }

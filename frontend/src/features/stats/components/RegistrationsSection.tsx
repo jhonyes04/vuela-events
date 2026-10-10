@@ -37,7 +37,7 @@ export const RegistrationsSection = ({
             </ChartCard>
         )}
 
-        {section === 'reg-category' && (
+        {section === 'reg-project' && (
             <ChartCard
                 title="Inscripciones por proyecto"
                 empty={stats.registrationsByProject.length === 0}

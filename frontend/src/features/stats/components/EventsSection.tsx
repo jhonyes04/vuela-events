@@ -71,7 +71,7 @@ export const EventsSection = ({ section, stats }: EventsSectionProps) => (
             </ChartCard>
         )}
 
-        {section === 'events-category' && (
+        {section === 'events-project' && (
             <ChartCard
                 title="Eventos por proyecto"
                 empty={stats.eventsByProject.length === 0}

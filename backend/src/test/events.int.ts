@@ -21,7 +21,7 @@ const validEvent = {
 
 describe('eventos: permisos y validación', () => {
     let server: Awaited<ReturnType<typeof startServer>>;
-    let categoryId: string;
+    let projectId: string;
     let guideId: string;
 
     before(async () => {
@@ -30,7 +30,7 @@ describe('eventos: permisos y validación', () => {
 
     beforeEach(async () => {
         await resetDb();
-        categoryId = (await createProject()).id;
+        projectId = (await createProject()).id;
         guideId = (await createGuide()).id;
     });
 
@@ -39,13 +39,13 @@ describe('eventos: permisos y validación', () => {
         await closeDb();
     });
 
-    // categoryId se añade solo si no viene ya en el cuerpo.
+    // projectId se añade solo si no viene ya en el cuerpo.
     const post = async (userId: string, body: unknown) =>
         api(server.baseUrl, 'POST', '/api/events', {
             cookie: await sessionCookieFor(userId),
             body:
                 typeof body === 'object' && body !== null
-                    ? { categoryId, guideId, ...body }
+                    ? { projectId, guideId, ...body }
                     : body,
         });
 
@@ -153,7 +153,7 @@ describe('eventos: permisos y validación', () => {
                 startsAt: new Date('2030-02-01T10:00:00Z'),
                 endsAt: new Date('2030-02-01T11:00:00Z'),
                 createdById: admin.id,
-                categoryId,
+                projectId,
                 guideId,
             },
         });
@@ -214,14 +214,14 @@ describe('eventos: permisos y validación', () => {
             cookie: await sessionCookieFor(userId),
         });
 
-    it('quien puede crear eventos (dt) puede listar categorías y guías', async () => {
+    it('quien puede crear eventos (dt) puede listar proyectos y guías', async () => {
         const dt = await createUser('dt');
 
         const projects = await get(dt.id, '/api/projects');
         const guides = await get(dt.id, '/api/guides');
 
         assert.equal(projects.status, 200);
-        assert.equal(projects.body.projects[0].id, categoryId);
+        assert.equal(projects.body.projects[0].id, projectId);
         assert.equal(guides.status, 200);
         assert.equal(guides.body.guides[0].id, guideId);
     });
@@ -242,7 +242,7 @@ describe('eventos: permisos y validación', () => {
             startsAt: new Date(validEvent.startsAt),
             endsAt: new Date(validEvent.endsAt),
             createdById: dt.id,
-            categoryId,
+            projectId,
             guideId,
         };
         const mine = await prisma.event.create({ data: base });

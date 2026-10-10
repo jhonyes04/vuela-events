@@ -35,8 +35,8 @@ export const EventInfoRows = ({
     <div className="grid gap-1.5 text-sm text-muted-foreground">
         <p className="flex items-center gap-2">
             <Tag className="size-4 shrink-0 text-brand-green" />
-            <Badge className={PROJECT_COLOR_STYLES[event.category.color].chip}>
-                {event.category.name}
+            <Badge className={PROJECT_COLOR_STYLES[event.project.color].chip}>
+                {event.project.name}
             </Badge>
         </p>
         <p className="flex items-center gap-2">

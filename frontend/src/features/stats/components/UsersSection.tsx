@@ -57,7 +57,7 @@ export const UsersSection = ({ section, stats }: UsersSectionProps) => (
             </ChartCard>
         )}
 
-        {section === 'users-interest-category' && (
+        {section === 'users-interest-project' && (
             <ChartCard
                 title="Usuarios por proyecto"
                 description="Usuarios AIL activos que marcaron cada proyecto como interés."

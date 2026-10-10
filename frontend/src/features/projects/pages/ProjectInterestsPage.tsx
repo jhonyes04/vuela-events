@@ -26,8 +26,8 @@ interface DeletingTarget {
 
 export const ProjectInterestsPage = () => {
     const { user } = useAuth();
-    const canAdd = user?.permissions.includes('categories:edit') ?? false;
-    const canDelete = user?.permissions.includes('categories:delete') ?? false;
+    const canAdd = user?.permissions.includes('projects:edit') ?? false;
+    const canDelete = user?.permissions.includes('projects:delete') ?? false;
 
     const [projects, setProjects] = useState<ProjectInterests[]>([]);
     const [loading, setLoading] = useState(true);

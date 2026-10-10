@@ -19,7 +19,7 @@ export interface ProjectOption {
 }
 
 export const listProjectOptions = (): Promise<ProjectOption[]> =>
-    prisma.category.findMany({
+    prisma.project.findMany({
         where: { active: true },
         select: { id: true, name: true, color: true },
         orderBy: { name: 'asc' },
@@ -28,13 +28,13 @@ export const listProjectOptions = (): Promise<ProjectOption[]> =>
 export const getProjectPreferences = async (
     userId: string,
 ): Promise<ProjectOption[]> => {
-    const rows = await prisma.userCategoryPreference.findMany({
+    const rows = await prisma.userProjectPreference.findMany({
         where: { userId },
-        select: { category: { select: { id: true, name: true, color: true } } },
-        orderBy: { category: { name: 'asc' } },
+        select: { project: { select: { id: true, name: true, color: true } } },
+        orderBy: { project: { name: 'asc' } },
     });
 
-    return rows.map((r) => r.category);
+    return rows.map((r) => r.project);
 };
 
 export const setProjectPreferences = async (
@@ -44,7 +44,7 @@ export const setProjectPreferences = async (
     const unique = [...new Set(projectIds)];
 
     if (unique.length > 0) {
-        const count = await prisma.category.count({
+        const count = await prisma.project.count({
             where: { id: { in: unique } },
         });
 
@@ -54,9 +54,9 @@ export const setProjectPreferences = async (
     }
 
     await prisma.$transaction([
-        prisma.userCategoryPreference.deleteMany({ where: { userId } }),
-        prisma.userCategoryPreference.createMany({
-            data: unique.map((categoryId) => ({ userId, categoryId })),
+        prisma.userProjectPreference.deleteMany({ where: { userId } }),
+        prisma.userProjectPreference.createMany({
+            data: unique.map((projectId) => ({ userId, projectId })),
         }),
     ]);
 
@@ -80,7 +80,7 @@ export interface ProjectWithInterestedUsers {
 export const listProjectInterestedUsers = async (): Promise<
     ProjectWithInterestedUsers[]
 > => {
-    const rows = await prisma.category.findMany({
+    const rows = await prisma.project.findMany({
         where: { active: true },
         select: {
             id: true,
@@ -128,7 +128,7 @@ export const listAilUsers = (): Promise<AilUserOption[]> =>
 
 export const addProjectPreference = async (
     userId: string,
-    categoryId: string,
+    projectId: string,
 ): Promise<void> => {
     const userExists = await prisma.user.count({ where: { id: userId } });
 
@@ -138,17 +138,17 @@ export const addProjectPreference = async (
 
     const current = await getProjectPreferences(userId);
     const ids = new Set(current.map((c) => c.id));
-    ids.add(categoryId);
+    ids.add(projectId);
 
     await setProjectPreferences(userId, [...ids]);
 };
 
 export const removeProjectPreference = async (
     userId: string,
-    categoryId: string,
+    projectId: string,
 ): Promise<void> => {
     const current = await getProjectPreferences(userId);
-    const ids = current.map((c) => c.id).filter((id) => id !== categoryId);
+    const ids = current.map((c) => c.id).filter((id) => id !== projectId);
 
     await setProjectPreferences(userId, ids);
 };

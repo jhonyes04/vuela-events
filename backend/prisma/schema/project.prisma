@@ -1,4 +1,4 @@
-model Category {
+model Project {
     id              String      @id @default(uuid()) @db.Uuid
     name            String      @unique @db.VarChar(80)
     color           String      @db.VarChar(20)
@@ -7,7 +7,7 @@ model Category {
     updatedAt       DateTime    @updatedAt
 
     events          Event[]
-    userPreferences UserCategoryPreference[]
+    userPreferences UserProjectPreference[]
 
-    @@map("categories")
+    @@map("projects")
 }

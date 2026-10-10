@@ -61,10 +61,10 @@ export const appRoutes: AppRoute[] = [
         label: 'Proyectos',
         element: <ProjectsPage />,
         permissions: [
-            'categories:view',
-            'categories:create',
-            'categories:edit',
-            'categories:delete',
+            'projects:view',
+            'projects:create',
+            'projects:edit',
+            'projects:delete',
         ],
         group: 'gestion',
     },
@@ -72,7 +72,7 @@ export const appRoutes: AppRoute[] = [
         path: '/gestion/intereses',
         label: 'Usuarios por proyecto',
         element: <ProjectInterestsPage />,
-        permissions: ['categories:view'],
+        permissions: ['projects:view'],
         group: 'gestion',
     },
     {

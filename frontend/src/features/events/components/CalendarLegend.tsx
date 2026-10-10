@@ -14,7 +14,7 @@ interface CalendarLegendProps {
 // Leyenda de lo que se ve: proyectos de los eventos visibles, y completo/finalizado si los hay.
 export const CalendarLegend = ({ events }: CalendarLegendProps) => {
     const projects = useMemo(() => {
-        const byId = new Map(events.map((e) => [e.category.id, e.category]));
+        const byId = new Map(events.map((e) => [e.project.id, e.project]));
 
         return [...byId.values()].sort((a, b) => a.name.localeCompare(b.name));
     }, [events]);

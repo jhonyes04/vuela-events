@@ -464,8 +464,8 @@ profileRouter.get('/reports/:id/pdf', requireAuth, async (req, res) => {
     res.send(report.pdf);
 });
 
-// Categorías activas, para el selector de preferencias: cualquier usuario
-// autenticado (no exige categories:view, que es de gestión).
+// Proyectos activos, para el selector de preferencias: cualquier usuario
+// autenticado (no exige projects:view, que es de gestión).
 profileRouter.get('/project-options', requireAuth, async (_req, res) => {
     res.json({ projects: await listProjectOptions() });
 });

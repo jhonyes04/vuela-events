@@ -48,10 +48,10 @@ projectsRouter.use(requireAuth);
 projectsRouter.get(
     '/',
     requirePermission(
-        'categories:view',
-        'categories:create',
-        'categories:edit',
-        'categories:delete',
+        'projects:view',
+        'projects:create',
+        'projects:edit',
+        'projects:delete',
         // El formulario de eventos necesita elegir proyecto.
         'events:create',
         'events:edit',
@@ -65,7 +65,7 @@ projectsRouter.get(
 
 projectsRouter.get(
     '/interested-users',
-    requirePermission('categories:view'),
+    requirePermission('projects:view'),
     async (_req, res) => {
         res.json({ projects: await listProjectInterestedUsers() });
     },
@@ -73,7 +73,7 @@ projectsRouter.get(
 
 projectsRouter.get(
     '/ail-users',
-    requirePermission('categories:edit'),
+    requirePermission('projects:edit'),
     async (_req, res) => {
         res.json({ users: await listAilUsers() });
     },
@@ -81,7 +81,7 @@ projectsRouter.get(
 
 projectsRouter.post(
     '/:id/interested-users',
-    requirePermission('categories:edit'),
+    requirePermission('projects:edit'),
     async (req, res) => {
         const params = idParamSchema.safeParse(req.params);
         const body = addInterestedUserSchema.safeParse(req.body);
@@ -109,7 +109,7 @@ projectsRouter.post(
 
 projectsRouter.delete(
     '/:id/interested-users/:userId',
-    requirePermission('categories:delete'),
+    requirePermission('projects:delete'),
     async (req, res) => {
         const params = projectUserParamsSchema.safeParse(req.params);
 
@@ -125,7 +125,7 @@ projectsRouter.delete(
 
 projectsRouter.post(
     '/',
-    requirePermission('categories:create'),
+    requirePermission('projects:create'),
     async (req, res) => {
         const actor = req.user;
 
@@ -164,7 +164,7 @@ projectsRouter.post(
 
 projectsRouter.patch(
     '/:id',
-    requirePermission('categories:edit'),
+    requirePermission('projects:edit'),
     async (req, res) => {
         const actor = req.user;
 
@@ -204,7 +204,7 @@ projectsRouter.patch(
 
 projectsRouter.delete(
     '/:id',
-    requirePermission('categories:delete'),
+    requirePermission('projects:delete'),
     async (req, res) => {
         const actor = req.user;
 

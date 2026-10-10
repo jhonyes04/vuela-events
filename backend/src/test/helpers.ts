@@ -16,7 +16,7 @@ if (
 }
 
 export const resetDb = async (): Promise<void> => {
-    await prisma.$executeRaw`TRUNCATE TABLE "audit_logs", "registrations", "events", "categories", "guides", "users", "session" RESTART IDENTITY CASCADE`;
+    await prisma.$executeRaw`TRUNCATE TABLE "audit_logs", "registrations", "events", "projects", "guides", "users", "session" RESTART IDENTITY CASCADE`;
 };
 
 export const closeDb = async (): Promise<void> => {
@@ -53,7 +53,7 @@ export const createProject = (
 ) => {
     const n = randomBytes(4).toString('hex');
 
-    return prisma.category.create({
+    return prisma.project.create({
         data: {
             name: opts.name ?? `Proyecto ${n}`,
             color: opts.color ?? 'amber',

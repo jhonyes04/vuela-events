@@ -8,7 +8,7 @@ export interface SeriesInput {
     description?: string | undefined;
     location: string;
     capacity?: number | undefined;
-    categoryId: string;
+    projectId: string;
     guideId: string;
     rule: RecurrenceRule;
 }
@@ -30,7 +30,7 @@ export const createEventSeries = async (
                 description: input.description,
                 location: input.location,
                 capacity: input.capacity,
-                categoryId: input.categoryId,
+                projectId: input.projectId,
                 guideId: input.guideId,
                 startsAt: session.startsAt,
                 endsAt: session.endsAt,

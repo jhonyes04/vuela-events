@@ -8,12 +8,12 @@ export interface EventColor {
     dot: string;
 }
 
-// El color viene de la categoría del evento (categoría es obligatoria),
+// El color viene del proyecto del evento (el proyecto es obligatorio),
 // salvo que esté completo: entonces se marca en rojo.
 export const eventColor = (event: EventItem): EventColor => {
     const style = isFull(event)
         ? { chip: 'bg-red-500 text-white', swatch: 'bg-red-500' }
-        : PROJECT_COLOR_STYLES[event.category.color];
+        : PROJECT_COLOR_STYLES[event.project.color];
 
     return {
         chip: `${style.chip} hover:brightness-95`,

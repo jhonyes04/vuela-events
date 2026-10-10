@@ -6,13 +6,18 @@ export const Footer = () => (
             <p className="text-white/80">
                 &copy; {new Date().getFullYear()} Vuela Events
             </p>
-            <p className="flex items-center gap-1.5 text-white/40">
+            <div className="flex items-center gap-1.5">
+                <div className="flex flex-col items-end gap-0 5 text-white/40">
+                    <span className="flex items-center gap-1 5">
+                        Juan Manuel España Redondo
+                    </span>
+                    <span>Punto Vuela Almáchar</span>
+                </div>
                 <Star
-                    className="size-4 shrink-0 text-yellow-300"
+                    className="siize-4 shrink-0 text-yellow-300"
                     fill="currentColor"
                 />
-                Punto Vuela Almáchar
-            </p>
+            </div>
         </div>
     </footer>
 );

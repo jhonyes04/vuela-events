@@ -30,7 +30,7 @@ export const EditUserProjectsDialog = ({
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent key={user.id}>
+            <DialogContent key={user.id} className="sm:max-w-2xl">
                 <DialogHeader>
                     <DialogTitle>
                         Proyectos de {user.name} {user.lastName}

@@ -1,0 +1,14 @@
+// Proyectos de evento en los que un usuario (normalmente AIL) dice estar
+// interesado en participar. Solo una preferencia visible, sin lógica de
+// filtrado ni envío asociada por ahora.
+model UserProjectPreference {
+    userId      String   @db.Uuid
+    projectId   String   @db.Uuid
+    createdAt   DateTime @default(now())
+
+    user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+    project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+    @@id([userId, projectId])
+    @@map("user_project_preferences")
+}

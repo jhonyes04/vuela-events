@@ -31,7 +31,7 @@ const weekdayOf = (d: Date) =>
 
 describe('series recurrentes y eliminación de sesiones', () => {
     let server: Awaited<ReturnType<typeof startServer>>;
-    let categoryId: string;
+    let projectId: string;
     let guideId: string;
 
     before(async () => {
@@ -40,7 +40,7 @@ describe('series recurrentes y eliminación de sesiones', () => {
 
     beforeEach(async () => {
         await resetDb();
-        categoryId = (await createProject()).id;
+        projectId = (await createProject()).id;
         guideId = (await createGuide()).id;
     });
 
@@ -49,14 +49,14 @@ describe('series recurrentes y eliminación de sesiones', () => {
         await closeDb();
     });
 
-    // categoryId se añade solo si no viene ya en el cuerpo (los casos de
-    // validación prueban otros campos, no la ausencia de categoría).
+    // projectId se añade solo si no viene ya en el cuerpo (los casos de
+    // validación prueban otros campos, no la ausencia de proyecto).
     const postSeries = async (userId: string, body: unknown) =>
         api(server.baseUrl, 'POST', '/api/events/recurring', {
             cookie: await sessionCookieFor(userId),
             body:
                 typeof body === 'object' && body !== null
-                    ? { categoryId, guideId, ...body }
+                    ? { projectId, guideId, ...body }
                     : body,
         });
 
@@ -72,7 +72,7 @@ describe('series recurrentes y eliminación de sesiones', () => {
                 startsAt: new Date('2030-01-10T10:00:00Z'),
                 endsAt: new Date('2030-01-10T12:00:00Z'),
                 createdById,
-                categoryId,
+                projectId,
                 guideId,
             },
         });
@@ -402,7 +402,7 @@ describe('series recurrentes y eliminación de sesiones', () => {
                     startsAt: new Date(starts),
                     endsAt: new Date(ends),
                     createdById,
-                    categoryId,
+                    projectId,
                     guideId,
                     seriesId,
                 })),

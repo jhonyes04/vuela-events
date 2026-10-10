@@ -37,7 +37,7 @@ describe('parte de firmas: generar, revisar y enviar', () => {
                 startsAt: new Date('2030-01-10T10:00:00.000Z'),
                 endsAt: new Date('2030-01-10T12:00:00.000Z'),
                 createdById: dt.id,
-                categoryId: (await createProject()).id,
+                projectId: (await createProject()).id,
                 guideId: (await createGuide()).id,
             },
         });
