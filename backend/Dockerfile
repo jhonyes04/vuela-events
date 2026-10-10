@@ -4,6 +4,9 @@ WORKDIR /app
 
 ENV NODE_ENV=production
 
+RUN apt-get update && apt-get install -y --no-install-recommends curl \
+    && rm -rf /var/lib/apt/lists/*
+
 RUN npm install -g pnpm@11
 
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml prisma.config.ts ./
