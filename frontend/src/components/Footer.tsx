@@ -8,9 +8,7 @@ export const Footer = () => (
             </p>
             <div className="flex items-center gap-1.5">
                 <div className="flex flex-col items-end gap-0 5 text-white/40">
-                    <span className="flex items-center gap-1 5">
-                        Juan Manuel España Redondo
-                    </span>
+                    <span className="flex items-center gap-1 5">Juannma</span>
                     <span>Punto Vuela Almáchar</span>
                 </div>
                 <Star

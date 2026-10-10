@@ -4,7 +4,7 @@ import {
     CalendarDays,
     Clock,
     MapPin,
-    Tag,
+    FolderKanban,
     User,
     Users,
 } from 'lucide-react';
@@ -34,7 +34,7 @@ export const EventInfoRows = ({
 }: EventInfoRowsProps) => (
     <div className="grid gap-1.5 text-sm text-muted-foreground">
         <p className="flex items-center gap-2">
-            <Tag className="size-4 shrink-0 text-brand-green" />
+            <FolderKanban className="size-4 shrink-0 text-brand-green" />
             <Badge className={PROJECT_COLOR_STYLES[event.project.color].chip}>
                 {event.project.name}
             </Badge>
