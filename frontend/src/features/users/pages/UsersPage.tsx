@@ -5,12 +5,12 @@ import { toast } from 'sonner';
 import { useAuth } from '@/features/auth/hooks/context';
 import { Button } from '@/components/ui/button';
 import { ConfirmDeleteDialog } from '@/components/ConfirmDeleteDialog';
+import { DataTable, type DataTableColumn } from '@/components/DataTable';
 import { IconTooltip } from '@/components/IconTooltip';
 import { EditUserDialog } from '@/features/users/components/EditUserDialog';
 import { EditUserProjectsDialog } from '@/features/users/components/EditUserProjectsDialog';
 import { ListErrors } from '@/features/users/components/ListErrors';
 import { PaginationControls } from '@/components/PaginationControls';
-import { SortableHeader } from '@/components/SortableHeader';
 import { usePagination } from '@/hooks/usePagination';
 import { useSort } from '@/hooks/useSort';
 import { scrollbarOptions } from '@/lib/overlayScrollbarsOptions';
@@ -67,6 +67,118 @@ export const UsersPage = () => {
 
     const { paged, page, pageCount, pageSize, total, setPage, setPageSize } =
         usePagination(sortedUsers, 10);
+
+    const columns: DataTableColumn<
+        AdminUser,
+        'name' | 'lastName' | 'email' | 'role' | 'active'
+    >[] = [
+        { key: 'name', header: 'Nombre', sortKey: 'name', render: (u) => u.name },
+        {
+            key: 'lastName',
+            header: 'Apellidos',
+            sortKey: 'lastName',
+            render: (u) => u.lastName,
+        },
+        {
+            key: 'email',
+            header: 'Correo',
+            sortKey: 'email',
+            cellClassName: 'break-all',
+            render: (u) => u.email,
+        },
+        {
+            key: 'role',
+            header: 'Rol',
+            sortKey: 'role',
+            render: (u) => {
+                const isSelf = u.id === me?.id;
+                const busy = busyId === u.id;
+
+                return (
+                    <select
+                        className={selectClass}
+                        value={u.role.id}
+                        disabled={isSelf || busy}
+                        onChange={(e) =>
+                            void changeRole(u.id, e.target.value)
+                        }
+                    >
+                        {roles.map((r) => (
+                            <option key={r.id} value={r.id}>
+                                {r.name}
+                            </option>
+                        ))}
+                    </select>
+                );
+            },
+        },
+        {
+            key: 'active',
+            header: 'Estado',
+            sortKey: 'active',
+            render: (u) => (u.active ? 'Activo' : 'Desactivado'),
+        },
+        {
+            key: 'actions',
+            header: <span className="sr-only">Acciones</span>,
+            align: 'right',
+            cellClassName: 'flex justify-end gap-2',
+            render: (u) => {
+                const isSelf = u.id === me?.id;
+                const busy = busyId === u.id;
+
+                return (
+                    <>
+                        <IconTooltip
+                            label={isSelf ? 'Edítate desde Mi perfil' : 'Editar'}
+                        >
+                            <Button
+                                variant="secondary"
+                                size="icon"
+                                aria-label="Editar"
+                                disabled={isSelf || busy}
+                                onClick={() => setEditing(u)}
+                            >
+                                <Pencil className="size-4" />
+                            </Button>
+                        </IconTooltip>
+                        {u.role.id === ROLE_IDS.AIL && (
+                            <IconTooltip label="Proyectos de interés">
+                                <Button
+                                    variant="secondary"
+                                    size="icon"
+                                    aria-label="Proyectos de interés"
+                                    disabled={busy}
+                                    onClick={() => setEditingProjects(u)}
+                                >
+                                    <FolderKanban className="size-4" />
+                                </Button>
+                            </IconTooltip>
+                        )}
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            disabled={isSelf || busy}
+                            onClick={() => void toggleActive(u.id, !u.active)}
+                        >
+                            {u.active ? 'Desactivar' : 'Activar'}
+                        </Button>
+                        <IconTooltip label="Eliminar">
+                            <Button
+                                variant="destructive"
+                                size="icon"
+                                aria-label="Eliminar"
+                                disabled={isSelf || busy}
+                                onClick={() => setDeleting(u)}
+                            >
+                                <Trash2 className="size-4" />
+                            </Button>
+                        </IconTooltip>
+                    </>
+                );
+            },
+        },
+    ];
 
     const load = async () => {
         setLoading(true);
@@ -151,163 +263,13 @@ export const UsersPage = () => {
                     options={scrollbarOptions}
                     defer
                 >
-                    <table className="w-full text-sm">
-                        <thead>
-                            <tr className="border-b bg-muted/50 text-left">
-                                <SortableHeader
-                                    label="Nombre"
-                                    sortKey="name"
-                                    sort={sort}
-                                    onSort={toggleSort}
-                                />
-                                <SortableHeader
-                                    label="Apellidos"
-                                    sortKey="lastName"
-                                    sort={sort}
-                                    onSort={toggleSort}
-                                />
-                                <SortableHeader
-                                    label="Correo"
-                                    sortKey="email"
-                                    sort={sort}
-                                    onSort={toggleSort}
-                                />
-                                <SortableHeader
-                                    label="Rol"
-                                    sortKey="role"
-                                    sort={sort}
-                                    onSort={toggleSort}
-                                />
-                                <SortableHeader
-                                    label="Estado"
-                                    sortKey="active"
-                                    sort={sort}
-                                    onSort={toggleSort}
-                                />
-                                <th className="p-3 font-bold">
-                                    <span className="sr-only">Acciones</span>
-                                </th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {paged.map((u) => {
-                                const isSelf = u.id === me?.id;
-                                const busy = busyId === u.id;
-
-                                return (
-                                    <tr
-                                        key={u.id}
-                                        className="border-b last:border-0"
-                                    >
-                                        <td className="p-3">{u.name}</td>
-                                        <td className="p-3">{u.lastName}</td>
-                                        <td className="p-3 break-all">
-                                            {u.email}
-                                        </td>
-                                        <td className="p-3">
-                                            <select
-                                                className={selectClass}
-                                                value={u.role.id}
-                                                disabled={isSelf || busy}
-                                                onChange={(e) =>
-                                                    void changeRole(
-                                                        u.id,
-                                                        e.target.value,
-                                                    )
-                                                }
-                                            >
-                                                {roles.map((r) => (
-                                                    <option
-                                                        key={r.id}
-                                                        value={r.id}
-                                                    >
-                                                        {r.name}
-                                                    </option>
-                                                ))}
-                                            </select>
-                                        </td>
-                                        <td className="p-3">
-                                            {u.active
-                                                ? 'Activo'
-                                                : 'Desactivado'}
-                                        </td>
-                                        <td className="p-3 text-right">
-                                            <div className="flex justify-end gap-2">
-                                                <IconTooltip
-                                                    label={
-                                                        isSelf
-                                                            ? 'Edítate desde Mi perfil'
-                                                            : 'Editar'
-                                                    }
-                                                >
-                                                    <Button
-                                                        variant="secondary"
-                                                        size="icon"
-                                                        aria-label="Editar"
-                                                        disabled={
-                                                            isSelf || busy
-                                                        }
-                                                        onClick={() =>
-                                                            setEditing(u)
-                                                        }
-                                                    >
-                                                        <Pencil className="size-4" />
-                                                    </Button>
-                                                </IconTooltip>
-                                                {u.role.id === ROLE_IDS.AIL && (
-                                                    <IconTooltip label="Proyectos de interés">
-                                                        <Button
-                                                            variant="secondary"
-                                                            size="icon"
-                                                            aria-label="Proyectos de interés"
-                                                            disabled={busy}
-                                                            onClick={() =>
-                                                                setEditingProjects(
-                                                                    u,
-                                                                )
-                                                            }
-                                                        >
-                                                            <FolderKanban className="size-4" />
-                                                        </Button>
-                                                    </IconTooltip>
-                                                )}
-                                                <Button
-                                                    variant="outline"
-                                                    size="sm"
-                                                    disabled={isSelf || busy}
-                                                    onClick={() =>
-                                                        void toggleActive(
-                                                            u.id,
-                                                            !u.active,
-                                                        )
-                                                    }
-                                                >
-                                                    {u.active
-                                                        ? 'Desactivar'
-                                                        : 'Activar'}
-                                                </Button>
-                                                <IconTooltip label="Eliminar">
-                                                    <Button
-                                                        variant="destructive"
-                                                        size="icon"
-                                                        aria-label="Eliminar"
-                                                        disabled={
-                                                            isSelf || busy
-                                                        }
-                                                        onClick={() =>
-                                                            setDeleting(u)
-                                                        }
-                                                    >
-                                                        <Trash2 className="size-4" />
-                                                    </Button>
-                                                </IconTooltip>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                );
-                            })}
-                        </tbody>
-                    </table>
+                    <DataTable
+                        columns={columns}
+                        rows={paged}
+                        rowKey={(u) => u.id}
+                        sort={sort}
+                        onSort={toggleSort}
+                    />
                 </OverlayScrollbarsComponent>
             )}
 

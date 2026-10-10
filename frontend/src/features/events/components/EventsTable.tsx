@@ -9,9 +9,9 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import { DataTable, type DataTableColumn } from '@/components/DataTable';
 import { ListErrors } from '@/features/users/components/ListErrors';
 import { PaginationControls } from '@/components/PaginationControls';
-import { SortableHeader } from '@/components/SortableHeader';
 import { usePagination } from '@/hooks/usePagination';
 import { useSort } from '@/hooks/useSort';
 import { scrollbarOptions } from '@/lib/overlayScrollbarsOptions';
@@ -125,6 +125,77 @@ export const EventsTable = ({
     const { paged, page, pageCount, pageSize, total, setPage, setPageSize } =
         usePagination(sorted, 10);
 
+    const columns: DataTableColumn<EventItem, SortKey>[] = [
+        {
+            key: 'title',
+            header: 'Título',
+            sortKey: 'title',
+            render: (event) => event.title,
+        },
+        {
+            key: 'category',
+            header: 'Proyecto',
+            sortKey: 'category',
+            render: (event) => (
+                <Badge
+                    className={PROJECT_COLOR_STYLES[event.project.color].chip}
+                >
+                    {event.project.name}
+                </Badge>
+            ),
+        },
+        {
+            key: 'startsAt',
+            header: 'Fecha',
+            sortKey: 'startsAt',
+            cellClassName: 'whitespace-nowrap',
+            render: (event) => (
+                <>
+                    {formatShortDate(event.startsAt)},{' '}
+                    {formatTime(event.startsAt)} -{' '}
+                    {formatTime(event.endsAt)}
+                </>
+            ),
+        },
+        {
+            key: 'location',
+            header: 'Lugar',
+            sortKey: 'location',
+            render: (event) => event.location ?? '—',
+        },
+        ...(showCapacity
+            ? [
+                  {
+                      key: 'capacity',
+                      header: 'Participantes',
+                      sortKey: 'capacity',
+                      cellClassName: 'whitespace-nowrap',
+                      render: (event: EventItem) => attendanceLabel(event),
+                  } satisfies DataTableColumn<EventItem, SortKey>,
+              ]
+            : []),
+        ...(showParticipants
+            ? [
+                  {
+                      key: 'participants',
+                      header: 'Atendidos',
+                      sortKey: 'participants',
+                      align: 'right',
+                      cellClassName: 'whitespace-nowrap',
+                      render: (event: EventItem) =>
+                          event.participantsCount ?? '—',
+                  } satisfies DataTableColumn<EventItem, SortKey>,
+              ]
+            : []),
+        {
+            key: 'actions',
+            header: <span className="sr-only">Acciones</span>,
+            align: 'right',
+            cellClassName: 'flex justify-end gap-2',
+            render: (event) => renderActions(event),
+        },
+    ];
+
     return (
         <>
             <ListErrors error={error} actionError={null} onRetry={onRetry} />
@@ -224,104 +295,18 @@ export const EventsTable = ({
                     options={scrollbarOptions}
                     defer
                 >
-                    <table className="w-full text-sm">
-                        <thead>
-                            <tr className="border-b bg-muted/50 text-left">
-                                <SortableHeader
-                                    label="Título"
-                                    sortKey="title"
-                                    sort={sort}
-                                    onSort={toggleSort}
-                                />
-                                <SortableHeader
-                                    label="Proyecto"
-                                    sortKey="category"
-                                    sort={sort}
-                                    onSort={toggleSort}
-                                />
-                                <SortableHeader
-                                    label="Fecha"
-                                    sortKey="startsAt"
-                                    sort={sort}
-                                    onSort={toggleSort}
-                                />
-                                <SortableHeader
-                                    label="Lugar"
-                                    sortKey="location"
-                                    sort={sort}
-                                    onSort={toggleSort}
-                                />
-                                {showCapacity && (
-                                    <SortableHeader
-                                        label="Participantes"
-                                        sortKey="capacity"
-                                        sort={sort}
-                                        onSort={toggleSort}
-                                    />
-                                )}
-                                {showParticipants && (
-                                    <SortableHeader
-                                        label="Atendidos"
-                                        sortKey="participants"
-                                        sort={sort}
-                                        onSort={toggleSort}
-                                    />
-                                )}
-                                <th className="p-3 font-bold">
-                                    <span className="sr-only">Acciones</span>
-                                </th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {paged.map((event) => (
-                                <tr
-                                    key={event.id}
-                                    className={cn(
-                                        'border-b last:border-0',
-                                        hasEnded(event)
-                                            ? 'bg-amber-500/10'
-                                            : 'bg-brand-green/5',
-                                    )}
-                                >
-                                    <td className="p-3">{event.title}</td>
-                                    <td className="p-3">
-                                        <Badge
-                                            className={
-                                                PROJECT_COLOR_STYLES[
-                                                    event.project.color
-                                                ].chip
-                                            }
-                                        >
-                                            {event.project.name}
-                                        </Badge>
-                                    </td>
-                                    <td className="p-3 whitespace-nowrap">
-                                        {formatShortDate(event.startsAt)},{' '}
-                                        {formatTime(event.startsAt)} -{' '}
-                                        {formatTime(event.endsAt)}
-                                    </td>
-                                    <td className="p-3">
-                                        {event.location ?? '—'}
-                                    </td>
-                                    {showCapacity && (
-                                        <td className="p-3 whitespace-nowrap">
-                                            {attendanceLabel(event)}
-                                        </td>
-                                    )}
-                                    {showParticipants && (
-                                        <td className="p-3 text-right whitespace-nowrap">
-                                            {event.participantsCount ?? '—'}
-                                        </td>
-                                    )}
-                                    <td className="p-3 text-right">
-                                        <div className="flex justify-end gap-2">
-                                            {renderActions(event)}
-                                        </div>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
+                    <DataTable
+                        columns={columns}
+                        rows={paged}
+                        rowKey={(event) => event.id}
+                        sort={sort}
+                        onSort={toggleSort}
+                        rowClassName={(event) =>
+                            hasEnded(event)
+                                ? 'bg-amber-500/10'
+                                : 'bg-brand-green/5'
+                        }
+                    />
                 </OverlayScrollbarsComponent>
             )}
 

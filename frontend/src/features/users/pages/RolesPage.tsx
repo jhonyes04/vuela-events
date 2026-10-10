@@ -4,6 +4,7 @@ import { OverlayScrollbarsComponent } from 'overlayscrollbars-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ConfirmDeleteDialog } from '@/components/ConfirmDeleteDialog';
+import { DataTable, type DataTableColumn } from '@/components/DataTable';
 import { IconTooltip } from '@/components/IconTooltip';
 import { CreateRoleDialog } from '@/features/users/components/CreateRoleDialog';
 import { ListErrors } from '@/features/users/components/ListErrors';
@@ -75,6 +76,54 @@ export const RolesPage = () => {
     // para que se refresque solo tras cada cambio de permiso.
     const editingRole = roles.find((r) => r.id === editingId) ?? null;
 
+    const columns: DataTableColumn<Role>[] = [
+        { key: 'name', header: 'Nombre', render: (role) => role.name },
+        {
+            key: 'id',
+            header: 'Identificador',
+            cellClassName: 'text-muted-foreground',
+            render: (role) => role.id,
+        },
+        {
+            key: 'protected',
+            header: 'Estado',
+            render: (role) =>
+                role.protected && <Badge variant="secondary">Protegido</Badge>,
+        },
+        {
+            key: 'actions',
+            header: <span className="sr-only">Acciones</span>,
+            align: 'right',
+            cellClassName: 'flex justify-end gap-2',
+            render: (role) => (
+                <>
+                    <IconTooltip label="Editar permisos">
+                        <Button
+                            variant="outline"
+                            size="icon"
+                            aria-label="Editar permisos"
+                            onClick={() => openPermissions(role.id)}
+                        >
+                            <ShieldCheck className="size-4" />
+                        </Button>
+                    </IconTooltip>
+                    {!role.protected && (
+                        <IconTooltip label="Eliminar">
+                            <Button
+                                variant="destructive"
+                                size="icon"
+                                aria-label="Eliminar"
+                                onClick={() => setDeleting(role)}
+                            >
+                                <Trash2 className="size-4" />
+                            </Button>
+                        </IconTooltip>
+                    )}
+                </>
+            ),
+        },
+    ];
+
     return (
         <section>
             <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
@@ -101,68 +150,11 @@ export const RolesPage = () => {
                     options={scrollbarOptions}
                     defer
                 >
-                    <table className="w-full text-sm">
-                        <thead>
-                            <tr className="border-b bg-muted/50 text-left">
-                                <th className="p-3 font-bold">Nombre</th>
-                                <th className="p-3 font-bold">Identificador</th>
-                                <th className="p-3 font-bold">Estado</th>
-                                <th className="p-3 font-bold">
-                                    <span className="sr-only">Acciones</span>
-                                </th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {roles.map((role) => (
-                                <tr
-                                    key={role.id}
-                                    className="border-b last:border-0"
-                                >
-                                    <td className="p-3">{role.name}</td>
-                                    <td className="p-3 text-muted-foreground">
-                                        {role.id}
-                                    </td>
-                                    <td className="p-3">
-                                        {role.protected && (
-                                            <Badge variant="secondary">
-                                                Protegido
-                                            </Badge>
-                                        )}
-                                    </td>
-                                    <td className="p-3 text-right">
-                                        <div className="flex justify-end gap-2">
-                                            <IconTooltip label="Editar permisos">
-                                                <Button
-                                                    variant="outline"
-                                                    size="icon"
-                                                    aria-label="Editar permisos"
-                                                    onClick={() =>
-                                                        openPermissions(role.id)
-                                                    }
-                                                >
-                                                    <ShieldCheck className="size-4" />
-                                                </Button>
-                                            </IconTooltip>
-                                            {!role.protected && (
-                                                <IconTooltip label="Eliminar">
-                                                    <Button
-                                                        variant="destructive"
-                                                        size="icon"
-                                                        aria-label="Eliminar"
-                                                        onClick={() =>
-                                                            setDeleting(role)
-                                                        }
-                                                    >
-                                                        <Trash2 className="size-4" />
-                                                    </Button>
-                                                </IconTooltip>
-                                            )}
-                                        </div>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
+                    <DataTable
+                        columns={columns}
+                        rows={roles}
+                        rowKey={(role) => role.id}
+                    />
                 </OverlayScrollbarsComponent>
             )}
 

@@ -4,11 +4,11 @@ import { OverlayScrollbarsComponent } from 'overlayscrollbars-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ConfirmDeleteDialog } from '@/components/ConfirmDeleteDialog';
+import { DataTable, type DataTableColumn } from '@/components/DataTable';
 import { IconTooltip } from '@/components/IconTooltip';
 import { ListErrors } from '@/features/users/components/ListErrors';
 import { PageTitle } from '@/components/PageTitle';
 import { PaginationControls } from '@/components/PaginationControls';
-import { SortableHeader } from '@/components/SortableHeader';
 import { usePagination } from '@/hooks/usePagination';
 import { useSort } from '@/hooks/useSort';
 import { scrollbarOptions } from '@/lib/overlayScrollbarsOptions';
@@ -161,6 +161,85 @@ export const AuditPage = () => {
         });
     };
 
+    const columns: DataTableColumn<AuditLogEntry, SortKey>[] = [
+        {
+            key: 'select',
+            header: (
+                <input
+                    type="checkbox"
+                    className="size-4 accent-primary"
+                    aria-label="Seleccionar todos"
+                    checked={allPagedSelected}
+                    onChange={toggleAllPaged}
+                />
+            ),
+            headerClassName: 'w-10 font-normal',
+            render: (log) => (
+                <input
+                    type="checkbox"
+                    className="size-4 accent-primary"
+                    aria-label="Seleccionar"
+                    checked={selected.has(log.id)}
+                    onChange={() => toggleOne(log.id)}
+                />
+            ),
+        },
+        {
+            key: 'createdAt',
+            header: 'Fecha',
+            sortKey: 'createdAt',
+            cellClassName: 'whitespace-nowrap',
+            render: (log) => dateTimeFormat.format(new Date(log.createdAt)),
+        },
+        {
+            key: 'action',
+            header: 'Acción',
+            sortKey: 'action',
+            render: (log) => actionLabel(log.action),
+        },
+        {
+            key: 'actor',
+            header: 'Quién',
+            sortKey: 'actor',
+            render: (log) => auditPersonLabel(log.actor),
+        },
+        {
+            key: 'target',
+            header: 'Sobre quién',
+            sortKey: 'target',
+            render: (log) =>
+                log.target ? auditPersonLabel(log.target) : '—',
+        },
+        {
+            key: 'detail',
+            header: 'Detalle',
+            cellClassName: 'text-muted-foreground',
+            render: (log) =>
+                log.oldValue || log.newValue
+                    ? `${log.oldValue ?? ''} → ${log.newValue ?? ''}`
+                    : '—',
+        },
+        {
+            key: 'actions',
+            header: <span className="sr-only">Acciones</span>,
+            align: 'right',
+            render: (log) => (
+                <IconTooltip label="Eliminar">
+                    <Button
+                        variant="destructive"
+                        size="icon"
+                        aria-label="Eliminar"
+                        onClick={() =>
+                            setDeleting({ ids: [log.id], label: 'este registro' })
+                        }
+                    >
+                        <Trash2 className="size-4" />
+                    </Button>
+                </IconTooltip>
+            ),
+        },
+    ];
+
     return (
         <section>
             <PageTitle>Auditoría</PageTitle>
@@ -227,105 +306,13 @@ export const AuditPage = () => {
                     options={scrollbarOptions}
                     defer
                 >
-                    <table className="w-full text-sm">
-                        <thead>
-                            <tr className="border-b bg-muted/50 text-left">
-                                <th className="w-10 p-3">
-                                    <input
-                                        type="checkbox"
-                                        className="size-4 accent-primary"
-                                        aria-label="Seleccionar todos"
-                                        checked={allPagedSelected}
-                                        onChange={toggleAllPaged}
-                                    />
-                                </th>
-                                <SortableHeader
-                                    label="Fecha"
-                                    sortKey="createdAt"
-                                    sort={sort}
-                                    onSort={toggleSort}
-                                />
-                                <SortableHeader
-                                    label="Acción"
-                                    sortKey="action"
-                                    sort={sort}
-                                    onSort={toggleSort}
-                                />
-                                <SortableHeader
-                                    label="Quién"
-                                    sortKey="actor"
-                                    sort={sort}
-                                    onSort={toggleSort}
-                                />
-                                <SortableHeader
-                                    label="Sobre quién"
-                                    sortKey="target"
-                                    sort={sort}
-                                    onSort={toggleSort}
-                                />
-                                <th className="p-3 font-bold">Detalle</th>
-                                <th className="p-3 font-bold">
-                                    <span className="sr-only">Acciones</span>
-                                </th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {paged.map((log) => (
-                                <tr
-                                    key={log.id}
-                                    className="border-b last:border-0"
-                                >
-                                    <td className="p-3">
-                                        <input
-                                            type="checkbox"
-                                            className="size-4 accent-primary"
-                                            aria-label="Seleccionar"
-                                            checked={selected.has(log.id)}
-                                            onChange={() => toggleOne(log.id)}
-                                        />
-                                    </td>
-                                    <td className="p-3 whitespace-nowrap">
-                                        {dateTimeFormat.format(
-                                            new Date(log.createdAt),
-                                        )}
-                                    </td>
-                                    <td className="p-3">
-                                        {actionLabel(log.action)}
-                                    </td>
-                                    <td className="p-3">
-                                        {auditPersonLabel(log.actor)}
-                                    </td>
-                                    <td className="p-3">
-                                        {log.target
-                                            ? auditPersonLabel(log.target)
-                                            : '—'}
-                                    </td>
-                                    <td className="p-3 text-muted-foreground">
-                                        {log.oldValue || log.newValue
-                                            ? `${log.oldValue ?? ''} → ${log.newValue ?? ''}`
-                                            : '—'}
-                                    </td>
-                                    <td className="p-3 text-right">
-                                        <IconTooltip label="Eliminar">
-                                            <Button
-                                                variant="destructive"
-                                                size="icon"
-                                                aria-label="Eliminar"
-                                                onClick={() =>
-                                                    setDeleting({
-                                                        ids: [log.id],
-                                                        label: 'este registro',
-                                                    })
-                                                }
-                                            >
-                                                <Trash2 className="size-4" />
-                                            </Button>
-                                        </IconTooltip>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
+                    <DataTable
+                        columns={columns}
+                        rows={paged}
+                        rowKey={(log) => log.id}
+                        sort={sort}
+                        onSort={toggleSort}
+                    />
                 </OverlayScrollbarsComponent>
             )}
 
