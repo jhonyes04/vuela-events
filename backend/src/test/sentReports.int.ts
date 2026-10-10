@@ -4,7 +4,7 @@ import { prisma } from '../lib/prisma.js';
 import { saveSentReport } from '../services/sentReports.js';
 import {
     closeDb,
-    createCategory,
+    createProject,
     createGuide,
     createUser,
     resetDb,
@@ -39,7 +39,7 @@ describe('partes de firmas guardados: listado y descarga', () => {
                 startsAt: new Date('2030-01-10T10:00:00.000Z'),
                 endsAt: new Date('2030-01-10T12:00:00.000Z'),
                 createdById: sender.id,
-                categoryId: (await createCategory()).id,
+                categoryId: (await createProject()).id,
                 guideId: (await createGuide()).id,
             },
         });

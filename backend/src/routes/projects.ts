@@ -2,76 +2,76 @@ import { Router } from 'express';
 import { z } from 'zod';
 import { requireAuth, requirePermission } from '../middleware/auth.js';
 import {
-    CATEGORY_COLORS,
-    CategoryManageError,
-    createCategory,
-    deleteCategory,
-    listCategories,
-    updateCategory,
-} from '../services/categories.js';
+    PROJECT_COLORS,
+    ProjectManageError,
+    createProject,
+    deleteProject,
+    listProjects,
+    updateProject,
+} from '../services/projects.js';
 import {
-    addCategoryPreference,
-    CategoryPreferenceError,
+    addProjectPreference,
+    ProjectPreferenceError,
     listAilUsers,
-    listCategoryInterestedUsers,
-    removeCategoryPreference,
-} from '../services/categoryPreferences.js';
+    listProjectInterestedUsers,
+    removeProjectPreference,
+} from '../services/projectPreferences.js';
 
 const idParamSchema = z.object({ id: z.uuid() });
-const categoryUserParamsSchema = z.object({
+const projectUserParamsSchema = z.object({
     id: z.uuid(),
     userId: z.uuid(),
 });
 const addInterestedUserSchema = z.strictObject({ userId: z.uuid() });
 
-const createCategorySchema = z.strictObject({
+const createProjectSchema = z.strictObject({
     name: z.string().trim().min(2).max(80),
-    color: z.enum(CATEGORY_COLORS),
+    color: z.enum(PROJECT_COLORS),
 });
 
-const updateCategorySchema = z.strictObject({
+const updateProjectSchema = z.strictObject({
     name: z.string().trim().min(2).max(80),
-    color: z.enum(CATEGORY_COLORS),
+    color: z.enum(PROJECT_COLORS),
     active: z.boolean(),
 });
 
-const categoryManageErrors = {
-    duplicate: [409, 'Ya existe una categoría con ese nombre'],
-    not_found: [404, 'Categoría no encontrada'],
-    has_events: [409, 'No se puede eliminar: hay eventos con esta categoría'],
+const projectManageErrors = {
+    duplicate: [409, 'Ya existe un proyecto con ese nombre'],
+    not_found: [404, 'Proyecto no encontrado'],
+    has_events: [409, 'No se puede eliminar: hay eventos con este proyecto'],
 } as const;
 
-export const categoriesRouter = Router();
+export const projectsRouter = Router();
 
-categoriesRouter.use(requireAuth);
+projectsRouter.use(requireAuth);
 
-categoriesRouter.get(
+projectsRouter.get(
     '/',
     requirePermission(
         'categories:view',
         'categories:create',
         'categories:edit',
         'categories:delete',
-        // El formulario de eventos necesita elegir categoría.
+        // El formulario de eventos necesita elegir proyecto.
         'events:create',
         'events:edit',
     ),
     async (_req, res) => {
-        const categories = await listCategories();
+        const projects = await listProjects();
 
-        res.json({ categories });
+        res.json({ projects });
     },
 );
 
-categoriesRouter.get(
+projectsRouter.get(
     '/interested-users',
     requirePermission('categories:view'),
     async (_req, res) => {
-        res.json({ categories: await listCategoryInterestedUsers() });
+        res.json({ projects: await listProjectInterestedUsers() });
     },
 );
 
-categoriesRouter.get(
+projectsRouter.get(
     '/ail-users',
     requirePermission('categories:edit'),
     async (_req, res) => {
@@ -79,7 +79,7 @@ categoriesRouter.get(
     },
 );
 
-categoriesRouter.post(
+projectsRouter.post(
     '/:id/interested-users',
     requirePermission('categories:edit'),
     async (req, res) => {
@@ -92,12 +92,12 @@ categoriesRouter.post(
         }
 
         try {
-            await addCategoryPreference(body.data.userId, params.data.id);
-            res.json({ categories: await listCategoryInterestedUsers() });
+            await addProjectPreference(body.data.userId, params.data.id);
+            res.json({ projects: await listProjectInterestedUsers() });
         } catch (e) {
-            if (e instanceof CategoryPreferenceError) {
+            if (e instanceof ProjectPreferenceError) {
                 res.status(400).json({
-                    error: 'Usuario o categoría no válidos',
+                    error: 'Usuario o proyecto no válidos',
                 });
                 return;
             }
@@ -107,23 +107,23 @@ categoriesRouter.post(
     },
 );
 
-categoriesRouter.delete(
+projectsRouter.delete(
     '/:id/interested-users/:userId',
     requirePermission('categories:delete'),
     async (req, res) => {
-        const params = categoryUserParamsSchema.safeParse(req.params);
+        const params = projectUserParamsSchema.safeParse(req.params);
 
         if (!params.success) {
             res.status(400).json({ error: 'Solicitud no válida' });
             return;
         }
 
-        await removeCategoryPreference(params.data.userId, params.data.id);
-        res.json({ categories: await listCategoryInterestedUsers() });
+        await removeProjectPreference(params.data.userId, params.data.id);
+        res.json({ projects: await listProjectInterestedUsers() });
     },
 );
 
-categoriesRouter.post(
+projectsRouter.post(
     '/',
     requirePermission('categories:create'),
     async (req, res) => {
@@ -134,7 +134,7 @@ categoriesRouter.post(
             return;
         }
 
-        const body = createCategorySchema.safeParse(req.body);
+        const body = createProjectSchema.safeParse(req.body);
 
         if (!body.success) {
             res.status(400).json({ error: 'Solicitud no válida' });
@@ -142,16 +142,16 @@ categoriesRouter.post(
         }
 
         try {
-            const category = await createCategory(
+            const project = await createProject(
                 actor.id,
                 body.data.name,
                 body.data.color,
             );
 
-            res.status(201).json({ category });
+            res.status(201).json({ project });
         } catch (e) {
-            if (e instanceof CategoryManageError) {
-                const [status, error] = categoryManageErrors[e.reason];
+            if (e instanceof ProjectManageError) {
+                const [status, error] = projectManageErrors[e.reason];
 
                 res.status(status).json({ error });
                 return;
@@ -162,7 +162,7 @@ categoriesRouter.post(
     },
 );
 
-categoriesRouter.patch(
+projectsRouter.patch(
     '/:id',
     requirePermission('categories:edit'),
     async (req, res) => {
@@ -174,7 +174,7 @@ categoriesRouter.patch(
         }
 
         const params = idParamSchema.safeParse(req.params);
-        const body = updateCategorySchema.safeParse(req.body);
+        const body = updateProjectSchema.safeParse(req.body);
 
         if (!params.success || !body.success) {
             res.status(400).json({ error: 'Solicitud no válida' });
@@ -182,16 +182,16 @@ categoriesRouter.patch(
         }
 
         try {
-            const category = await updateCategory(
+            const project = await updateProject(
                 actor.id,
                 params.data.id,
                 body.data,
             );
 
-            res.json({ category });
+            res.json({ project });
         } catch (e) {
-            if (e instanceof CategoryManageError) {
-                const [status, error] = categoryManageErrors[e.reason];
+            if (e instanceof ProjectManageError) {
+                const [status, error] = projectManageErrors[e.reason];
 
                 res.status(status).json({ error });
                 return;
@@ -202,7 +202,7 @@ categoriesRouter.patch(
     },
 );
 
-categoriesRouter.delete(
+projectsRouter.delete(
     '/:id',
     requirePermission('categories:delete'),
     async (req, res) => {
@@ -221,11 +221,11 @@ categoriesRouter.delete(
         }
 
         try {
-            await deleteCategory(actor.id, params.data.id);
+            await deleteProject(actor.id, params.data.id);
             res.status(204).end();
         } catch (e) {
-            if (e instanceof CategoryManageError) {
-                const [status, error] = categoryManageErrors[e.reason];
+            if (e instanceof ProjectManageError) {
+                const [status, error] = projectManageErrors[e.reason];
 
                 res.status(status).json({ error });
                 return;

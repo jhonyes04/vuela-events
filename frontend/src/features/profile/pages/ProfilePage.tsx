@@ -6,7 +6,7 @@ import { ProfileForm } from '@/features/profile/components/ProfileForm';
 import { AppPasswordSection } from '@/features/profile/components/AppPasswordSection';
 import { SignatureSection } from '@/features/profile/components/SignatureSection';
 import { EmailSignatureSection } from '@/features/profile/components/EmailSignatureSection';
-import { CategoryPreferencesSection } from '@/features/profile/components/CategoryPreferencesSection';
+import { ProjectPreferencesSection } from '@/features/profile/components/ProjectPreferencesSection';
 
 export const ProfilePage = () => {
     const { user, setUser } = useAuth();
@@ -51,7 +51,7 @@ export const ProfilePage = () => {
 
                 {user.roleId === 'ail' && (
                     <div className="rounded-xl border bg-card p-4 sm:p-6">
-                        <CategoryPreferencesSection />
+                        <ProjectPreferencesSection />
                     </div>
                 )}
 

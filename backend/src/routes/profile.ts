@@ -18,11 +18,11 @@ import {
 } from '../services/emailSignature.js';
 import { getSentReportPdf, listSentReports } from '../services/sentReports.js';
 import {
-    CategoryPreferenceError,
-    getCategoryPreferences,
-    listCategoryOptions,
-    setCategoryPreferences,
-} from '../services/categoryPreferences.js';
+    ProjectPreferenceError,
+    getProjectPreferences,
+    listProjectOptions,
+    setProjectPreferences,
+} from '../services/projectPreferences.js';
 import { DINAMIZADOR_TITLES } from '../lib/authUser.js';
 
 // Firma la genera cualquier lector de imágenes normal: cabe de sobra en 300KB.
@@ -99,8 +99,8 @@ const reportsQuerySchema = z.object({
 
 const reportParamsSchema = z.object({ id: z.uuid() });
 
-export const categoryPreferencesSchema = z.strictObject({
-    categoryIds: z.array(z.uuid()).max(100),
+export const projectPreferencesSchema = z.strictObject({
+    projectIds: z.array(z.uuid()).max(100),
 });
 
 export const profileRouter = Router();
@@ -466,11 +466,11 @@ profileRouter.get('/reports/:id/pdf', requireAuth, async (req, res) => {
 
 // Categorías activas, para el selector de preferencias: cualquier usuario
 // autenticado (no exige categories:view, que es de gestión).
-profileRouter.get('/category-options', requireAuth, async (_req, res) => {
-    res.json({ categories: await listCategoryOptions() });
+profileRouter.get('/project-options', requireAuth, async (_req, res) => {
+    res.json({ projects: await listProjectOptions() });
 });
 
-profileRouter.get('/category-preferences', requireAuth, async (req, res) => {
+profileRouter.get('/project-preferences', requireAuth, async (req, res) => {
     const actor = req.user;
 
     if (!actor) {
@@ -478,10 +478,10 @@ profileRouter.get('/category-preferences', requireAuth, async (req, res) => {
         return;
     }
 
-    res.json({ categories: await getCategoryPreferences(actor.id) });
+    res.json({ projects: await getProjectPreferences(actor.id) });
 });
 
-profileRouter.patch('/category-preferences', requireAuth, async (req, res) => {
+profileRouter.patch('/project-preferences', requireAuth, async (req, res) => {
     const actor = req.user;
 
     if (!actor) {
@@ -489,7 +489,7 @@ profileRouter.patch('/category-preferences', requireAuth, async (req, res) => {
         return;
     }
 
-    const body = categoryPreferencesSchema.safeParse(req.body);
+    const body = projectPreferencesSchema.safeParse(req.body);
 
     if (!body.success) {
         res.status(400).json({ error: 'Solicitud no válida' });
@@ -497,15 +497,15 @@ profileRouter.patch('/category-preferences', requireAuth, async (req, res) => {
     }
 
     try {
-        const categories = await setCategoryPreferences(
+        const projects = await setProjectPreferences(
             actor.id,
-            body.data.categoryIds,
+            body.data.projectIds,
         );
 
-        res.json({ categories });
+        res.json({ projects });
     } catch (e) {
-        if (e instanceof CategoryPreferenceError) {
-            res.status(400).json({ error: 'Una o más categorías no existen' });
+        if (e instanceof ProjectPreferenceError) {
+            res.status(400).json({ error: 'Uno o más proyectos no existen' });
             return;
         }
 

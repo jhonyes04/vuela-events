@@ -6,25 +6,25 @@ import { IconTooltip } from '@/components/IconTooltip';
 import { ConfirmDeleteDialog } from '@/components/ConfirmDeleteDialog';
 import { PageTitle } from '@/components/PageTitle';
 import { ListErrors } from '@/features/users/components/ListErrors';
-import { CategoryFormDialog } from '@/features/categories/components/CategoryFormDialog';
+import { ProjectFormDialog } from '@/features/projects/components/ProjectFormDialog';
 import {
-    deleteCategory,
-    type Category,
-} from '@/features/categories/lib/categories';
-import { CATEGORY_COLOR_STYLES } from '@/features/categories/lib/colors';
-import { useCategoriesStore } from '@/features/categories/store';
+    deleteProject,
+    type Project,
+} from '@/features/projects/lib/projects';
+import { PROJECT_COLOR_STYLES } from '@/features/projects/lib/colors';
+import { useProjectsStore } from '@/features/projects/store';
 
-export const CategoriesPage = () => {
-    const categories = useCategoriesStore((s) => s.items);
-    const loading = useCategoriesStore((s) => s.loading);
-    const error = useCategoriesStore((s) => s.error);
-    const load = useCategoriesStore((s) => s.load);
-    const upsert = useCategoriesStore((s) => s.upsert);
-    const remove = useCategoriesStore((s) => s.remove);
+export const ProjectsPage = () => {
+    const projects = useProjectsStore((s) => s.items);
+    const loading = useProjectsStore((s) => s.loading);
+    const error = useProjectsStore((s) => s.error);
+    const load = useProjectsStore((s) => s.load);
+    const upsert = useProjectsStore((s) => s.upsert);
+    const remove = useProjectsStore((s) => s.remove);
     const [formOpen, setFormOpen] = useState(false);
     const [formKey, setFormKey] = useState(0);
-    const [editing, setEditing] = useState<Category | null>(null);
-    const [deleting, setDeleting] = useState<Category | null>(null);
+    const [editing, setEditing] = useState<Project | null>(null);
+    const [deleting, setDeleting] = useState<Project | null>(null);
 
     // Al entrar se refresca, pero la lista en caché se ve mientras tanto.
     useEffect(() => {
@@ -37,8 +37,8 @@ export const CategoriesPage = () => {
         setFormOpen(true);
     };
 
-    const openEdit = (category: Category) => {
-        setEditing(category);
+    const openEdit = (project: Project) => {
+        setEditing(project);
         setFormKey((k) => k + 1);
         setFormOpen(true);
     };
@@ -46,8 +46,8 @@ export const CategoriesPage = () => {
     return (
         <section>
             <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-                <PageTitle>Gestionar Cagegorías</PageTitle>
-                <Button onClick={openCreate}>Nueva categoría</Button>
+                <PageTitle>Gestionar Proyectos</PageTitle>
+                <Button onClick={openCreate}>Nuevo proyecto</Button>
             </div>
 
             <ListErrors
@@ -58,26 +58,26 @@ export const CategoriesPage = () => {
 
             {loading ? (
                 <p role="status" className="text-muted-foreground">
-                    Cargando categorías…
+                    Cargando proyectos…
                 </p>
-            ) : categories.length === 0 ? (
+            ) : projects.length === 0 ? (
                 <p className="text-muted-foreground">
-                    Todavía no hay categorías.
+                    Todavía no hay proyectos.
                 </p>
             ) : (
                 <ul className="grid gap-3 sm:grid-cols-2">
-                    {categories.map((category) => (
+                    {projects.map((project) => (
                         <li
-                            key={category.id}
+                            key={project.id}
                             className="flex items-center gap-3 rounded-xl border bg-card p-4"
                         >
                             <span
-                                className={`size-4 shrink-0 rounded-full ${CATEGORY_COLOR_STYLES[category.color].swatch}`}
+                                className={`size-4 shrink-0 rounded-full ${PROJECT_COLOR_STYLES[project.color].swatch}`}
                             />
                             <span className="flex-1 truncate font-medium">
-                                {category.name}
+                                {project.name}
                             </span>
-                            {!category.active && (
+                            {!project.active && (
                                 <Badge variant="secondary">Inactiva</Badge>
                             )}
                             <IconTooltip label="Editar">
@@ -85,7 +85,7 @@ export const CategoriesPage = () => {
                                     variant="secondary"
                                     size="icon"
                                     aria-label="Editar"
-                                    onClick={() => openEdit(category)}
+                                    onClick={() => openEdit(project)}
                                 >
                                     <Pencil className="size-4" />
                                 </Button>
@@ -95,7 +95,7 @@ export const CategoriesPage = () => {
                                     variant="destructive"
                                     size="icon"
                                     aria-label="Eliminar"
-                                    onClick={() => setDeleting(category)}
+                                    onClick={() => setDeleting(project)}
                                 >
                                     <Trash2 className="size-4" />
                                 </Button>
@@ -105,11 +105,11 @@ export const CategoriesPage = () => {
                 </ul>
             )}
 
-            <CategoryFormDialog
+            <ProjectFormDialog
                 key={formKey}
                 open={formOpen}
                 onOpenChange={setFormOpen}
-                category={editing}
+                project={editing}
                 onSaved={upsert}
             />
 
@@ -117,13 +117,13 @@ export const CategoriesPage = () => {
                 <ConfirmDeleteDialog
                     open={deleting !== null}
                     onOpenChange={(open) => !open && setDeleting(null)}
-                    title="Eliminar categoría"
+                    title="Eliminar proyecto"
                     description={`¿Eliminar «${deleting.name}»? Esta acción no se puede deshacer.`}
                     confirmLabel="Eliminar"
                     deletingLabel="Eliminando…"
-                    errorFallback="No se pudo eliminar la categoría"
-                    successLabel={`Categoría «${deleting.name}» eliminada.`}
-                    onConfirm={() => deleteCategory(deleting.id)}
+                    errorFallback="No se pudo eliminar el proyecto"
+                    successLabel={`Proyecto «${deleting.name}» eliminado.`}
+                    onConfirm={() => deleteProject(deleting.id)}
                     onDeleted={() => {
                         remove(deleting.id);
                         setDeleting(null);

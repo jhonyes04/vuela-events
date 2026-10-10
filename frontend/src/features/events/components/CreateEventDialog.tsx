@@ -15,7 +15,7 @@ import { EventBasicFields, Field } from '@/features/events/components/EventBasic
 import { RecurringEventFields } from '@/features/events/components/RecurringEventFields';
 import { SingleSessionFields } from '@/features/events/components/SingleSessionFields';
 import { api, ApiError } from '@/lib/api';
-import { useCategoriesStore } from '@/features/categories/store';
+import { useProjectsStore } from '@/features/projects/store';
 import { useGuidesStore } from '@/features/guides/store';
 import {
     createRecurringEvents,
@@ -61,20 +61,20 @@ function EventFormBody({
               : EMPTY_FORM_VALUES,
     );
     const [submitting, setSubmitting] = useState(false);
-    const categories = useCategoriesStore((s) => s.items);
+    const projects = useProjectsStore((s) => s.items);
     const guides = useGuidesStore((s) => s.items);
-    const loadCategories = useCategoriesStore((s) => s.load);
+    const loadProjects = useProjectsStore((s) => s.load);
     const loadGuides = useGuidesStore((s) => s.load);
 
     // Usa la caché si ya se cargaron; solo pide lo que falta.
     useEffect(() => {
-        void loadCategories();
+        void loadProjects();
         void loadGuides();
-    }, [loadCategories, loadGuides]);
+    }, [loadProjects, loadGuides]);
 
-    // La categoría/guía actuales del evento siguen disponibles al editar
+    // El proyecto/guía actuales del evento siguen disponibles al editar
     // aunque se hayan desactivado después de crearlo.
-    const activeCategories = categories.filter(
+    const activeProjects = projects.filter(
         (c) => c.active || c.id === event?.category.id,
     );
     const activeGuides = guides.filter(
@@ -98,7 +98,7 @@ function EventFormBody({
         e.preventDefault();
 
         if (!values.categoryId) {
-            toast.error('Selecciona una categoría');
+            toast.error('Selecciona un proyecto');
             return;
         }
 
@@ -227,13 +227,13 @@ function EventFormBody({
                     fieldId={fieldId}
                     values={values}
                     onChange={set}
-                    onCategoryChange={(categoryId) =>
+                    onProjectChange={(categoryId) =>
                         setValues((v) => ({ ...v, categoryId }))
                     }
                     onGuideChange={(guideId) =>
                         setValues((v) => ({ ...v, guideId }))
                     }
-                    activeCategories={activeCategories}
+                    activeProjects={activeProjects}
                     activeGuides={activeGuides}
                 />
 

@@ -59,12 +59,12 @@ export const UsersSection = ({ section, stats }: UsersSectionProps) => (
 
         {section === 'users-interest-category' && (
             <ChartCard
-                title="Usuarios por categoría"
-                description="Usuarios AIL activos que marcaron cada categoría como interés."
-                empty={stats.interestByCategory.length === 0}
+                title="Usuarios por proyecto"
+                description="Usuarios AIL activos que marcaron cada proyecto como interés."
+                empty={stats.interestByProject.length === 0}
             >
                 <HorizontalBars
-                    data={stats.interestByCategory}
+                    data={stats.interestByProject}
                     metric="interestedUsers"
                     config={valueConfig('Usuarios', 'var(--chart-3)')}
                 />

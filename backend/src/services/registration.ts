@@ -209,7 +209,7 @@ export interface RegistrationCandidate {
     lastName: string;
     puntoVuela: string | null;
     registered: boolean;
-    categoryPreferences: { id: string; name: string; color: string }[];
+    projectPreferences: { id: string; name: string; color: string }[];
 }
 
 export const listRegistrationCandidates = async (
@@ -251,6 +251,6 @@ export const listRegistrationCandidates = async (
         lastName: user.lastName,
         puntoVuela: user.puntoVuela,
         registered: user.registrations.length > 0,
-        categoryPreferences: user.categoryPreferences.map((p) => p.category),
+        projectPreferences: user.categoryPreferences.map((p) => p.category),
     }));
 };

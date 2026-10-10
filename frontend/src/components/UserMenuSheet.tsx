@@ -9,8 +9,8 @@ import {
     Settings,
     ShieldCheck,
     SlidersHorizontal,
-    Tag,
-    User as UserIcon,
+    FolderKanban,
+    UserIcon,
     UserCog,
     Users,
     XIcon,
@@ -35,7 +35,7 @@ import { appRoutes, canAccess, type AppRoute } from '@/routes/routes';
 // Un icono por ruta, para que cada opción del menú se reconozca de un vistazo.
 const ROUTE_ICONS: Record<string, LucideIcon> = {
     '/gestion/eventos': Calendar,
-    '/gestion/categorias': Tag,
+    '/gestion/proyectos': FolderKanban,
     '/gestion/intereses': Users,
     '/gestion/guias': BookOpen,
     '/gestion/plantillas-correo': Mail,

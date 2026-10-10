@@ -3,29 +3,29 @@ import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { ApiError } from '@/lib/api';
 import {
-    getCategoryPreferences,
-    listCategoryOptions,
-    setCategoryPreferences,
-    type CategoryOption,
+    getProjectPreferences,
+    listProjectOptions,
+    setProjectPreferences,
+    type ProjectOption,
 } from '@/features/profile/lib/profile';
 import {
-    getUserCategoryPreferences,
-    setUserCategoryPreferences,
+    getUserProjectPreferences,
+    setUserProjectPreferences,
 } from '@/features/users/lib/users';
-import { categoryChipClass } from '@/features/categories/lib/colors';
+import { projectChipClass } from '@/features/projects/lib/colors';
 
-interface CategoryPreferencesSectionProps {
+interface ProjectPreferencesSectionProps {
     continueLabel?: string;
     onContinue?: () => void;
     userId?: string;
 }
 
-export const CategoryPreferencesSection = ({
+export const ProjectPreferencesSection = ({
     continueLabel = 'Continuar',
     onContinue,
     userId,
-}: CategoryPreferencesSectionProps = {}) => {
-    const [options, setOptions] = useState<CategoryOption[]>([]);
+}: ProjectPreferencesSectionProps = {}) => {
+    const [options, setOptions] = useState<ProjectOption[]>([]);
     const [selected, setSelected] = useState<Set<string>>(new Set());
     const [loading, setLoading] = useState(true);
     const [failed, setFailed] = useState(false);
@@ -33,9 +33,9 @@ export const CategoryPreferencesSection = ({
 
     useEffect(() => {
         const loadMine = userId
-            ? getUserCategoryPreferences(userId)
-            : getCategoryPreferences();
-        Promise.all([listCategoryOptions(), loadMine])
+            ? getUserProjectPreferences(userId)
+            : getProjectPreferences();
+        Promise.all([listProjectOptions(), loadMine])
             .then(([all, mine]) => {
                 setOptions(all);
                 setSelected(new Set(mine.map((c) => c.id)));
@@ -56,9 +56,9 @@ export const CategoryPreferencesSection = ({
 
         try {
             if (userId) {
-                await setUserCategoryPreferences(userId, [...next]);
+                await setUserProjectPreferences(userId, [...next]);
             } else {
-                await setCategoryPreferences([...next]);
+                await setProjectPreferences([...next]);
             }
         } catch (e) {
             setSelected(previous);
@@ -79,22 +79,22 @@ export const CategoryPreferencesSection = ({
                     Tipos de eventos en los que te gustaría participar
                 </h2>
                 <p className="text-sm text-muted-foreground">
-                    Marca las categorías que te interesan. Es solo una
+                    Marca los proyectos que te interesan. Es solo una
                     referencia para quien organiza los eventos.
                 </p>
             </div>
 
             {loading ? (
                 <p role="status" className="text-sm text-muted-foreground">
-                    Cargando categorías…
+                    Cargando proyectos…
                 </p>
             ) : failed ? (
                 <p className="text-sm text-destructive">
-                    No se pudieron cargar las categorías.
+                    No se pudieron cargar los proyectos.
                 </p>
             ) : options.length === 0 ? (
                 <p className="text-sm text-muted-foreground">
-                    Todavía no hay categorías de eventos.
+                    Todavía no hay proyectos de eventos.
                 </p>
             ) : (
                 <div className="flex flex-wrap gap-2">
@@ -110,7 +110,7 @@ export const CategoryPreferencesSection = ({
                                 onClick={() => void toggle(option.id)}
                                 className={`cursor-pointer rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${
                                     isChecked
-                                        ? categoryChipClass(option.color)
+                                        ? projectChipClass(option.color)
                                         : 'border text-muted-foreground hover:bg-muted'
                                 }`}
                             >

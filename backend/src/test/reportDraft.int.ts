@@ -4,7 +4,7 @@ import { prisma } from '../lib/prisma.js';
 import {
     api,
     closeDb,
-    createCategory,
+    createProject,
     createGuide,
     createUser,
     resetDb,
@@ -37,7 +37,7 @@ describe('parte de firmas: generar, revisar y enviar', () => {
                 startsAt: new Date('2030-01-10T10:00:00.000Z'),
                 endsAt: new Date('2030-01-10T12:00:00.000Z'),
                 createdById: dt.id,
-                categoryId: (await createCategory()).id,
+                categoryId: (await createProject()).id,
                 guideId: (await createGuide()).id,
             },
         });

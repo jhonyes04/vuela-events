@@ -1,5 +1,5 @@
 import { api, downloadFile } from '@/lib/api';
-import type { CategoryColor } from '@/features/categories/lib/colors';
+import type { ProjectColor } from '@/features/projects/lib/colors';
 
 export interface SentReport {
     id: string;
@@ -13,7 +13,7 @@ export interface SentReport {
         startsAt: string;
         endsAt: string;
         location: string | null;
-        category: { id: string; name: string; color: CategoryColor };
+        category: { id: string; name: string; color: ProjectColor };
     };
 }
 

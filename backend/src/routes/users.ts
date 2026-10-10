@@ -11,11 +11,11 @@ import {
     setUserActive,
 } from '../services/roles.js';
 import {
-    CategoryPreferenceError,
-    getCategoryPreferences,
-    setCategoryPreferences,
-} from '../services/categoryPreferences.js';
-import { categoryPreferencesSchema, profileSchema } from './profile.js';
+    ProjectPreferenceError,
+    getProjectPreferences,
+    setProjectPreferences,
+} from '../services/projectPreferences.js';
+import { projectPreferencesSchema, profileSchema } from './profile.js';
 
 const paramsSchema = z.object({ id: z.uuid() });
 const roleBodySchema = z.strictObject({
@@ -204,7 +204,7 @@ usersRouter.delete('/:id', async (req, res) => {
     }
 });
 
-usersRouter.get('/:id/category-preferences', async (req, res) => {
+usersRouter.get('/:id/project-preferences', async (req, res) => {
     const params = paramsSchema.safeParse(req.params);
 
     if (!params.success) {
@@ -212,12 +212,12 @@ usersRouter.get('/:id/category-preferences', async (req, res) => {
         return;
     }
 
-    res.json({ categories: await getCategoryPreferences(params.data.id) });
+    res.json({ projects: await getProjectPreferences(params.data.id) });
 });
 
-usersRouter.patch('/:id/category-preferences', async (req, res) => {
+usersRouter.patch('/:id/project-preferences', async (req, res) => {
     const params = paramsSchema.safeParse(req.params);
-    const body = categoryPreferencesSchema.safeParse(req.body);
+    const body = projectPreferencesSchema.safeParse(req.body);
 
     if (!params.success || !body.success) {
         res.status(400).json({ error: 'Solicitud no válida' });
@@ -225,15 +225,15 @@ usersRouter.patch('/:id/category-preferences', async (req, res) => {
     }
 
     try {
-        const categories = await setCategoryPreferences(
+        const projects = await setProjectPreferences(
             params.data.id,
-            body.data.categoryIds,
+            body.data.projectIds,
         );
 
-        res.json({ categories });
+        res.json({ projects });
     } catch (e) {
-        if (e instanceof CategoryPreferenceError) {
-            res.status(400).json({ error: 'Una o más categorías no exiten' });
+        if (e instanceof ProjectPreferenceError) {
+            res.status(400).json({ error: 'Uno o más proyectos no existen' });
             return;
         }
 

@@ -22,7 +22,7 @@ import {
 import { ConfirmDeleteDialog } from '@/components/ConfirmDeleteDialog';
 import { IconTooltip } from '@/components/IconTooltip';
 import { useAttendees } from '@/features/events/hooks/useAttendees';
-import { CATEGORY_COLOR_STYLES } from '@/features/categories/lib/colors';
+import { PROJECT_COLOR_STYLES } from '@/features/projects/lib/colors';
 import { ApiError } from '@/lib/api';
 import { cn } from '@/lib/utils';
 import { scrollbarOptions } from '@/lib/overlayScrollbarsOptions';
@@ -80,7 +80,7 @@ const EventDetailBody = ({
         ? { border: 'border-t-gray-400', tint: 'bg-gray-400/10' }
         : full
           ? { border: 'border-t-red-500', tint: 'bg-red-500/10' }
-          : CATEGORY_COLOR_STYLES[event.category.color];
+          : PROJECT_COLOR_STYLES[event.category.color];
 
     // Al abrir la ficha de un evento completo, se avisa aunque el usuario
     // ya esté inscrito. El ref evita el doble aviso del StrictMode en dev.

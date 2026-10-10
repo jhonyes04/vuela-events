@@ -1,7 +1,7 @@
 import { prisma } from '../lib/prisma.js';
 import { recordAudit } from './audit.js';
 
-export const CATEGORY_COLORS = [
+export const PROJECT_COLORS = [
     'yellow',
     'amber',
     'emerald',
@@ -25,101 +25,101 @@ export const CATEGORY_COLORS = [
     'fuchsia',
 ] as const;
 
-export type CategoryColor = (typeof CATEGORY_COLORS)[number];
+export type ProjectColor = (typeof PROJECT_COLORS)[number];
 
-export type CategoryManageFailure = 'duplicate' | 'not_found' | 'has_events';
+export type ProjectManageFailure = 'duplicate' | 'not_found' | 'has_events';
 
-export class CategoryManageError extends Error {
-    readonly reason: CategoryManageFailure;
+export class ProjectManageError extends Error {
+    readonly reason: ProjectManageFailure;
 
-    constructor(reason: CategoryManageFailure) {
+    constructor(reason: ProjectManageFailure) {
         super(reason);
 
-        this.name = 'CategoryManageError';
+        this.name = 'ProjectManageError';
         this.reason = reason;
     }
 }
 
-const categorySelect = {
+const projectSelect = {
     id: true,
     name: true,
     color: true,
     active: true,
 } as const;
 
-export const listCategories = () =>
+export const listProjects = () =>
     prisma.category.findMany({
         orderBy: { name: 'asc' },
-        select: categorySelect,
+        select: projectSelect,
     });
 
-export const createCategory = async (
+export const createProject = async (
     actorId: string,
     name: string,
-    color: CategoryColor,
+    color: ProjectColor,
 ) => {
     const exists = await prisma.category.findUnique({ where: { name } });
 
     if (exists) {
-        throw new CategoryManageError('duplicate');
+        throw new ProjectManageError('duplicate');
     }
 
-    const category = await prisma.category.create({
+    const project = await prisma.category.create({
         data: { name, color },
-        select: categorySelect,
+        select: projectSelect,
     });
 
     await recordAudit({
         action: 'category_created',
         actorId,
-        newValue: category.name.slice(0, 100),
+        newValue: project.name.slice(0, 100),
     });
 
-    return category;
+    return project;
 };
 
-export const updateCategory = async (
+export const updateProject = async (
     actorId: string,
     id: string,
-    input: { name: string; color: CategoryColor; active: boolean },
+    input: { name: string; color: ProjectColor; active: boolean },
 ) => {
-    const category = await prisma.category.findUnique({ where: { id } });
+    const project = await prisma.category.findUnique({ where: { id } });
 
-    if (!category) {
-        throw new CategoryManageError('not_found');
+    if (!project) {
+        throw new ProjectManageError('not_found');
     }
 
-    if (input.name !== category.name) {
+    if (input.name !== project.name) {
         const clash = await prisma.category.findUnique({
             where: { name: input.name },
         });
 
         if (clash) {
-            throw new CategoryManageError('duplicate');
+            throw new ProjectManageError('duplicate');
         }
     }
 
     const updated = await prisma.category.update({
         where: { id },
         data: input,
-        select: categorySelect,
+        select: projectSelect,
     });
 
     await recordAudit({
         action: 'category_updated',
         actorId,
-        oldValue: category.name.slice(0, 100),
+        oldValue: project.name.slice(0, 100),
         newValue: updated.name.slice(0, 100),
     });
 
     return updated;
 };
 
-export const deleteCategory = async (actorId: string, id: string) => {
-    const category = await prisma.category.findUnique({ where: { id } });
+export const deleteProject = async (actorId: string, id: string) => {
+    const project = await prisma.category.findUnique({ where: { id } });
 
-    if (!category) {
-        throw new CategoryManageError('not_found');
+    if (!project) {
+        throw new ProjectManageError('not_found');
     }
 
     const eventsCount = await prisma.event.count({
@@ -127,7 +127,7 @@ export const deleteCategory = async (actorId: string, id: string) => {
     });
 
     if (eventsCount > 0) {
-        throw new CategoryManageError('has_events');
+        throw new ProjectManageError('has_events');
     }
 
     await prisma.category.delete({ where: { id } });
@@ -135,6 +135,6 @@ export const deleteCategory = async (actorId: string, id: string) => {
     await recordAudit({
         action: 'category_deleted',
         actorId,
-        oldValue: category.name.slice(0, 100),
+        oldValue: project.name.slice(0, 100),
     });
 };

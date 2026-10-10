@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { Badge } from '@/components/ui/badge';
-import { CATEGORY_COLOR_STYLES } from '@/features/categories/lib/colors';
+import { PROJECT_COLOR_STYLES } from '@/features/projects/lib/colors';
 import {
     hasEnded,
     isFull,
@@ -11,9 +11,9 @@ interface CalendarLegendProps {
     events: EventItem[];
 }
 
-// Leyenda de lo que se ve: categorías de los eventos visibles, y completo/finalizado si los hay.
+// Leyenda de lo que se ve: proyectos de los eventos visibles, y completo/finalizado si los hay.
 export const CalendarLegend = ({ events }: CalendarLegendProps) => {
-    const categories = useMemo(() => {
+    const projects = useMemo(() => {
         const byId = new Map(events.map((e) => [e.category.id, e.category]));
 
         return [...byId.values()].sort((a, b) => a.name.localeCompare(b.name));
@@ -35,12 +35,12 @@ export const CalendarLegend = ({ events }: CalendarLegendProps) => {
             <span className="text-xs font-medium text-muted-foreground">
                 Leyenda:
             </span>
-            {categories.map((category) => (
+            {projects.map((project) => (
                 <Badge
-                    key={category.id}
-                    className={CATEGORY_COLOR_STYLES[category.color].chip}
+                    key={project.id}
+                    className={PROJECT_COLOR_STYLES[project.color].chip}
                 >
-                    {category.name}
+                    {project.name}
                 </Badge>
             ))}
             {anyFull && <Badge className="bg-red-500 text-white">Completo</Badge>}

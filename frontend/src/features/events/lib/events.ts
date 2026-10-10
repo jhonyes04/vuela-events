@@ -1,5 +1,5 @@
 import { api } from '@/lib/api';
-import type { CategoryColor } from '@/features/categories/lib/colors';
+import type { ProjectColor } from '@/features/projects/lib/colors';
 import { addDays } from '@/features/events/lib/calendar';
 
 export interface EventItem {
@@ -19,7 +19,7 @@ export interface EventItem {
     seriesId: string | null;
     createdAt: string;
     createdBy: { id: string; name: string; puntoVuela: string | null };
-    category: { id: string; name: string; color: CategoryColor };
+    category: { id: string; name: string; color: ProjectColor };
     guide: { id: string; name: string; url: string };
     _count: { registrations: number };
     registered: boolean;
@@ -452,7 +452,7 @@ export interface RegistrationCandidate {
     lastName: string;
     puntoVuela: string | null;
     registered: boolean;
-    categoryPreferences: { id: string; name: string; color: string }[];
+    projectPreferences: { id: string; name: string; color: string }[];
 }
 
 export const listRegistrationCandidates = async (

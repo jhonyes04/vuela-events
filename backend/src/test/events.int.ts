@@ -4,7 +4,7 @@ import { prisma } from '../lib/prisma.js';
 import {
     api,
     closeDb,
-    createCategory,
+    createProject,
     createGuide,
     createUser,
     resetDb,
@@ -30,7 +30,7 @@ describe('eventos: permisos y validación', () => {
 
     beforeEach(async () => {
         await resetDb();
-        categoryId = (await createCategory()).id;
+        categoryId = (await createProject()).id;
         guideId = (await createGuide()).id;
     });
 
@@ -217,11 +217,11 @@ describe('eventos: permisos y validación', () => {
     it('quien puede crear eventos (dt) puede listar categorías y guías', async () => {
         const dt = await createUser('dt');
 
-        const categories = await get(dt.id, '/api/categories');
+        const projects = await get(dt.id, '/api/projects');
         const guides = await get(dt.id, '/api/guides');
 
-        assert.equal(categories.status, 200);
-        assert.equal(categories.body.categories[0].id, categoryId);
+        assert.equal(projects.status, 200);
+        assert.equal(projects.body.projects[0].id, categoryId);
         assert.equal(guides.status, 200);
         assert.equal(guides.body.guides[0].id, guideId);
     });
@@ -229,7 +229,7 @@ describe('eventos: permisos y validación', () => {
     it('ail sin permisos de eventos ni de catálogos NO las lista: 403', async () => {
         const ail = await createUser('ail');
 
-        assert.equal((await get(ail.id, '/api/categories')).status, 403);
+        assert.equal((await get(ail.id, '/api/projects')).status, 403);
         assert.equal((await get(ail.id, '/api/guides')).status, 403);
     });
 

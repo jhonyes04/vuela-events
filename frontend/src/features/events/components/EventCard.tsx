@@ -2,7 +2,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { AttendeeChips } from '@/features/events/components/AttendeeChips';
 import { EventInfoRows } from '@/features/events/components/EventInfoRows';
-import { CATEGORY_COLOR_STYLES } from '@/features/categories/lib/colors';
+import { PROJECT_COLOR_STYLES } from '@/features/projects/lib/colors';
 import { cn } from '@/lib/utils';
 import { hasEnded, isFull, type EventItem } from '@/features/events/lib/events';
 
@@ -62,7 +62,7 @@ export const EventCard = ({ event, onOpen }: EventCardProps) => {
         ? { border: 'border-t-gray-400', tint: 'bg-gray-400/10' }
         : full
           ? { border: 'border-t-red-500', tint: 'bg-red-500/10' }
-          : CATEGORY_COLOR_STYLES[event.category.color];
+          : PROJECT_COLOR_STYLES[event.category.color];
 
     return (
         <Card

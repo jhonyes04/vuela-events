@@ -15,7 +15,7 @@ import { SortableHeader } from '@/components/SortableHeader';
 import { usePagination } from '@/hooks/usePagination';
 import { useSort } from '@/hooks/useSort';
 import { scrollbarOptions } from '@/lib/overlayScrollbarsOptions';
-import { CATEGORY_COLOR_STYLES } from '@/features/categories/lib/colors';
+import { PROJECT_COLOR_STYLES } from '@/features/projects/lib/colors';
 import { cn } from '@/lib/utils';
 import {
     attendanceLabel,
@@ -76,12 +76,12 @@ export const EventsTable = ({
     renderActions,
 }: EventsTableProps) => {
     const [search, setSearch] = useState('');
-    const [categoryFilter, setCategoryFilter] = useState('');
+    const [projectFilter, setProjectFilter] = useState('');
     const [monthFilter, setMonthFilter] = useState('');
     const [timeFilter, setTimeFilter] = useState<TimeFilter>(defaultTimeFilter);
 
-    // Opciones de los filtros: solo las categorías/meses que aparecen en la lista.
-    const categories = [
+    // Opciones de los filtros: solo los proyectos/meses que aparecen en la lista.
+    const projects = [
         ...new Map(events.map((e) => [e.category.id, e.category])).values(),
     ].sort((a, b) => a.name.localeCompare(b.name));
     const months = [
@@ -89,7 +89,7 @@ export const EventsTable = ({
     ].sort((a, b) => b.localeCompare(a));
 
     const filtered = events.filter((event) => {
-        if (categoryFilter && event.category.id !== categoryFilter) {
+        if (projectFilter && event.category.id !== projectFilter) {
             return false;
         }
 
@@ -137,31 +137,31 @@ export const EventsTable = ({
                     onChange={(e) => setSearch(e.target.value)}
                 />
                 <Select
-                    value={categoryFilter}
+                    value={projectFilter}
                     items={[
-                        { value: '', label: 'Todas las categorías' },
-                        ...categories.map((c) => ({
+                        { value: '', label: 'Todos los proyectos' },
+                        ...projects.map((c) => ({
                             value: c.id,
                             label: c.name,
                         })),
                     ]}
-                    onValueChange={(value) => setCategoryFilter(value ?? '')}
+                    onValueChange={(value) => setProjectFilter(value ?? '')}
                 >
                     <SelectTrigger className="w-48 bg-card">
-                        <SelectValue placeholder="Todas las categorías">
+                        <SelectValue placeholder="Todos los proyectos">
                             {(value: string | null) => {
-                                const selected = categories.find(
+                                const selected = projects.find(
                                     (c) => c.id === value,
                                 );
 
-                                if (!selected) return 'Todas las categorías';
+                                if (!selected) return 'Todos los proyectos';
 
                                 return (
                                     <>
                                         <span
                                             className={cn(
                                                 'size-3 shrink-0 rounded-full',
-                                                CATEGORY_COLOR_STYLES[
+                                                PROJECT_COLOR_STYLES[
                                                     selected.color
                                                 ].swatch,
                                             )}
@@ -173,15 +173,15 @@ export const EventsTable = ({
                         </SelectValue>
                     </SelectTrigger>
                     <SelectContent>
-                        <SelectItem value="" label="Todas las categorías">
-                            Todas las categorías
+                        <SelectItem value="" label="Todos los proyectos">
+                            Todos los proyectos
                         </SelectItem>
-                        {categories.map((c) => (
+                        {projects.map((c) => (
                             <SelectItem key={c.id} value={c.id} label={c.name}>
                                 <span
                                     className={cn(
                                         'size-3 shrink-0 rounded-full',
-                                        CATEGORY_COLOR_STYLES[c.color].swatch,
+                                        PROJECT_COLOR_STYLES[c.color].swatch,
                                     )}
                                 />
                                 {c.name}
@@ -234,7 +234,7 @@ export const EventsTable = ({
                                     onSort={toggleSort}
                                 />
                                 <SortableHeader
-                                    label="Categoría"
+                                    label="Proyecto"
                                     sortKey="category"
                                     sort={sort}
                                     onSort={toggleSort}
@@ -287,7 +287,7 @@ export const EventsTable = ({
                                     <td className="p-3">
                                         <Badge
                                             className={
-                                                CATEGORY_COLOR_STYLES[
+                                                PROJECT_COLOR_STYLES[
                                                     event.category.color
                                                 ].chip
                                             }

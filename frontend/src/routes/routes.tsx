@@ -5,8 +5,8 @@ import { ProfilePage } from '@/features/profile/pages/ProfilePage';
 import { MyEventsPage } from '@/features/profile/pages/MyEventsPage';
 import { RolesPage } from '@/features/users/pages/RolesPage';
 import { UsersPage } from '@/features/users/pages/UsersPage';
-import { CategoriesPage } from '@/features/categories/pages/CategoriesPage';
-import { CategoryInterestsPage } from '@/features/categories/pages/CategoryInterestsPage';
+import { ProjectsPage } from '@/features/projects/pages/ProjectsPage';
+import { ProjectInterestsPage } from '@/features/projects/pages/ProjectInterestsPage';
 import { GuidesPage } from '@/features/guides/pages/GuidesPage';
 import { EmailTemplatesPage } from '@/features/emailTemplates/pages/EmailTemplatesPage';
 import { EmailSettingsPage } from '@/features/emailSettings/pages/EmailSettingsPage';
@@ -57,9 +57,9 @@ export const appRoutes: AppRoute[] = [
         group: 'gestion',
     },
     {
-        path: '/gestion/categorias',
-        label: 'Categorías',
-        element: <CategoriesPage />,
+        path: '/gestion/proyectos',
+        label: 'Proyectos',
+        element: <ProjectsPage />,
         permissions: [
             'categories:view',
             'categories:create',
@@ -70,8 +70,8 @@ export const appRoutes: AppRoute[] = [
     },
     {
         path: '/gestion/intereses',
-        label: 'Usuarios por categoría',
-        element: <CategoryInterestsPage />,
+        label: 'Usuarios por proyecto',
+        element: <ProjectInterestsPage />,
         permissions: ['categories:view'],
         group: 'gestion',
     },

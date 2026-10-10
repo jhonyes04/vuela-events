@@ -8,12 +8,12 @@ export const SECTIONS = [
         label: 'Estado (pasados, en curso, próximos)',
         group: 'Eventos',
     },
-    { id: 'events-category', label: 'Por categoría', group: 'Eventos' },
+    { id: 'events-category', label: 'Por proyecto', group: 'Eventos' },
     { id: 'events-guide', label: 'Por guía', group: 'Eventos' },
     { id: 'reg-month', label: 'Inscripciones por mes', group: 'Inscripciones' },
     {
         id: 'reg-category',
-        label: 'Inscripciones por categoría',
+        label: 'Inscripciones por proyecto',
         group: 'Inscripciones',
     },
     {
@@ -26,7 +26,7 @@ export const SECTIONS = [
     { id: 'users-all', label: 'Todos los usuarios', group: 'Usuarios' },
     {
         id: 'users-interest-category',
-        label: 'Usuarios por categoría',
+        label: 'Usuarios por proyecto',
         group: 'Usuarios',
     },
     { id: 'attended-month', label: 'Atendidos por mes', group: 'Atendidos' },
@@ -39,7 +39,7 @@ export const SECTIONS = [
     { id: 'attended-total', label: 'Atendidos en total', group: 'Atendidos' },
     {
         id: 'attended-category',
-        label: 'Atendidos por categoría',
+        label: 'Atendidos por proyecto',
         group: 'Atendidos',
     },
     {

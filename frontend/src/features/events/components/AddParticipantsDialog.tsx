@@ -10,7 +10,7 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
-import { categoryChipClass } from '@/features/categories/lib/colors';
+import { projectChipClass } from '@/features/projects/lib/colors';
 import {
     adminRegisterUser,
     listRegistrationCandidates,
@@ -137,12 +137,12 @@ const AddParticipantsBody = ({
                                 <p className="break-words">
                                     {personLabel(c)}
                                 </p>
-                                {c.categoryPreferences.length > 0 && (
+                                {c.projectPreferences.length > 0 && (
                                     <div className="mt-1 flex flex-wrap gap-1">
-                                        {c.categoryPreferences.map((cat) => (
+                                        {c.projectPreferences.map((cat) => (
                                             <span
                                                 key={cat.id}
-                                                className={`rounded px-1.5 py-0.5 text-xs font-medium ${categoryChipClass(cat.color)}`}
+                                                className={`rounded px-1.5 py-0.5 text-xs font-medium ${projectChipClass(cat.color)}`}
                                             >
                                                 {cat.name}
                                             </span>

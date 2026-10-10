@@ -26,7 +26,7 @@ const event = (id: string, startsAt: string): EventItem => ({
     seriesId: null,
     createdAt: startsAt,
     createdBy: { id: 'u', name: 'U', puntoVuela: null },
-    category: { id: 'c', name: 'Categoría', color: 'amber' },
+    category: { id: 'c', name: 'Proyecto', color: 'amber' },
     guide: { id: 'g', name: 'Guía', url: 'https://example.com' },
     _count: { registrations: 0 },
     registered: false,

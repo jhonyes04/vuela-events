@@ -44,37 +44,37 @@ export interface ProfileValues {
 export const cleanText = (value: string): string =>
     value.trim().replace(/\s+/g, ' ');
 
-export interface CategoryOption {
+export interface ProjectOption {
     id: string;
     name: string;
     color: string;
 }
 
-export const listCategoryOptions = async (): Promise<CategoryOption[]> => {
-    const { categories } = await api.get<{ categories: CategoryOption[] }>(
-        '/profile/category-options',
+export const listProjectOptions = async (): Promise<ProjectOption[]> => {
+    const { projects } = await api.get<{ projects: ProjectOption[] }>(
+        '/profile/project-options',
     );
 
-    return categories;
+    return projects;
 };
 
-export const getCategoryPreferences = async (): Promise<CategoryOption[]> => {
-    const { categories } = await api.get<{ categories: CategoryOption[] }>(
-        '/profile/category-preferences',
+export const getProjectPreferences = async (): Promise<ProjectOption[]> => {
+    const { projects } = await api.get<{ projects: ProjectOption[] }>(
+        '/profile/project-preferences',
     );
 
-    return categories;
+    return projects;
 };
 
-export const setCategoryPreferences = async (
-    categoryIds: string[],
-): Promise<CategoryOption[]> => {
-    const { categories } = await api.patch<{ categories: CategoryOption[] }>(
-        '/profile/category-preferences',
-        { categoryIds },
+export const setProjectPreferences = async (
+    projectIds: string[],
+): Promise<ProjectOption[]> => {
+    const { projects } = await api.patch<{ projects: ProjectOption[] }>(
+        '/profile/project-preferences',
+        { projectIds },
     );
 
-    return categories;
+    return projects;
 };
 
 export const updateProfile = async (values: ProfileValues): Promise<User> => {

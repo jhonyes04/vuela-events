@@ -39,11 +39,11 @@ export const RegistrationsSection = ({
 
         {section === 'reg-category' && (
             <ChartCard
-                title="Inscripciones por categoría"
-                empty={stats.registrationsByCategory.length === 0}
+                title="Inscripciones por proyecto"
+                empty={stats.registrationsByProject.length === 0}
             >
                 <HorizontalBars
-                    data={stats.registrationsByCategory}
+                    data={stats.registrationsByProject}
                     metric="registrations"
                     config={valueConfig('Inscripciones', 'var(--chart-2)')}
                 />

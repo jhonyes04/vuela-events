@@ -4,7 +4,7 @@ import { prisma } from '../lib/prisma.js';
 import {
     api,
     closeDb,
-    createCategory,
+    createProject,
     createGuide,
     createUser,
     resetDb,
@@ -23,7 +23,7 @@ describe('administración de usuarios', () => {
 
     beforeEach(async () => {
         await resetDb();
-        categoryId = (await createCategory()).id;
+        categoryId = (await createProject()).id;
         guideId = (await createGuide()).id;
     });
 

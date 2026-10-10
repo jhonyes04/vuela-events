@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Pencil, Tags, Trash2 } from 'lucide-react';
+import { Pencil, FolderKanban, Trash2 } from 'lucide-react';
 import { OverlayScrollbarsComponent } from 'overlayscrollbars-react';
 import { toast } from 'sonner';
 import { useAuth } from '@/features/auth/hooks/context';
@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { ConfirmDeleteDialog } from '@/components/ConfirmDeleteDialog';
 import { IconTooltip } from '@/components/IconTooltip';
 import { EditUserDialog } from '@/features/users/components/EditUserDialog';
-import { EditUserCategoriesDialog } from '@/features/users/components/EditUserCategoriesDialog';
+import { EditUserProjectsDialog } from '@/features/users/components/EditUserProjectsDialog';
 import { ListErrors } from '@/features/users/components/ListErrors';
 import { PaginationControls } from '@/components/PaginationControls';
 import { SortableHeader } from '@/components/SortableHeader';
@@ -44,8 +44,9 @@ export const UsersPage = () => {
     const [error, setError] = useState<string | null>(null);
     const [busyId, setBusyId] = useState<string | null>(null);
     const [editing, setEditing] = useState<AdminUser | null>(null);
-    const [editingCategories, setEditingCategories] =
-        useState<AdminUser | null>(null);
+    const [editingProjects, setEditingProjects] = useState<AdminUser | null>(
+        null,
+    );
     const [deleting, setDeleting] = useState<AdminUser | null>(null);
 
     const {
@@ -253,21 +254,20 @@ export const UsersPage = () => {
                                                         <Pencil className="size-4" />
                                                     </Button>
                                                 </IconTooltip>
-                                                {u.role.id ===
-                                                    ROLE_IDS.AIL && (
-                                                    <IconTooltip label="Categorías de interés">
+                                                {u.role.id === ROLE_IDS.AIL && (
+                                                    <IconTooltip label="Proyectos de interés">
                                                         <Button
                                                             variant="secondary"
                                                             size="icon"
-                                                            aria-label="Categorías de interés"
+                                                            aria-label="Proyectos de interés"
                                                             disabled={busy}
                                                             onClick={() =>
-                                                                setEditingCategories(
+                                                                setEditingProjects(
                                                                     u,
                                                                 )
                                                             }
                                                         >
-                                                            <Tags className="size-4" />
+                                                            <FolderKanban className="size-4" />
                                                         </Button>
                                                     </IconTooltip>
                                                 )}
@@ -332,10 +332,10 @@ export const UsersPage = () => {
                 onSaved={() => void load()}
             />
 
-            <EditUserCategoriesDialog
-                open={editingCategories !== null}
-                onOpenChange={(open) => !open && setEditingCategories(null)}
-                user={editingCategories}
+            <EditUserProjectsDialog
+                open={editingProjects !== null}
+                onOpenChange={(open) => !open && setEditingProjects(null)}
+                user={editingProjects}
             />
 
             {deleting && (

@@ -1,6 +1,6 @@
 import { prisma } from '../lib/prisma.js';
 import { Prisma } from '../generated/prisma/client.js';
-import { listCategoryInterestedUsers } from './categoryPreferences.js';
+import { listProjectInterestedUsers } from './projectPreferences.js';
 
 const quarterKey = (key: string): string => {
     const [year, month] = key.split('-');
@@ -137,7 +137,7 @@ export const getStats = async (now: Date = new Date()) => {
     const eventsRollup = rollUp(eventsByMonth);
     const attendedRollup = rollUp(attendedByMonth);
 
-    const byCategory = await prisma.$queryRaw<Group[]>`
+    const byProject = await prisma.$queryRaw<Group[]>`
         ${regCountsCte}
         SELECT
             c.id,
@@ -273,12 +273,12 @@ export const getStats = async (now: Date = new Date()) => {
         registrations: row.registrations,
     }));
 
-    const interestByCategory = (await listCategoryInterestedUsers())
-        .map((category) => ({
-            id: category.id,
-            name: category.name,
-            color: category.color,
-            interestedUsers: category.users.length,
+    const interestByProject = (await listProjectInterestedUsers())
+        .map((project) => ({
+            id: project.id,
+            name: project.name,
+            color: project.color,
+            interestedUsers: project.users.length,
         }))
         .sort(
             (a, b) =>
@@ -300,10 +300,10 @@ export const getStats = async (now: Date = new Date()) => {
         eventsByMonth,
         eventsByQuarter: eventsRollup.byQuarter,
         eventsByYear: eventsRollup.byYear,
-        eventsByCategory: byCategory,
+        eventsByProject: byProject,
         eventsByGuide: byGuide,
         registrationsByMonth,
-        registrationsByCategory: byCategory,
+        registrationsByProject: byProject,
         topEvents: topEventRows,
         occupancy: {
             eventsWithCapacity: occupancyRow.eventsWithCapacity,
@@ -318,10 +318,10 @@ export const getStats = async (now: Date = new Date()) => {
         usersWithoutRegistrations,
         registrationsByUser,
         attendedByMonth,
-        attendedByCategory: byCategory,
+        attendedByProject: byProject,
         attendedByQuarter: attendedRollup.byQuarter,
         attendedByYear: attendedRollup.byYear,
-        interestByCategory,
+        interestByProject,
         finishedWithoutAttended: {
             count: finishedWithoutAttendedCount,
             events: finishedWithoutAttendedRows,

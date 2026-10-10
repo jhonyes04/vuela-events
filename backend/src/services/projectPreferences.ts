@@ -1,33 +1,33 @@
 import { prisma } from '../lib/prisma.js';
 
-export type CategoryPreferenceFailure = 'invalid_category';
+export type ProjectPreferenceFailure = 'invalid_project';
 
-export class CategoryPreferenceError extends Error {
-    readonly reason: CategoryPreferenceFailure;
+export class ProjectPreferenceError extends Error {
+    readonly reason: ProjectPreferenceFailure;
 
-    constructor(reason: CategoryPreferenceFailure) {
+    constructor(reason: ProjectPreferenceFailure) {
         super(reason);
-        this.name = 'CategoryPreferenceError';
+        this.name = 'ProjectPreferenceError';
         this.reason = reason;
     }
 }
 
-export interface CategoryOption {
+export interface ProjectOption {
     id: string;
     name: string;
     color: string;
 }
 
-export const listCategoryOptions = (): Promise<CategoryOption[]> =>
+export const listProjectOptions = (): Promise<ProjectOption[]> =>
     prisma.category.findMany({
         where: { active: true },
         select: { id: true, name: true, color: true },
         orderBy: { name: 'asc' },
     });
 
-export const getCategoryPreferences = async (
+export const getProjectPreferences = async (
     userId: string,
-): Promise<CategoryOption[]> => {
+): Promise<ProjectOption[]> => {
     const rows = await prisma.userCategoryPreference.findMany({
         where: { userId },
         select: { category: { select: { id: true, name: true, color: true } } },
@@ -37,11 +37,11 @@ export const getCategoryPreferences = async (
     return rows.map((r) => r.category);
 };
 
-export const setCategoryPreferences = async (
+export const setProjectPreferences = async (
     userId: string,
-    categoryIds: string[],
-): Promise<CategoryOption[]> => {
-    const unique = [...new Set(categoryIds)];
+    projectIds: string[],
+): Promise<ProjectOption[]> => {
+    const unique = [...new Set(projectIds)];
 
     if (unique.length > 0) {
         const count = await prisma.category.count({
@@ -49,7 +49,7 @@ export const setCategoryPreferences = async (
         });
 
         if (count !== unique.length) {
-            throw new CategoryPreferenceError('invalid_category');
+            throw new ProjectPreferenceError('invalid_project');
         }
     }
 
@@ -60,25 +60,25 @@ export const setCategoryPreferences = async (
         }),
     ]);
 
-    return getCategoryPreferences(userId);
+    return getProjectPreferences(userId);
 };
 
-export interface CategoryInterestedUser {
+export interface ProjectInterestedUser {
     id: string;
     name: string;
     lastName: string;
     puntoVuela: string | null;
 }
 
-export interface CategoryWithInterestedUsers {
+export interface ProjectWithInterestedUsers {
     id: string;
     name: string;
     color: string;
-    users: CategoryInterestedUser[];
+    users: ProjectInterestedUser[];
 }
 
-export const listCategoryInterestedUsers = async (): Promise<
-    CategoryWithInterestedUsers[]
+export const listProjectInterestedUsers = async (): Promise<
+    ProjectWithInterestedUsers[]
 > => {
     const rows = await prisma.category.findMany({
         where: { active: true },
@@ -104,11 +104,11 @@ export const listCategoryInterestedUsers = async (): Promise<
         orderBy: { name: 'asc' },
     });
 
-    return rows.map((category) => ({
-        id: category.id,
-        name: category.name,
-        color: category.color,
-        users: category.userPreferences.map((p) => p.user),
+    return rows.map((project) => ({
+        id: project.id,
+        name: project.name,
+        color: project.color,
+        users: project.userPreferences.map((p) => p.user),
     }));
 };
 
@@ -126,29 +126,29 @@ export const listAilUsers = (): Promise<AilUserOption[]> =>
         orderBy: [{ name: 'asc' }, { lastName: 'asc' }],
     });
 
-export const addCategoryPreference = async (
+export const addProjectPreference = async (
     userId: string,
     categoryId: string,
 ): Promise<void> => {
     const userExists = await prisma.user.count({ where: { id: userId } });
 
     if (!userExists) {
-        throw new CategoryPreferenceError('invalid_category');
+        throw new ProjectPreferenceError('invalid_project');
     }
 
-    const current = await getCategoryPreferences(userId);
+    const current = await getProjectPreferences(userId);
     const ids = new Set(current.map((c) => c.id));
     ids.add(categoryId);
 
-    await setCategoryPreferences(userId, [...ids]);
+    await setProjectPreferences(userId, [...ids]);
 };
 
-export const removeCategoryPreference = async (
+export const removeProjectPreference = async (
     userId: string,
     categoryId: string,
 ): Promise<void> => {
-    const current = await getCategoryPreferences(userId);
+    const current = await getProjectPreferences(userId);
     const ids = current.map((c) => c.id).filter((id) => id !== categoryId);
 
-    await setCategoryPreferences(userId, ids);
+    await setProjectPreferences(userId, ids);
 };

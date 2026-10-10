@@ -5,7 +5,7 @@ import { prisma } from '../lib/prisma.js';
 import {
     api,
     closeDb,
-    createCategory,
+    createProject,
     createGuide,
     createUser,
     resetDb,
@@ -40,7 +40,7 @@ describe('series recurrentes y eliminación de sesiones', () => {
 
     beforeEach(async () => {
         await resetDb();
-        categoryId = (await createCategory()).id;
+        categoryId = (await createProject()).id;
         guideId = (await createGuide()).id;
     });
 

@@ -14,7 +14,7 @@ export interface StatsGroup {
     attended: number;
 }
 
-export interface CategoryInterestGroup {
+export interface ProjectInterestGroup {
     id: string;
     name: string;
     color: string | null;
@@ -27,10 +27,10 @@ export interface StatsSummary {
     eventsByMonth: SeriesPoint[];
     eventsByQuarter: SeriesPoint[];
     eventsByYear: SeriesPoint[];
-    eventsByCategory: StatsGroup[];
+    eventsByProject: StatsGroup[];
     eventsByGuide: StatsGroup[];
     registrationsByMonth: SeriesPoint[];
-    registrationsByCategory: StatsGroup[];
+    registrationsByProject: StatsGroup[];
     topEvents: {
         id: string;
         title: string;
@@ -65,8 +65,8 @@ export interface StatsSummary {
     attendedByMonth: SeriesPoint[];
     attendedByQuarter: SeriesPoint[];
     attendedByYear: SeriesPoint[];
-    attendedByCategory: StatsGroup[];
-    interestByCategory: CategoryInterestGroup[];
+    attendedByProject: StatsGroup[];
+    interestByProject: ProjectInterestGroup[];
     finishedWithoutAttended: {
         count: number;
         events: { id: string; title: string; startsAt: string }[];

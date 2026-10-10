@@ -13,7 +13,7 @@ import { usersRouter } from './routes/users.js';
 import { eventsRouter } from './routes/events.js';
 import { profileRouter } from './routes/profile.js';
 import { rolesRouter } from './routes/roles.js';
-import { categoriesRouter } from './routes/categories.js';
+import { projectsRouter } from './routes/projects.js';
 import { guidesRouter } from './routes/guides.js';
 import { resourceLinkRouter } from './routes/resourceLinks.js';
 import { documentRouter } from './routes/documents.js';
@@ -71,7 +71,7 @@ export function createApp(options: AppOptions = {}) {
     app.use('/api/profile', profileRouter);
     app.use('/api/users', usersRouter);
     app.use('/api/roles', rolesRouter);
-    app.use('/api/categories', categoriesRouter);
+    app.use('/api/projects', projectsRouter);
     app.use('/api/guides', guidesRouter);
     app.use('/api/resource-links', resourceLinkRouter);
     app.use('/api/documents', documentRouter);

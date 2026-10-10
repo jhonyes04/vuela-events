@@ -49,11 +49,11 @@ export const AttendedSection = ({ section, stats }: AttendedSectionProps) => (
 
         {section === 'attended-category' && (
             <ChartCard
-                title="Atendidos por categoría"
-                empty={stats.attendedByCategory.length === 0}
+                title="Atendidos por proyecto"
+                empty={stats.attendedByProject.length === 0}
             >
                 <HorizontalBars
-                    data={stats.attendedByCategory}
+                    data={stats.attendedByProject}
                     metric="attended"
                     config={valueConfig('Atendidos', 'var(--chart-3)')}
                 />

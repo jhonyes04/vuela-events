@@ -22,9 +22,9 @@ import {
 } from '@/components/ui/chart';
 import { Progress } from '@/components/ui/progress';
 import {
-    CATEGORY_HEX,
-    type CategoryColor,
-} from '@/features/categories/lib/colors';
+    PROJECT_HEX,
+    type ProjectColor,
+} from '@/features/projects/lib/colors';
 import type { SeriesPoint, StatsSummary } from '@/features/stats/lib/stats';
 
 export const countConfig = (label: string, color: string): ChartConfig => ({
@@ -41,10 +41,10 @@ const STATUS_CONFIG = {
     future: { label: 'Próximos', color: 'var(--chart-1)' },
 } satisfies ChartConfig;
 
-// Las categorías llevan su color; los grupos sin color (guías) usan el de la gráfica.
+// Los proyectos llevan su color; los grupos sin color (guías) usan el de la gráfica.
 const groupFill = (color: string | null): string =>
-    color && color in CATEGORY_HEX
-        ? CATEGORY_HEX[color as CategoryColor]
+    color && color in PROJECT_HEX
+        ? PROJECT_HEX[color as ProjectColor]
         : 'var(--color-value)';
 
 export const initials = (name: string): string =>

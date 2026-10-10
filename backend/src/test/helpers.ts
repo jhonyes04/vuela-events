@@ -47,15 +47,15 @@ export const createUser = (
     });
 };
 
-// Categoría de prueba: por defecto activa, para poder usarla al crear eventos.
-export const createCategory = (
+// Proyecto de prueba: por defecto activo, para poder usarlo al crear eventos.
+export const createProject = (
     opts: { name?: string; color?: string; active?: boolean } = {},
 ) => {
     const n = randomBytes(4).toString('hex');
 
     return prisma.category.create({
         data: {
-            name: opts.name ?? `Categoria ${n}`,
+            name: opts.name ?? `Proyecto ${n}`,
             color: opts.color ?? 'amber',
             active: opts.active ?? true,
         },

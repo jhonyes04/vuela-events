@@ -1,4 +1,4 @@
-export const CATEGORY_COLORS = [
+export const PROJECT_COLORS = [
     'yellow',
     'amber',
     'emerald',
@@ -22,9 +22,9 @@ export const CATEGORY_COLORS = [
     'fuchsia',
 ] as const;
 
-export type CategoryColor = (typeof CATEGORY_COLORS)[number];
+export type ProjectColor = (typeof PROJECT_COLORS)[number];
 
-interface CategoryColorStyle {
+interface ProjectColorStyle {
     label: string;
     chip: string;
     swatch: string;
@@ -33,7 +33,7 @@ interface CategoryColorStyle {
     tint: string;
 }
 
-export const CATEGORY_COLOR_STYLES: Record<CategoryColor, CategoryColorStyle> =
+export const PROJECT_COLOR_STYLES: Record<ProjectColor, ProjectColorStyle> =
     {
         yellow: {
             label: 'Amarillo',
@@ -185,14 +185,14 @@ export const CATEGORY_COLOR_STYLES: Record<CategoryColor, CategoryColorStyle> =
     };
 
 // Para datos que no garantizan que el color siga en la paleta actual
-// (p. ej. categorías guardadas antes de quitar un color de CATEGORY_COLORS).
-export const categoryChipClass = (color: string): string =>
-    color in CATEGORY_COLOR_STYLES
-        ? CATEGORY_COLOR_STYLES[color as CategoryColor].chip
+// (p. ej. proyectos guardados antes de quitar un color de PROJECT_COLORS).
+export const projectChipClass = (color: string): string =>
+    color in PROJECT_COLOR_STYLES
+        ? PROJECT_COLOR_STYLES[color as ProjectColor].chip
         : 'bg-muted text-foreground';
 
 // Mismos colores en hex para las gráficas (Recharts no entiende clases de Tailwind).
-export const CATEGORY_HEX: Record<CategoryColor, string> = {
+export const PROJECT_HEX: Record<ProjectColor, string> = {
     yellow: '#f4d64e',
     amber: '#f59e0b',
     emerald: '#10b981',

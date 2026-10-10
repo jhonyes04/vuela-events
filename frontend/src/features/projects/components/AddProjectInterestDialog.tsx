@@ -11,24 +11,24 @@ import {
 import { Input } from '@/components/ui/input';
 import { ApiError } from '@/lib/api';
 import {
-    addCategoryInterestedUser,
+    addProjectInterestedUser,
     listAilUsers,
     type AilUserOption,
-    type CategoryInterests,
-} from '@/features/categories/lib/categories';
+    type ProjectInterests,
+} from '@/features/projects/lib/projects';
 import { personLabel } from '@/features/events/lib/events';
 
-interface AddCategoryInterestBodyProps {
-    categoryId: string;
+interface AddProjectInterestBodyProps {
+    projectId: string;
     currentUserIds: Set<string>;
-    onAdded: (categories: CategoryInterests[]) => void;
+    onAdded: (projects: ProjectInterests[]) => void;
 }
 
-const AddCategoryInterestBody = ({
-    categoryId,
+const AddProjectInterestBody = ({
+    projectId,
     currentUserIds,
     onAdded,
-}: AddCategoryInterestBodyProps) => {
+}: AddProjectInterestBodyProps) => {
     const [candidates, setCandidates] = useState<AilUserOption[]>([]);
     const [loading, setLoading] = useState(true);
     const [failed, setFailed] = useState(false);
@@ -56,12 +56,12 @@ const AddCategoryInterestBody = ({
         setAddingId(userId);
 
         try {
-            const categories = await addCategoryInterestedUser(
-                categoryId,
+            const projects = await addProjectInterestedUser(
+                projectId,
                 userId,
             );
 
-            onAdded(categories);
+            onAdded(projects);
             toast.success('Usuario añadido.');
         } catch (e) {
             toast.error(
@@ -80,7 +80,7 @@ const AddCategoryInterestBody = ({
                 <DialogTitle>Agregar usuario</DialogTitle>
                 <DialogDescription>
                     Usuarios AIL activos que todavía no están marcados en
-                    esta categoría.
+                    este proyecto.
                 </DialogDescription>
             </DialogHeader>
 
@@ -131,26 +131,26 @@ const AddCategoryInterestBody = ({
     );
 };
 
-interface AddCategoryInterestDialogProps {
+interface AddProjectInterestDialogProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
-    categoryId: string;
+    projectId: string;
     currentUserIds: Set<string>;
-    onAdded: (categories: CategoryInterests[]) => void;
+    onAdded: (projects: ProjectInterests[]) => void;
 }
 
-export const AddCategoryInterestDialog = ({
+export const AddProjectInterestDialog = ({
     open,
     onOpenChange,
-    categoryId,
+    projectId,
     currentUserIds,
     onAdded,
-}: AddCategoryInterestDialogProps) => (
+}: AddProjectInterestDialogProps) => (
     <Dialog open={open} onOpenChange={onOpenChange}>
         {open && (
-            <AddCategoryInterestBody
-                key={categoryId}
-                categoryId={categoryId}
+            <AddProjectInterestBody
+                key={projectId}
+                projectId={projectId}
                 currentUserIds={currentUserIds}
                 onAdded={onAdded}
             />

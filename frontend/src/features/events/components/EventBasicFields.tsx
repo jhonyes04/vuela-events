@@ -9,8 +9,8 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
-import type { Category } from '@/features/categories/lib/categories';
-import { CATEGORY_COLOR_STYLES } from '@/features/categories/lib/colors';
+import type { Project } from '@/features/projects/lib/projects';
+import { PROJECT_COLOR_STYLES } from '@/features/projects/lib/colors';
 import type { Guide } from '@/features/guides/lib/guides';
 import type { FormValues, TextField } from '@/features/events/lib/eventForm';
 
@@ -35,21 +35,21 @@ interface EventBasicFieldsProps {
     fieldId: (name: string) => string;
     values: FormValues;
     onChange: (name: TextField) => (e: { target: { value: string } }) => void;
-    onCategoryChange: (id: string) => void;
+    onProjectChange: (id: string) => void;
     onGuideChange: (id: string) => void;
-    activeCategories: Category[];
+    activeProjects: Project[];
     activeGuides: Guide[];
 }
 
-// Título, subtítulo, lugar y los selects de categoría/guía: comunes a crear
+// Título, subtítulo, lugar y los selects de proyecto/guía: comunes a crear
 // y editar, con o sin recurrencia.
 export function EventBasicFields({
     fieldId,
     values,
     onChange,
-    onCategoryChange,
+    onProjectChange,
     onGuideChange,
-    activeCategories,
+    activeProjects,
     activeGuides,
 }: EventBasicFieldsProps) {
     return (
@@ -80,19 +80,19 @@ export function EventBasicFields({
                     onChange={onChange('location')}
                 />
             </Field>
-            <Field id={fieldId('category')} label="Categoría *">
+            <Field id={fieldId('category')} label="Proyecto *">
                 <Select
                     value={values.categoryId}
-                    items={activeCategories.map((c) => ({
+                    items={activeProjects.map((c) => ({
                         value: c.id,
                         label: c.name,
                     }))}
-                    onValueChange={(value) => onCategoryChange(value ?? '')}
+                    onValueChange={(value) => onProjectChange(value ?? '')}
                 >
                     <SelectTrigger id={fieldId('category')} className="w-full">
-                        <SelectValue placeholder="Selecciona una categoría">
+                        <SelectValue placeholder="Selecciona un proyecto">
                             {(value: string | null) => {
-                                const selected = activeCategories.find(
+                                const selected = activeProjects.find(
                                     (c) => c.id === value,
                                 );
 
@@ -103,7 +103,7 @@ export function EventBasicFields({
                                         <span
                                             className={cn(
                                                 'size-3 shrink-0 rounded-full',
-                                                CATEGORY_COLOR_STYLES[
+                                                PROJECT_COLOR_STYLES[
                                                     selected.color
                                                 ].swatch,
                                             )}
@@ -115,12 +115,12 @@ export function EventBasicFields({
                         </SelectValue>
                     </SelectTrigger>
                     <SelectContent>
-                        {activeCategories.map((c) => (
+                        {activeProjects.map((c) => (
                             <SelectItem key={c.id} value={c.id} label={c.name}>
                                 <span
                                     className={cn(
                                         'size-3 shrink-0 rounded-full',
-                                        CATEGORY_COLOR_STYLES[c.color].swatch,
+                                        PROJECT_COLOR_STYLES[c.color].swatch,
                                     )}
                                 />
                                 {c.name}

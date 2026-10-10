@@ -14,33 +14,33 @@ import { Label } from '@/components/ui/label';
 import { ApiError } from '@/lib/api';
 import { cn } from '@/lib/utils';
 import {
-    createCategory,
-    updateCategory,
-    type Category,
-} from '@/features/categories/lib/categories';
+    createProject,
+    updateProject,
+    type Project,
+} from '@/features/projects/lib/projects';
 import {
-    CATEGORY_COLORS,
-    CATEGORY_COLOR_STYLES,
-    type CategoryColor,
-} from '@/features/categories/lib/colors';
+    PROJECT_COLORS,
+    PROJECT_COLOR_STYLES,
+    type ProjectColor,
+} from '@/features/projects/lib/colors';
 
-interface CategoryFormBodyProps {
-    category: Category | null;
-    onSaved: (category: Category) => void;
+interface ProjectFormBodyProps {
+    project: Project | null;
+    onSaved: (project: Project) => void;
     onClose: () => void;
 }
 
 // Con su propio estado: el padre la remonta (key) cada vez que abre el diálogo.
-const CategoryFormBody = ({
-    category,
+const ProjectFormBody = ({
+    project,
     onSaved,
     onClose,
-}: CategoryFormBodyProps) => {
-    const [name, setName] = useState(category?.name ?? '');
-    const [color, setColor] = useState<CategoryColor>(
-        category?.color ?? CATEGORY_COLORS[0],
+}: ProjectFormBodyProps) => {
+    const [name, setName] = useState(project?.name ?? '');
+    const [color, setColor] = useState<ProjectColor>(
+        project?.color ?? PROJECT_COLORS[0],
     );
-    const [active, setActive] = useState(category?.active ?? true);
+    const [active, setActive] = useState(project?.active ?? true);
     const [submitting, setSubmitting] = useState(false);
 
     const handleSubmit = async (e: FormEvent) => {
@@ -48,12 +48,12 @@ const CategoryFormBody = ({
         setSubmitting(true);
 
         try {
-            const saved = category
-                ? await updateCategory(category.id, { name, color, active })
-                : await createCategory({ name, color });
+            const saved = project
+                ? await updateProject(project.id, { name, color, active })
+                : await createProject({ name, color });
 
             toast.success(
-                category ? 'Categoría actualizada.' : 'Categoría creada.',
+                project ? 'Proyecto actualizado.' : 'Proyecto creado.',
             );
             onSaved(saved);
             onClose();
@@ -61,7 +61,7 @@ const CategoryFormBody = ({
             toast.error(
                 err instanceof ApiError
                     ? err.message
-                    : 'No se pudo guardar la categoría',
+                    : 'No se pudo guardar el proyecto',
             );
         } finally {
             setSubmitting(false);
@@ -72,10 +72,10 @@ const CategoryFormBody = ({
         <DialogContent className="sm:max-w-md">
             <DialogHeader>
                 <DialogTitle>
-                    {category ? 'Editar categoría' : 'Nueva categoría'}
+                    {project ? 'Editar proyecto' : 'Nuevo proyecto'}
                 </DialogTitle>
                 <DialogDescription>
-                    El color se usa para diferenciarla en el calendario.
+                    El color se usa para diferenciarlo en el calendario.
                 </DialogDescription>
             </DialogHeader>
 
@@ -101,16 +101,16 @@ const CategoryFormBody = ({
                         Color
                     </legend>
                     <div className="flex flex-wrap gap-2">
-                        {CATEGORY_COLORS.map((c) => (
+                        {PROJECT_COLORS.map((c) => (
                             <button
                                 key={c}
                                 type="button"
-                                aria-label={CATEGORY_COLOR_STYLES[c].label}
+                                aria-label={PROJECT_COLOR_STYLES[c].label}
                                 aria-pressed={color === c}
                                 onClick={() => setColor(c)}
                                 className={cn(
                                     'size-8 rounded-full ring-offset-2 ring-offset-background',
-                                    CATEGORY_COLOR_STYLES[c].swatch,
+                                    PROJECT_COLOR_STYLES[c].swatch,
                                     color === c
                                         ? 'ring-2 ring-ring'
                                         : 'hover:ring-2 hover:ring-border',
@@ -120,7 +120,7 @@ const CategoryFormBody = ({
                     </div>
                 </fieldset>
 
-                {category && (
+                {project && (
                     <label className="flex items-center gap-2 text-sm">
                         <input
                             type="checkbox"
@@ -128,7 +128,7 @@ const CategoryFormBody = ({
                             checked={active}
                             onChange={(e) => setActive(e.target.checked)}
                         />
-                        Activa
+                        Activo
                     </label>
                 )}
 
@@ -147,25 +147,25 @@ const CategoryFormBody = ({
     );
 };
 
-interface CategoryFormDialogProps {
+interface ProjectFormDialogProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
-    // null = crear, categoría = editar.
-    category: Category | null;
-    onSaved: (category: Category) => void;
+    // null = crear, proyecto = editar.
+    project: Project | null;
+    onSaved: (project: Project) => void;
 }
 
-export const CategoryFormDialog = ({
+export const ProjectFormDialog = ({
     open,
     onOpenChange,
-    category,
+    project,
     onSaved,
-}: CategoryFormDialogProps) => (
+}: ProjectFormDialogProps) => (
     <Dialog open={open} onOpenChange={onOpenChange}>
         {open && (
-            <CategoryFormBody
-                key={category?.id ?? 'new'}
-                category={category}
+            <ProjectFormBody
+                key={project?.id ?? 'new'}
+                project={project}
                 onSaved={onSaved}
                 onClose={() => onOpenChange(false)}
             />

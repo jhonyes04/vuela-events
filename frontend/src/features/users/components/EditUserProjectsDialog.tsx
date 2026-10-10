@@ -5,27 +5,27 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
-import { CategoryPreferencesSection } from '@/features/profile/components/CategoryPreferencesSection';
+import { ProjectPreferencesSection } from '@/features/profile/components/ProjectPreferencesSection';
 
-export interface CategoriesUser {
+export interface ProjectsUser {
     id: string;
     name: string;
     lastName: string;
     email: string;
 }
 
-interface EditUserCategoriesDialogProps {
+interface EditUserProjectsDialogProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
     // null = nada que editar (el diálogo no se muestra).
-    user: CategoriesUser | null;
+    user: ProjectsUser | null;
 }
 
-export const EditUserCategoriesDialog = ({
+export const EditUserProjectsDialog = ({
     open,
     onOpenChange,
     user,
-}: EditUserCategoriesDialogProps) => {
+}: EditUserProjectsDialogProps) => {
     if (!user) return null;
 
     return (
@@ -33,12 +33,12 @@ export const EditUserCategoriesDialog = ({
             <DialogContent key={user.id}>
                 <DialogHeader>
                     <DialogTitle>
-                        Categorías de {user.name} {user.lastName}
+                        Proyectos de {user.name} {user.lastName}
                     </DialogTitle>
                     <DialogDescription>{user.email}</DialogDescription>
                 </DialogHeader>
 
-                <CategoryPreferencesSection userId={user.id} />
+                <ProjectPreferencesSection userId={user.id} />
             </DialogContent>
         </Dialog>
     );

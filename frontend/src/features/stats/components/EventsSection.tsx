@@ -73,11 +73,11 @@ export const EventsSection = ({ section, stats }: EventsSectionProps) => (
 
         {section === 'events-category' && (
             <ChartCard
-                title="Eventos por categoría"
-                empty={stats.eventsByCategory.length === 0}
+                title="Eventos por proyecto"
+                empty={stats.eventsByProject.length === 0}
             >
                 <HorizontalBars
-                    data={stats.eventsByCategory}
+                    data={stats.eventsByProject}
                     metric="events"
                     config={valueConfig('Eventos', 'var(--chart-1)')}
                 />

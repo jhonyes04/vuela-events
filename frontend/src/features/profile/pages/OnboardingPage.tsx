@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { PageTitle } from '@/components/PageTitle';
 import { useAuth } from '@/features/auth/hooks/context';
 import { ProfileForm } from '@/features/profile/components/ProfileForm';
-import { CategoryPreferencesSection } from '@/features/profile/components/CategoryPreferencesSection';
+import { ProjectPreferencesSection } from '@/features/profile/components/ProjectPreferencesSection';
 import { PUNTO_VUELA_MAX } from '@/features/profile/lib/profile';
 import type { User } from '@/lib/api';
 
@@ -22,7 +22,7 @@ export function OnboardingPage() {
                 <p className="mb-6 text-muted-foreground">
                     Un último paso: elige qué tipos de eventos te interesan.
                 </p>
-                <CategoryPreferencesSection
+                <ProjectPreferencesSection
                     continueLabel="Continuar"
                     onContinue={() => setUser(pendingUser)}
                 />

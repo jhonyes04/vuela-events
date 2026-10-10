@@ -8,28 +8,28 @@ import { IconTooltip } from '@/components/IconTooltip';
 import { ConfirmDeleteDialog } from '@/components/ConfirmDeleteDialog';
 import { ListErrors } from '@/features/users/components/ListErrors';
 import {
-    listCategoryInterests,
-    removeCategoryInterestedUser,
-    type CategoryInterests,
-} from '@/features/categories/lib/categories';
-import { CATEGORY_COLOR_STYLES } from '@/features/categories/lib/colors';
-import { AddCategoryInterestDialog } from '@/features/categories/components/AddCategoryInterestDialog';
+    listProjectInterests,
+    removeProjectInterestedUser,
+    type ProjectInterests,
+} from '@/features/projects/lib/projects';
+import { PROJECT_COLOR_STYLES } from '@/features/projects/lib/colors';
+import { AddProjectInterestDialog } from '@/features/projects/components/AddProjectInterestDialog';
 import { personLabel } from '@/features/events/lib/events';
 import { cn } from '@/lib/utils';
 import { ApiError } from '@/lib/api';
 
 interface DeletingTarget {
-    categoryId: string;
+    projectId: string;
     userId: string;
     label: string;
 }
 
-export const CategoryInterestsPage = () => {
+export const ProjectInterestsPage = () => {
     const { user } = useAuth();
     const canAdd = user?.permissions.includes('categories:edit') ?? false;
     const canDelete = user?.permissions.includes('categories:delete') ?? false;
 
-    const [categories, setCategories] = useState<CategoryInterests[]>([]);
+    const [projects, setProjects] = useState<ProjectInterests[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [addingFor, setAddingFor] = useState<string | null>(null);
@@ -40,7 +40,7 @@ export const CategoryInterestsPage = () => {
         setError(null);
 
         try {
-            setCategories(await listCategoryInterests());
+            setProjects(await listProjectInterests());
         } catch (e) {
             setError(
                 e instanceof ApiError
@@ -58,7 +58,7 @@ export const CategoryInterestsPage = () => {
 
     return (
         <section>
-            <PageTitle>Usuarios por categoría</PageTitle>
+            <PageTitle>Usuarios por proyecto</PageTitle>
 
             <ListErrors
                 error={error}
@@ -70,19 +70,19 @@ export const CategoryInterestsPage = () => {
                 <p role="status" className="text-muted-foreground">
                     Cargando…
                 </p>
-            ) : categories.length === 0 ? (
+            ) : projects.length === 0 ? (
                 <p className="text-muted-foreground">
-                    Todavía no hay categorías.
+                    Todavía no hay proyectos.
                 </p>
             ) : (
                 <div className="grid gap-4 sm:grid-cols-2">
-                    {categories.map((category) => {
+                    {projects.map((project) => {
                         const colorStyle =
-                            CATEGORY_COLOR_STYLES[category.color];
+                            PROJECT_COLOR_STYLES[project.color];
 
                         return (
                             <Card
-                                key={category.id}
+                                key={project.id}
                                 className={cn(
                                     'gap-0 overflow-hidden border-t-4 py-0',
                                     colorStyle.border,
@@ -95,7 +95,7 @@ export const CategoryInterestsPage = () => {
                                     )}
                                 >
                                     <h3 className="font-heading text-base leading-snug font-semibold">
-                                        {category.name}
+                                        {project.name}
                                     </h3>
                                     {canAdd && (
                                         <IconTooltip label="Agregar usuario">
@@ -104,7 +104,7 @@ export const CategoryInterestsPage = () => {
                                                 size="icon-sm"
                                                 aria-label="Agregar usuario"
                                                 onClick={() =>
-                                                    setAddingFor(category.id)
+                                                    setAddingFor(project.id)
                                                 }
                                             >
                                                 <UserPlus className="size-3.5" />
@@ -113,13 +113,13 @@ export const CategoryInterestsPage = () => {
                                     )}
                                 </CardHeader>
                                 <CardContent className="px-4! py-4!">
-                                    {category.users.length === 0 ? (
+                                    {project.users.length === 0 ? (
                                         <p className="text-sm text-muted-foreground">
                                             Nadie ha marcado interés todavía.
                                         </p>
                                     ) : (
                                         <ul className="grid gap-1 text-sm">
-                                            {category.users.map((u) => (
+                                            {project.users.map((u) => (
                                                 <li
                                                     key={u.id}
                                                     className="flex items-center gap-2 rounded-md bg-card px-2 py-1"
@@ -140,8 +140,8 @@ export const CategoryInterestsPage = () => {
                                                                 onClick={() =>
                                                                     setDeleting(
                                                                         {
-                                                                            categoryId:
-                                                                                category.id,
+                                                                            projectId:
+                                                                                project.id,
                                                                             userId: u.id,
                                                                             label: `${u.name} ${u.lastName}`,
                                                                         },
@@ -164,18 +164,18 @@ export const CategoryInterestsPage = () => {
             )}
 
             {addingFor && (
-                <AddCategoryInterestDialog
+                <AddProjectInterestDialog
                     open={addingFor !== null}
                     onOpenChange={(open) => !open && setAddingFor(null)}
-                    categoryId={addingFor}
+                    projectId={addingFor}
                     currentUserIds={
                         new Set(
-                            categories
+                            projects
                                 .find((c) => c.id === addingFor)
                                 ?.users.map((u) => u.id) ?? [],
                         )
                     }
-                    onAdded={setCategories}
+                    onAdded={setProjects}
                 />
             )}
 
@@ -183,20 +183,20 @@ export const CategoryInterestsPage = () => {
                 <ConfirmDeleteDialog
                     open={deleting !== null}
                     onOpenChange={(open) => !open && setDeleting(null)}
-                    title="Quitar de la categoría"
-                    description={`¿Quitar a «${deleting.label}» de esta categoría? Esta acción no se puede deshacer.`}
+                    title="Quitar del proyecto"
+                    description={`¿Quitar a «${deleting.label}» de este proyecto? Esta acción no se puede deshacer.`}
                     confirmLabel="Quitar"
                     deletingLabel="Quitando…"
                     errorFallback="No se pudo quitar al usuario"
                     successLabel="Usuario quitado."
                     onConfirm={() =>
-                        removeCategoryInterestedUser(
-                            deleting.categoryId,
+                        removeProjectInterestedUser(
+                            deleting.projectId,
                             deleting.userId,
                         )
                     }
                     onDeleted={(updated) => {
-                        setCategories(updated);
+                        setProjects(updated);
                         setDeleting(null);
                     }}
                 />

@@ -1,6 +1,6 @@
 import { api } from '@/lib/api';
 import {
-    type CategoryOption,
+    type ProjectOption,
     type DinamizadorTitle,
 } from '@/features/profile/lib/profile';
 
@@ -31,24 +31,24 @@ export const updateUserProfile = async (
     return user;
 };
 
-export const getUserCategoryPreferences = async (
+export const getUserProjectPreferences = async (
     userId: string,
-): Promise<CategoryOption[]> => {
-    const { categories } = await api.get<{ categories: CategoryOption[] }>(
-        `/users/${userId}/category-preferences`,
+): Promise<ProjectOption[]> => {
+    const { projects } = await api.get<{ projects: ProjectOption[] }>(
+        `/users/${userId}/project-preferences`,
     );
 
-    return categories;
+    return projects;
 };
 
-export const setUserCategoryPreferences = async (
+export const setUserProjectPreferences = async (
     userId: string,
-    categoryIds: string[],
-): Promise<CategoryOption[]> => {
-    const { categories } = await api.patch<{ categories: CategoryOption[] }>(
-        `/users/${userId}/category-preferences`,
-        { categoryIds },
+    projectIds: string[],
+): Promise<ProjectOption[]> => {
+    const { projects } = await api.patch<{ projects: ProjectOption[] }>(
+        `/users/${userId}/project-preferences`,
+        { projectIds },
     );
 
-    return categories;
+    return projects;
 };

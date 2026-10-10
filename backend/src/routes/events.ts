@@ -54,13 +54,13 @@ const eventFields = {
 };
 
 // La categoría debe existir y estar activa: una inactiva no admite eventos nuevos.
-const isActiveCategory = async (categoryId: string): Promise<boolean> => {
-    const category = await prisma.category.findUnique({
+const isActiveProject = async (categoryId: string): Promise<boolean> => {
+    const project = await prisma.category.findUnique({
         where: { id: categoryId },
         select: { active: true },
     });
 
-    return category?.active === true;
+    return project?.active === true;
 };
 
 // La guía debe existir y estar activa: una inactiva no admite eventos nuevos.
@@ -288,8 +288,8 @@ eventsRouter.post(
             guideId,
         } = body.data;
 
-        if (!(await isActiveCategory(categoryId))) {
-            res.status(400).json({ error: 'Categoría no válida' });
+        if (!(await isActiveProject(categoryId))) {
+            res.status(400).json({ error: 'Proyecto no válido' });
             return;
         }
 
@@ -356,8 +356,8 @@ eventsRouter.patch(
             guideId,
         } = body.data;
 
-        if (!(await isActiveCategory(categoryId))) {
-            res.status(400).json({ error: 'Categoría no válida' });
+        if (!(await isActiveProject(categoryId))) {
+            res.status(400).json({ error: 'Proyecto no válido' });
             return;
         }
 
@@ -484,8 +484,8 @@ eventsRouter.post(
 
         const { from, to, weekdays, startTime, endTime, ...fields } = body.data;
 
-        if (!(await isActiveCategory(fields.categoryId))) {
-            res.status(400).json({ error: 'Categoría no válida' });
+        if (!(await isActiveProject(fields.categoryId))) {
+            res.status(400).json({ error: 'Proyecto no válido' });
             return;
         }
 

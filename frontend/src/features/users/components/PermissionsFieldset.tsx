@@ -7,7 +7,7 @@ import {
     Mail,
     ShieldCheck,
     SlidersHorizontal,
-    Tag,
+    FolderKanban,
     UserPlus,
     Users,
     type LucideIcon,
@@ -37,7 +37,7 @@ interface CategoryStyle {
 const CATEGORY_STYLES: Record<string, CategoryStyle> = {
     events: { label: 'Eventos', icon: CalendarDays },
     attendees: { label: 'Asistencia', icon: UserPlus },
-    categories: { label: 'Categorías', icon: Tag },
+    categories: { label: 'Proyectos', icon: FolderKanban },
     guides: { label: 'Guías', icon: BookOpen },
     email: { label: 'Correo', icon: Mail },
     users: { label: 'Usuarios', icon: Users },

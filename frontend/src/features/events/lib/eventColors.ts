@@ -1,4 +1,4 @@
-import { CATEGORY_COLOR_STYLES } from '@/features/categories/lib/colors';
+import { PROJECT_COLOR_STYLES } from '@/features/projects/lib/colors';
 import { isFull, type EventItem } from '@/features/events/lib/events';
 
 export interface EventColor {
@@ -13,7 +13,7 @@ export interface EventColor {
 export const eventColor = (event: EventItem): EventColor => {
     const style = isFull(event)
         ? { chip: 'bg-red-500 text-white', swatch: 'bg-red-500' }
-        : CATEGORY_COLOR_STYLES[event.category.color];
+        : PROJECT_COLOR_STYLES[event.category.color];
 
     return {
         chip: `${style.chip} hover:brightness-95`,
