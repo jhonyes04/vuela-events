@@ -14,7 +14,7 @@ export const Footer = () => (
                     <span>Punto Vuela Almáchar</span>
                 </div>
                 <Star
-                    className="siize-4 shrink-0 text-yellow-300"
+                    className="size-4 shrink-0 text-yellow-300"
                     fill="currentColor"
                 />
             </div>
