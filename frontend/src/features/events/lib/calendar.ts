@@ -5,8 +5,7 @@ export interface CalendarDay {
     key: string;
     // Día del mes (1-31)
     day: number;
-    // false para los días de relleno del mes anterior o siguiente (siempre
-    // true en la vista de semana, que no tiene ese concepto).
+    // false para los días de relleno del mes anterior o siguiente.
     inMonth: boolean;
     isToday: boolean;
 }
@@ -26,23 +25,6 @@ export const WEEKDAY_HEADERS = [
 const mondayOffset = (date: Date): number => (date.getUTCDay() + 6) % 7;
 
 const toKey = (date: Date): string => date.toISOString().slice(0, 10);
-
-const dayFromKey = (key: string): Date => {
-    const [year, month, day] = key.split('-').map(Number);
-
-    return new Date(Date.UTC(year!, month! - 1, day!));
-};
-
-// 'YYYY-MM-DD' del lunes de la semana que contiene `key`.
-export const mondayKeyOf = (key: string): string => {
-    const date = dayFromKey(key);
-
-    return toKey(new Date(date.getTime() - mondayOffset(date) * DAY_MS));
-};
-
-// Suma (o resta, con delta negativo) días a una fecha 'YYYY-MM-DD'.
-export const addDays = (key: string, delta: number): string =>
-    toKey(new Date(dayFromKey(key).getTime() + delta * DAY_MS));
 
 // Cuadrícula del mes: solo las semanas necesarias (4 a 6), de 7 días cada una.
 // `month` va de 0 a 11 y `todayKey` es el 'YYYY-MM-DD' de hoy en Madrid.
@@ -80,24 +62,4 @@ export const buildMonthGrid = (
     }
 
     return weeks;
-};
-
-// La semana (lunes a domingo) que contiene `key`: una sola fila de 7 días.
-export const buildWeekGrid = (
-    key: string,
-    todayKey: string,
-): CalendarDay[] => {
-    const monday = dayFromKey(mondayKeyOf(key));
-
-    return Array.from({ length: 7 }, (_, i) => {
-        const date = new Date(monday.getTime() + i * DAY_MS);
-        const dayKeyValue = toKey(date);
-
-        return {
-            key: dayKeyValue,
-            day: date.getUTCDate(),
-            inMonth: true,
-            isToday: dayKeyValue === todayKey,
-        };
-    });
 };

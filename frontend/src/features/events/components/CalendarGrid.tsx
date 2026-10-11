@@ -17,9 +17,7 @@ import { cn } from '@/lib/utils';
 const MAX_CHIPS = 3;
 const MAX_DOTS = 4;
 
-// Rejilla de semanas (una sola fila para la vista de semana, varias para la
-// de mes): el llamador decide qué cuadrícula construir (buildMonthGrid o
-// buildWeekGrid), este componente solo la dibuja.
+// Rejilla del mes (buildMonthGrid): este componente solo la dibuja.
 export function CalendarGrid({
     weeks,
     events,
