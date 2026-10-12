@@ -11,14 +11,9 @@ import { ListErrors } from '@/features/users/components/ListErrors';
 import { RolePermissionsDialog } from '@/features/users/components/RolePermissionsDialog';
 import { scrollbarOptions } from '@/lib/overlayScrollbarsOptions';
 import { useRolesStore } from '@/features/users/store';
-import type { Role } from '@/features/users/lib/roles';
+import type { PermissionOption, Role } from '@/features/users/lib/roles';
 import { api, ApiError } from '@/lib/api';
 import { PageTitle } from '@/components/PageTitle';
-
-interface PermissionOption {
-    id: string;
-    description: string;
-}
 
 export const RolesPage = () => {
     const roles = useRolesStore((s) => s.items);

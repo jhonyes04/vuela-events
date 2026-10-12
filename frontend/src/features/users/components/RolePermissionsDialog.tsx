@@ -10,17 +10,13 @@ import {
 } from '@/components/ui/dialog';
 import { PermissionsFieldset } from '@/features/users/components/PermissionsFieldset';
 import { api, ApiError } from '@/lib/api';
+import type { PermissionOption } from '@/features/users/lib/roles';
 
 interface RoleRow {
     id: string;
     name: string;
     protected: boolean;
     permissions: { permissionId: string }[];
-}
-
-interface PermissionOption {
-    id: string;
-    description: string;
 }
 
 interface RolePermissionsBodyProps {

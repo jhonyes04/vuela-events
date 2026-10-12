@@ -15,12 +15,8 @@ import {
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import type { PermissionOption } from '@/features/users/lib/roles';
 import { cn } from '@/lib/utils';
-
-interface PermissionOption {
-    id: string;
-    description: string;
-}
 
 interface PermissionsFieldsetProps {
     permissions: PermissionOption[];

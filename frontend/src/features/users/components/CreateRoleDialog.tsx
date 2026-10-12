@@ -12,12 +12,8 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { PermissionsFieldset } from '@/features/users/components/PermissionsFieldset';
+import type { PermissionOption } from '@/features/users/lib/roles';
 import { api, ApiError } from '@/lib/api';
-
-interface PermissionOption {
-    id: string;
-    description: string;
-}
 
 const EMPTY = { id: '', name: '', permissionIds: [] as string[] };
 

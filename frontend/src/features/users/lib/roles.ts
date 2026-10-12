@@ -7,6 +7,11 @@ export const ROLE_IDS = {
     AIL: 'ail',
 } as const;
 
+export interface PermissionOption {
+    id: string;
+    description: string;
+}
+
 export interface Role {
     id: string;
     name: string;
