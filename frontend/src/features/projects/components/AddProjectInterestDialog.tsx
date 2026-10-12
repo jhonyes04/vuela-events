@@ -1,18 +1,20 @@
 import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
     Dialog,
     DialogContent,
     DialogDescription,
+    DialogFooter,
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
-import { ApiError } from '@/lib/api';
 import {
     addProjectInterestedUser,
     listAilUsers,
+    listProjectInterests,
     type AilUserOption,
     type ProjectInterests,
 } from '@/features/projects/lib/projects';
@@ -21,19 +23,22 @@ import { personLabel } from '@/features/events/lib/events';
 interface AddProjectInterestBodyProps {
     projectId: string;
     currentUserIds: Set<string>;
+    onClose: () => void;
     onAdded: (projects: ProjectInterests[]) => void;
 }
 
 const AddProjectInterestBody = ({
     projectId,
     currentUserIds,
+    onClose,
     onAdded,
 }: AddProjectInterestBodyProps) => {
     const [candidates, setCandidates] = useState<AilUserOption[]>([]);
     const [loading, setLoading] = useState(true);
     const [failed, setFailed] = useState(false);
     const [query, setQuery] = useState('');
-    const [addingId, setAddingId] = useState<string | null>(null);
+    const [selected, setSelected] = useState<Set<string>>(new Set());
+    const [submitting, setSubmitting] = useState(false);
 
     useEffect(() => {
         listAilUsers()
@@ -46,41 +51,61 @@ const AddProjectInterestBody = ({
         const q = query.trim().toLowerCase();
 
         return candidates.filter(
-            (c) =>
-                !currentUserIds.has(c.id) &&
-                (!q || `${c.name} ${c.lastName}`.toLowerCase().includes(q)),
+            (candidate) =>
+                !currentUserIds.has(candidate.id) &&
+                (!q ||
+                    `${candidate.name} ${candidate.lastName} ${candidate.puntoVuela ?? ''}`
+                        .toLowerCase()
+                        .includes(q)),
         );
     }, [candidates, currentUserIds, query]);
 
-    const handleAdd = async (userId: string) => {
-        setAddingId(userId);
+    const toggle = (id: string) => {
+        setSelected((prev) => {
+            const next = new Set(prev);
 
-        try {
-            const projects = await addProjectInterestedUser(
-                projectId,
-                userId,
-            );
+            if (next.has(id)) next.delete(id);
+            else next.add(id);
 
-            onAdded(projects);
-            toast.success('Usuario añadido.');
-        } catch (e) {
+            return next;
+        });
+    };
+
+    const handleSave = async () => {
+        setSubmitting(true);
+
+        const ids = [...selected];
+        const results = await Promise.allSettled(
+            ids.map((id) => addProjectInterestedUser(projectId, id)),
+        );
+        const failedCount = results.filter(
+            (r) => r.status === 'rejected',
+        ).length;
+
+        if (failedCount > 0) {
             toast.error(
-                e instanceof ApiError
-                    ? e.message
-                    : 'No se pudo añadir al usuario',
+                `${failedCount} de ${ids.length} no se pudieron añadir`,
             );
-        } finally {
-            setAddingId(null);
+        } else {
+            toast.success(
+                ids.length === 1
+                    ? 'Usuario añadido.'
+                    : `${ids.length} usuarios añadidos.`,
+            );
         }
+
+        onAdded(await listProjectInterests());
+        setSubmitting(false);
+        onClose();
     };
 
     return (
         <DialogContent className="sm:max-w-md">
             <DialogHeader>
-                <DialogTitle>Agregar usuario</DialogTitle>
+                <DialogTitle>Agregar usuarios</DialogTitle>
                 <DialogDescription>
-                    Usuarios AIL activos que todavía no están marcados en
-                    este proyecto.
+                    Usuarios AIL activos que todavía no están marcados en este
+                    proyecto.
                 </DialogDescription>
             </DialogHeader>
 
@@ -107,26 +132,36 @@ const AddProjectInterestBody = ({
                     {filtered.map((c) => (
                         <li
                             key={c.id}
-                            className="flex items-center justify-between gap-2 rounded-md bg-card px-2 py-1.5 ring-1 ring-border"
+                            className="flex items-start gap-2 rounded-md bg-card px-2 py-1.5 ring-1 ring-border"
                         >
+                            <Checkbox
+                                className="mt-0.5"
+                                checked={selected.has(c.id)}
+                                onCheckedChange={() => toggle(c.id)}
+                                aria-label={`Seleccionar a ${c.name} ${c.lastName}`}
+                            />
                             <span className="min-w-0 flex-1 break-words">
                                 {personLabel({
                                     name: `${c.name} ${c.lastName}`,
                                     puntoVuela: c.puntoVuela,
                                 })}
                             </span>
-                            <Button
-                                type="button"
-                                size="sm"
-                                disabled={addingId === c.id}
-                                onClick={() => void handleAdd(c.id)}
-                            >
-                                {addingId === c.id ? 'Añadiendo…' : 'Añadir'}
-                            </Button>
                         </li>
                     ))}
                 </ul>
             )}
+
+            <DialogFooter>
+                <Button
+                    type="button"
+                    disabled={selected.size === 0 || submitting}
+                    onClick={() => void handleSave()}
+                >
+                    {submitting
+                        ? 'Añadiendo…'
+                        : `Añadir${selected.size > 0 ? ` (${selected.size})` : ''}`}
+                </Button>
+            </DialogFooter>
         </DialogContent>
     );
 };
@@ -152,6 +187,7 @@ export const AddProjectInterestDialog = ({
                 key={projectId}
                 projectId={projectId}
                 currentUserIds={currentUserIds}
+                onClose={() => onOpenChange(false)}
                 onAdded={onAdded}
             />
         )}

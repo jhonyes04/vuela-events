@@ -49,8 +49,10 @@ const AddParticipantsBody = ({
 
         if (!q) return candidates;
 
-        return candidates.filter((c) =>
-            `${c.name} ${c.lastName}`.toLowerCase().includes(q),
+        return candidates.filter((candidate) =>
+            `${candidate.name} ${candidate.lastName} ${candidate.puntoVuela ?? ''}`
+                .toLowerCase()
+                .includes(q),
         );
     }, [candidates, query]);
 

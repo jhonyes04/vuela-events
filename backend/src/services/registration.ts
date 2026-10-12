@@ -246,7 +246,7 @@ export const listRegistrationCandidates = async (
                 },
             },
         },
-        orderBy: [{ name: 'asc' }, { lastName: 'asc' }],
+        orderBy: [{ puntoVuela: 'asc' }, { name: 'asc' }, { lastName: 'asc' }],
     });
 
     return users.map((user) => ({

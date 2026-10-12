@@ -98,7 +98,10 @@ export const listProjectInterestedUsers = async (): Promise<
                         },
                     },
                 },
-                orderBy: { user: { name: 'asc' } },
+                orderBy: [
+                    { user: { puntoVuela: 'asc' } },
+                    { user: { name: 'asc' } },
+                ],
             },
         },
         orderBy: { name: 'asc' },
@@ -123,7 +126,7 @@ export const listAilUsers = (): Promise<AilUserOption[]> =>
     prisma.user.findMany({
         where: { active: true, roleId: 'ail' },
         select: { id: true, name: true, lastName: true, puntoVuela: true },
-        orderBy: [{ name: 'asc' }, { lastName: 'asc' }],
+        orderBy: [{ puntoVuela: 'asc' }, { name: 'asc' }, { lastName: 'asc' }],
     });
 
 export const addProjectPreference = async (

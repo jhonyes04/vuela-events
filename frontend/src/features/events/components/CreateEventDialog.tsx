@@ -12,7 +12,10 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { EventBasicFields, Field } from '@/features/events/components/EventBasicFields';
+import {
+    EventBasicFields,
+    Field,
+} from '@/features/events/components/EventBasicFields';
 import { RecurringEventFields } from '@/features/events/components/RecurringEventFields';
 import { SingleSessionFields } from '@/features/events/components/SingleSessionFields';
 import { api, ApiError } from '@/lib/api';
