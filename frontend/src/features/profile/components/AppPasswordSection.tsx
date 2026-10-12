@@ -66,22 +66,47 @@ export function AppPasswordSection({
 
     return (
         <div className="grid gap-4">
-            <div className="grid gap-1">
+            <div className="grid gap-1.5">
                 <h2 className="text-sm font-medium">
                     Contraseña de aplicación para enviar correos
                 </h2>
                 <p className="text-sm text-muted-foreground">
                     Se usa para enviar los correos masivos desde tu cuenta de
-                    Gmail. No es tu contraseña normal de Google: genera una{' '}
-                    <a
-                        href="https://myaccount.google.com/apppasswords"
-                        target="_blank"
-                        rel="noreferrer"
-                        className="underline"
-                    >
-                        contraseña de aplicación
-                    </a>{' '}
-                    y pégala aquí. Se guarda cifrada y nunca se muestra.
+                    Gmail. Tu contraseña normal de Google no sirve para esto,
+                    Google ya no la acepta.
+                </p>
+                <p className="text-xs font-bold tracking-wide text-muted-foreground uppercase">
+                    Paso a paso
+                </p>
+                <ol className="grid list-decimal gap-1 pl-5 text-sm text-muted-foreground">
+                    <li>
+                        Activa la{' '}
+                        <a
+                            href="https://myaccount.google.com/signinoptions/two-step-verification"
+                            target="_blank"
+                            rel="noreferrer"
+                            className="underline"
+                        >
+                            verificación en dos pasos
+                        </a>{' '}
+                        en tu cuenta de Google, si todavía no la tienes.
+                    </li>
+                    <li>
+                        Genera una{' '}
+                        <a
+                            href="https://myaccount.google.com/apppasswords"
+                            target="_blank"
+                            rel="noreferrer"
+                            className="underline"
+                        >
+                            contraseña de aplicación
+                        </a>
+                        .
+                    </li>
+                    <li>Pégala aquí abajo.</li>
+                </ol>
+                <p className="text-sm text-muted-foreground">
+                    Se guarda cifrada y nunca se muestra.
                 </p>
             </div>
 
