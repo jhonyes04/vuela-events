@@ -8,6 +8,7 @@ import {
     NodeViewWrapper,
     ReactNodeViewRenderer,
     useEditor,
+    useEditorState,
     type Editor,
     type NodeViewProps,
 } from '@tiptap/react';
@@ -103,12 +104,30 @@ const FontSize = TextStyle.extend({
     },
 });
 
+interface ToolbarState {
+    bold: boolean;
+    italic: boolean;
+    underline: boolean;
+    strike: boolean;
+    heading2: boolean;
+    heading3: boolean;
+    bulletList: boolean;
+    orderedList: boolean;
+    alignLeft: boolean;
+    alignCenter: boolean;
+    alignRight: boolean;
+    alignJustify: boolean;
+    link: boolean;
+    fontSize: string;
+}
+
 interface ToolbarProps {
     editor: Editor;
+    state: ToolbarState;
     onImageClick?: () => void;
 }
 
-const Toolbar = ({ editor, onImageClick }: ToolbarProps) => (
+const Toolbar = ({ editor, state, onImageClick }: ToolbarProps) => (
     <div
         role="toolbar"
         aria-label="Formato de texto"
@@ -116,7 +135,7 @@ const Toolbar = ({ editor, onImageClick }: ToolbarProps) => (
     >
         <ToolbarButton
             label="Título grande"
-            active={editor.isActive('heading', { level: 2 })}
+            active={state.heading2}
             onClick={() =>
                 editor.chain().focus().toggleHeading({ level: 2 }).run()
             }
@@ -125,7 +144,7 @@ const Toolbar = ({ editor, onImageClick }: ToolbarProps) => (
         </ToolbarButton>
         <ToolbarButton
             label="Título pequeño"
-            active={editor.isActive('heading', { level: 3 })}
+            active={state.heading3}
             onClick={() =>
                 editor.chain().focus().toggleHeading({ level: 3 }).run()
             }
@@ -135,7 +154,7 @@ const Toolbar = ({ editor, onImageClick }: ToolbarProps) => (
 
         <select
             aria-label="Tamaño del texto"
-            value={editor.getAttributes('textStyle').fontSize ?? ''}
+            value={state.fontSize}
             onChange={(e) => {
                 const size = e.target.value;
 
@@ -163,28 +182,28 @@ const Toolbar = ({ editor, onImageClick }: ToolbarProps) => (
 
         <ToolbarButton
             label="Negrita"
-            active={editor.isActive('bold')}
+            active={state.bold}
             onClick={() => editor.chain().focus().toggleBold().run()}
         >
             <Bold className="size-4" />
         </ToolbarButton>
         <ToolbarButton
             label="Cursiva"
-            active={editor.isActive('italic')}
+            active={state.italic}
             onClick={() => editor.chain().focus().toggleItalic().run()}
         >
             <Italic className="size-4" />
         </ToolbarButton>
         <ToolbarButton
             label="Subrayado"
-            active={editor.isActive('underline')}
+            active={state.underline}
             onClick={() => editor.chain().focus().toggleUnderline().run()}
         >
             <UnderlineIcon className="size-4" />
         </ToolbarButton>
         <ToolbarButton
             label="Tachado"
-            active={editor.isActive('strike')}
+            active={state.strike}
             onClick={() => editor.chain().focus().toggleStrike().run()}
         >
             <Strikethrough className="size-4" />
@@ -194,14 +213,14 @@ const Toolbar = ({ editor, onImageClick }: ToolbarProps) => (
 
         <ToolbarButton
             label="Lista con viñetas"
-            active={editor.isActive('bulletList')}
+            active={state.bulletList}
             onClick={() => editor.chain().focus().toggleBulletList().run()}
         >
             <List className="size-4" />
         </ToolbarButton>
         <ToolbarButton
             label="Lista numerada"
-            active={editor.isActive('orderedList')}
+            active={state.orderedList}
             onClick={() => editor.chain().focus().toggleOrderedList().run()}
         >
             <ListOrdered className="size-4" />
@@ -211,28 +230,28 @@ const Toolbar = ({ editor, onImageClick }: ToolbarProps) => (
 
         <ToolbarButton
             label="Alinear a la izquierda"
-            active={editor.isActive({ textAlign: 'left' })}
+            active={state.alignLeft}
             onClick={() => editor.chain().focus().setTextAlign('left').run()}
         >
             <AlignLeft className="size-4" />
         </ToolbarButton>
         <ToolbarButton
             label="Centrar"
-            active={editor.isActive({ textAlign: 'center' })}
+            active={state.alignCenter}
             onClick={() => editor.chain().focus().setTextAlign('center').run()}
         >
             <AlignCenter className="size-4" />
         </ToolbarButton>
         <ToolbarButton
             label="Alinear a la derecha"
-            active={editor.isActive({ textAlign: 'right' })}
+            active={state.alignRight}
             onClick={() => editor.chain().focus().setTextAlign('right').run()}
         >
             <AlignRight className="size-4" />
         </ToolbarButton>
         <ToolbarButton
             label="Justificar"
-            active={editor.isActive({ textAlign: 'justify' })}
+            active={state.alignJustify}
             onClick={() => editor.chain().focus().setTextAlign('justify').run()}
         >
             <AlignJustify className="size-4" />
@@ -242,7 +261,7 @@ const Toolbar = ({ editor, onImageClick }: ToolbarProps) => (
 
         <ToolbarButton
             label="Enlace"
-            active={editor.isActive('link')}
+            active={state.link}
             onClick={() => setLink(editor)}
         >
             <LinkIcon className="size-4" />
@@ -445,6 +464,27 @@ export const RichTextEditor = ({
         onUpdate: ({ editor }) => onChange(editor.getHTML()),
     });
 
+    const toolbarState = useEditorState({
+        editor,
+        selector: ({ editor }): ToolbarState => ({
+            bold: editor?.isActive('bold') ?? false,
+            italic: editor?.isActive('italic') ?? false,
+            underline: editor?.isActive('underline') ?? false,
+            strike: editor?.isActive('strike') ?? false,
+            heading2: editor?.isActive('heading', { level: 2 }) ?? false,
+            heading3: editor?.isActive('heading', { level: 3 }) ?? false,
+            bulletList: editor?.isActive('bulletList') ?? false,
+            orderedList: editor?.isActive('orderedList') ?? false,
+            alignLeft: editor?.isActive({ textAlign: 'left' }) ?? false,
+            alignCenter: editor?.isActive({ textAlign: 'center' }) ?? false,
+            alignRight: editor?.isActive({ textAlign: 'right' }) ?? false,
+            alignJustify: editor?.isActive({ textAlign: 'justify' }) ?? false,
+            link: editor?.isActive('link') ?? false,
+            fontSize:
+                (editor?.getAttributes('textStyle').fontSize as string) ?? '',
+        }),
+    });
+
     if (!editor) return null;
 
     const hasPlaceholders = placeholders && placeholders.length > 0;
@@ -471,6 +511,7 @@ export const RichTextEditor = ({
         <div className={cn('grid min-w-0 grid-cols-1', className)}>
             <Toolbar
                 editor={editor}
+                state={toolbarState}
                 onImageClick={
                     onImageUpload
                         ? () => fileInputRef.current?.click()
