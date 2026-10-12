@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
+import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { PageTitle } from '@/components/PageTitle';
@@ -62,9 +63,8 @@ export const AppSettingsPage = () => {
         setSavingMaintenance(true);
 
         try {
-            const { maintenanceMode } = await saveMaintenanceMode(
-                !storeMaintenance,
-            );
+            const { maintenanceMode } =
+                await saveMaintenanceMode(!storeMaintenance);
 
             applyMaintenance(maintenanceMode);
             toast.success(
@@ -84,6 +84,35 @@ export const AppSettingsPage = () => {
     return (
         <section className="mx-auto grid w-full max-w-xl gap-6">
             <PageTitle>Ajustes de la app</PageTitle>
+
+            {user?.isSuperadmin && (
+                <div className="grid gap-4 rounded-xl border bg-card p-4 sm:p-6">
+                    <div className="grid gap-1">
+                        <h2 className="text-sm font-medium">
+                            Modo mantenimiento
+                        </h2>
+                        <p className="text-sm text-muted-foreground">
+                            Mientras esté activo, solo los superadmin pueden
+                            usar la app. El resto verá una pantalla de
+                            mantenimiento.
+                        </p>
+                    </div>
+
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                        <Label htmlFor="maintenance-mode">
+                            {storeMaintenance ? 'Activado' : 'Desactivado'}
+                        </Label>
+                        <Switch
+                            id="maintenance-mode"
+                            checked={storeMaintenance}
+                            disabled={savingMaintenance}
+                            onCheckedChange={() =>
+                                void handleToggleMaintenance()
+                            }
+                        />
+                    </div>
+                </div>
+            )}
 
             <div className="grid gap-4 rounded-xl border bg-card p-4 sm:p-6">
                 <div className="grid gap-1">
@@ -135,39 +164,6 @@ export const AppSettingsPage = () => {
                     </Button>
                 </div>
             </div>
-
-            {user?.isSuperadmin && (
-                <div className="grid gap-4 rounded-xl border bg-card p-4 sm:p-6">
-                    <div className="grid gap-1">
-                        <h2 className="text-sm font-medium">
-                            Modo mantenimiento
-                        </h2>
-                        <p className="text-sm text-muted-foreground">
-                            Mientras esté activo, solo los superadmin pueden
-                            usar la app. El resto verá una pantalla de
-                            mantenimiento.
-                        </p>
-                    </div>
-
-                    <div className="flex flex-wrap items-center justify-between gap-3">
-                        <span className="text-sm font-medium">
-                            {storeMaintenance ? 'Activado' : 'Desactivado'}
-                        </span>
-                        <Button
-                            type="button"
-                            variant={storeMaintenance ? 'destructive' : 'outline'}
-                            disabled={savingMaintenance}
-                            onClick={() => void handleToggleMaintenance()}
-                        >
-                            {savingMaintenance
-                                ? 'Guardando…'
-                                : storeMaintenance
-                                  ? 'Desactivar'
-                                  : 'Activar'}
-                        </Button>
-                    </div>
-                </div>
-            )}
         </section>
     );
 };
