@@ -79,8 +79,8 @@ export const ProjectPreferencesSection = ({
                     Tipos de eventos en los que te gustaría participar
                 </h2>
                 <p className="text-sm text-muted-foreground">
-                    Marca los proyectos que te interesan. Es solo una
-                    referencia para quien organiza los eventos.
+                    Marca los proyectos que te interesan. Es solo una referencia
+                    para quien organiza los eventos.
                 </p>
             </div>
 
@@ -122,7 +122,7 @@ export const ProjectPreferencesSection = ({
             )}
 
             {onContinue && (
-                <div className="flex justify-center sm:justify-end">
+                <div className="flex justify-end">
                     <Button type="button" onClick={onContinue}>
                         {continueLabel}
                     </Button>

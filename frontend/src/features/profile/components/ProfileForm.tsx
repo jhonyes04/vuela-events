@@ -209,12 +209,8 @@ export function ProfileForm({
                 </section>
             )}
 
-            <div className="flex justify-center sm:justify-end">
-                <Button
-                    type="submit"
-                    disabled={submitting}
-                    className="w-full sm:w-auto"
-                >
+            <div className="flex justify-end">
+                <Button type="submit" disabled={submitting}>
                     {submitting ? 'Guardando…' : submitLabel}
                 </Button>
             </div>

@@ -151,7 +151,7 @@ export function SignatureSection({
                 }}
             />
 
-            <div className="flex flex-wrap justify-center gap-2 sm:justify-end">
+            <div className="flex flex-wrap justify-end gap-2">
                 <Button
                     type="button"
                     disabled={submitting}
