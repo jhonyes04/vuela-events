@@ -22,12 +22,13 @@ DECLARE
     placeholder_id UUID;
 BEGIN
     IF EXISTS (SELECT 1 FROM "projects" WHERE "guideId" IS NULL) THEN
-        INSERT INTO "guides" ("id", "name", "url", "active")
+        INSERT INTO "guides" ("id", "name", "url", "active", "updatedAt")
         VALUES (
             gen_random_uuid(),
             'Pendiente de asignar',
             'https://puntosvuela.es',
-            false
+            false,
+            now()
         )
         RETURNING "id" INTO placeholder_id;
 
