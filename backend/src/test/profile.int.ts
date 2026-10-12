@@ -93,6 +93,7 @@ describe('perfil: primer acceso y edición', () => {
                 name: 'Lucía',
                 lastName: 'Pérez Ruiz',
                 puntoVuela: 'DT Axarquía y Sierra de las Nieves',
+                dinamizadorTitle: 'dinamizadora',
             });
 
             assert.equal(res.status, 200);
@@ -193,6 +194,7 @@ describe('perfil: primer acceso y edición', () => {
                 name: 'Nombre Nuevo',
                 lastName: 'Apellido Nuevo',
                 puntoVuela: 'Almáchar',
+                dinamizadorTitle: null,
             });
 
             assert.equal(res.status, 200);
@@ -207,6 +209,7 @@ describe('perfil: primer acceso y edición', () => {
                 name: '  Ana    García   ',
                 lastName: '  López   Ruiz  ',
                 puntoVuela: '   Benamargosa  ',
+                dinamizadorTitle: null,
             });
 
             assert.equal(res.status, 200);
@@ -217,6 +220,7 @@ describe('perfil: primer acceso y edición', () => {
                 name: 'Ana\nGarcía\tLópez',
                 lastName: 'Pérez\nRuiz',
                 puntoVuela: 'Sierra\r\nde las Nieves',
+                dinamizadorTitle: null,
             });
 
             assert.equal(multiline.status, 200);
@@ -241,6 +245,7 @@ describe('perfil: primer acceso y edición', () => {
                             name,
                             lastName: name,
                             puntoVuela: 'Lugar',
+                            dinamizadorTitle: null,
                         })
                     ).status,
                     200,
@@ -256,6 +261,7 @@ describe('perfil: primer acceso y edición', () => {
                 name: 'Nombre Distinto',
                 lastName: 'Apellido Distinto',
                 puntoVuela: 'Lugar Distinto',
+                dinamizadorTitle: null,
             });
 
             const log = await prisma.auditLog.findFirstOrThrow({
@@ -277,6 +283,7 @@ describe('perfil: primer acceso y edición', () => {
                 name: before.name,
                 lastName: before.lastName,
                 puntoVuela: before.puntoVuela,
+                dinamizadorTitle: before.dinamizadorTitle,
             });
 
             assert.equal(res.status, 200);

@@ -246,6 +246,12 @@ describe('inscripciones a eventos', () => {
 
         await register(a.id, event.id);
 
+        // b no se inscribe: sin esto, al no tener el proyecto marcado como
+        // interés ni estar inscrito, el evento ni le aparecería en /api/events.
+        await prisma.userProjectPreference.create({
+            data: { userId: b.id, projectId: event.projectId },
+        });
+
         const forA = (await listFor(a.id)).body.events[0];
         const forB = (await listFor(b.id)).body.events[0];
 

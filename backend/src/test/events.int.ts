@@ -159,6 +159,14 @@ describe('eventos: permisos y validación', () => {
 
         for (const role of ['ail', 'dt', 'admin'] as const) {
             const user = await createUser(role);
+
+            // Un AIL solo ve eventos de proyectos que marcó como interés.
+            if (role === 'ail') {
+                await prisma.userProjectPreference.create({
+                    data: { userId: user.id, projectId },
+                });
+            }
+
             const res = await api(server.baseUrl, 'GET', '/api/events', {
                 cookie: await sessionCookieFor(user.id),
             });
@@ -220,9 +228,15 @@ describe('eventos: permisos y validación', () => {
         const guides = await get(dt.id, '/api/guides');
 
         assert.equal(projects.status, 200);
-        assert.equal(projects.body.projects[0].id, projectId);
+        assert.ok(
+            projects.body.projects.some(
+                (p: { id: string }) => p.id === projectId,
+            ),
+        );
         assert.equal(guides.status, 200);
-        assert.equal(guides.body.guides[0].id, guideId);
+        assert.ok(
+            guides.body.guides.some((g: { id: string }) => g.id === guideId),
+        );
     });
 
     it('ail sin permisos de eventos ni de catálogos NO las lista: 403', async () => {
@@ -248,6 +262,12 @@ describe('eventos: permisos y validación', () => {
         await prisma.event.create({ data: { ...base, title: 'Otro evento' } });
         await prisma.registration.create({
             data: { eventId: mine.id, userId: ail.id },
+        });
+
+        // Sin esto, "Otro evento" quedaría fuera de /api/events para un AIL
+        // (solo ve proyectos marcados como interés o eventos ya inscritos).
+        await prisma.userProjectPreference.create({
+            data: { userId: ail.id, projectId },
         });
 
         const filtered = await get(ail.id, '/api/events?registered=1');

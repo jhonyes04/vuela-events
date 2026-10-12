@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Pencil, FolderKanban, Trash2 } from 'lucide-react';
+import { Pencil, FolderKanban, Trash2, CircleCheck } from 'lucide-react';
 import { OverlayScrollbarsComponent } from 'overlayscrollbars-react';
 import { toast } from 'sonner';
 import { useAuth } from '@/features/auth/hooks/context';
@@ -28,6 +28,7 @@ interface AdminUser {
     puntoVuela: string | null;
     dinamizadorTitle: DinamizadorTitle | null;
     active: boolean;
+    isSuperadmin: boolean;
     createdAt: string;
     role: { id: string; name: string };
 }
@@ -72,7 +73,12 @@ export const UsersPage = () => {
         AdminUser,
         'name' | 'lastName' | 'email' | 'role' | 'active'
     >[] = [
-        { key: 'name', header: 'Nombre', sortKey: 'name', render: (u) => u.name },
+        {
+            key: 'name',
+            header: 'Nombre',
+            sortKey: 'name',
+            render: (u) => u.name,
+        },
         {
             key: 'lastName',
             header: 'Apellidos',
@@ -99,9 +105,7 @@ export const UsersPage = () => {
                         className={selectClass}
                         value={u.role.id}
                         disabled={isSelf || busy}
-                        onChange={(e) =>
-                            void changeRole(u.id, e.target.value)
-                        }
+                        onChange={(e) => void changeRole(u.id, e.target.value)}
                     >
                         {roles.map((r) => (
                             <option key={r.id} value={r.id}>
@@ -119,6 +123,18 @@ export const UsersPage = () => {
             render: (u) => (u.active ? 'Activo' : 'Desactivado'),
         },
         {
+            key: 'superadmin',
+            header: 'Superadmin',
+            align: 'left',
+            render: (u) =>
+                u.isSuperadmin && (
+                    <CircleCheck
+                        className="mx-auto size-4 text-brand-green"
+                        aria-label="Superadmin"
+                    />
+                ),
+        },
+        {
             key: 'actions',
             header: <span className="sr-only">Acciones</span>,
             align: 'right',
@@ -130,7 +146,9 @@ export const UsersPage = () => {
                 return (
                     <>
                         <IconTooltip
-                            label={isSelf ? 'Edítate desde Mi perfil' : 'Editar'}
+                            label={
+                                isSelf ? 'Edítate desde Mi perfil' : 'Editar'
+                            }
                         >
                             <Button
                                 variant="secondary"

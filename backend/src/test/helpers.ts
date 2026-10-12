@@ -39,7 +39,7 @@ export const createUser = (
             name: `${roleId} ${n}`,
             lastName: `Apellido ${n}`,
             puntoVuela: completed ? `Punto ${n}` : null,
-            dinamizadorTitle: completed ? 'dinamizador' : null,
+            dinamizadorTitle: completed && roleId === 'dt' ? 'dinamizador' : null,
             profileCompletedAt: completed ? new Date() : null,
             roleId,
             active: opts.active ?? true,

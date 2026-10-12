@@ -33,8 +33,9 @@ describe('parte de firmas: generar, revisar y enviar', () => {
             data: {
                 title: 'Taller de robótica',
                 location: 'Sala 1',
-                startsAt: new Date('2030-01-10T10:00:00.000Z'),
-                endsAt: new Date('2030-01-10T12:00:00.000Z'),
+                // El acta de asistencia solo se genera tras finalizar el evento.
+                startsAt: new Date('2020-01-10T10:00:00.000Z'),
+                endsAt: new Date('2020-01-10T12:00:00.000Z'),
                 createdById: dt.id,
                 projectId: (await createProject()).id,
             },
@@ -135,23 +136,23 @@ describe('parte de firmas: generar, revisar y enviar', () => {
         assert.match(res.body.error, /destinatarios han cambiado/);
     });
 
-    it('con borrador válido pasa la validación del acta (falla después por falta de SMTP)', async () => {
+    it('con borrador válido pasa la validación del acta (falla después por falta de contraseña de aplicación)', async () => {
         const draft = await generate(dt.id, registrationIds);
         const res = await send(dt.id, {
             reportDraftId: draft.headers.get('x-report-draft-id'),
         });
 
-        // La configuración de correo no existe en la base de pruebas: lo que
-        // importa es que ya no falla por el borrador.
+        // Ni la contraseña de aplicación ni el SMTP existen en la base de
+        // pruebas: lo que importa es que ya no falla por el borrador.
         assert.equal(res.status, 409);
-        assert.match(res.body.error, /SMTP/);
+        assert.match(res.body.error, /contraseña de aplicación/);
     });
 
     it('la convocatoria no necesita borrador de acta', async () => {
         const res = await send(dt.id, { slot: 'convocatoria' });
 
-        // Llega hasta la comprobación del SMTP: no se pidió ningún borrador.
+        // Llega hasta la comprobación de envío: no se pidió ningún borrador.
         assert.equal(res.status, 409);
-        assert.match(res.body.error, /SMTP/);
+        assert.match(res.body.error, /contraseña de aplicación/);
     });
 });

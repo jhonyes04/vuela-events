@@ -79,6 +79,7 @@ usersRouter.get('/', async (_req, res) => {
             puntoVuela: true,
             dinamizadorTitle: true,
             active: true,
+            isSuperadmin: true,
             createdAt: true,
             role: { select: { id: true, name: true } },
         },

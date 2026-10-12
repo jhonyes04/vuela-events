@@ -5,11 +5,7 @@ import { authUserSelect, toAuthUser, type AuthUser } from '../lib/authUser.js';
 import type { GoogleIdentity } from '../lib/google.js';
 
 const MAX_AVATAR_BYTES = 1024 * 1024;
-const ALLOWED_AVATAR_TYPES = new Set([
-    'image/jpeg',
-    'image/png',
-    'image/webp',
-]);
+const ALLOWED_AVATAR_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp']);
 
 export type LoginFailure = 'account_disabled' | 'email_conflict';
 
@@ -30,8 +26,11 @@ const isUniqueViolation = (e: unknown): boolean => {
     );
 };
 
+const isSuperadminEmail = (email: string): boolean =>
+    env.SUPERADMIN_EMAIL !== undefined && email === env.SUPERADMIN_EMAIL;
+
 const initialRoleFor = (email: string): string =>
-    env.SUPERADMIN_EMAIL && email === env.SUPERADMIN_EMAIL ? 'admin' : 'ail';
+    isSuperadminEmail(email) ? 'admin' : 'ail';
 
 // Si ya tiene avatar, no hace nada (solo se descarga una vez). Si Google
 // falla o el fichero no es válido, no bloquea el login: simplemente no
@@ -165,6 +164,7 @@ export const findOrCreateUser = async (
                         name: identity.name,
                         lastName: identity.lastName,
                         roleId: initialRoleFor(identity.email),
+                        isSuperadmin: isSuperadminEmail(identity.email),
                     },
                     select: authUserSelect,
                 }),

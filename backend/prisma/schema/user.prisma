@@ -9,6 +9,7 @@ model User {
     profileCompletedAt      DateTime?   
     roleId                  String          @default("ail") @db.VarChar(40)             
     active                  Boolean         @default(true)
+    isSuperadmin            Boolean         @default(false)
     smtpAppPassword         String?         @db.Text
     avatarImage             Bytes?
     avatarImageType         String?         @db.VarChar(40)

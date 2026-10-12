@@ -10,7 +10,7 @@
     "start": "node --env-file-if-exists=.env dist/index.js",
     "typecheck": "tsc --noEmit",
     "test": "tsx --env-file=.env --test \"src/**/*.test.ts\"",
-    "test:int": "tsx --env-file=.env --env-file=.env.test --test --test-concurrency=1 \"src/test/*.int.ts\"",
+    "test:int": "node --env-file=.env --env-file=.env.test --import tsx scripts/run-int-tests.mjs",
     "db:test:migrate": "node --env-file=.env.test node_modules/prisma/build/index.js migrate deploy",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
