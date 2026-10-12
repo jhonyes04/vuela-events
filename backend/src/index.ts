@@ -2,6 +2,7 @@ import { env } from './config/env.js';
 import { prisma } from './lib/prisma.js';
 import { sessionPool } from './middleware/session.js';
 import { createApp } from './app.js';
+import { logger } from './lib/logger.js';
 import { pruneOldAuditLogs } from './services/audit.js';
 
 const app = createApp();
@@ -12,26 +13,29 @@ const runAuditRetention = () => {
     void pruneOldAuditLogs()
         .then((count) => {
             if (count > 0) {
-                console.log(
+                logger.info(
+                    { count },
                     `Auditoría: ${count} registro${count === 1 ? '' : 's'} antiguo${count === 1 ? '' : 's'} eliminado${count === 1 ? '' : 's'}.`,
                 );
             }
         })
-        .catch((e) => console.error('No se pudo limpiar la auditoría:', e));
+        .catch((e) =>
+            logger.error({ err: e }, 'No se pudo limpiar la auditoría'),
+        );
 };
 
 runAuditRetention();
 setInterval(runAuditRetention, DAY_MS).unref();
 
 const server = app.listen(env.PORT, env.HOST, () => {
-    console.log(`API escuchando en http://${env.HOST}:${env.PORT}`);
+    logger.info(`API escuchando en http://${env.HOST}:${env.PORT}`);
 });
 
 server.headersTimeout = 15_000;
 server.requestTimeout = 30_000;
 
 function shutdown(signal: string) {
-    console.log(`${signal} recibido, cerrando...`);
+    logger.info(`${signal} recibido, cerrando...`);
 
     server.close(() => {
         void Promise.allSettled([

@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import nodemailer from 'nodemailer';
 import { prisma } from '../lib/prisma.js';
+import { logger } from '../lib/logger.js';
 import { renderEmail } from '../lib/emailTemplateRender.js';
 import { getDecryptedAppPassword } from './profile.js';
 import { deleteReportDraft, getReportDraft } from './reportDrafts.js';
@@ -307,7 +308,10 @@ const runSendJob = async (
                 });
             } catch (e) {
                 // El envío ya salió: un fallo al archivar no debe romper el job.
-                console.error('No se pudo guardar la copia del acta', e);
+                logger.error(
+                    { err: e, eventId: ctx.report.eventId },
+                    'No se pudo guardar la copia del acta',
+                );
             }
         }
 

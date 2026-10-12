@@ -5,6 +5,7 @@ import express, {
 } from 'express';
 import helmet from 'helmet';
 import cors from 'cors';
+import { logger } from './lib/logger.js';
 import { env } from './config/env.js';
 import { sessionMiddleware } from './middleware/session.js';
 import { requireSameOrigin } from './middleware/csrf.js';
@@ -100,19 +101,21 @@ export function createApp(options: AppOptions = {}) {
     });
 
     app.use(
-        (err: unknown, _req: Request, res: Response, _next: NextFunction) => {
+        (err: unknown, req: Request, res: Response, _next: NextFunction) => {
             const status =
                 typeof err === 'object' && err !== null && 'status' in err
                     ? Number(err.status)
                     : 500;
 
-            console.error(err);
             if (status >= 400 && status < 500) {
                 res.status(status).json({ error: 'Solicitud no válida' });
                 return;
             }
 
-            console.error(err);
+            logger.error(
+                { err, path: req.path, method: req.method },
+                'Error no controlado',
+            );
 
             res.status(500).json({ error: 'Error interno del servidor' });
         },

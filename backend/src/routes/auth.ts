@@ -12,6 +12,7 @@ import { loginLimiter } from '../middleware/rateLimit.js';
 import { SESSION_COOKIE } from '../middleware/session.js';
 import { findOrCreateUser, LoginFailureError } from '../services/users.js';
 import { recordAudit } from '../services/audit.js';
+import { logger } from '../lib/logger.js';
 
 export type TokenVerifier = (
     credential: string,
@@ -87,7 +88,7 @@ export const createAuthRouter = (
             res.json({ user });
         } catch (e) {
             if (e instanceof LoginRejectedError) {
-                console.warn(`Login rechazado: ${e.reason}`);
+                logger.warn({ reason: e.reason }, 'Login rechazado');
 
                 await recordAudit({
                     action: 'login_rejected',
@@ -112,7 +113,7 @@ export const createAuthRouter = (
             }
 
             if (e instanceof LoginFailureError) {
-                console.warn(`Login rechazado: ${e.reason}`);
+                logger.warn({ reason: e.reason }, 'Login rechazado');
 
                 await recordAudit({
                     action: 'login_rejected',

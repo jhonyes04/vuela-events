@@ -1,4 +1,5 @@
 import { prisma } from '../lib/prisma.js';
+import { logger } from '../lib/logger.js';
 
 interface AuditEntry {
     action: string;
@@ -13,8 +14,10 @@ export const recordAudit = async (entry: AuditEntry): Promise<void> => {
     try {
         await prisma.auditLog.create({ data: entry });
     } catch (e) {
-        console.error(`No se pudo registrar la auditoría (${entry.action}):`);
-        e instanceof Error ? e.name : 'error desconocido';
+        logger.error(
+            { err: e, action: entry.action },
+            'No se pudo registrar la auditoría',
+        );
     }
 };
 
