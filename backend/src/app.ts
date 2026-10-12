@@ -106,13 +106,10 @@ export function createApp(options: AppOptions = {}) {
                     ? Number(err.status)
                     : 500;
 
-            console.error(err);
             if (status >= 400 && status < 500) {
                 res.status(status).json({ error: 'Solicitud no válida' });
                 return;
             }
-
-            console.error(err);
 
             res.status(500).json({ error: 'Error interno del servidor' });
         },
