@@ -41,6 +41,12 @@ export function createApp(options: AppOptions = {}) {
     app.use(
         helmet({
             crossOriginResourcePolicy: { policy: 'same-site' },
+            contentSecurityPolicy: {
+                directives: {
+                    defaultSrc: ["'none'"],
+                    frameAncestors: ["'none'"],
+                },
+            },
         }),
     );
     app.use(

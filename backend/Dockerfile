@@ -19,4 +19,4 @@ RUN pnpm run db:generate && pnpm run build
 
 EXPOSE 3001
 
-CMD ["sh", "-c", "pnpm run db:deploy && node --env-file-if-exists=.env dist/index.js"]
+CMD ["sh", "-c", "DATABASE_URL=\"$MIGRATE_DATABASE_URL\" pnpm run db:deploy && node --env-file-if-exists=.env dist/index.js"]
