@@ -22,6 +22,7 @@ import {
 import { ConfirmDeleteDialog } from '@/components/ConfirmDeleteDialog';
 import { IconTooltip } from '@/components/IconTooltip';
 import { useAttendees } from '@/features/events/hooks/useAttendees';
+import { ProjectInfoDialog } from '@/features/projects/components/ProjectInfoDialog';
 import { PROJECT_COLOR_STYLES } from '@/features/projects/lib/colors';
 import { ApiError } from '@/lib/api';
 import { cn } from '@/lib/utils';
@@ -37,7 +38,7 @@ import {
     type EventItem,
 } from '@/features/events/lib/events';
 import { Alert, AlertTitle } from '@/components/ui/alert';
-import { AlertCircle, UserPlus } from 'lucide-react';
+import { AlertCircle, EyeIcon, UserPlus } from 'lucide-react';
 
 interface EventDetailBodyProps {
     event: EventItem;
@@ -63,6 +64,7 @@ const EventDetailBody = ({
         null,
     );
     const [refreshNonce, setRefreshNonce] = useState(0);
+    const [projectDescOpen, setProjectDescOpen] = useState(false);
     // Se refresca cuando cambia el número de inscritos, la inscripción propia,
     // o tras agregar/quitar a alguien manualmente.
     const { attendees, failed, loading } = useAttendees(
@@ -172,7 +174,22 @@ const EventDetailBody = ({
                         {ended && <Badge variant="outline">Finalizado</Badge>}
                     </div>
 
-                    <EventInfoRows event={event} />
+                    <EventInfoRows
+                        event={event}
+                        projectTrailing={
+                            <IconTooltip label="Ver información del proyecto">
+                                <Button
+                                    type="button"
+                                    size="icon-xs"
+                                    className="bg-green-800"
+                                    aria-label="Ver proyecto"
+                                    onClick={() => setProjectDescOpen(true)}
+                                >
+                                    <EyeIcon className="size-3.5" />
+                                </Button>
+                            </IconTooltip>
+                        }
+                    />
 
                     {ended && (
                         <p className="text-sm text-muted-foreground">
@@ -350,6 +367,12 @@ const EventDetailBody = ({
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
+
+            <ProjectInfoDialog
+                open={projectDescOpen}
+                onOpenChange={setProjectDescOpen}
+                project={event.project}
+            />
 
             {canDelete && (
                 <DeleteEventDialog

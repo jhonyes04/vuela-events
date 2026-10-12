@@ -47,21 +47,6 @@ export const createUser = (
     });
 };
 
-// Proyecto de prueba: por defecto activo, para poder usarlo al crear eventos.
-export const createProject = (
-    opts: { name?: string; color?: string; active?: boolean } = {},
-) => {
-    const n = randomBytes(4).toString('hex');
-
-    return prisma.project.create({
-        data: {
-            name: opts.name ?? `Proyecto ${n}`,
-            color: opts.color ?? 'amber',
-            active: opts.active ?? true,
-        },
-    });
-};
-
 // Guía de prueba: por defecto activa, para poder usarla al crear eventos.
 export const createGuide = (
     opts: { name?: string; url?: string; active?: boolean } = {},
@@ -72,6 +57,29 @@ export const createGuide = (
         data: {
             name: opts.name ?? `Guía ${n}`,
             url: opts.url ?? `https://example.com/guia-${n}`,
+            active: opts.active ?? true,
+        },
+    });
+};
+
+// Proyecto de prueba: por defecto activo, para poder usarlo al crear eventos.
+// Si no se pasa guideId, crea una guía de prueba propia.
+export const createProject = async (
+    opts: {
+        name?: string;
+        color?: string;
+        active?: boolean;
+        guideId?: string;
+    } = {},
+) => {
+    const n = randomBytes(4).toString('hex');
+    const guideId = opts.guideId ?? (await createGuide()).id;
+
+    return prisma.project.create({
+        data: {
+            name: opts.name ?? `Proyecto ${n}`,
+            color: opts.color ?? 'amber',
+            guideId,
             active: opts.active ?? true,
         },
     });

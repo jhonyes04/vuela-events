@@ -6,7 +6,7 @@ export const LoginPage = () => {
     const [otherAccount, setOtherAccount] = useState(false);
 
     return (
-        <section className="mx-auto grid w-full max-w-5xl overflow-hidden rounded-3xl shadow-2xl ring-1 ring-black/5 md:grid-cols-2">
+        <section className="mx-auto grid w-full grid-cols-1 max-w-5xl overflow-hidden rounded-3xl shadow-2xl ring-1 ring-black/5 md:grid-cols-2">
             {/* Izquierda: foto + efectos, solo en pantallas medianas o más. */}
             <div className="login-hero relative hidden min-h-[480px] flex-col justify-between overflow-hidden bg-brand-ink p-8 md:flex">
                 <div className="pointer-events-none absolute -top-16 -left-16 size-64 rounded-full bg-brand-yellow/30 blur-3xl" />

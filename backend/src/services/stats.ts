@@ -163,7 +163,8 @@ export const getStats = async (now: Date = new Date()) => {
             coalesce(sum(rc.cnt), 0)::int AS registrations,
             coalesce(sum(e."participantsCount"), 0)::int AS attended
         FROM events e
-        JOIN guides g ON g.id = e."guideId"
+        JOIN projects p ON p.id = e."projectId"
+        JOIN guides g ON g.id = p."guideId"
         LEFT JOIN reg_counts rc ON rc."eventId" = e.id
         GROUP BY g.id, g.name
         ORDER BY events DESC

@@ -1,6 +1,5 @@
 import { type ReactNode } from 'react';
 import {
-    BookOpen,
     CalendarDays,
     Clock,
     MapPin,
@@ -25,19 +24,23 @@ interface EventInfoRowsProps {
     showOrganizer?: boolean;
     // La tarjeta añade el badge "Completo" pegado al aforo; la ficha no lo necesita aquí.
     trailing?: ReactNode;
+    // La ficha de detalle agrega el botón de ver descripción del proyecto.
+    projectTrailing?: ReactNode;
 }
 
 export const EventInfoRows = ({
     event,
     showOrganizer = false,
     trailing,
+    projectTrailing,
 }: EventInfoRowsProps) => (
     <div className="grid gap-1.5 text-sm text-muted-foreground">
-        <p className="flex items-center gap-2">
+        <p className="flex flex-wrap items-center gap-2">
             <FolderKanban className="size-4 shrink-0 text-brand-green" />
             <Badge className={PROJECT_COLOR_STYLES[event.project.color].chip}>
                 {event.project.name}
             </Badge>
+            {projectTrailing}
         </p>
         <p className="flex items-center gap-2">
             <CalendarDays className="size-4 shrink-0 text-brand-green" />
@@ -54,18 +57,6 @@ export const EventInfoRows = ({
                 {event.location}
             </p>
         )}
-
-        <p className="relative z-10 flex items-center gap-2">
-            <BookOpen className="size-4 shrink-0 text-brand-green" />
-            <a
-                href={event.guide.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="truncate hover:underline"
-            >
-                {event.guide.name}
-            </a>
-        </p>
 
         {showOrganizer && (
             <p className="flex items-center gap-2">

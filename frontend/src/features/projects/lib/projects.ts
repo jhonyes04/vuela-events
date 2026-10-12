@@ -7,12 +7,14 @@ export interface Project {
     description: string | null;
     color: ProjectColor;
     active: boolean;
+    guide: { id: string; name: string; url: string };
 }
 
 export interface ProjectInput {
     name: string;
     description: string | null;
     color: ProjectColor;
+    guideId: string;
 }
 
 export interface ProjectUpdateInput extends ProjectInput {

@@ -5,7 +5,6 @@ import {
     api,
     closeDb,
     createProject,
-    createGuide,
     createUser,
     resetDb,
     sessionCookieFor,
@@ -15,7 +14,6 @@ import {
 describe('administración de usuarios', () => {
     let server: Awaited<ReturnType<typeof startServer>>;
     let projectId: string;
-    let guideId: string;
 
     before(async () => {
         server = await startServer();
@@ -24,7 +22,6 @@ describe('administración de usuarios', () => {
     beforeEach(async () => {
         await resetDb();
         projectId = (await createProject()).id;
-        guideId = (await createGuide()).id;
     });
 
     // projectId cambia cada test (resetDb borra los proyectos).
@@ -34,7 +31,6 @@ describe('administración de usuarios', () => {
         startsAt: '2030-01-10T10:00:00.000Z',
         endsAt: '2030-01-10T12:00:00.000Z',
         projectId,
-        guideId,
     });
 
     after(async () => {

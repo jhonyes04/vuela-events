@@ -11,7 +11,6 @@ import {
 import { cn } from '@/lib/utils';
 import type { Project } from '@/features/projects/lib/projects';
 import { PROJECT_COLOR_STYLES } from '@/features/projects/lib/colors';
-import type { Guide } from '@/features/guides/lib/guides';
 import type { FormValues, TextField } from '@/features/events/lib/eventForm';
 
 export function Field({
@@ -36,21 +35,17 @@ interface EventBasicFieldsProps {
     values: FormValues;
     onChange: (name: TextField) => (e: { target: { value: string } }) => void;
     onProjectChange: (id: string) => void;
-    onGuideChange: (id: string) => void;
     activeProjects: Project[];
-    activeGuides: Guide[];
 }
 
-// Título, subtítulo, lugar y los selects de proyecto/guía: comunes a crear
+// Título, subtítulo, lugar y el select de proyecto: comunes a crear
 // y editar, con o sin recurrencia.
 export function EventBasicFields({
     fieldId,
     values,
     onChange,
     onProjectChange,
-    onGuideChange,
     activeProjects,
-    activeGuides,
 }: EventBasicFieldsProps) {
     return (
         <>
@@ -124,28 +119,6 @@ export function EventBasicFields({
                                     )}
                                 />
                                 {c.name}
-                            </SelectItem>
-                        ))}
-                    </SelectContent>
-                </Select>
-            </Field>
-
-            <Field id={fieldId('guide')} label="Guía *">
-                <Select
-                    value={values.guideId}
-                    items={activeGuides.map((g) => ({
-                        value: g.id,
-                        label: g.name,
-                    }))}
-                    onValueChange={(value) => onGuideChange(value ?? '')}
-                >
-                    <SelectTrigger id={fieldId('guide')} className="w-full">
-                        <SelectValue placeholder="Selecciona una guía" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        {activeGuides.map((g) => (
-                            <SelectItem key={g.id} value={g.id} label={g.name}>
-                                {g.name}
                             </SelectItem>
                         ))}
                     </SelectContent>

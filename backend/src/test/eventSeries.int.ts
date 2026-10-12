@@ -6,7 +6,6 @@ import {
     api,
     closeDb,
     createProject,
-    createGuide,
     createUser,
     resetDb,
     sessionCookieFor,
@@ -32,7 +31,6 @@ const weekdayOf = (d: Date) =>
 describe('series recurrentes y eliminación de sesiones', () => {
     let server: Awaited<ReturnType<typeof startServer>>;
     let projectId: string;
-    let guideId: string;
 
     before(async () => {
         server = await startServer();
@@ -41,7 +39,6 @@ describe('series recurrentes y eliminación de sesiones', () => {
     beforeEach(async () => {
         await resetDb();
         projectId = (await createProject()).id;
-        guideId = (await createGuide()).id;
     });
 
     after(async () => {
@@ -56,7 +53,7 @@ describe('series recurrentes y eliminación de sesiones', () => {
             cookie: await sessionCookieFor(userId),
             body:
                 typeof body === 'object' && body !== null
-                    ? { projectId, guideId, ...body }
+                    ? { projectId, ...body }
                     : body,
         });
 
@@ -73,7 +70,6 @@ describe('series recurrentes y eliminación de sesiones', () => {
                 endsAt: new Date('2030-01-10T12:00:00Z'),
                 createdById,
                 projectId,
-                guideId,
             },
         });
 
@@ -403,7 +399,6 @@ describe('series recurrentes y eliminación de sesiones', () => {
                     endsAt: new Date(ends),
                     createdById,
                     projectId,
-                    guideId,
                     seriesId,
                 })),
             });

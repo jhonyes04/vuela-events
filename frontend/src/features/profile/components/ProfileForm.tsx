@@ -118,7 +118,7 @@ export function ProfileForm({
                 <div
                     className={
                         layout === 'row'
-                            ? 'grid gap-4 sm:grid-cols-2'
+                            ? 'grid grid-cols-1 gap-4 sm:grid-cols-2'
                             : 'grid gap-4'
                     }
                 >
@@ -186,7 +186,7 @@ export function ProfileForm({
                         </p>
                     </div>
                     <RadioGroup
-                        className="grid gap-3 sm:grid-cols-2"
+                        className="grid grid-cols-1 gap-3 sm:grid-cols-2"
                         value={dinamizadorTitle ?? ''}
                         onValueChange={(value) =>
                             setDinamizadorTitle(value as DinamizadorTitle)

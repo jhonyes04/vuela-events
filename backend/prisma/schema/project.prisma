@@ -3,12 +3,15 @@ model Project {
     name            String      @unique @db.VarChar(80)
     description     String?     @db.Text
     color           String      @db.VarChar(20)
+    guideId         String      @db.Uuid
     active          Boolean     @default(true)
     createdAt       DateTime    @default(now())
     updatedAt       DateTime    @updatedAt
 
+    guide           Guide       @relation(fields: [guideId], references: [id], onDelete: Restrict)
     events          Event[]
     userPreferences UserProjectPreference[]
 
+    @@index([guideId])
     @@map("projects")
 }

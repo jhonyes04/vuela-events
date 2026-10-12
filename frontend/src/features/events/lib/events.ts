@@ -18,8 +18,13 @@ export interface EventItem {
     seriesId: string | null;
     createdAt: string;
     createdBy: { id: string; name: string; puntoVuela: string | null };
-    project: { id: string; name: string; color: ProjectColor };
-    guide: { id: string; name: string; url: string };
+    project: {
+        id: string;
+        name: string;
+        description: string | null;
+        color: ProjectColor;
+        guide: { id: string; name: string; url: string };
+    };
     _count: { registrations: number };
     registered: boolean;
 }
@@ -269,7 +274,6 @@ export interface RecurringPayload {
     location: string;
     capacity?: number | undefined;
     projectId: string;
-    guideId: string;
     from: string;
     to: string;
     weekdays: number[];
@@ -295,7 +299,6 @@ export interface EventUpdateInput {
     location: string;
     capacity?: number | undefined;
     projectId: string;
-    guideId: string;
     startsAt: string;
     endsAt: string;
 }

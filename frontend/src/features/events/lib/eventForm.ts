@@ -7,7 +7,6 @@ export interface FormValues {
     description: string;
     capacity: string;
     projectId: string;
-    guideId: string;
     // Evento suelto
     startsAt: string;
     endsAt: string;
@@ -29,7 +28,6 @@ export const EMPTY_FORM_VALUES: FormValues = {
     description: '',
     capacity: '',
     projectId: '',
-    guideId: '',
     startsAt: '',
     endsAt: '',
     recurring: false,
@@ -47,7 +45,6 @@ export const valuesFromEvent = (event: EventItem): FormValues => ({
     description: event.description ?? '',
     capacity: event.capacity ? String(event.capacity) : '',
     projectId: event.project.id,
-    guideId: event.guide.id,
     startsAt: isoToMadridLocal(event.startsAt),
     endsAt: isoToMadridLocal(event.endsAt),
     recurring: false,

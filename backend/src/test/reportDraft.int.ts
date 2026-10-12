@@ -5,7 +5,6 @@ import {
     api,
     closeDb,
     createProject,
-    createGuide,
     createUser,
     resetDb,
     sessionCookieFor,
@@ -38,7 +37,6 @@ describe('parte de firmas: generar, revisar y enviar', () => {
                 endsAt: new Date('2030-01-10T12:00:00.000Z'),
                 createdById: dt.id,
                 projectId: (await createProject()).id,
-                guideId: (await createGuide()).id,
             },
         });
 

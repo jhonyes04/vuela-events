@@ -63,48 +63,57 @@ export const ProjectsPage = () => {
                     Todavía no hay proyectos.
                 </p>
             ) : (
-                <ul className="grid gap-3 sm:grid-cols-2">
+                <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                     {projects.map((project) => (
                         <li
                             key={project.id}
-                            className="flex items-center gap-3 rounded-xl border bg-card p-4"
+                            className="flex flex-col gap-3 rounded-xl border bg-card p-4 sm:flex-row sm:items-center"
                         >
-                            <span
-                                className={`size-4 shrink-0 rounded-full ${PROJECT_COLOR_STYLES[project.color].swatch}`}
-                            />
-                            <div className="min-w-0 flex-1">
-                                <p className="truncate font-medium">
-                                    {project.name}
-                                </p>
-                                {project.description && (
-                                    <p className="truncate text-xs text-muted-foreground">
-                                        {stripHtml(project.description)}
+                            <div className="flex min-w-0 flex-1 items-center gap-3">
+                                <span
+                                    className={`size-4 shrink-0 rounded-full ${PROJECT_COLOR_STYLES[project.color].swatch}`}
+                                />
+                                <div className="min-w-0 flex-1">
+                                    <p className="truncate font-medium">
+                                        {project.name}
                                     </p>
-                                )}
+                                    <p className="truncate text-xs text-muted-foreground">
+                                        Guía: {project.guide.name}
+                                    </p>
+                                    {project.description && (
+                                        <p className="truncate text-xs text-muted-foreground">
+                                            {stripHtml(project.description)}
+                                        </p>
+                                    )}
+                                </div>
                             </div>
-                            {!project.active && (
-                                <Badge variant="secondary">Inactiva</Badge>
-                            )}
-                            <IconTooltip label="Editar">
-                                <Button
-                                    variant="secondary"
-                                    size="icon"
-                                    aria-label="Editar"
-                                    onClick={() => openEdit(project)}
-                                >
-                                    <Pencil className="size-4" />
-                                </Button>
-                            </IconTooltip>
-                            <IconTooltip label="Eliminar">
-                                <Button
-                                    variant="destructive"
-                                    size="icon"
-                                    aria-label="Eliminar"
-                                    onClick={() => setDeleting(project)}
-                                >
-                                    <Trash2 className="size-4" />
-                                </Button>
-                            </IconTooltip>
+                            <div className="flex items-center justify-end gap-2">
+                                {!project.active && (
+                                    <Badge variant="secondary">
+                                        Inactiva
+                                    </Badge>
+                                )}
+                                <IconTooltip label="Editar">
+                                    <Button
+                                        variant="secondary"
+                                        size="icon"
+                                        aria-label="Editar"
+                                        onClick={() => openEdit(project)}
+                                    >
+                                        <Pencil className="size-4" />
+                                    </Button>
+                                </IconTooltip>
+                                <IconTooltip label="Eliminar">
+                                    <Button
+                                        variant="destructive"
+                                        size="icon"
+                                        aria-label="Eliminar"
+                                        onClick={() => setDeleting(project)}
+                                    >
+                                        <Trash2 className="size-4" />
+                                    </Button>
+                                </IconTooltip>
+                            </div>
                         </li>
                     ))}
                 </ul>

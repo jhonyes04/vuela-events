@@ -40,7 +40,7 @@ export function RecurringEventFields({
 
     return (
         <>
-            <div className="grid gap-4 sm:grid-cols-2">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <Field id={fieldId('from')} label="Desde *">
                     <DatePicker
                         id={fieldId('from')}
@@ -84,7 +84,7 @@ export function RecurringEventFields({
                 </div>
             </fieldset>
 
-            <div className="grid gap-4 sm:grid-cols-2">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <Field id={fieldId('start-time')} label="Hora de inicio *">
                     <Input
                         id={fieldId('start-time')}

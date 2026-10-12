@@ -1,7 +1,7 @@
 import { prisma } from '../lib/prisma.js';
 import { recordAudit } from './audit.js';
 
-export type GuideManageFealure = 'duplicate' | 'not_found';
+export type GuideManageFealure = 'duplicate' | 'not_found' | 'has_projects';
 
 export class GuideManageError extends Error {
     readonly reason: GuideManageFealure;
@@ -94,6 +94,14 @@ export const deleteGuide = async (actorId: string, id: string) => {
 
     if (!guide) {
         throw new GuideManageError('not_found');
+    }
+
+    const projectsCount = await prisma.project.count({
+        where: { guideId: id },
+    });
+
+    if (projectsCount > 0) {
+        throw new GuideManageError('has_projects');
     }
 
     await prisma.guide.delete({ where: { id } });

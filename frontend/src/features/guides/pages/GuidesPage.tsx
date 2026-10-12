@@ -59,11 +59,11 @@ export const GuidesPage = () => {
             ) : guides.length === 0 ? (
                 <p className="text-muted-foreground">Todavía no hay guías.</p>
             ) : (
-                <ul className="grid gap-3 sm:grid-cols-2">
+                <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                     {guides.map((guide) => (
                         <li
                             key={guide.id}
-                            className="flex items-center gap-3 rounded-xl border bg-card p-4"
+                            className="flex flex-col gap-3 rounded-xl border bg-card p-4 sm:flex-row sm:items-center"
                         >
                             <div className="min-w-0 flex-1">
                                 <p className="truncate font-medium">
@@ -81,29 +81,33 @@ export const GuidesPage = () => {
                                     </span>
                                 </a>
                             </div>
-                            {!guide.active && (
-                                <Badge variant="secondary">Inactiva</Badge>
-                            )}
-                            <IconTooltip label="Editar">
-                                <Button
-                                    variant="secondary"
-                                    size="icon"
-                                    aria-label="Editar"
-                                    onClick={() => openEdit(guide)}
-                                >
-                                    <Pencil className="size-4" />
-                                </Button>
-                            </IconTooltip>
-                            <IconTooltip label="Eliminar">
-                                <Button
-                                    variant="destructive"
-                                    size="icon"
-                                    aria-label="Eliminar"
-                                    onClick={() => setDeleting(guide)}
-                                >
-                                    <Trash2 className="size-4" />
-                                </Button>
-                            </IconTooltip>
+                            <div className="flex items-center justify-end gap-2">
+                                {!guide.active && (
+                                    <Badge variant="secondary">
+                                        Inactiva
+                                    </Badge>
+                                )}
+                                <IconTooltip label="Editar">
+                                    <Button
+                                        variant="secondary"
+                                        size="icon"
+                                        aria-label="Editar"
+                                        onClick={() => openEdit(guide)}
+                                    >
+                                        <Pencil className="size-4" />
+                                    </Button>
+                                </IconTooltip>
+                                <IconTooltip label="Eliminar">
+                                    <Button
+                                        variant="destructive"
+                                        size="icon"
+                                        aria-label="Eliminar"
+                                        onClick={() => setDeleting(guide)}
+                                    >
+                                        <Trash2 className="size-4" />
+                                    </Button>
+                                </IconTooltip>
+                            </div>
                         </li>
                     ))}
                 </ul>

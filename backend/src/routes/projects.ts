@@ -28,12 +28,14 @@ const createProjectSchema = z.strictObject({
     name: z.string().trim().min(2).max(80),
     description: z.string().max(20000).nullable().optional(),
     color: z.enum(PROJECT_COLORS),
+    guideId: z.uuid(),
 });
 
 const updateProjectSchema = z.strictObject({
     name: z.string().trim().min(2).max(80),
     description: z.string().max(20000).nullable(),
     color: z.enum(PROJECT_COLORS),
+    guideId: z.uuid(),
     active: z.boolean(),
 });
 
@@ -41,6 +43,7 @@ const projectManageErrors = {
     duplicate: [409, 'Ya existe un proyecto con ese nombre'],
     not_found: [404, 'Proyecto no encontrado'],
     has_events: [409, 'No se puede eliminar: hay eventos con este proyecto'],
+    guide_not_found: [400, 'Guía no válida'],
 } as const;
 
 export const projectsRouter = Router();
@@ -149,6 +152,7 @@ projectsRouter.post(
                 body.data.name,
                 body.data.description ?? null,
                 body.data.color,
+                body.data.guideId,
             );
 
             res.status(201).json({ project });

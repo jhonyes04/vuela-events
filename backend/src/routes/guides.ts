@@ -36,6 +36,7 @@ const updateGuideSchema = z.strictObject({
 const guideManageErrors = {
     duplicate: [409, 'Ya existe una guía con ese nombre'],
     not_found: [404, 'Guía no encontrada'],
+    has_projects: [409, 'No se puede eliminar: hay proyectos con esta guía'],
 } as const;
 
 export const guidesRouter = Router();

@@ -45,7 +45,7 @@ describe('eventos: permisos y validación', () => {
             cookie: await sessionCookieFor(userId),
             body:
                 typeof body === 'object' && body !== null
-                    ? { projectId, guideId, ...body }
+                    ? { projectId, ...body }
                     : body,
         });
 
@@ -154,7 +154,6 @@ describe('eventos: permisos y validación', () => {
                 endsAt: new Date('2030-02-01T11:00:00Z'),
                 createdById: admin.id,
                 projectId,
-                guideId,
             },
         });
 
@@ -243,7 +242,6 @@ describe('eventos: permisos y validación', () => {
             endsAt: new Date(validEvent.endsAt),
             createdById: dt.id,
             projectId,
-            guideId,
         };
         const mine = await prisma.event.create({ data: base });
 

@@ -16,7 +16,6 @@ import { RecurringEventFields } from '@/features/events/components/RecurringEven
 import { SingleSessionFields } from '@/features/events/components/SingleSessionFields';
 import { api, ApiError } from '@/lib/api';
 import { useProjectsStore } from '@/features/projects/store';
-import { useGuidesStore } from '@/features/guides/store';
 import {
     createRecurringEvents,
     madridLocalToIso,
@@ -62,23 +61,17 @@ function EventFormBody({
     );
     const [submitting, setSubmitting] = useState(false);
     const projects = useProjectsStore((s) => s.items);
-    const guides = useGuidesStore((s) => s.items);
     const loadProjects = useProjectsStore((s) => s.load);
-    const loadGuides = useGuidesStore((s) => s.load);
 
     // Usa la caché si ya se cargaron; solo pide lo que falta.
     useEffect(() => {
         void loadProjects();
-        void loadGuides();
-    }, [loadProjects, loadGuides]);
+    }, [loadProjects]);
 
-    // El proyecto/guía actuales del evento siguen disponibles al editar
-    // aunque se hayan desactivado después de crearlo.
+    // El proyecto actual del evento sigue disponible al editar aunque se
+    // haya desactivado después de crearlo.
     const activeProjects = projects.filter(
         (c) => c.active || c.id === event?.project.id,
-    );
-    const activeGuides = guides.filter(
-        (g) => g.active || g.id === event?.guide.id,
     );
 
     const set = (name: TextField) => (e: { target: { value: string } }) =>
@@ -102,11 +95,6 @@ function EventFormBody({
             return;
         }
 
-        if (!values.guideId) {
-            toast.error('Selecciona una guía');
-            return;
-        }
-
         const common = {
             title: values.title,
             // Los opcionales vacíos no se envían.
@@ -115,7 +103,6 @@ function EventFormBody({
             description: values.description || undefined,
             capacity: values.capacity ? Number(values.capacity) : undefined,
             projectId: values.projectId,
-            guideId: values.guideId,
         };
 
         try {
@@ -230,11 +217,7 @@ function EventFormBody({
                     onProjectChange={(projectId) =>
                         setValues((v) => ({ ...v, projectId }))
                     }
-                    onGuideChange={(guideId) =>
-                        setValues((v) => ({ ...v, guideId }))
-                    }
                     activeProjects={activeProjects}
-                    activeGuides={activeGuides}
                 />
 
                 {!isEdit && (

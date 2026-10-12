@@ -28,7 +28,11 @@ export const PROJECT_COLORS = [
 
 export type ProjectColor = (typeof PROJECT_COLORS)[number];
 
-export type ProjectManageFailure = 'duplicate' | 'not_found' | 'has_events';
+export type ProjectManageFailure =
+    | 'duplicate'
+    | 'not_found'
+    | 'has_events'
+    | 'guide_not_found';
 
 export class ProjectManageError extends Error {
     readonly reason: ProjectManageFailure;
@@ -47,7 +51,17 @@ const projectSelect = {
     description: true,
     color: true,
     active: true,
+    guide: { select: { id: true, name: true, url: true } },
 } as const;
+
+const guideExists = async (guideId: string): Promise<boolean> => {
+    const guide = await prisma.guide.findUnique({
+        where: { id: guideId },
+        select: { id: true },
+    });
+
+    return guide !== null;
+};
 
 export const listProjects = () =>
     prisma.project.findMany({
@@ -60,6 +74,7 @@ export const createProject = async (
     name: string,
     description: string | null,
     color: ProjectColor,
+    guideId: string,
 ) => {
     const exists = await prisma.project.findUnique({ where: { name } });
 
@@ -74,6 +89,7 @@ export const createProject = async (
                 ? sanitizeEmailHtml(description) || null
                 : null,
             color,
+            guideId,
         },
         select: projectSelect,
     });
@@ -94,6 +110,7 @@ export const updateProject = async (
         name: string;
         description: string | null;
         color: ProjectColor;
+        guideId: string;
         active: boolean;
     },
 ) => {
@@ -111,6 +128,10 @@ export const updateProject = async (
         if (clash) {
             throw new ProjectManageError('duplicate');
         }
+    }
+
+    if (!(await guideExists(input.guideId))) {
+        throw new ProjectManageError('guide_not_found');
     }
 
     const updated = await prisma.project.update({

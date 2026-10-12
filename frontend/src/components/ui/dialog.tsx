@@ -72,8 +72,8 @@ function DialogContent({
             data-slot="dialog-close"
             render={
               <Button
-                variant="ghost"
-                className="absolute top-2 right-2 text-primary hover:text-primary"
+                variant="default"
+                className="absolute top-2 right-2 rounded-full bg-black text-white hover:bg-black/80"
                 size="icon-sm"
               />
             }

@@ -50,7 +50,6 @@ const eventFields = {
     location: z.string().trim().min(1).max(200).regex(NO_CONTROL_OR_TAGS),
     capacity: z.number().int().positive().max(100_000).optional(),
     projectId: z.uuid(),
-    guideId: z.uuid(),
 };
 
 // El proyecto debe existir y estar activo: uno inactivo no admite eventos nuevos.
@@ -61,16 +60,6 @@ const isActiveProject = async (projectId: string): Promise<boolean> => {
     });
 
     return project?.active === true;
-};
-
-// La guía debe existir y estar activa: una inactiva no admite eventos nuevos.
-const isActiveGuide = async (guideId: string): Promise<boolean> => {
-    const guide = await prisma.guide.findUnique({
-        where: { id: guideId },
-        select: { active: true },
-    });
-
-    return guide?.active === true;
 };
 
 const createEventSchema = z
@@ -144,8 +133,15 @@ const eventSelect = {
     seriesId: true,
     createdAt: true,
     createdBy: { select: { id: true, name: true, puntoVuela: true } },
-    project: { select: { id: true, name: true, color: true } },
-    guide: { select: { id: true, name: true, url: true } },
+    project: {
+        select: {
+            id: true,
+            name: true,
+            description: true,
+            color: true,
+            guide: { select: { id: true, name: true, url: true } },
+        },
+    },
     _count: {
         select: {
             registrations: { where: { user: { roleId: { not: 'dt' } } } },
@@ -285,16 +281,10 @@ eventsRouter.post(
             endsAt,
             capacity,
             projectId,
-            guideId,
         } = body.data;
 
         if (!(await isActiveProject(projectId))) {
             res.status(400).json({ error: 'Proyecto no válido' });
-            return;
-        }
-
-        if (!(await isActiveGuide(guideId))) {
-            res.status(400).json({ error: 'Guía no válida' });
             return;
         }
 
@@ -308,7 +298,6 @@ eventsRouter.post(
                 endsAt: new Date(endsAt),
                 capacity,
                 projectId,
-                guideId,
                 createdById: actor.id,
             },
             select: eventSelect,
@@ -353,16 +342,10 @@ eventsRouter.patch(
             endsAt,
             capacity,
             projectId,
-            guideId,
         } = body.data;
 
         if (!(await isActiveProject(projectId))) {
             res.status(400).json({ error: 'Proyecto no válido' });
-            return;
-        }
-
-        if (!(await isActiveGuide(guideId))) {
-            res.status(400).json({ error: 'Guía no válida' });
             return;
         }
 
@@ -387,7 +370,6 @@ eventsRouter.patch(
                 endsAt: new Date(endsAt),
                 capacity,
                 projectId,
-                guideId,
             },
             select: eventSelect,
         });
@@ -486,11 +468,6 @@ eventsRouter.post(
 
         if (!(await isActiveProject(fields.projectId))) {
             res.status(400).json({ error: 'Proyecto no válido' });
-            return;
-        }
-
-        if (!(await isActiveGuide(fields.guideId))) {
-            res.status(400).json({ error: 'Guía no válida' });
             return;
         }
 
