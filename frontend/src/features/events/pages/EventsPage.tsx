@@ -137,7 +137,7 @@ export function EventsPage() {
         <section>
             <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
                 <PageTitle className="mb-0">Eventos</PageTitle>
-                {createButton}
+                <div className="sm:hidden">{createButton}</div>
 
                 {/* Móvil: controles centrados en su propia fila. */}
                 <div className="flex w-full flex-wrap items-center justify-center gap-2 sm:hidden">

@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from 'react';
 import { toast } from 'sonner';
+import { RichTextEditor } from '@/components/RichTextEditor';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -24,6 +25,8 @@ import {
     type ProjectColor,
 } from '@/features/projects/lib/colors';
 
+const EMPTY_EDITOR_HTML = '<p></p>';
+
 interface ProjectFormBodyProps {
     project: Project | null;
     onSaved: (project: Project) => void;
@@ -37,6 +40,7 @@ const ProjectFormBody = ({
     onClose,
 }: ProjectFormBodyProps) => {
     const [name, setName] = useState(project?.name ?? '');
+    const [description, setDescription] = useState(project?.description ?? '');
     const [color, setColor] = useState<ProjectColor>(
         project?.color ?? PROJECT_COLORS[0],
     );
@@ -48,9 +52,16 @@ const ProjectFormBody = ({
         setSubmitting(true);
 
         try {
+            const payload = {
+                name,
+                description:
+                    description === EMPTY_EDITOR_HTML ? null : description,
+                color,
+            };
+
             const saved = project
-                ? await updateProject(project.id, { name, color, active })
-                : await createProject({ name, color });
+                ? await updateProject(project.id, { ...payload, active })
+                : await createProject(payload);
 
             toast.success(
                 project ? 'Proyecto actualizado.' : 'Proyecto creado.',
@@ -69,7 +80,7 @@ const ProjectFormBody = ({
     };
 
     return (
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-3xl">
             <DialogHeader>
                 <DialogTitle>
                     {project ? 'Editar proyecto' : 'Nuevo proyecto'}
@@ -93,6 +104,13 @@ const ProjectFormBody = ({
                         maxLength={80}
                         value={name}
                         onChange={(e) => setName(e.target.value)}
+                    />
+                </div>
+                <div className="grid gap-1.5">
+                    <Label htmlFor="category-description">Descripción</Label>
+                    <RichTextEditor
+                        value={description}
+                        onChange={setDescription}
                     />
                 </div>
 
@@ -131,7 +149,6 @@ const ProjectFormBody = ({
                         Activo
                     </label>
                 )}
-
             </form>
 
             <DialogFooter>

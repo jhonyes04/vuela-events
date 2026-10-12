@@ -12,6 +12,7 @@ import {
 } from '@/features/emailTemplates/lib/emailTemplates';
 import { useEmailTemplatesStore } from '@/features/emailTemplates/store';
 import { PageTitle } from '@/components/PageTitle';
+import { stripHtml } from '@/lib/html';
 
 export const EmailTemplatesPage = () => {
     const templates = useEmailTemplatesStore((s) => s.items);
@@ -72,7 +73,7 @@ export const EmailTemplatesPage = () => {
                                     {template.name}
                                 </p>
                                 <p className="text-sm break-words text-muted-foreground">
-                                    {template.subject}
+                                    {stripHtml(template.subject)}
                                 </p>
                             </div>
                             <div className="flex items-center gap-2 sm:shrink-0">

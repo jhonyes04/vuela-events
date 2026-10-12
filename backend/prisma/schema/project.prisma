@@ -1,6 +1,7 @@
 model Project {
     id              String      @id @default(uuid()) @db.Uuid
     name            String      @unique @db.VarChar(80)
+    description     String?     @db.Text
     color           String      @db.VarChar(20)
     active          Boolean     @default(true)
     createdAt       DateTime    @default(now())

@@ -1,5 +1,6 @@
 import { prisma } from '../lib/prisma.js';
 import { recordAudit } from './audit.js';
+import { sanitizeEmailHtml } from './emailSignature.js';
 
 export const PROJECT_COLORS = [
     'yellow',
@@ -43,6 +44,7 @@ export class ProjectManageError extends Error {
 const projectSelect = {
     id: true,
     name: true,
+    description: true,
     color: true,
     active: true,
 } as const;
@@ -56,6 +58,7 @@ export const listProjects = () =>
 export const createProject = async (
     actorId: string,
     name: string,
+    description: string | null,
     color: ProjectColor,
 ) => {
     const exists = await prisma.project.findUnique({ where: { name } });
@@ -65,7 +68,13 @@ export const createProject = async (
     }
 
     const project = await prisma.project.create({
-        data: { name, color },
+        data: {
+            name,
+            description: description
+                ? sanitizeEmailHtml(description) || null
+                : null,
+            color,
+        },
         select: projectSelect,
     });
 
@@ -81,7 +90,12 @@ export const createProject = async (
 export const updateProject = async (
     actorId: string,
     id: string,
-    input: { name: string; color: ProjectColor; active: boolean },
+    input: {
+        name: string;
+        description: string | null;
+        color: ProjectColor;
+        active: boolean;
+    },
 ) => {
     const project = await prisma.project.findUnique({ where: { id } });
 
@@ -101,7 +115,12 @@ export const updateProject = async (
 
     const updated = await prisma.project.update({
         where: { id },
-        data: input,
+        data: {
+            ...input,
+            description: input.description
+                ? sanitizeEmailHtml(input.description) || null
+                : null,
+        },
         select: projectSelect,
     });
 

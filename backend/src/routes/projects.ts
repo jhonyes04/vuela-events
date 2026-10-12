@@ -26,11 +26,13 @@ const addInterestedUserSchema = z.strictObject({ userId: z.uuid() });
 
 const createProjectSchema = z.strictObject({
     name: z.string().trim().min(2).max(80),
+    description: z.string().max(20000).nullable().optional(),
     color: z.enum(PROJECT_COLORS),
 });
 
 const updateProjectSchema = z.strictObject({
     name: z.string().trim().min(2).max(80),
+    description: z.string().max(20000).nullable(),
     color: z.enum(PROJECT_COLORS),
     active: z.boolean(),
 });
@@ -145,6 +147,7 @@ projectsRouter.post(
             const project = await createProject(
                 actor.id,
                 body.data.name,
+                body.data.description ?? null,
                 body.data.color,
             );
 

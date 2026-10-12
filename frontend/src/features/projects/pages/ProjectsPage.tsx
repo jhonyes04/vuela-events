@@ -7,12 +7,10 @@ import { ConfirmDeleteDialog } from '@/components/ConfirmDeleteDialog';
 import { PageTitle } from '@/components/PageTitle';
 import { ListErrors } from '@/features/users/components/ListErrors';
 import { ProjectFormDialog } from '@/features/projects/components/ProjectFormDialog';
-import {
-    deleteProject,
-    type Project,
-} from '@/features/projects/lib/projects';
+import { deleteProject, type Project } from '@/features/projects/lib/projects';
 import { PROJECT_COLOR_STYLES } from '@/features/projects/lib/colors';
 import { useProjectsStore } from '@/features/projects/store';
+import { stripHtml } from '@/lib/html';
 
 export const ProjectsPage = () => {
     const projects = useProjectsStore((s) => s.items);
@@ -74,9 +72,16 @@ export const ProjectsPage = () => {
                             <span
                                 className={`size-4 shrink-0 rounded-full ${PROJECT_COLOR_STYLES[project.color].swatch}`}
                             />
-                            <span className="flex-1 truncate font-medium">
-                                {project.name}
-                            </span>
+                            <div className="min-w-0 flex-1">
+                                <p className="truncate font-medium">
+                                    {project.name}
+                                </p>
+                                {project.description && (
+                                    <p className="truncate text-xs text-muted-foreground">
+                                        {stripHtml(project.description)}
+                                    </p>
+                                )}
+                            </div>
                             {!project.active && (
                                 <Badge variant="secondary">Inactiva</Badge>
                             )}

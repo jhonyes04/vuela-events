@@ -353,8 +353,7 @@ const ResizableImageView = ({
         const startX = e.clientX;
         const startWidth = img.getBoundingClientRect().width;
         // El padre se ajusta a la imagen (inline-block), así que el tope es el área de edición.
-        const maxWidth =
-            img.closest('.ProseMirror')?.clientWidth ?? Infinity;
+        const maxWidth = img.closest('.ProseMirror')?.clientWidth ?? Infinity;
 
         const onMove = (ev: PointerEvent) => {
             const width = Math.min(
@@ -411,6 +410,7 @@ interface RichTextEditorProps {
     value: string;
     onChange: (html: string) => void;
     className?: string;
+    contentClassName?: string;
     placeholders?: EditorPlaceholder[];
     onImageUpload?: (file: File) => Promise<string | null>;
 }
@@ -420,6 +420,7 @@ export const RichTextEditor = ({
     value,
     onChange,
     className,
+    contentClassName = 'min-h-75',
     placeholders,
     onImageUpload,
 }: RichTextEditorProps) => {
@@ -500,6 +501,7 @@ export const RichTextEditor = ({
                     '[&_a]:text-primary [&_a]:underline',
                     'min-w-0 break-words',
                     '[&_img]:my-2 [&_img]:h-auto [&_img]:max-w-full',
+                    contentClassName,
                 )}
             />
             {hasPlaceholders && (

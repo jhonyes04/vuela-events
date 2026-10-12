@@ -4,12 +4,14 @@ import type { ProjectColor } from '@/features/projects/lib/colors';
 export interface Project {
     id: string;
     name: string;
+    description: string | null;
     color: ProjectColor;
     active: boolean;
 }
 
 export interface ProjectInput {
     name: string;
+    description: string | null;
     color: ProjectColor;
 }
 
@@ -18,16 +20,12 @@ export interface ProjectUpdateInput extends ProjectInput {
 }
 
 export const listProjects = async (): Promise<Project[]> => {
-    const { projects } = await api.get<{ projects: Project[] }>(
-        '/projects',
-    );
+    const { projects } = await api.get<{ projects: Project[] }>('/projects');
 
     return projects;
 };
 
-export const createProject = async (
-    input: ProjectInput,
-): Promise<Project> => {
+export const createProject = async (input: ProjectInput): Promise<Project> => {
     const { project } = await api.post<{ project: Project }>(
         '/projects',
         input,
