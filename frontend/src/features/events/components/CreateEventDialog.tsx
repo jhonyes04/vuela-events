@@ -1,6 +1,7 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
     Dialog,
     DialogContent,
@@ -222,14 +223,12 @@ function EventFormBody({
 
                 {!isEdit && (
                     <label className="flex cursor-pointer items-center gap-2 text-sm font-medium">
-                        <input
-                            type="checkbox"
-                            className="size-4 accent-primary"
+                        <Checkbox
                             checked={values.recurring}
-                            onChange={(e) =>
+                            onCheckedChange={(checked) =>
                                 setValues((v) => ({
                                     ...v,
-                                    recurring: e.target.checked,
+                                    recurring: checked,
                                 }))
                             }
                         />

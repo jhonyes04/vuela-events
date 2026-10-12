@@ -3,6 +3,7 @@ import { CircleAlert } from 'lucide-react';
 import { toast } from 'sonner';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -186,14 +187,12 @@ export const EmailSettingsPage = () => {
                         </div>
 
                         <label className="flex items-end gap-2 pb-2 text-sm">
-                            <input
-                                type="checkbox"
-                                className="size-4 accent-primary"
+                            <Checkbox
                                 checked={smtp.secure}
-                                onChange={(e) =>
+                                onCheckedChange={(checked) =>
                                     setSmtp((v) => ({
                                         ...v,
-                                        secure: e.target.checked,
+                                        secure: checked,
                                     }))
                                 }
                             />

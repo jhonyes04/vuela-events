@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import type { PermissionOption } from '@/features/users/lib/roles';
 import { cn } from '@/lib/utils';
 
@@ -137,21 +138,16 @@ export const PermissionsFieldset = ({
                                             className={cn(
                                                 'flex cursor-pointer items-center justify-between gap-2 rounded-lg px-2.5 py-1.5 text-sm',
                                                 isChecked
-                                                    ? 'bg-brand-yellow/15'
+                                                    ? 'bg-primary/10'
                                                     : 'hover:bg-muted',
                                             )}
                                         >
                                             <span>{p.description}</span>
-                                            <input
-                                                type="checkbox"
-                                                className="size-4 shrink-0 accent-brand-yellow"
+                                            <Checkbox
                                                 checked={isChecked}
                                                 disabled={disabled}
-                                                onChange={(e) =>
-                                                    onToggle(
-                                                        p.id,
-                                                        e.target.checked,
-                                                    )
+                                                onCheckedChange={(checked) =>
+                                                    onToggle(p.id, checked)
                                                 }
                                             />
                                         </label>

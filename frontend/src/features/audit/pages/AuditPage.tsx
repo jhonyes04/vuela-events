@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Trash2 } from 'lucide-react';
 import { OverlayScrollbarsComponent } from 'overlayscrollbars-react';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { ConfirmDeleteDialog } from '@/components/ConfirmDeleteDialog';
 import { DataTable, type DataTableColumn } from '@/components/DataTable';
@@ -165,22 +166,18 @@ export const AuditPage = () => {
         {
             key: 'select',
             header: (
-                <input
-                    type="checkbox"
-                    className="size-4 accent-primary"
+                <Checkbox
                     aria-label="Seleccionar todos"
                     checked={allPagedSelected}
-                    onChange={toggleAllPaged}
+                    onCheckedChange={toggleAllPaged}
                 />
             ),
             headerClassName: 'w-10 font-normal',
             render: (log) => (
-                <input
-                    type="checkbox"
-                    className="size-4 accent-primary"
+                <Checkbox
                     aria-label="Seleccionar"
                     checked={selected.has(log.id)}
-                    onChange={() => toggleOne(log.id)}
+                    onCheckedChange={() => toggleOne(log.id)}
                 />
             ),
         },

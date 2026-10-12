@@ -2,6 +2,7 @@ import { useEffect, useState, type FormEvent } from 'react';
 import { toast } from 'sonner';
 import { RichTextEditor } from '@/components/RichTextEditor';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
     Dialog,
     DialogContent,
@@ -196,13 +197,12 @@ const ProjectFormBody = ({
 
                 {project && (
                     <label className="flex items-center gap-2 text-sm">
-                        <input
-                            type="checkbox"
-                            className="size-4 accent-primary"
+                        <Checkbox
                             checked={active}
-                            onChange={(e) => setActive(e.target.checked)}
+                            disabled={submitting}
+                            onCheckedChange={setActive}
                         />
-                        Activo
+                        {active ? 'Activo' : 'Desactivado'}
                     </label>
                 )}
             </form>

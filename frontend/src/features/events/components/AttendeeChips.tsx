@@ -1,5 +1,6 @@
 import { Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { IconTooltip } from '@/components/IconTooltip';
 import { personLabel, type Attendee } from '@/features/events/lib/events';
 
@@ -24,11 +25,9 @@ export const AttendeeChips = ({
                 className="flex items-center gap-2 rounded-md bg-card px-2 py-1 ring-1 ring-border"
             >
                 {onToggle && (
-                    <input
-                        type="checkbox"
-                        className="size-4 shrink-0 accent-primary"
+                    <Checkbox
                         checked={selected?.has(person.id) ?? false}
-                        onChange={() => onToggle(person.id)}
+                        onCheckedChange={() => onToggle(person.id)}
                         aria-label={`Seleccionar a ${personLabel(person)}`}
                     />
                 )}

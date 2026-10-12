@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
     Dialog,
     DialogContent,
@@ -126,11 +127,10 @@ const AddParticipantsBody = ({
                             key={c.id}
                             className="flex items-start gap-2 rounded-md bg-card px-2 py-1.5 ring-1 ring-border"
                         >
-                            <input
-                                type="checkbox"
-                                className="mt-0.5 size-4 shrink-0 accent-primary"
+                            <Checkbox
+                                className="mt-0.5"
                                 checked={selected.has(c.id)}
-                                onChange={() => toggle(c.id)}
+                                onCheckedChange={() => toggle(c.id)}
                                 aria-label={`Seleccionar a ${personLabel(c)}`}
                             />
                             <div className="min-w-0 flex-1">
