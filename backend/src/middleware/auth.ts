@@ -89,3 +89,24 @@ export const requirePermission = (...required: string[]) => {
         next();
     };
 };
+
+export const requireSuperadmin = (
+    req: Request,
+    res: Response,
+    next: NextFunction,
+): void => {
+    if (!req.user) {
+        res.status(401).json({ error: 'Autenticación requerida' });
+        return;
+    }
+
+    if (!req.user.isSuperadmin) {
+        res.status(403).json({
+            error: 'Solo un superadmin puede realizar esta acción',
+        });
+
+        return;
+    }
+
+    next();
+};

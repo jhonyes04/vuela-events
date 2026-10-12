@@ -4,15 +4,19 @@ const APP_SETTINGS_ID = 'default';
 
 export type UserMenuStyle = 'dropdown' | 'sheet';
 
-export const getAppSettings = async (): Promise<{
+export interface AppSettingsData {
     userMenuStyle: UserMenuStyle;
-}> => {
+    maintenanceMode: boolean;
+}
+
+export const getAppSettings = async (): Promise<AppSettingsData> => {
     const settings = await prisma.appSettings.findUnique({
         where: { id: APP_SETTINGS_ID },
     });
 
     return {
         userMenuStyle: (settings?.userMenuStyle as UserMenuStyle) ?? 'dropdown',
+        maintenanceMode: settings?.maintenanceMode ?? false,
     };
 };
 
@@ -26,4 +30,36 @@ export const setUserMenuStyle = async (
     });
 
     return { userMenuStyle: settings.userMenuStyle as UserMenuStyle };
+};
+
+export const setMaintenanceMode = async (
+    maintenanceMode: boolean,
+): Promise<{ maintenanceMode: boolean }> => {
+    const settings = await prisma.appSettings.upsert({
+        where: { id: APP_SETTINGS_ID },
+        create: { id: APP_SETTINGS_ID, maintenanceMode },
+        update: { maintenanceMode },
+    });
+
+    return { maintenanceMode: settings.maintenanceMode };
+};
+
+// Cache en memoria para no golpear la DB en cada request del middleware global.
+let cached: { value: boolean; expiresAt: number } | null = null;
+const CACHE_TTL_MS = 5_000;
+
+export const isMaintenanceModeActive = async (): Promise<boolean> => {
+    if (cached && cached.expiresAt > Date.now()) {
+        return cached.value;
+    }
+
+    const { maintenanceMode } = await getAppSettings();
+    cached = { value: maintenanceMode, expiresAt: Date.now() + CACHE_TTL_MS };
+
+    return maintenanceMode;
+};
+
+// El PATCH del propio ajuste debe reflejarse ya en la próxima request.
+export const invalidateMaintenanceModeCache = (): void => {
+    cached = null;
 };

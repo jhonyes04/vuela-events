@@ -19,6 +19,7 @@ export interface AuthUser {
     roleId: string;
     roleName: string;
     permissions: string[];
+    isSuperadmin: boolean;
     smtpAppPasswordConfigured: boolean;
     signatureConfigured: boolean;
     avatarConfigured: boolean;
@@ -34,6 +35,7 @@ export const authUserSelect = {
     dinamizadorTitle: true,
     profileCompletedAt: true,
     active: true,
+    isSuperadmin: true,
     smtpAppPassword: true,
     signatureImage: true,
     avatarImage: true,
@@ -54,6 +56,7 @@ export const toAuthUser = (row: {
     puntoVuela: string | null;
     dinamizadorTitle: string | null;
     profileCompletedAt: Date | null;
+    isSuperadmin: boolean;
     smtpAppPassword: string | null;
     signatureImage: unknown | null;
     avatarImage: unknown | null;
@@ -73,6 +76,7 @@ export const toAuthUser = (row: {
     permissions: row.role.permissions.map(
         (permission) => permission.permissionId,
     ),
+    isSuperadmin: row.isSuperadmin,
     smtpAppPasswordConfigured: row.smtpAppPassword !== null,
     signatureConfigured: row.signatureImage !== null,
     avatarConfigured: row.avatarImage !== null,

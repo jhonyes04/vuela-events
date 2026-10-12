@@ -1,9 +1,10 @@
 // Ajustes globales de la app, una sola fila (id fijo 'default'), igual patrón
 // que SmtpConfig: upsert por id, sin tabla genérica clave/valor.
 model AppSettings {
-    id            String   @id @db.VarChar(20)
-    userMenuStyle String   @db.VarChar(20) @default("dropdown")
-    updatedAt     DateTime @updatedAt
+    id              String   @id @db.VarChar(20)
+    userMenuStyle   String   @db.VarChar(20) @default("dropdown")
+    maintenanceMode Boolean  @default(false)
+    updatedAt       DateTime @updatedAt
 
     @@map("app_settings")
 }

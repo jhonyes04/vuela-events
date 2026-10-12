@@ -11,6 +11,7 @@ export interface User {
     roleId: string;
     roleName: string;
     permissions: string[];
+    isSuperadmin: boolean;
     smtpAppPasswordConfigured: boolean;
     signatureConfigured: boolean;
     avatarConfigured: boolean;

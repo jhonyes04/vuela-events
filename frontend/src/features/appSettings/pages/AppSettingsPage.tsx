@@ -5,8 +5,10 @@ import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { PageTitle } from '@/components/PageTitle';
 import { ApiError } from '@/lib/api';
+import { useAuth } from '@/features/auth/hooks/context';
 import {
     setUserMenuStyle as saveUserMenuStyle,
+    setMaintenanceMode as saveMaintenanceMode,
     type UserMenuStyle,
 } from '@/features/appSettings/lib/appSettings';
 import { useAppSettingsStore } from '@/features/appSettings/store';
@@ -17,12 +19,17 @@ const USER_MENU_STYLE_OPTIONS: { value: UserMenuStyle; label: string }[] = [
 ];
 
 export const AppSettingsPage = () => {
+    const { user } = useAuth();
     const storeStyle = useAppSettingsStore((s) => s.userMenuStyle);
+    const storeMaintenance = useAppSettingsStore((s) => s.maintenanceMode);
     const loadStore = useAppSettingsStore((s) => s.load);
     const applyStyle = useAppSettingsStore((s) => s.setUserMenuStyle);
-    const [userMenuStyle, setUserMenuStyle] = useState<UserMenuStyle>('dropdown');
+    const applyMaintenance = useAppSettingsStore((s) => s.setMaintenanceMode);
+    const [userMenuStyle, setUserMenuStyle] =
+        useState<UserMenuStyle>('dropdown');
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
+    const [savingMaintenance, setSavingMaintenance] = useState(false);
 
     useEffect(() => {
         void loadStore().finally(() => setLoading(false));
@@ -51,6 +58,29 @@ export const AppSettingsPage = () => {
         }
     };
 
+    const handleToggleMaintenance = async () => {
+        setSavingMaintenance(true);
+
+        try {
+            const { maintenanceMode } = await saveMaintenanceMode(
+                !storeMaintenance,
+            );
+
+            applyMaintenance(maintenanceMode);
+            toast.success(
+                maintenanceMode
+                    ? 'Modo mantenimiento activado.'
+                    : 'Modo mantenimiento desactivado.',
+            );
+        } catch (e) {
+            toast.error(
+                e instanceof ApiError ? e.message : 'No se pudo guardar',
+            );
+        } finally {
+            setSavingMaintenance(false);
+        }
+    };
+
     return (
         <section className="mx-auto grid w-full max-w-xl gap-6">
             <PageTitle>Ajustes de la app</PageTitle>
@@ -59,9 +89,8 @@ export const AppSettingsPage = () => {
                 <div className="grid gap-1">
                     <h2 className="text-sm font-medium">Menú de usuario</h2>
                     <p className="text-sm text-muted-foreground">
-                        Cómo se muestra el menú del avatar (Mi perfil,
-                        Gestión, Estadísticas, Administración) para todos
-                        los usuarios.
+                        Cómo se muestra el menú del avatar (Mi perfil, Gestión,
+                        Estadísticas, Administración) para todos los usuarios.
                     </p>
                 </div>
 
@@ -106,6 +135,39 @@ export const AppSettingsPage = () => {
                     </Button>
                 </div>
             </div>
+
+            {user?.isSuperadmin && (
+                <div className="grid gap-4 rounded-xl border bg-card p-4 sm:p-6">
+                    <div className="grid gap-1">
+                        <h2 className="text-sm font-medium">
+                            Modo mantenimiento
+                        </h2>
+                        <p className="text-sm text-muted-foreground">
+                            Mientras esté activo, solo los superadmin pueden
+                            usar la app. El resto verá una pantalla de
+                            mantenimiento.
+                        </p>
+                    </div>
+
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                        <span className="text-sm font-medium">
+                            {storeMaintenance ? 'Activado' : 'Desactivado'}
+                        </span>
+                        <Button
+                            type="button"
+                            variant={storeMaintenance ? 'destructive' : 'outline'}
+                            disabled={savingMaintenance}
+                            onClick={() => void handleToggleMaintenance()}
+                        >
+                            {savingMaintenance
+                                ? 'Guardando…'
+                                : storeMaintenance
+                                  ? 'Desactivar'
+                                  : 'Activar'}
+                        </Button>
+                    </div>
+                </div>
+            )}
         </section>
     );
 };
