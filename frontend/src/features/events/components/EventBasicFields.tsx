@@ -1,13 +1,7 @@
 import type { ReactNode } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
+import { ComboboxField } from '@/components/ComboboxField';
 import { cn } from '@/lib/utils';
 import type { Project } from '@/features/projects/lib/projects';
 import { PROJECT_COLOR_STYLES } from '@/features/projects/lib/colors';
@@ -76,53 +70,25 @@ export function EventBasicFields({
                 />
             </Field>
             <Field id={fieldId('category')} label="Proyecto *">
-                <Select
+                <ComboboxField
+                    id={fieldId('category')}
+                    className="w-full"
+                    items={activeProjects}
+                    getValue={(c) => c.id}
+                    getLabel={(c) => c.name}
+                    getIndicator={(c) => (
+                        <span
+                            className={cn(
+                                'size-3 shrink-0 rounded-full',
+                                PROJECT_COLOR_STYLES[c.color].swatch,
+                            )}
+                        />
+                    )}
                     value={values.projectId}
-                    items={activeProjects.map((c) => ({
-                        value: c.id,
-                        label: c.name,
-                    }))}
-                    onValueChange={(value) => onProjectChange(value ?? '')}
-                >
-                    <SelectTrigger id={fieldId('category')} className="w-full">
-                        <SelectValue placeholder="Selecciona un proyecto">
-                            {(value: string | null) => {
-                                const selected = activeProjects.find(
-                                    (c) => c.id === value,
-                                );
-
-                                if (!selected) return null;
-
-                                return (
-                                    <>
-                                        <span
-                                            className={cn(
-                                                'size-3 shrink-0 rounded-full',
-                                                PROJECT_COLOR_STYLES[
-                                                    selected.color
-                                                ].swatch,
-                                            )}
-                                        />
-                                        {selected.name}
-                                    </>
-                                );
-                            }}
-                        </SelectValue>
-                    </SelectTrigger>
-                    <SelectContent>
-                        {activeProjects.map((c) => (
-                            <SelectItem key={c.id} value={c.id} label={c.name}>
-                                <span
-                                    className={cn(
-                                        'size-3 shrink-0 rounded-full',
-                                        PROJECT_COLOR_STYLES[c.color].swatch,
-                                    )}
-                                />
-                                {c.name}
-                            </SelectItem>
-                        ))}
-                    </SelectContent>
-                </Select>
+                    onValueChange={onProjectChange}
+                    placeholder="Selecciona un proyecto"
+                    emptyMessage="No hay proyectos"
+                />
             </Field>
         </>
     );

@@ -6,13 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
+import { ComboboxField } from '@/components/ComboboxField';
 import {
     getEmailSettings,
     updateSmtpConfig,
@@ -29,6 +23,11 @@ const SLOT_LABELS: Record<SlotId, string> = {
     convocatoria: 'Convocatoria',
     parte_firmas: 'Parte de firmas',
 };
+
+interface TemplateOption {
+    id: string;
+    name: string;
+}
 
 const EMPTY_SMTP: SmtpConfig = { host: '', port: 587, secure: true };
 
@@ -224,44 +223,24 @@ export const EmailSettingsPage = () => {
                             <Label htmlFor={`slot-${slot}`}>
                                 {SLOT_LABELS[slot]}
                             </Label>
-                            <Select
-                                value={templateId ?? ''}
-                                items={[
-                                    { value: '', label: 'Sin asignar' },
-                                    ...activeTemplates.map((t) => ({
-                                        value: t.id,
-                                        label: t.name,
-                                    })),
-                                ]}
-                                onValueChange={(value) =>
-                                    void handleAssignmentChange(
-                                        slot,
-                                        value ?? '',
-                                    )
+                            <ComboboxField
+                                id={`slot-${slot}`}
+                                className="w-full"
+                                disabled={savingSlot === slot}
+                                items={
+                                    [
+                                        { id: '', name: 'Sin asignar' },
+                                        ...activeTemplates,
+                                    ] satisfies TemplateOption[]
                                 }
-                            >
-                                <SelectTrigger
-                                    id={`slot-${slot}`}
-                                    className="w-full"
-                                    disabled={savingSlot === slot}
-                                >
-                                    <SelectValue placeholder="Sin asignar" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="" label="Sin asignar">
-                                        Sin asignar
-                                    </SelectItem>
-                                    {activeTemplates.map((t) => (
-                                        <SelectItem
-                                            key={t.id}
-                                            value={t.id}
-                                            label={t.name}
-                                        >
-                                            {t.name}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
+                                getValue={(t) => t.id}
+                                getLabel={(t) => t.name}
+                                value={templateId ?? ''}
+                                onValueChange={(v) =>
+                                    void handleAssignmentChange(slot, v)
+                                }
+                                placeholder="Sin asignar"
+                            />
                         </div>
                     ))}
                 </div>

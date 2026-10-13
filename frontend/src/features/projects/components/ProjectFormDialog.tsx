@@ -188,7 +188,7 @@ const ProjectFormBody = ({
                                     <ComboboxItem
                                         key={item.value}
                                         value={item.value}
-                                        className="text-base"
+                                        className="text-sm"
                                     >
                                         {item.label}
                                     </ComboboxItem>

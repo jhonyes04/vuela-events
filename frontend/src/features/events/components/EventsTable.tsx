@@ -2,20 +2,17 @@ import { useState, type ReactNode } from 'react';
 import { OverlayScrollbarsComponent } from 'overlayscrollbars-react';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
+import { ComboboxField } from '@/components/ComboboxField';
 import { DataTable, type DataTableColumn } from '@/components/DataTable';
 import { ListErrors } from '@/features/users/components/ListErrors';
 import { PaginationControls } from '@/components/PaginationControls';
 import { usePagination } from '@/hooks/usePagination';
 import { useSort } from '@/hooks/useSort';
 import { scrollbarOptions } from '@/lib/overlayScrollbarsOptions';
-import { PROJECT_COLOR_STYLES } from '@/features/projects/lib/colors';
+import {
+    PROJECT_COLOR_STYLES,
+    type ProjectColor,
+} from '@/features/projects/lib/colors';
 import { cn } from '@/lib/utils';
 import {
     attendanceLabel,
@@ -27,9 +24,6 @@ import {
     type EventItem,
 } from '@/features/events/lib/events';
 
-const selectClass =
-    'h-8 rounded-lg border border-input bg-card px-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50';
-
 type SortKey =
     | 'title'
     | 'category'
@@ -40,12 +34,25 @@ type SortKey =
 
 type TimeFilter = 'all' | 'past' | 'future';
 
+const TIME_FILTERS: TimeFilter[] = ['all', 'future', 'past'];
+const TIME_FILTER_LABELS: Record<TimeFilter, string> = {
+    all: 'Todos',
+    future: 'Futuros',
+    past: 'Pasados',
+};
+
 // 'YYYY-MM' -> 'Septiembre de 2026'
 const monthLabelFrom = (key: string): string => {
     const [year, month] = key.split('-').map(Number);
 
     return formatMonthLabel(year!, month! - 1);
 };
+
+interface ProjectFilterOption {
+    id: string;
+    name: string;
+    color: ProjectColor | null;
+}
 
 interface EventsTableProps {
     events: EventItem[];
@@ -87,6 +94,11 @@ export const EventsTable = ({
     const months = [
         ...new Set(events.map((e) => dayKey(e.startsAt).slice(0, 7))),
     ].sort((a, b) => b.localeCompare(a));
+
+    const projectOptions: ProjectFilterOption[] = [
+        { id: '', name: 'Todos los proyectos', color: null },
+        ...projects,
+    ];
 
     const filtered = events.filter((event) => {
         if (projectFilter && event.project.id !== projectFilter) {
@@ -152,8 +164,7 @@ export const EventsTable = ({
             render: (event) => (
                 <>
                     {formatShortDate(event.startsAt)},{' '}
-                    {formatTime(event.startsAt)} -{' '}
-                    {formatTime(event.endsAt)}
+                    {formatTime(event.startsAt)} - {formatTime(event.endsAt)}
                 </>
             ),
         },
@@ -207,82 +218,45 @@ export const EventsTable = ({
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
                 />
-                <Select
-                    value={projectFilter}
-                    items={[
-                        { value: '', label: 'Todos los proyectos' },
-                        ...projects.map((c) => ({
-                            value: c.id,
-                            label: c.name,
-                        })),
-                    ]}
-                    onValueChange={(value) => setProjectFilter(value ?? '')}
-                >
-                    <SelectTrigger className="w-48 bg-card">
-                        <SelectValue placeholder="Todos los proyectos">
-                            {(value: string | null) => {
-                                const selected = projects.find(
-                                    (c) => c.id === value,
-                                );
-
-                                if (!selected) return 'Todos los proyectos';
-
-                                return (
-                                    <>
-                                        <span
-                                            className={cn(
-                                                'size-3 shrink-0 rounded-full',
-                                                PROJECT_COLOR_STYLES[
-                                                    selected.color
-                                                ].swatch,
-                                            )}
-                                        />
-                                        {selected.name}
-                                    </>
-                                );
-                            }}
-                        </SelectValue>
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="" label="Todos los proyectos">
-                            Todos los proyectos
-                        </SelectItem>
-                        {projects.map((c) => (
-                            <SelectItem key={c.id} value={c.id} label={c.name}>
-                                <span
-                                    className={cn(
-                                        'size-3 shrink-0 rounded-full',
-                                        PROJECT_COLOR_STYLES[c.color].swatch,
-                                    )}
-                                />
-                                {c.name}
-                            </SelectItem>
-                        ))}
-                    </SelectContent>
-                </Select>
-                <select
-                    className={selectClass}
-                    value={monthFilter}
-                    onChange={(e) => setMonthFilter(e.target.value)}
-                >
-                    <option value="">Todos los meses</option>
-                    {months.map((key) => (
-                        <option key={key} value={key}>
-                            {monthLabelFrom(key)}
-                        </option>
-                    ))}
-                </select>
-                <select
-                    className={selectClass}
-                    value={timeFilter}
-                    onChange={(e) =>
-                        setTimeFilter(e.target.value as TimeFilter)
+                <ComboboxField
+                    className="w-48 bg-card"
+                    items={projectOptions}
+                    getValue={(c) => c.id}
+                    getLabel={(c) => c.name}
+                    getIndicator={(c) =>
+                        c.color && (
+                            <span
+                                className={cn(
+                                    'size-3 shrink-0 rounded-full',
+                                    PROJECT_COLOR_STYLES[c.color].swatch,
+                                )}
+                            />
+                        )
                     }
-                >
-                    <option value="all">Todos</option>
-                    <option value="future">Futuros</option>
-                    <option value="past">Pasados</option>
-                </select>
+                    value={projectFilter}
+                    onValueChange={setProjectFilter}
+                    placeholder="Todos los proyectos"
+                />
+                <ComboboxField
+                    className="w-40 bg-card"
+                    items={['', ...months]}
+                    getValue={(key) => key}
+                    getLabel={(key) =>
+                        key === '' ? 'Todos los meses' : monthLabelFrom(key)
+                    }
+                    value={monthFilter}
+                    onValueChange={setMonthFilter}
+                    placeholder="Todos los meses"
+                />
+                <ComboboxField
+                    className="w-32 bg-card"
+                    items={TIME_FILTERS}
+                    getValue={(t) => t}
+                    getLabel={(t) => TIME_FILTER_LABELS[t]}
+                    value={timeFilter}
+                    onValueChange={(v) => setTimeFilter(v as TimeFilter)}
+                    searchable={false}
+                />
             </div>
 
             {loading ? (

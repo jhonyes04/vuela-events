@@ -14,6 +14,7 @@ import {
 import { ChevronDownIcon, XIcon, CheckIcon } from "lucide-react"
 
 const Combobox = ComboboxPrimitive.Root
+const createComboboxItems = ComboboxPrimitive.createItems
 
 function ComboboxValue({ ...props }: ComboboxPrimitive.Value.Props) {
   return <ComboboxPrimitive.Value data-slot="combobox-value" {...props} />
@@ -279,6 +280,7 @@ function useComboboxAnchor() {
 
 export {
   Combobox,
+  createComboboxItems,
   ComboboxInput,
   ComboboxContent,
   ComboboxList,

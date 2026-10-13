@@ -1,13 +1,7 @@
 import { useEffect, useState } from 'react';
 import { CalendarDays, Gauge, Ticket, Users } from 'lucide-react';
 import { Label } from '@/components/ui/label';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
+import { ComboboxField } from '@/components/ComboboxField';
 import { Kpi } from '@/features/stats/components/StatsChartKit';
 import { EventsSection } from '@/features/stats/components/EventsSection';
 import { RegistrationsSection } from '@/features/stats/components/RegistrationsSection';
@@ -88,30 +82,16 @@ export const StatsPage = () => {
                         >
                             Tipo
                         </Label>
-                        <Select
+                        <ComboboxField
+                            id="stats-group"
+                            className="w-full bg-card"
+                            items={GROUP_ORDER}
+                            getValue={(g) => g}
+                            getLabel={(g) => g}
                             value={group}
-                            items={GROUP_ORDER.map((g) => ({
-                                value: g,
-                                label: g,
-                            }))}
-                            onValueChange={(value) =>
-                                value && changeGroup(value as GroupId)
-                            }
-                        >
-                            <SelectTrigger
-                                id="stats-group"
-                                className="w-full bg-card"
-                            >
-                                <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {GROUP_ORDER.map((g) => (
-                                    <SelectItem key={g} value={g} label={g}>
-                                        {g}
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
+                            onValueChange={(v) => changeGroup(v as GroupId)}
+                            searchable={false}
+                        />
                     </div>
 
                     {groupSections.length > 1 && (
@@ -122,34 +102,18 @@ export const StatsPage = () => {
                             >
                                 Estadística
                             </Label>
-                            <Select
+                            <ComboboxField
+                                id="stats-section"
+                                className="w-full bg-card"
+                                items={groupSections}
+                                getValue={(s) => s.id}
+                                getLabel={(s) => s.label}
                                 value={section}
-                                items={groupSections.map((s) => ({
-                                    value: s.id,
-                                    label: s.label,
-                                }))}
-                                onValueChange={(value) =>
-                                    value && setSection(value as SectionId)
+                                onValueChange={(v) =>
+                                    setSection(v as SectionId)
                                 }
-                            >
-                                <SelectTrigger
-                                    id="stats-section"
-                                    className="w-full bg-card"
-                                >
-                                    <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {groupSections.map((s) => (
-                                        <SelectItem
-                                            key={s.id}
-                                            value={s.id}
-                                            label={s.label}
-                                        >
-                                            {s.label}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
+                                searchable={false}
+                            />
                         </div>
                     )}
                 </div>
