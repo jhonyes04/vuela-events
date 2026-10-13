@@ -96,7 +96,7 @@ export const ProjectInterestsPage = () => {
                     Todavía no hay proyectos.
                 </p>
             ) : (
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                     {projects.map((project) => {
                         const colorStyle = PROJECT_COLOR_STYLES[project.color];
                         const projectSelected =
