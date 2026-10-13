@@ -36,6 +36,11 @@ import { recordAudit } from '../services/audit.js';
 // escapar en el HTML de los correos vía {{proyecto}}/{{lugar}}) cuelen markup.
 const NO_CONTROL_OR_TAGS = /^[^\p{C}<>]+$/u;
 
+const hasFullAttendeeAccess = (actor: { permissions: string[] }): boolean =>
+    ['attendees:view', 'attendees:add', 'attendees:delete'].every((code) =>
+        actor.permissions.includes(code),
+    );
+
 // Campos comunes a un evento suelto y a una serie.
 const eventFields = {
     title: z.string().trim().min(1).max(120).regex(NO_CONTROL_OR_TAGS),
@@ -708,7 +713,11 @@ eventsRouter.post(
             const registration = await registerForEvent(
                 params.data.userId,
                 params.data.id,
-                { actorId: actor.id, bypassCapacity: true },
+                {
+                    actorId: actor.id,
+                    bypassCapacity: true,
+                    allowAfterEnd: hasFullAttendeeAccess(actor),
+                },
             );
 
             res.status(201).json({ registration });
@@ -748,6 +757,7 @@ eventsRouter.delete(
                 actor.id,
                 params.data.id,
                 params.data.registrationId,
+                { allowAfterEnd: hasFullAttendeeAccess(actor) },
             );
 
             res.status(204).end();

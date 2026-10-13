@@ -15,7 +15,7 @@ const PERMISSIONS: { id: string; description: string }[] = [
     { id: 'events:view', description: 'Ver gestión de eventos' },
     { id: 'events:edit', description: 'Editar eventos' },
     { id: 'events:delete', description: 'Eliminar eventos' },
-    { id: 'attendees:view', description: 'Ver candidatos para inscribir' },
+    { id: 'attendees:view', description: 'Ver participantes para inscribir' },
     { id: 'attendees:add', description: 'Inscribir participantes manualmente' },
     { id: 'attendees:delete', description: 'Quitar participantes de un evento' },
     { id: 'projects:view', description: 'Ver proyectos' },

@@ -409,10 +409,16 @@ export const listRegistrationCandidates = async (
     return candidates;
 };
 
-export const adminRegisterUser = (
+export const adminRegisterUser = async (
     eventId: string,
     userId: string,
-): Promise<void> => api.post(`/events/${eventId}/attendees/${userId}`);
+): Promise<string> => {
+    const { registration } = await api.post<{ registration: { id: string } }>(
+        `/events/${eventId}/attendees/${userId}`,
+    );
+
+    return registration.id;
+};
 
 export const adminUnregisterAttendee = (
     eventId: string,

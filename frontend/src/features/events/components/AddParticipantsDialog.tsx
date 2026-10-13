@@ -22,7 +22,7 @@ import {
 interface AddParticipantsBodyProps {
     eventId: string;
     onClose: () => void;
-    onAdded: () => void;
+    onAdded: (addedIds: string[]) => void;
 }
 
 const AddParticipantsBody = ({
@@ -71,12 +71,19 @@ const AddParticipantsBody = ({
         setSubmitting(true);
 
         const ids = [...selected];
+
         const results = await Promise.allSettled(
             ids.map((id) => adminRegisterUser(eventId, id)),
         );
-        const failedCount = results.filter(
-            (r) => r.status === 'rejected',
-        ).length;
+
+        const succeededRegistrationIds = results
+            .filter(
+                (r): r is PromiseFulfilledResult<string> =>
+                    r.status === 'fulfilled',
+            )
+            .map((r) => r.value);
+
+        const failedCount = ids.length - succeededRegistrationIds.length;
 
         if (failedCount > 0) {
             toast.error(
@@ -85,13 +92,13 @@ const AddParticipantsBody = ({
         } else {
             toast.success(
                 ids.length === 1
-                    ? 'Participante añadido.'
-                    : `${ids.length} participantes añadidos.`,
+                    ? 'Participante añadido'
+                    : `${ids.length} participantes añadidos`,
             );
         }
 
         setSubmitting(false);
-        onAdded();
+        onAdded(succeededRegistrationIds);
         onClose();
     };
 
@@ -174,7 +181,7 @@ interface AddParticipantsDialogProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
     eventId: string;
-    onAdded: () => void;
+    onAdded: (addedIds: string[]) => void;
 }
 
 export const AddParticipantsDialog = ({

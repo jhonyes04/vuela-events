@@ -1,4 +1,5 @@
 import { useState, type ReactNode } from 'react';
+import { CircleXIcon } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import {
@@ -70,9 +71,12 @@ export function ConfirmDeleteDialog<T>({
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent>
+            <DialogContent showCloseButton={false}>
                 <DialogHeader>
-                    <DialogTitle>{title}</DialogTitle>
+                    <div className="flex items-center gap-2">
+                        <CircleXIcon className="size-6 text-destructive" />
+                        <DialogTitle>{title}</DialogTitle>
+                    </div>
                     <DialogDescription>{description}</DialogDescription>
                 </DialogHeader>
 
@@ -90,7 +94,7 @@ export function ConfirmDeleteDialog<T>({
                     </div>
                 )}
 
-                <DialogFooter>
+                <DialogFooter className="bg-destructive/20">
                     <Button
                         variant="default"
                         onClick={() => onOpenChange(false)}
@@ -98,11 +102,11 @@ export function ConfirmDeleteDialog<T>({
                         Cancelar
                     </Button>
                     <Button
-                        variant="destructive"
+                        variant="default"
+                        className="bg-destructive"
                         disabled={
                             deleting ||
-                            (confirmText !== undefined &&
-                                typed !== confirmText)
+                            (confirmText !== undefined && typed !== confirmText)
                         }
                         onClick={() => void handleDelete()}
                     >

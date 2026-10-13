@@ -23,7 +23,11 @@ export class RegistrationError extends Error {
 export const registerForEvent = async (
     userId: string,
     eventId: string,
-    opts?: { actorId?: string; bypassCapacity?: boolean },
+    opts?: {
+        actorId?: string;
+        bypassCapacity?: boolean;
+        allowAfterEnd?: boolean;
+    },
 ) => {
     try {
         return await prisma.$transaction(async (tx) => {
@@ -43,7 +47,7 @@ export const registerForEvent = async (
                 throw new RegistrationError('not_found');
             }
 
-            if (event.endsAt <= new Date()) {
+            if (!opts?.allowAfterEnd && event.endsAt <= new Date()) {
                 throw new RegistrationError('event_ended');
             }
 
@@ -148,14 +152,19 @@ export const unregisterRegistration = async (
     actorId: string,
     eventId: string,
     registrationId: string,
+    opts?: { allowAfterEnd?: boolean },
 ): Promise<void> => {
     const registration = await prisma.registration.findFirst({
         where: { id: registrationId, eventId },
-        select: { userId: true },
+        select: { userId: true, event: { select: { endsAt: true } } },
     });
 
     if (!registration) {
         throw new RegistrationError('not_found');
+    }
+
+    if (!opts?.allowAfterEnd && registration.event.endsAt <= new Date()) {
+        throw new RegistrationError('event_ended');
     }
 
     await prisma.registration.delete({ where: { id: registrationId } });

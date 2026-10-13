@@ -38,11 +38,18 @@ const AttendeesBody = ({ event, onCloseAll }: AttendeesBodyProps) => {
     const ended = hasEnded(event);
     // "Agregar" exige poder ver candidatos y poder inscribirlos (la misma
     // llamada que carga el diálogo requiere attendees:view).
+    const fullAttendeeAccess =
+        (user?.permissions.includes('attendees:view') ?? false) &&
+        (user?.permissions.includes('attendees:add') ?? false) &&
+        (user?.permissions.includes('attendees:delete') ?? false);
+
     const canAddAttendees =
         (user?.permissions.includes('attendees:view') ?? false) &&
-        (user?.permissions.includes('attendees:add') ?? false);
+        (user?.permissions.includes('attendees:add') ?? false) &&
+        (!ended || fullAttendeeAccess);
     const canDeleteAttendees =
-        user?.permissions.includes('attendees:delete') ?? false;
+        (user?.permissions.includes('attendees:delete') ?? false) &&
+        (!ended || fullAttendeeAccess);
     const [refreshNonce, setRefreshNonce] = useState(0);
     const { attendees, failed, loading } = useAttendees(
         event.id,
@@ -58,18 +65,17 @@ const AttendeesBody = ({ event, onCloseAll }: AttendeesBodyProps) => {
     );
     const { draft, generating, generate, clear } = useReportDraft(event.id);
 
-    // Cambiar la selección invalida el parte generado: hay que volver a generarlo.
-    const toggle = (id: string) => {
+    const invalidateReport = () => {
         clear();
         setPreviewOpen(false);
+    };
+    const toggle = (id: string) => {
+        invalidateReport();
         setSelected((prev) => {
             const next = new Set(prev);
 
-            if (next.has(id)) {
-                next.delete(id);
-            } else {
-                next.add(id);
-            }
+            if (next.has(id)) next.delete(id);
+            else next.add(id);
 
             return next;
         });
@@ -219,7 +225,16 @@ const AttendeesBody = ({ event, onCloseAll }: AttendeesBodyProps) => {
                     open={addOpen}
                     onOpenChange={setAddOpen}
                     eventId={event.id}
-                    onAdded={() => setRefreshNonce((n) => n + 1)}
+                    onAdded={(addedIds) => {
+                        setRefreshNonce((n) => n + 1);
+                        invalidateReport();
+
+                        if (selected.size > 0) {
+                            setSelected(
+                                (prev) => new Set([...prev, ...addedIds]),
+                            );
+                        }
+                    }}
                 />
             )}
 
@@ -228,7 +243,7 @@ const AttendeesBody = ({ event, onCloseAll }: AttendeesBodyProps) => {
                     open={deletingAttendee !== null}
                     onOpenChange={(open) => !open && setDeletingAttendee(null)}
                     title="Quitar del evento"
-                    description={`¿Quitar a «${deletingAttendee.name}» de este evento? Esta acción no se puede deshacer.`}
+                    description={`¿Quitar a «${deletingAttendee.puntoVuela} (${deletingAttendee.name})» de este evento? Esta acción no se puede deshacer.`}
                     confirmLabel="Quitar"
                     deletingLabel="Quitando…"
                     errorFallback="No se pudo quitar al participante"
@@ -238,6 +253,14 @@ const AttendeesBody = ({ event, onCloseAll }: AttendeesBodyProps) => {
                     }
                     onDeleted={() => {
                         setRefreshNonce((n) => n + 1);
+                        invalidateReport();
+                        setSelected((prev) => {
+                            const next = new Set(prev);
+
+                            next.delete(deletingAttendee.id);
+
+                            return next;
+                        });
                         setDeletingAttendee(null);
                     }}
                 />
