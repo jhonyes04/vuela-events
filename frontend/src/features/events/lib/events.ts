@@ -23,7 +23,7 @@ export interface EventItem {
         name: string;
         description: string | null;
         color: ProjectColor;
-        guide: { id: string; name: string; url: string };
+        guides: { id: string; name: string; url: string }[];
     };
     _count: { registrations: number };
     registered: boolean;

@@ -1,20 +1,26 @@
 import { api } from '@/lib/api';
 import type { ProjectColor } from '@/features/projects/lib/colors';
 
+export interface ProjectGuide {
+    id: string;
+    name: string;
+    url: string;
+}
+
 export interface Project {
     id: string;
     name: string;
     description: string | null;
     color: ProjectColor;
     active: boolean;
-    guide: { id: string; name: string; url: string };
+    guides: ProjectGuide[];
 }
 
 export interface ProjectInput {
     name: string;
     description: string | null;
     color: ProjectColor;
-    guideId: string;
+    guideIds: string[];
 }
 
 export interface ProjectUpdateInput extends ProjectInput {

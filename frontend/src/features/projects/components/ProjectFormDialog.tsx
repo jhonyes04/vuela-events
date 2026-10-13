@@ -4,6 +4,18 @@ import { RichTextEditor } from '@/components/RichTextEditor';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
+    Combobox,
+    ComboboxChip,
+    ComboboxChips,
+    ComboboxChipsInput,
+    ComboboxContent,
+    ComboboxEmpty,
+    ComboboxItem,
+    ComboboxList,
+    ComboboxValue,
+    useComboboxAnchor,
+} from '@/components/ui/combobox';
+import {
     Dialog,
     DialogContent,
     DialogDescription,
@@ -13,13 +25,6 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
 import { ApiError } from '@/lib/api';
 import { cn } from '@/lib/utils';
 import {
@@ -48,12 +53,15 @@ const ProjectFormBody = ({
     onSaved,
     onClose,
 }: ProjectFormBodyProps) => {
+    const chipsAnchor = useComboboxAnchor();
     const [name, setName] = useState(project?.name ?? '');
     const [description, setDescription] = useState(project?.description ?? '');
     const [color, setColor] = useState<ProjectColor>(
         project?.color ?? PROJECT_COLORS[0],
     );
-    const [guideId, setGuideId] = useState(project?.guide.id ?? '');
+    const [guideIds, setGuideIds] = useState<Set<string>>(
+        new Set(project?.guides.map((guide) => guide.id) ?? []),
+    );
     const [active, setActive] = useState(project?.active ?? true);
     const [submitting, setSubmitting] = useState(false);
 
@@ -67,14 +75,14 @@ const ProjectFormBody = ({
     // La guía actual del proyecto sigue disponible aunque se haya
     // desactivado después de asignarla.
     const activeGuides = guides.filter(
-        (g) => g.active || g.id === project?.guide.id,
+        (guide) => guide.active || guideIds.has(guide.id),
     );
 
     const handleSubmit = async (e: FormEvent) => {
         e.preventDefault();
 
-        if (!guideId) {
-            toast.error('Selecciona una guía');
+        if (guideIds.size === 0) {
+            toast.error('Selecciona al menos una guía');
             return;
         }
 
@@ -86,7 +94,7 @@ const ProjectFormBody = ({
                 description:
                     description === EMPTY_EDITOR_HTML ? null : description,
                 color,
-                guideId,
+                guideIds: [...guideIds],
             };
 
             const saved = project
@@ -136,32 +144,60 @@ const ProjectFormBody = ({
                         onChange={(e) => setName(e.target.value)}
                     />
                 </div>
+
                 <div className="grid gap-1.5">
-                    <Label htmlFor="project-guide">Guía *</Label>
-                    <Select
-                        value={guideId}
-                        items={activeGuides.map((g) => ({
-                            value: g.id,
-                            label: g.name,
+                    <Label htmlFor="project-guides">Guías *</Label>
+                    <Combobox
+                        items={activeGuides.map((guide) => ({
+                            value: guide.id,
+                            label: guide.name,
                         }))}
-                        onValueChange={(value) => setGuideId(value ?? '')}
+                        multiple
+                        value={[...guideIds]}
+                        onValueChange={(ids) => setGuideIds(new Set(ids))}
                     >
-                        <SelectTrigger id="project-guide" className="w-full">
-                            <SelectValue placeholder="Selecciona una guía" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            {activeGuides.map((g) => (
-                                <SelectItem
-                                    key={g.id}
-                                    value={g.id}
-                                    label={g.name}
-                                >
-                                    {g.name}
-                                </SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
+                        <ComboboxChips ref={chipsAnchor} id="project-guides">
+                            <ComboboxValue>
+                                {(value: string[]) =>
+                                    value.map((id) => (
+                                        <ComboboxChip
+                                            key={id}
+                                            className="text-sm"
+                                        >
+                                            {activeGuides.find(
+                                                (guide) => guide.id === id,
+                                            )?.name ?? id}
+                                        </ComboboxChip>
+                                    ))
+                                }
+                            </ComboboxValue>
+                            <ComboboxChipsInput
+                                placeholder={
+                                    guideIds.size === 0
+                                        ? 'Buscar una guía…'
+                                        : undefined
+                                }
+                            />
+                        </ComboboxChips>
+                        <ComboboxContent anchor={chipsAnchor}>
+                            <ComboboxEmpty>
+                                No se encontraron guías
+                            </ComboboxEmpty>
+                            <ComboboxList>
+                                {(item: { value: string; label: string }) => (
+                                    <ComboboxItem
+                                        key={item.value}
+                                        value={item.value}
+                                        className="text-base"
+                                    >
+                                        {item.label}
+                                    </ComboboxItem>
+                                )}
+                            </ComboboxList>
+                        </ComboboxContent>
+                    </Combobox>
                 </div>
+
                 <fieldset className="grid gap-1.5">
                     <legend className="mb-1.5 text-sm font-medium">
                         Color

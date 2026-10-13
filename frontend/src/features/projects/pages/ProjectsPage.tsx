@@ -78,7 +78,10 @@ export const ProjectsPage = () => {
                                         {project.name}
                                     </p>
                                     <p className="truncate text-xs text-muted-foreground">
-                                        Guía: {project.guide.name}
+                                        Guías:{' '}
+                                        {project.guides
+                                            .map((guide) => guide.name)
+                                            .join(', ')}
                                     </p>
                                     {project.description && (
                                         <p className="truncate text-xs text-muted-foreground">
@@ -89,9 +92,7 @@ export const ProjectsPage = () => {
                             </div>
                             <div className="flex items-center justify-end gap-2">
                                 {!project.active && (
-                                    <Badge variant="secondary">
-                                        Inactiva
-                                    </Badge>
+                                    <Badge variant="secondary">Inactiva</Badge>
                                 )}
                                 <IconTooltip label="Editar">
                                     <Button

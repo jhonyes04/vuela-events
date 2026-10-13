@@ -16,7 +16,7 @@ interface ProjectInfoDialogProps {
     project: {
         name: string;
         description: string | null;
-        guide: { name: string; url: string };
+        guides: { name: string; url: string }[];
     };
 }
 
@@ -32,24 +32,28 @@ export const ProjectInfoDialog = ({
                 <DialogDescription>Información del proyecto</DialogDescription>
             </DialogHeader>
 
-            <p className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+            <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
                 <BookOpen className="size-4 shrink-0 text-brand-green" />
-                <span className="p-0 font-bold">Guía Ágora:</span>
-                <a
-                    href={project.guide.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className={cn(
-                        buttonVariants({
-                            variant: 'default',
-                            size: 'xs',
-                            className: 'bg-green-800',
-                        }),
-                    )}
-                >
-                    {project.guide.name}
-                </a>
-            </p>
+                <span className="p-0 font-bold">Guías Ágora:</span>
+
+                {project.guides.map((guide) => (
+                    <a
+                        key={guide.url}
+                        href={guide.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className={cn(
+                            buttonVariants({
+                                variant: 'default',
+                                size: 'xs',
+                                className: 'bg-green-800',
+                            }),
+                        )}
+                    >
+                        {guide.name}
+                    </a>
+                ))}
+            </div>
 
             {project.description && (
                 <div className="grid gap-1.5">
