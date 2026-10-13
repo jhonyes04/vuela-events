@@ -1,0 +1,12 @@
+model ProjectGuide {
+    projectId           String          @db.Uuid
+    guideId             String          @db.Uuid
+    createdAt           DateTime        @default(now())
+
+    project             Project         @relation(fields: [projectId], references: [id], onDelete: Cascade)
+    guide               Guide           @relation(fields: [guideId], references: [id], onDelete: Restrict)
+
+    @@id([projectId, guideId])
+    @@index([guideId])
+    @@map("project_guides")
+}

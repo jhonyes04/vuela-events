@@ -97,7 +97,7 @@ export const deleteGuide = async (actorId: string, id: string) => {
     }
 
     const projectsCount = await prisma.project.count({
-        where: { guideId: id },
+        where: { guides: { some: { guideId: id } } },
     });
 
     if (projectsCount > 0) {

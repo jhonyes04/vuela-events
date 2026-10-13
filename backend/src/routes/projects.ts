@@ -28,14 +28,14 @@ const createProjectSchema = z.strictObject({
     name: z.string().trim().min(2).max(80),
     description: z.string().max(20000).nullable().optional(),
     color: z.enum(PROJECT_COLORS),
-    guideId: z.uuid(),
+    guideIds: z.array(z.uuid()).min(1),
 });
 
 const updateProjectSchema = z.strictObject({
     name: z.string().trim().min(2).max(80),
     description: z.string().max(20000).nullable(),
     color: z.enum(PROJECT_COLORS),
-    guideId: z.uuid(),
+    guideIds: z.array(z.uuid()).min(1),
     active: z.boolean(),
 });
 
@@ -152,7 +152,7 @@ projectsRouter.post(
                 body.data.name,
                 body.data.description ?? null,
                 body.data.color,
-                body.data.guideId,
+                body.data.guideIds,
             );
 
             res.status(201).json({ project });

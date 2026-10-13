@@ -144,7 +144,11 @@ const eventSelect = {
             name: true,
             description: true,
             color: true,
-            guide: { select: { id: true, name: true, url: true } },
+            guides: {
+                select: {
+                    guide: { select: { id: true, name: true, url: true } },
+                },
+            },
         },
     },
     _count: {
@@ -153,6 +157,22 @@ const eventSelect = {
         },
     },
 } as const;
+
+const flattenEventProject = <
+    T extends {
+        project: {
+            guides: { guide: { id: string; name: string; url: string } }[];
+        };
+    },
+>(
+    event: T,
+) => ({
+    ...event,
+    project: {
+        ...event.project,
+        guides: event.project.guides.map((guide) => guide.guide),
+    },
+});
 
 const eventUserParamsSchema = z.object({ id: z.uuid(), userId: z.uuid() });
 const eventRegistrationParamsSchema = z.object({
@@ -249,10 +269,12 @@ eventsRouter.get('/', async (req, res) => {
         take: 500,
     });
 
-    const events = rows.map(({ registrations, ...event }) => ({
-        ...event,
-        registered: registrations.length > 0,
-    }));
+    const events = rows.map(({ registrations, ...event }) =>
+        flattenEventProject({
+            ...event,
+            registered: registrations.length > 0,
+        }),
+    );
 
     res.json({ events });
 });
@@ -314,7 +336,7 @@ eventsRouter.post(
             newValue: event.title.slice(0, 100),
         });
 
-        res.status(201).json({ event });
+        res.status(201).json({ event: flattenEventProject(event) });
     },
 );
 
@@ -385,7 +407,7 @@ eventsRouter.patch(
             newValue: event.title.slice(0, 100),
         });
 
-        res.json({ event });
+        res.json({ event: flattenEventProject(event) });
     },
 );
 
@@ -445,7 +467,7 @@ eventsRouter.patch('/:id/participants-count', async (req, res) => {
                 : String(body.data.participantsCount),
     });
 
-    res.json({ event });
+    res.json({ event: flattenEventProject(event) });
 });
 
 // Crear una serie recurrente (mismos días de la semana entre dos fechas): admin y dt.

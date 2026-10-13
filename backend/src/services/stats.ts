@@ -124,7 +124,10 @@ export const getStats = async (now: Date = new Date()) => {
         ORDER BY 1
     `;
 
-    const eventsByMonth = months.map((m) => ({ key: m.month, count: m.events }));
+    const eventsByMonth = months.map((m) => ({
+        key: m.month,
+        count: m.events,
+    }));
     const registrationsByMonth = months.map((m) => ({
         key: m.month,
         count: m.registrations,
@@ -164,7 +167,8 @@ export const getStats = async (now: Date = new Date()) => {
             coalesce(sum(e."participantsCount"), 0)::int AS attended
         FROM events e
         JOIN projects p ON p.id = e."projectId"
-        JOIN guides g ON g.id = p."guideId"
+        JOIN project_guides pg ON pg."projectId" = p.id
+        JOIN guides g ON g.id = pg."guideId"
         LEFT JOIN reg_counts rc ON rc."eventId" = e.id
         GROUP BY g.id, g.name
         ORDER BY events DESC
@@ -208,7 +212,8 @@ export const getStats = async (now: Date = new Date()) => {
         FROM events
         WHERE "endsAt" <= ${now} AND "participantsCount" IS NULL
     `;
-    const finishedWithoutAttendedCount = finishedWithoutAttendedCountRows[0]!.count;
+    const finishedWithoutAttendedCount =
+        finishedWithoutAttendedCountRows[0]!.count;
 
     const finishedWithoutAttendedRows = await prisma.$queryRaw<
         FinishedEventRow[]
@@ -249,7 +254,13 @@ export const getStats = async (now: Date = new Date()) => {
     });
 
     const registrationsByUserRows = await prisma.$queryRaw<
-        { id: string; name: string; lastName: string; puntoVuela: string | null; registrations: number }[]
+        {
+            id: string;
+            name: string;
+            lastName: string;
+            puntoVuela: string | null;
+            registrations: number;
+        }[]
     >`
         SELECT
             u.id,

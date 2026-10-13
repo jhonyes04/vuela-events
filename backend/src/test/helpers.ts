@@ -39,7 +39,8 @@ export const createUser = (
             name: `${roleId} ${n}`,
             lastName: `Apellido ${n}`,
             puntoVuela: completed ? `Punto ${n}` : null,
-            dinamizadorTitle: completed && roleId === 'dt' ? 'dinamizador' : null,
+            dinamizadorTitle:
+                completed && roleId === 'dt' ? 'dinamizador' : null,
             profileCompletedAt: completed ? new Date() : null,
             roleId,
             active: opts.active ?? true,
@@ -63,23 +64,23 @@ export const createGuide = (
 };
 
 // Proyecto de prueba: por defecto activo, para poder usarlo al crear eventos.
-// Si no se pasa guideId, crea una guía de prueba propia.
+// Si no se pasan guideIds, crea una guía de prueba propia.
 export const createProject = async (
     opts: {
         name?: string;
         color?: string;
         active?: boolean;
-        guideId?: string;
+        guideIds?: string[];
     } = {},
 ) => {
     const n = randomBytes(4).toString('hex');
-    const guideId = opts.guideId ?? (await createGuide()).id;
+    const guideIds = opts.guideIds ?? [(await createGuide()).id];
 
     return prisma.project.create({
         data: {
             name: opts.name ?? `Proyecto ${n}`,
             color: opts.color ?? 'amber',
-            guideId,
+            guides: { create: guideIds.map((guideId) => ({ guideId })) },
             active: opts.active ?? true,
         },
     });

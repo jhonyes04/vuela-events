@@ -51,35 +51,53 @@ const projectSelect = {
     description: true,
     color: true,
     active: true,
-    guide: { select: { id: true, name: true, url: true } },
+    guides: {
+        select: { guide: { select: { id: true, name: true, url: true } } },
+    },
 } as const;
 
-const guideExists = async (guideId: string): Promise<boolean> => {
-    const guide = await prisma.guide.findUnique({
-        where: { id: guideId },
-        select: { id: true },
-    });
-
-    return guide !== null;
+type RawProject = {
+    guides: { guide: { id: string; name: string; url: string } }[];
+    [key: string]: unknown;
 };
 
-export const listProjects = () =>
-    prisma.project.findMany({
+const flattenGuides = <T extends RawProject>({ guides, ...rest }: T) => ({
+    ...rest,
+    guides: guides.map((g) => g.guide),
+});
+
+const guidesExist = async (guideIds: string[]): Promise<boolean> => {
+    const count = await prisma.guide.count({
+        where: { id: { in: guideIds } },
+    });
+
+    return count === guideIds.length;
+};
+
+export const listProjects = async () => {
+    const projects = await prisma.project.findMany({
         orderBy: { name: 'asc' },
         select: projectSelect,
     });
+
+    return projects.map(flattenGuides);
+};
 
 export const createProject = async (
     actorId: string,
     name: string,
     description: string | null,
     color: ProjectColor,
-    guideId: string,
+    guideIds: string[],
 ) => {
     const exists = await prisma.project.findUnique({ where: { name } });
 
     if (exists) {
         throw new ProjectManageError('duplicate');
+    }
+
+    if (!(await guidesExist(guideIds))) {
+        throw new ProjectManageError('guide_not_found');
     }
 
     const project = await prisma.project.create({
@@ -89,7 +107,7 @@ export const createProject = async (
                 ? sanitizeEmailHtml(description) || null
                 : null,
             color,
-            guideId,
+            guides: { create: guideIds.map((guideId) => ({ guideId })) },
         },
         select: projectSelect,
     });
@@ -100,7 +118,7 @@ export const createProject = async (
         newValue: project.name.slice(0, 100),
     });
 
-    return project;
+    return flattenGuides(project);
 };
 
 export const updateProject = async (
@@ -110,7 +128,7 @@ export const updateProject = async (
         name: string;
         description: string | null;
         color: ProjectColor;
-        guideId: string;
+        guideIds: string[];
         active: boolean;
     },
 ) => {
@@ -130,20 +148,31 @@ export const updateProject = async (
         }
     }
 
-    if (!(await guideExists(input.guideId))) {
+    if (!(await guidesExist(input.guideIds))) {
         throw new ProjectManageError('guide_not_found');
     }
 
-    const updated = await prisma.project.update({
-        where: { id },
-        data: {
-            ...input,
-            description: input.description
-                ? sanitizeEmailHtml(input.description) || null
-                : null,
-        },
-        select: projectSelect,
-    });
+    const [, , updated] = await prisma.$transaction([
+        prisma.projectGuide.deleteMany({ where: { projectId: id } }),
+        prisma.projectGuide.createMany({
+            data: input.guideIds.map((guideId) => ({
+                projectId: id,
+                guideId,
+            })),
+        }),
+        prisma.project.update({
+            where: { id },
+            data: {
+                name: input.name,
+                description: input.description
+                    ? sanitizeEmailHtml(input.description) || null
+                    : null,
+                color: input.color,
+                active: input.active,
+            },
+            select: projectSelect,
+        }),
+    ]);
 
     await recordAudit({
         action: 'project_updated',
@@ -152,7 +181,7 @@ export const updateProject = async (
         newValue: updated.name.slice(0, 100),
     });
 
-    return updated;
+    return flattenGuides(updated);
 };
 
 export const deleteProject = async (actorId: string, id: string) => {
