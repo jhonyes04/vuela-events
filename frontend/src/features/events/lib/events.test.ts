@@ -29,7 +29,8 @@ const event = (id: string, startsAt: string): EventItem => ({
     project: {
         id: 'c',
         name: 'Proyecto',
-        description: null,
+        openingInstructions: null,
+        closingInstructions: null,
         color: 'amber',
         guides: [{ id: 'g', name: 'Guía', url: 'https://example.com' }],
     },
