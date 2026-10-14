@@ -1,6 +1,5 @@
 import { ChartCard } from '@/features/stats/components/ChartCard';
 import {
-    AreaSeries,
     countConfig,
     HorizontalBars,
     StatusDonut,
@@ -26,8 +25,7 @@ export const EventsSection = ({ section, stats }: EventsSectionProps) => (
                 title="Eventos por mes"
                 empty={stats.eventsByMonth.length === 0}
             >
-                <AreaSeries
-                    id="grad-events-month"
+                <BarSeries
                     data={stats.eventsByMonth}
                     config={countConfig('Eventos', 'var(--chart-1)')}
                     labelOf={monthLabel}
@@ -78,19 +76,6 @@ export const EventsSection = ({ section, stats }: EventsSectionProps) => (
             >
                 <HorizontalBars
                     data={stats.eventsByProject}
-                    metric="events"
-                    config={valueConfig('Eventos', 'var(--chart-1)')}
-                />
-            </ChartCard>
-        )}
-
-        {section === 'events-guide' && (
-            <ChartCard
-                title="Eventos por guía"
-                empty={stats.eventsByGuide.length === 0}
-            >
-                <HorizontalBars
-                    data={stats.eventsByGuide}
                     metric="events"
                     config={valueConfig('Eventos', 'var(--chart-1)')}
                 />

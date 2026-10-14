@@ -16,6 +16,8 @@ import type { LucideIcon } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import {
     ChartContainer,
+    ChartLegend,
+    ChartLegendContent,
     ChartTooltip,
     ChartTooltipContent,
     type ChartConfig,
@@ -25,7 +27,12 @@ import {
     PROJECT_HEX,
     type ProjectColor,
 } from '@/features/projects/lib/colors';
-import type { SeriesPoint, StatsSummary } from '@/features/stats/lib/stats';
+import { monthLabel } from '@/features/stats/lib/stats';
+import type {
+    SeriesPoint,
+    StatsSummary,
+    UserParticipationSummary,
+} from '@/features/stats/lib/stats';
 
 export const countConfig = (label: string, color: string): ChartConfig => ({
     count: { label, color },
@@ -47,6 +54,18 @@ const groupFill = (color: string | null): string =>
         ? PROJECT_HEX[color as ProjectColor]
         : 'var(--color-value)';
 
+// Texto blanco o negro según la luminancia del fondo (fórmula YIQ).
+const contrastText = (hex: string): string => {
+    if (!/^#[0-9a-f]{6}$/i.test(hex)) return '#ffffff';
+
+    const r = parseInt(hex.slice(1, 3), 16);
+    const g = parseInt(hex.slice(3, 5), 16);
+    const b = parseInt(hex.slice(5, 7), 16);
+    const yiq = (r * 299 + g * 587 + b * 114) / 1000;
+
+    return yiq >= 150 ? '#000000' : '#ffffff';
+};
+
 export const initials = (name: string): string =>
     name
         .split(' ')
@@ -66,9 +85,17 @@ const Sparkline = ({ data, color }: { data: SeriesPoint[]; color: string }) => {
     return (
         <ChartContainer config={config} className="h-16 w-full">
             <AreaChart
-                data={data.map((p) => ({ count: p.count }))}
+                data={data.map((p) => ({
+                    label: monthLabel(p.key),
+                    count: p.count,
+                }))}
                 margin={{ top: 4, left: 0, right: 0, bottom: 0 }}
             >
+                <XAxis dataKey="label" hide />
+                <ChartTooltip
+                    cursor={{ strokeDasharray: '3 3' }}
+                    content={<ChartTooltipContent />}
+                />
                 <Area
                     dataKey="count"
                     type="monotone"
@@ -110,66 +137,6 @@ export const Kpi = ({
             <Sparkline data={series} color={color} />
         )}
     </Card>
-);
-
-// Área con degradado para series mensuales.
-export const AreaSeries = ({
-    id,
-    data,
-    config,
-    labelOf,
-}: {
-    id: string;
-    data: SeriesPoint[];
-    config: ChartConfig;
-    labelOf: (key: string) => string;
-}) => (
-    <ChartContainer config={config} className="h-72 w-full">
-        <AreaChart
-            data={data.map((p) => ({ label: labelOf(p.key), count: p.count }))}
-            margin={{ top: 8, left: 0, right: 8 }}
-        >
-            <defs>
-                <linearGradient id={id} x1="0" y1="0" x2="0" y2="1">
-                    <stop
-                        offset="0%"
-                        stopColor="var(--color-count)"
-                        stopOpacity={0.35}
-                    />
-                    <stop
-                        offset="100%"
-                        stopColor="var(--color-count)"
-                        stopOpacity={0}
-                    />
-                </linearGradient>
-            </defs>
-            <CartesianGrid vertical={false} strokeDasharray="3 3" />
-            <XAxis
-                dataKey="label"
-                tickLine={false}
-                axisLine={false}
-                tickMargin={8}
-                minTickGap={12}
-            />
-            <YAxis
-                allowDecimals={false}
-                width={32}
-                tickLine={false}
-                axisLine={false}
-            />
-            <ChartTooltip
-                cursor={{ strokeDasharray: '3 3' }}
-                content={<ChartTooltipContent />}
-            />
-            <Area
-                type="monotone"
-                dataKey="count"
-                stroke="var(--color-count)"
-                strokeWidth={2.5}
-                fill={`url(#${id})`}
-            />
-        </AreaChart>
-    </ChartContainer>
 );
 
 // Barras verticales redondeadas con el valor encima (trimestre, año).
@@ -222,6 +189,68 @@ export const BarSeries = ({
     </ChartContainer>
 );
 
+// Barras horizontales apiladas: una fila por participante, un segmento de
+// color por proyecto. Sustituye al ranking + selector de proyecto.
+export const StackedHorizontalBars = ({
+    rows,
+    projects,
+}: {
+    rows: UserParticipationSummary['rows'];
+    projects: UserParticipationSummary['projects'];
+}) => {
+    const config = Object.fromEntries(
+        projects.map((p) => [
+            p.id,
+            { label: p.name, color: groupFill(p.color) },
+        ]),
+    ) satisfies ChartConfig;
+
+    const data = rows.map((row) => ({
+        label: row.puntoVuela ?? 'Sin Punto Vuela',
+        ...row.byProject,
+    }));
+
+    return (
+        <ChartContainer
+            config={config}
+            className="w-full"
+            style={{ height: Math.min(480, Math.max(160, rows.length * 40)) }}
+        >
+            <BarChart data={data} layout="vertical" margin={{ left: 8, right: 16 }}>
+                <XAxis type="number" hide allowDecimals={false} />
+                <YAxis
+                    dataKey="label"
+                    type="category"
+                    width={140}
+                    tickLine={false}
+                    axisLine={false}
+                />
+                <ChartTooltip
+                    cursor={{ fill: 'var(--muted)' }}
+                    content={<ChartTooltipContent />}
+                />
+                <ChartLegend content={<ChartLegendContent />} />
+                {projects.map((p) => (
+                    <Bar
+                        key={p.id}
+                        dataKey={p.id}
+                        name={p.name}
+                        stackId="participations"
+                        fill={groupFill(p.color)}
+                    >
+                        <LabelList
+                            dataKey={p.id}
+                            position="center"
+                            fontSize={12}
+                            fill={contrastText(groupFill(p.color))}
+                        />
+                    </Bar>
+                ))}
+            </BarChart>
+        </ChartContainer>
+    );
+};
+
 interface NamedGroup {
     id: string;
     name: string;
@@ -234,15 +263,17 @@ export const HorizontalBars = <T extends NamedGroup>({
     data,
     metric,
     config,
+    maxHeight = 288,
 }: {
     data: T[];
     metric: keyof Omit<T, 'id' | 'name' | 'color'>;
     config: ChartConfig;
+    maxHeight?: number;
 }) => (
     <ChartContainer
         config={config}
         className="w-full"
-        style={{ height: Math.min(288, Math.max(120, data.length * 44)) }}
+        style={{ height: Math.min(maxHeight, Math.max(120, data.length * 44)) }}
     >
         <BarChart
             data={data.map((g) => ({ label: g.name, value: Number(g[metric]) }))}
@@ -261,7 +292,12 @@ export const HorizontalBars = <T extends NamedGroup>({
                 cursor={{ fill: 'var(--muted)' }}
                 content={<ChartTooltipContent />}
             />
-            <Bar dataKey="value" radius={[0, 6, 6, 0]} barSize={14}>
+            <Bar
+                dataKey="value"
+                radius={[0, 6, 6, 0]}
+                barSize={14}
+                minPointSize={3}
+            >
                 {data.map((g) => (
                     <Cell key={g.id} fill={groupFill(g.color)} />
                 ))}

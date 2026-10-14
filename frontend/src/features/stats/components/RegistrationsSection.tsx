@@ -1,16 +1,11 @@
 import { ChartCard } from '@/features/stats/components/ChartCard';
 import {
-    AreaSeries,
+    BarSeries,
     countConfig,
     HorizontalBars,
-    RankList,
     valueConfig,
 } from '@/features/stats/components/StatsChartKit';
-import {
-    formatStatsDate,
-    monthLabel,
-    type StatsSummary,
-} from '@/features/stats/lib/stats';
+import { monthLabel, type StatsSummary } from '@/features/stats/lib/stats';
 import type { SectionId } from '@/features/stats/lib/sections';
 
 interface RegistrationsSectionProps {
@@ -28,8 +23,7 @@ export const RegistrationsSection = ({
                 title="Inscripciones por mes"
                 empty={stats.registrationsByMonth.length === 0}
             >
-                <AreaSeries
-                    id="grad-reg-month"
+                <BarSeries
                     data={stats.registrationsByMonth}
                     config={countConfig('Inscripciones', 'var(--chart-2)')}
                     labelOf={monthLabel}
@@ -46,22 +40,6 @@ export const RegistrationsSection = ({
                     data={stats.registrationsByProject}
                     metric="registrations"
                     config={valueConfig('Inscripciones', 'var(--chart-2)')}
-                />
-            </ChartCard>
-        )}
-
-        {section === 'reg-top-events' && (
-            <ChartCard
-                title="Eventos con más inscritos"
-                empty={stats.topEvents.length === 0}
-            >
-                <RankList
-                    rows={stats.topEvents.map((e) => ({
-                        id: e.id,
-                        title: e.title,
-                        meta: formatStatsDate(e.startsAt),
-                        value: String(e.registrations),
-                    }))}
                 />
             </ChartCard>
         )}

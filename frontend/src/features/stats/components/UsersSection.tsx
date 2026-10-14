@@ -1,8 +1,6 @@
 import { ChartCard } from '@/features/stats/components/ChartCard';
 import {
     HorizontalBars,
-    initials,
-    RankList,
     valueConfig,
 } from '@/features/stats/components/StatsChartKit';
 import type { StatsSummary } from '@/features/stats/lib/stats';
@@ -17,21 +15,22 @@ export const UsersSection = ({ section, stats }: UsersSectionProps) => (
     <>
         {section === 'users-top' && (
             <ChartCard
-                title="Usuarios más activos"
+                title="Participantes más activos"
                 description="Por número de inscripciones."
                 empty={stats.topUsers.length === 0}
             >
-                <RankList
-                    rows={stats.topUsers.map((u) => ({
+                <HorizontalBars
+                    data={stats.topUsers.map((u) => ({
                         id: u.id,
-                        title: u.name,
-                        meta: u.puntoVuela ?? 'Sin Punto Vuela',
-                        value: String(u.registrations),
-                        leading: initials(u.name),
+                        name: u.puntoVuela ?? 'Sin Punto Vuela',
+                        color: null,
+                        registrations: u.registrations,
                     }))}
+                    metric="registrations"
+                    config={valueConfig('Inscripciones', 'var(--brand-yellow)')}
                 />
                 <p className="mt-4 text-sm text-muted-foreground">
-                    Usuarios activos sin ninguna inscripción:{' '}
+                    Participantes activos sin ninguna inscripción:{' '}
                     <strong className="text-foreground">
                         {stats.usersWithoutRegistrations}
                     </strong>
@@ -41,32 +40,34 @@ export const UsersSection = ({ section, stats }: UsersSectionProps) => (
 
         {section === 'users-all' && (
             <ChartCard
-                title="Todos los usuarios"
+                title="Todos los participantes"
                 description="Ranking completo por número de inscripciones."
                 empty={stats.registrationsByUser.length === 0}
             >
-                <RankList
-                    rows={stats.registrationsByUser.map((u) => ({
+                <HorizontalBars
+                    data={stats.registrationsByUser.map((u) => ({
                         id: u.id,
-                        title: u.name,
-                        meta: u.puntoVuela ?? 'Sin Punto Vuela',
-                        value: String(u.registrations),
-                        leading: initials(u.name),
+                        name: u.puntoVuela ?? 'Sin Punto Vuela',
+                        color: null,
+                        registrations: u.registrations,
                     }))}
+                    metric="registrations"
+                    maxHeight={Infinity}
+                    config={valueConfig('Inscripciones', 'var(--brand-yellow)')}
                 />
             </ChartCard>
         )}
 
         {section === 'users-interest-project' && (
             <ChartCard
-                title="Usuarios por proyecto"
-                description="Usuarios AIL activos que marcaron cada proyecto como interés."
+                title="Participantes por proyecto"
+                description="Participantes AIL activos que marcaron cada proyecto como interés."
                 empty={stats.interestByProject.length === 0}
             >
                 <HorizontalBars
                     data={stats.interestByProject}
                     metric="interestedUsers"
-                    config={valueConfig('Usuarios', 'var(--chart-3)')}
+                    config={valueConfig('Participantes', 'var(--chart-3)')}
                 />
             </ChartCard>
         )}

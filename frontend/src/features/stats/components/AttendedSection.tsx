@@ -1,6 +1,5 @@
 import { ChartCard } from '@/features/stats/components/ChartCard';
 import {
-    AreaSeries,
     BarSeries,
     countConfig,
     HorizontalBars,
@@ -25,8 +24,7 @@ export const AttendedSection = ({ section, stats }: AttendedSectionProps) => (
                 title="Atendidos por mes"
                 empty={stats.attendedByMonth.length === 0}
             >
-                <AreaSeries
-                    id="grad-attended-month"
+                <BarSeries
                     data={stats.attendedByMonth}
                     config={countConfig('Atendidos', 'var(--chart-3)')}
                     labelOf={monthLabel}

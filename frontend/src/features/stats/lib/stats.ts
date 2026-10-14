@@ -21,27 +21,44 @@ export interface ProjectInterestGroup {
     interestedUsers: number;
 }
 
+export interface ProjectParticipation {
+    id: string;
+    name: string;
+    color: string | null;
+    users: {
+        id: string;
+        name: string;
+        puntoVuela: string | null;
+        registrations: number;
+    }[];
+}
+
+export interface UserParticipationSummary {
+    projects: { id: string; name: string; color: string | null }[];
+    rows: {
+        id: string;
+        puntoVuela: string | null;
+        total: number;
+        byProject: Record<string, number>;
+    }[];
+}
+
 export interface StatsSummary {
+    availableYears: number[];
     totals: { events: number; registrations: number; attended: number };
     eventsByStatus: { past: number; ongoing: number; future: number };
     eventsByMonth: SeriesPoint[];
     eventsByQuarter: SeriesPoint[];
     eventsByYear: SeriesPoint[];
     eventsByProject: StatsGroup[];
-    eventsByGuide: StatsGroup[];
     registrationsByMonth: SeriesPoint[];
     registrationsByProject: StatsGroup[];
-    topEvents: {
-        id: string;
-        title: string;
-        startsAt: string;
-        registrations: number;
-    }[];
     occupancy: {
         eventsWithCapacity: number;
         averageRate: number | null;
         fullEvents: number;
     };
+    occupancyByMonth: SeriesPoint[];
     occupancyEvents: {
         id: string;
         title: string;
@@ -62,6 +79,8 @@ export interface StatsSummary {
         puntoVuela: string | null;
         registrations: number;
     }[];
+    participationsByProject: ProjectParticipation[];
+    participationsByUser: UserParticipationSummary;
     attendedByMonth: SeriesPoint[];
     attendedByQuarter: SeriesPoint[];
     attendedByYear: SeriesPoint[];
@@ -73,7 +92,10 @@ export interface StatsSummary {
     };
 }
 
-export const getStats = () => api.get<StatsSummary>('/stats');
+export const getStats = (year: number | null) =>
+    api.get<StatsSummary>(
+        year === null ? '/stats' : `/stats?year=${year}`,
+    );
 
 const dateFormat = new Intl.DateTimeFormat('es-ES', {
     day: 'numeric',

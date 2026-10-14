@@ -18,7 +18,7 @@ export const OccupancySection = ({
 }: OccupancySectionProps) => (
     <ChartCard
         title="Ocupación"
-        description="Inscritos frente al aforo, de más a menos llenos."
+        description="Inscritos frente al aforo, primero los que antes finalizan."
         empty={stats.occupancyEvents.length === 0}
     >
         <div className="grid min-w-0 grid-cols-1 gap-6">

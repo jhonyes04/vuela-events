@@ -9,26 +9,30 @@ export const SECTIONS = [
         group: 'Eventos',
     },
     { id: 'events-project', label: 'Por proyecto', group: 'Eventos' },
-    { id: 'events-guide', label: 'Por guía', group: 'Eventos' },
     { id: 'reg-month', label: 'Inscripciones por mes', group: 'Inscripciones' },
     {
         id: 'reg-project',
         label: 'Inscripciones por proyecto',
         group: 'Inscripciones',
     },
-    {
-        id: 'reg-top-events',
-        label: 'Eventos con más inscritos',
-        group: 'Inscripciones',
-    },
     { id: 'occupancy', label: 'Ocupación', group: 'Ocupación' },
-    { id: 'users-top', label: 'Usuarios más activos', group: 'Usuarios' },
-    { id: 'users-all', label: 'Todos los usuarios', group: 'Usuarios' },
+    { id: 'users-all', label: 'Todos los participantes', group: 'Participantes' },
     {
         id: 'users-interest-project',
-        label: 'Usuarios por proyecto',
-        group: 'Usuarios',
+        label: 'Participantes por proyecto',
+        group: 'Participantes',
     },
+    {
+        id: 'project-participants',
+        label: 'Participantes inscritos por proyecto',
+        group: 'Participantes',
+    },
+    {
+        id: 'project-user-participations',
+        label: 'Participaciones por participante',
+        group: 'Participantes',
+    },
+    { id: 'users-top', label: 'Participantes más activos', group: 'Participantes' },
     { id: 'attended-month', label: 'Atendidos por mes', group: 'Atendidos' },
     {
         id: 'attended-quarter',
@@ -50,11 +54,11 @@ export const SECTIONS = [
 ] as const;
 
 export const GROUP_ORDER = [
+    'Atendidos',
     'Eventos',
     'Inscripciones',
     'Ocupación',
-    'Usuarios',
-    'Atendidos',
+    'Participantes',
     'Pendientes',
 ] as const;
 

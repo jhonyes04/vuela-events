@@ -64,13 +64,6 @@ interface OccupancyRow {
     fullEvents: number;
 }
 
-interface TopEventRow {
-    id: string;
-    title: string;
-    startsAt: Date;
-    registrations: number;
-}
-
 interface OccupancyEventRow {
     id: string;
     title: string;
@@ -83,6 +76,17 @@ interface FinishedEventRow {
     id: string;
     title: string;
     startsAt: Date;
+}
+
+interface ParticipationRow {
+    projectId: string;
+    projectName: string;
+    projectColor: string | null;
+    userId: string;
+    name: string;
+    lastName: string;
+    puntoVuela: string | null;
+    registrations: number;
 }
 
 // Cuenta de inscripciones por evento, reutilizada por cada consulta agregada.
@@ -98,15 +102,33 @@ const regCountsCte = Prisma.sql`
     )
 `;
 
-export const getStats = async (now: Date = new Date()) => {
+export const getStats = async (
+    now: Date = new Date(),
+    year: number | null = null,
+) => {
+    // Mismo criterio de zona horaria que el resto del fichero: el año se
+    // calcula en hora de Madrid, no en UTC.
+    const yearFilter =
+        year === null
+            ? Prisma.sql`true`
+            : Prisma.sql`to_char(e."startsAt" AT TIME ZONE 'UTC' AT TIME ZONE 'Europe/Madrid', 'YYYY') = ${String(year)}`;
+
+    const yearRows = await prisma.$queryRaw<{ year: number }[]>`
+        SELECT DISTINCT
+            to_char("startsAt" AT TIME ZONE 'UTC' AT TIME ZONE 'Europe/Madrid', 'YYYY')::int AS year
+        FROM events
+        ORDER BY year DESC
+    `;
+    const availableYears = yearRows.map((row) => row.year);
+
     const totalsRows = await prisma.$queryRaw<TotalsRow[]>`
         SELECT
-            (SELECT count(*)::int FROM events) AS "eventsTotal",
-            (SELECT count(*)::int FROM registrations) AS "registrationsTotal",
-            (SELECT coalesce(sum("participantsCount"), 0)::int FROM events) AS "attendedTotal",
-            (SELECT count(*)::int FROM events WHERE "endsAt" <= ${now}) AS "past",
-            (SELECT count(*)::int FROM events WHERE "startsAt" <= ${now} AND "endsAt" > ${now}) AS "ongoing",
-            (SELECT count(*)::int FROM events WHERE "startsAt" > ${now}) AS "future"
+            (SELECT count(*)::int FROM events e WHERE ${yearFilter}) AS "eventsTotal",
+            (SELECT count(*)::int FROM registrations r JOIN events e ON e.id = r."eventId" WHERE ${yearFilter}) AS "registrationsTotal",
+            (SELECT coalesce(sum(e."participantsCount"), 0)::int FROM events e WHERE ${yearFilter}) AS "attendedTotal",
+            (SELECT count(*)::int FROM events e WHERE e."endsAt" <= ${now} AND ${yearFilter}) AS "past",
+            (SELECT count(*)::int FROM events e WHERE e."startsAt" <= ${now} AND e."endsAt" > ${now} AND ${yearFilter}) AS "ongoing",
+            (SELECT count(*)::int FROM events e WHERE e."startsAt" > ${now} AND ${yearFilter}) AS "future"
     `;
     // Agregado puro sin GROUP BY: devuelve siempre exactamente una fila.
     const totalsRow = totalsRows[0]!;
@@ -120,6 +142,7 @@ export const getStats = async (now: Date = new Date()) => {
             coalesce(sum(e."participantsCount"), 0)::int AS attended
         FROM events e
         LEFT JOIN reg_counts rc ON rc."eventId" = e.id
+        WHERE ${yearFilter}
         GROUP BY 1
         ORDER BY 1
     `;
@@ -146,41 +169,14 @@ export const getStats = async (now: Date = new Date()) => {
             c.id,
             c.name,
             c.color,
-            count(*)::int AS events,
+            count(e.id)::int AS events,
             coalesce(sum(rc.cnt), 0)::int AS registrations,
             coalesce(sum(e."participantsCount"), 0)::int AS attended
-        FROM events e
-        JOIN projects c ON c.id = e."projectId"
+        FROM projects c
+        LEFT JOIN events e ON e."projectId" = c.id AND ${yearFilter}
         LEFT JOIN reg_counts rc ON rc."eventId" = e.id
         GROUP BY c.id, c.name, c.color
         ORDER BY events DESC
-    `;
-
-    const byGuide = await prisma.$queryRaw<Group[]>`
-        ${regCountsCte}
-        SELECT
-            g.id,
-            g.name,
-            NULL AS color,
-            count(*)::int AS events,
-            coalesce(sum(rc.cnt), 0)::int AS registrations,
-            coalesce(sum(e."participantsCount"), 0)::int AS attended
-        FROM events e
-        JOIN projects p ON p.id = e."projectId"
-        JOIN project_guides pg ON pg."projectId" = p.id
-        JOIN guides g ON g.id = pg."guideId"
-        LEFT JOIN reg_counts rc ON rc."eventId" = e.id
-        GROUP BY g.id, g.name
-        ORDER BY events DESC
-    `;
-
-    const topEventRows = await prisma.$queryRaw<TopEventRow[]>`
-        ${regCountsCte}
-        SELECT e.id, e.title, e."startsAt", coalesce(rc.cnt, 0)::int AS registrations
-        FROM events e
-        LEFT JOIN reg_counts rc ON rc."eventId" = e.id
-        ORDER BY registrations DESC, e."startsAt" DESC
-        LIMIT 10
     `;
 
     const occupancyRows = await prisma.$queryRaw<OccupancyRow[]>`
@@ -191,17 +187,36 @@ export const getStats = async (now: Date = new Date()) => {
             count(*) FILTER (WHERE coalesce(rc.cnt, 0) >= e.capacity)::int AS "fullEvents"
         FROM events e
         LEFT JOIN reg_counts rc ON rc."eventId" = e.id
-        WHERE e.capacity IS NOT NULL AND e.capacity > 0
+        WHERE e.capacity IS NOT NULL AND e.capacity > 0 AND ${yearFilter}
     `;
     const occupancyRow = occupancyRows[0]!;
+
+    const occupancyMonthRows = await prisma.$queryRaw<
+        { month: string; avgRate: number | null }[]
+    >`
+        ${regCountsCte}
+        SELECT
+            to_char(e."startsAt" AT TIME ZONE 'UTC' AT TIME ZONE 'Europe/Madrid', 'YYYY-MM') AS month,
+            avg(coalesce(rc.cnt, 0)::float8 / e.capacity) AS "avgRate"
+        FROM events e
+        LEFT JOIN reg_counts rc ON rc."eventId" = e.id
+        WHERE e.capacity IS NOT NULL AND e.capacity > 0 AND ${yearFilter}
+        GROUP BY 1
+        ORDER BY 1
+    `;
+
+    const occupancyByMonth = occupancyMonthRows.map((row) => ({
+        key: row.month,
+        count: row.avgRate === null ? 0 : percent(row.avgRate),
+    }));
 
     const occupancyEventRows = await prisma.$queryRaw<OccupancyEventRow[]>`
         ${regCountsCte}
         SELECT e.id, e.title, e."startsAt", coalesce(rc.cnt, 0)::int AS registrations, e.capacity
         FROM events e
         LEFT JOIN reg_counts rc ON rc."eventId" = e.id
-        WHERE e.capacity IS NOT NULL AND e.capacity > 0
-        ORDER BY (coalesce(rc.cnt, 0)::float8 / e.capacity) DESC
+        WHERE e.capacity IS NOT NULL AND e.capacity > 0 AND e."endsAt" > ${now} AND ${yearFilter}
+        ORDER BY e."endsAt" ASC
         LIMIT 10
     `;
 
@@ -209,8 +224,8 @@ export const getStats = async (now: Date = new Date()) => {
         { count: number }[]
     >`
         SELECT count(*)::int AS count
-        FROM events
-        WHERE "endsAt" <= ${now} AND "participantsCount" IS NULL
+        FROM events e
+        WHERE e."endsAt" <= ${now} AND e."participantsCount" IS NULL AND ${yearFilter}
     `;
     const finishedWithoutAttendedCount =
         finishedWithoutAttendedCountRows[0]!.count;
@@ -218,40 +233,56 @@ export const getStats = async (now: Date = new Date()) => {
     const finishedWithoutAttendedRows = await prisma.$queryRaw<
         FinishedEventRow[]
     >`
-        SELECT id, title, "startsAt"
-        FROM events
-        WHERE "endsAt" <= ${now} AND "participantsCount" IS NULL
-        ORDER BY "startsAt" DESC
+        SELECT e.id, e.title, e."startsAt"
+        FROM events e
+        WHERE e."endsAt" <= ${now} AND e."participantsCount" IS NULL AND ${yearFilter}
+        ORDER BY e."startsAt" DESC
         LIMIT 20
     `;
 
-    const registrationGroups = await prisma.registration.groupBy({
-        by: ['userId'],
-        where: { user: { roleId: 'ail' } },
-        _count: { userId: true },
-        orderBy: { _count: { userId: 'desc' } },
-        take: 10,
-    });
+    const registrationGroupRows = await prisma.$queryRaw<
+        { userId: string; cnt: number }[]
+    >`
+        SELECT r."userId", count(*)::int AS cnt
+        FROM registrations r
+        JOIN users u ON u.id = r."userId"
+        JOIN events e ON e.id = r."eventId"
+        WHERE u."roleId" = 'ail' AND ${yearFilter}
+        GROUP BY r."userId"
+        ORDER BY cnt DESC
+        LIMIT 10
+    `;
 
     const topUserRows = await prisma.user.findMany({
-        where: { id: { in: registrationGroups.map((g) => g.userId) } },
+        where: { id: { in: registrationGroupRows.map((g) => g.userId) } },
         select: { id: true, name: true, lastName: true, puntoVuela: true },
     });
 
-    const topUsers = registrationGroups.map((group) => {
+    const topUsers = registrationGroupRows.map((group) => {
         const user = topUserRows.find((row) => row.id === group.userId);
 
         return {
             id: group.userId,
             name: user ? `${user.name} ${user.lastName}`.trim() : '—',
             puntoVuela: user?.puntoVuela ?? null,
-            registrations: group._count.userId,
+            registrations: group.cnt,
         };
     });
 
-    const usersWithoutRegistrations = await prisma.user.count({
-        where: { active: true, roleId: 'ail', registrations: { none: {} } },
-    });
+    const usersWithoutRegistrationsRows = await prisma.$queryRaw<
+        { count: number }[]
+    >`
+        SELECT count(*)::int AS count
+        FROM users u
+        WHERE u.active = true AND u."roleId" = 'ail'
+        AND NOT EXISTS (
+            SELECT 1
+            FROM registrations r
+            JOIN events e ON e.id = r."eventId"
+            WHERE r."userId" = u.id AND ${yearFilter}
+        )
+    `;
+    const usersWithoutRegistrations = usersWithoutRegistrationsRows[0]!.count;
 
     const registrationsByUserRows = await prisma.$queryRaw<
         {
@@ -270,9 +301,11 @@ export const getStats = async (now: Date = new Date()) => {
             coalesce(rc.cnt, 0)::int AS registrations
         FROM users u
         LEFT JOIN (
-            SELECT "userId", count(*)::int AS cnt
-            FROM registrations
-            GROUP BY "userId"
+            SELECT r."userId", count(*)::int AS cnt
+            FROM registrations r
+            JOIN events e ON e.id = r."eventId"
+            WHERE ${yearFilter}
+            GROUP BY r."userId"
         ) rc ON rc."userId" = u.id
         WHERE u.active = true AND u."roleId" = 'ail'
         ORDER BY registrations DESC, u.name ASC, u."lastName" ASC
@@ -284,6 +317,115 @@ export const getStats = async (now: Date = new Date()) => {
         puntoVuela: row.puntoVuela,
         registrations: row.registrations,
     }));
+
+    const participationsByProjectRows = await prisma.$queryRaw<
+        ParticipationRow[]
+    >`
+        SELECT
+            p.id AS "projectId",
+            p.name AS "projectName",
+            p.color AS "projectColor",
+            u.id AS "userId",
+            u.name,
+            u."lastName",
+            u."puntoVuela",
+            count(*)::int AS registrations
+        FROM registrations r
+        JOIN users u ON u.id = r."userId"
+        JOIN events e ON e.id = r."eventId"
+        JOIN projects p ON p.id = e."projectId"
+        WHERE u.active = true AND u."roleId" = 'ail' AND ${yearFilter}
+        GROUP BY p.id, p.name, p.color, u.id, u.name, u."lastName", u."puntoVuela"
+        ORDER BY p.name ASC, registrations DESC, u.name ASC, u."lastName" ASC
+    `;
+
+    const participationsByProjectMap = new Map<
+        string,
+        {
+            id: string;
+            name: string;
+            color: string | null;
+            users: {
+                id: string;
+                name: string;
+                puntoVuela: string | null;
+                registrations: number;
+            }[];
+        }
+    >();
+
+    for (const project of byProject) {
+        participationsByProjectMap.set(project.id, {
+            id: project.id,
+            name: project.name,
+            color: project.color,
+            users: [],
+        });
+    }
+
+    for (const row of participationsByProjectRows) {
+        if (!participationsByProjectMap.has(row.projectId)) {
+            participationsByProjectMap.set(row.projectId, {
+                id: row.projectId,
+                name: row.projectName,
+                color: row.projectColor,
+                users: [],
+            });
+        }
+
+        participationsByProjectMap.get(row.projectId)!.users.push({
+            id: row.userId,
+            name: `${row.name} ${row.lastName}`.trim(),
+            puntoVuela: row.puntoVuela,
+            registrations: row.registrations,
+        });
+    }
+
+    const participationsByProject = [
+        ...participationsByProjectMap.values(),
+    ].sort(
+        (a, b) =>
+            b.users.length - a.users.length || a.name.localeCompare(b.name),
+    );
+
+    const participationsByUserMap = new Map<
+        string,
+        {
+            id: string;
+            puntoVuela: string | null;
+            total: number;
+            byProject: Record<string, number>;
+        }
+    >();
+
+    for (const row of participationsByProjectRows) {
+        if (!participationsByUserMap.has(row.userId)) {
+            participationsByUserMap.set(row.userId, {
+                id: row.userId,
+                puntoVuela: row.puntoVuela,
+                total: 0,
+                byProject: {},
+            });
+        }
+
+        const entry = participationsByUserMap.get(row.userId)!;
+
+        entry.byProject[row.projectId] = row.registrations;
+        entry.total += row.registrations;
+    }
+
+    const participationsByUser = {
+        projects: participationsByProject.map((p) => ({
+            id: p.id,
+            name: p.name,
+            color: p.color,
+        })),
+        rows: [...participationsByUserMap.values()].sort(
+            (a, b) =>
+                b.total - a.total ||
+                (a.puntoVuela ?? '').localeCompare(b.puntoVuela ?? ''),
+        ),
+    };
 
     const interestByProject = (await listProjectInterestedUsers())
         .map((project) => ({
@@ -299,6 +441,7 @@ export const getStats = async (now: Date = new Date()) => {
         );
 
     return {
+        availableYears,
         totals: {
             events: totalsRow.eventsTotal,
             registrations: totalsRow.registrationsTotal,
@@ -313,10 +456,8 @@ export const getStats = async (now: Date = new Date()) => {
         eventsByQuarter: eventsRollup.byQuarter,
         eventsByYear: eventsRollup.byYear,
         eventsByProject: byProject,
-        eventsByGuide: byGuide,
         registrationsByMonth,
         registrationsByProject: byProject,
-        topEvents: topEventRows,
         occupancy: {
             eventsWithCapacity: occupancyRow.eventsWithCapacity,
             averageRate:
@@ -325,10 +466,13 @@ export const getStats = async (now: Date = new Date()) => {
                     : percent(occupancyRow.avgRate),
             fullEvents: occupancyRow.fullEvents,
         },
+        occupancyByMonth,
         occupancyEvents: occupancyEventRows,
         topUsers,
         usersWithoutRegistrations,
         registrationsByUser,
+        participationsByProject,
+        participationsByUser,
         attendedByMonth,
         attendedByProject: byProject,
         attendedByQuarter: attendedRollup.byQuarter,

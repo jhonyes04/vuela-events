@@ -7,6 +7,7 @@ import { EventsSection } from '@/features/stats/components/EventsSection';
 import { RegistrationsSection } from '@/features/stats/components/RegistrationsSection';
 import { OccupancySection } from '@/features/stats/components/OccupancySection';
 import { UsersSection } from '@/features/stats/components/UsersSection';
+import { ProjectsSection } from '@/features/stats/components/ProjectsSection';
 import { AttendedSection } from '@/features/stats/components/AttendedSection';
 import { PendingSection } from '@/features/stats/components/PendingSection';
 import { getStats, type StatsSummary } from '@/features/stats/lib/stats';
@@ -21,8 +22,12 @@ import { PageTitle } from '@/components/PageTitle';
 export const StatsPage = () => {
     const [stats, setStats] = useState<StatsSummary | null>(null);
     const [failed, setFailed] = useState(false);
-    const [group, setGroup] = useState<GroupId>('Eventos');
-    const [section, setSection] = useState<SectionId>('events-month');
+    const [group, setGroup] = useState<GroupId>(GROUP_ORDER[0]);
+    const [section, setSection] = useState<SectionId>(
+        SECTIONS.find((s) => s.group === GROUP_ORDER[0])!.id,
+    );
+    const [yearId, setYearId] = useState('all');
+    const year = yearId === 'all' ? null : Number(yearId);
 
     const groupSections = SECTIONS.filter((s) => s.group === group);
 
@@ -35,14 +40,14 @@ export const StatsPage = () => {
         if (first) setSection(first.id);
     };
 
-    const loadStats = () =>
-        getStats()
+    const loadStats = (y: number | null) =>
+        getStats(y)
             .then(setStats)
             .catch(() => setFailed(true));
 
     useEffect(() => {
-        void loadStats();
-    }, []);
+        void loadStats(year);
+    }, [year]);
 
     if (failed) {
         return (
@@ -74,7 +79,32 @@ export const StatsPage = () => {
                         Eventos, inscripciones y personas atendidas.
                     </p>
                 </div>
-                <div className="grid w-full grid-cols-1 gap-3 sm:w-[28rem] sm:grid-cols-2">
+                <div className="grid w-full grid-cols-1 gap-3 sm:w-[min(44rem,100%)] sm:grid-cols-[8rem_10rem_1fr]">
+                    <div className="grid gap-1.5">
+                        <Label
+                            htmlFor="stats-year"
+                            className="text-xs font-medium text-muted-foreground"
+                        >
+                            Año
+                        </Label>
+                        <ComboboxField
+                            id="stats-year"
+                            className="w-full bg-card"
+                            items={[
+                                { id: 'all', label: 'Todos' },
+                                ...stats.availableYears.map((y) => ({
+                                    id: String(y),
+                                    label: String(y),
+                                })),
+                            ]}
+                            getValue={(y) => y.id}
+                            getLabel={(y) => y.label}
+                            value={yearId}
+                            onValueChange={setYearId}
+                            searchable={false}
+                        />
+                    </div>
+
                     <div className="grid gap-1.5">
                         <Label
                             htmlFor="stats-group"
@@ -141,7 +171,13 @@ export const StatsPage = () => {
                     series={stats.attendedByMonth}
                     color="var(--chart-3)"
                 />
-                <Kpi icon={Gauge} label="Ocupación media" value={averageRate} />
+                <Kpi
+                    icon={Gauge}
+                    label="Ocupación media"
+                    value={averageRate}
+                    series={stats.occupancyByMonth}
+                    color="var(--chart-4)"
+                />
             </div>
 
             <div className="grid min-w-0 grid-cols-1 gap-6">
@@ -154,8 +190,11 @@ export const StatsPage = () => {
                 {group === 'Ocupación' && (
                     <OccupancySection stats={stats} averageRate={averageRate} />
                 )}
-                {group === 'Usuarios' && (
-                    <UsersSection section={section} stats={stats} />
+                {group === 'Participantes' && (
+                    <>
+                        <UsersSection section={section} stats={stats} />
+                        <ProjectsSection section={section} stats={stats} />
+                    </>
                 )}
                 {group === 'Atendidos' && (
                     <AttendedSection section={section} stats={stats} />
@@ -163,7 +202,7 @@ export const StatsPage = () => {
                 {group === 'Pendientes' && (
                     <PendingSection
                         stats={stats}
-                        onSaved={() => void loadStats()}
+                        onSaved={() => void loadStats(year)}
                     />
                 )}
             </div>
