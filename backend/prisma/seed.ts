@@ -197,6 +197,34 @@ const main = async () => {
         });
     }
 
+    // Contenido creado antes de que existiera "createdById" se le asigna al
+    // admin más antiguo, para que quien solo tenga permiso "propios" pueda
+    // seguir gestionándolo (en producción todo lo había creado un admin).
+    const fallbackOwner = await prisma.user.findFirst({
+        where: { roleId: 'admin' },
+        orderBy: { createdAt: 'asc' },
+        select: { id: true },
+    });
+
+    if (fallbackOwner) {
+        await prisma.project.updateMany({
+            where: { createdById: null },
+            data: { createdById: fallbackOwner.id },
+        });
+        await prisma.guide.updateMany({
+            where: { createdById: null },
+            data: { createdById: fallbackOwner.id },
+        });
+        await prisma.document.updateMany({
+            where: { createdById: null },
+            data: { createdById: fallbackOwner.id },
+        });
+        await prisma.resourceLink.updateMany({
+            where: { createdById: null },
+            data: { createdById: fallbackOwner.id },
+        });
+    }
+
     console.log('Seed completado.');
 };
 
