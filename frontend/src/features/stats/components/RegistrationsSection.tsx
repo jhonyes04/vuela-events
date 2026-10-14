@@ -1,10 +1,9 @@
 import { ChartCard } from '@/features/stats/components/ChartCard';
 import {
     BarSeries,
-    countConfig,
     HorizontalBars,
-    valueConfig,
 } from '@/features/stats/components/StatsChartKit';
+import { countConfig, valueConfig } from '@/features/stats/lib/chartHelpers';
 import { monthLabel, type StatsSummary } from '@/features/stats/lib/stats';
 import type { SectionId } from '@/features/stats/lib/sections';
 

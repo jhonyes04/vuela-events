@@ -27,20 +27,13 @@ import {
     PROJECT_HEX,
     type ProjectColor,
 } from '@/features/projects/lib/colors';
+import { percentOf } from '@/features/stats/lib/chartHelpers';
 import { monthLabel } from '@/features/stats/lib/stats';
 import type {
     SeriesPoint,
     StatsSummary,
     UserParticipationSummary,
 } from '@/features/stats/lib/stats';
-
-export const countConfig = (label: string, color: string): ChartConfig => ({
-    count: { label, color },
-});
-
-export const valueConfig = (label: string, color: string): ChartConfig => ({
-    value: { label, color },
-});
 
 const STATUS_CONFIG = {
     past: { label: 'Finalizados', color: 'var(--chart-4)' },
@@ -65,18 +58,6 @@ const contrastText = (hex: string): string => {
 
     return yiq >= 150 ? '#000000' : '#ffffff';
 };
-
-export const initials = (name: string): string =>
-    name
-        .split(' ')
-        .filter(Boolean)
-        .slice(0, 2)
-        .map((part) => part[0])
-        .join('')
-        .toUpperCase();
-
-export const percentOf = (part: number, total: number): number =>
-    total === 0 ? 0 : Math.round((part / total) * 100);
 
 // Mini gráfica de fondo de cada KPI: la tendencia mensual.
 const Sparkline = ({ data, color }: { data: SeriesPoint[]; color: string }) => {
@@ -439,3 +420,111 @@ export const RankList = ({ rows }: { rows: RankRow[] }) => (
         ))}
     </ul>
 );
+
+interface OccupancyRow {
+    id: string;
+    title: string;
+    meta: string;
+    rate: number;
+}
+
+const OccupancyTick = ({
+    x = 0,
+    y = 0,
+    payload,
+    rows,
+}: {
+    x?: number | string;
+    y?: number | string;
+    payload?: { value?: string };
+    rows: OccupancyRow[];
+}) => {
+    const row = rows.find((r) => r.id === payload?.value);
+
+    if (!row) return null;
+
+    return (
+        <g transform={`translate(${x},${y})`}>
+            <text
+                x={-8}
+                y={-3}
+                textAnchor="end"
+                fontSize={12}
+                className="fill-foreground font-medium"
+            >
+                {row.title}
+            </text>
+            <text
+                x={-8}
+                y={11}
+                textAnchor="end"
+                fontSize={11}
+                className="fill-muted-foreground"
+            >
+                {row.meta}
+            </text>
+        </g>
+    );
+};
+
+// Barra horizontal de progreso: fondo = aforo completo, relleno = % ocupado.
+// Cada fila lleva evento + fecha/plazas en dos líneas, como el RankList.
+export const OccupancyBars = ({ rows }: { rows: OccupancyRow[] }) => {
+    const config = {
+        rate: { label: 'Ocupación', color: '#f59e0b' },
+    } satisfies ChartConfig;
+
+    return (
+        <ChartContainer
+            config={config}
+            className="w-full"
+            style={{ height: Math.max(140, rows.length * 52) }}
+        >
+            <BarChart
+                data={rows.map((r) => ({ id: r.id, rate: r.rate }))}
+                layout="vertical"
+                margin={{ left: 8, right: 40 }}
+            >
+                <XAxis
+                    type="number"
+                    domain={[0, (max: number) => Math.max(100, max)]}
+                    hide
+                />
+                <YAxis
+                    dataKey="id"
+                    type="category"
+                    width={190}
+                    tickLine={false}
+                    axisLine={false}
+                    tick={(props) => <OccupancyTick {...props} rows={rows} />}
+                />
+                <ChartTooltip
+                    cursor={false}
+                    content={
+                        <ChartTooltipContent
+                            labelFormatter={(id) =>
+                                rows.find((r) => r.id === id)?.title ?? ''
+                            }
+                        />
+                    }
+                />
+                <Bar
+                    dataKey="rate"
+                    fill="var(--color-rate)"
+                    radius={6}
+                    barSize={16}
+                    minPointSize={3}
+                    background={{ fill: 'var(--muted)', radius: 6 }}
+                >
+                    <LabelList
+                        dataKey="rate"
+                        position="right"
+                        formatter={(v) => `${v} %`}
+                        fontSize={12}
+                        className="fill-muted-foreground"
+                    />
+                </Bar>
+            </BarChart>
+        </ChartContainer>
+    );
+};

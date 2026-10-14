@@ -176,7 +176,7 @@ export const StatsPage = () => {
                     label="Ocupación media"
                     value={averageRate}
                     series={stats.occupancyByMonth}
-                    color="var(--chart-4)"
+                    color="#f59e0b"
                 />
             </div>
 
@@ -188,7 +188,7 @@ export const StatsPage = () => {
                     <RegistrationsSection section={section} stats={stats} />
                 )}
                 {group === 'Ocupación' && (
-                    <OccupancySection stats={stats} averageRate={averageRate} />
+                    <OccupancySection stats={stats} />
                 )}
                 {group === 'Participantes' && (
                     <>

@@ -1,11 +1,10 @@
 import { ChartCard } from '@/features/stats/components/ChartCard';
 import {
-    countConfig,
     HorizontalBars,
     StatusDonut,
     BarSeries,
-    valueConfig,
 } from '@/features/stats/components/StatsChartKit';
+import { countConfig, valueConfig } from '@/features/stats/lib/chartHelpers';
 import {
     monthLabel,
     quarterLabel,
