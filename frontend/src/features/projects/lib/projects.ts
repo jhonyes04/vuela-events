@@ -14,6 +14,7 @@ export interface Project {
     closingInstructions: string | null;
     color: ProjectColor;
     active: boolean;
+    createdById: string | null;
     guides: ProjectGuide[];
 }
 

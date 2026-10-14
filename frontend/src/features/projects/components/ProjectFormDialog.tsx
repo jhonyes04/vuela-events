@@ -59,10 +59,10 @@ const ProjectFormBody = ({
     const chipsAnchor = useComboboxAnchor();
     const [name, setName] = useState(project?.name ?? '');
     const [openingInstructions, setOpeningInstructions] = useState(
-        project?.openingInstructions ?? '',
+        project?.openingInstructions ?? EMPTY_EDITOR_HTML,
     );
     const [closingInstructions, setClosingInstructions] = useState(
-        project?.closingInstructions ?? '',
+        project?.closingInstructions ?? EMPTY_EDITOR_HTML,
     );
     const [color, setColor] = useState<ProjectColor>(
         project?.color ?? PROJECT_COLORS[0],

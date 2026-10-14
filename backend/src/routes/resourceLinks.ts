@@ -35,6 +35,7 @@ const updateResourceLinkSchema = z.strictObject({
 const resourceLinkManageErrors = {
     duplicate: [409, 'Ya existe un enlace con ese título'],
     not_found: [404, 'Enlace no encontrado'],
+    forbidden: [403, 'No puedes gestionar un enlace que no creaste'],
 } as const;
 
 export const resourceLinkRouter = Router();
@@ -47,7 +48,9 @@ resourceLinkRouter.get(
         'resources:view',
         'resources:create',
         'resources:edit',
+        'resources:edit:own',
         'resources:delete',
+        'resources:delete:own',
     ),
 
     async (_req, res) => {
@@ -98,7 +101,7 @@ resourceLinkRouter.post(
 
 resourceLinkRouter.patch(
     '/:id',
-    requirePermission('resources:edit'),
+    requirePermission('resources:edit', 'resources:edit:own'),
     async (req, res) => {
         const actor = req.user;
 
@@ -117,7 +120,7 @@ resourceLinkRouter.patch(
 
         try {
             const link = await updateResourceLink(
-                actor.id,
+                actor,
                 params.data.id,
                 body.data,
             );
@@ -138,7 +141,7 @@ resourceLinkRouter.patch(
 
 resourceLinkRouter.delete(
     '/:id',
-    requirePermission('resources:delete'),
+    requirePermission('resources:delete', 'resources:delete:own'),
     async (req, res) => {
         const actor = req.user;
 
@@ -155,7 +158,7 @@ resourceLinkRouter.delete(
         }
 
         try {
-            await deleteResourceLink(actor.id, params.data.id);
+            await deleteResourceLink(actor, params.data.id);
 
             res.status(204).end();
         } catch (e) {

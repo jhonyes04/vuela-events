@@ -13,6 +13,7 @@ import { EmailSettingsPage } from '@/features/emailSettings/pages/EmailSettingsP
 import { AuditPage } from '@/features/audit/pages/AuditPage';
 import { StatsPage } from '@/features/stats/pages/StatsPage';
 import { ResourcesPage } from '@/features/resources/pages/ResourcesPage';
+import { ResourcesManagementPage } from '@/features/resources/pages/ResourcesManagementPage';
 import { AppSettingsPage } from '@/features/appSettings/pages/AppSettingsPage';
 import { SessionsPage } from '@/features/sessions/pages/SessionsPage';
 
@@ -34,7 +35,9 @@ export const appRoutes: AppRoute[] = [
             'resources:view',
             'resources:create',
             'resources:edit',
+            'resources:edit:own',
             'resources:delete',
+            'resources:delete:own',
         ],
     },
     { path: '/perfil', label: 'Mi perfil', element: <ProfilePage /> },
@@ -58,6 +61,20 @@ export const appRoutes: AppRoute[] = [
         group: 'gestion',
     },
     {
+        path: '/gestion/recursos',
+        label: 'Recursos',
+        element: <ResourcesManagementPage />,
+        permissions: [
+            'resources:view',
+            'resources:create',
+            'resources:edit',
+            'resources:edit:own',
+            'resources:delete',
+            'resources:delete:own',
+        ],
+        group: 'gestion',
+    },
+    {
         path: '/gestion/proyectos',
         label: 'Proyectos',
         element: <ProjectsPage />,
@@ -65,17 +82,13 @@ export const appRoutes: AppRoute[] = [
             'projects:view',
             'projects:create',
             'projects:edit',
+            'projects:edit:own',
             'projects:delete',
+            'projects:delete:own',
         ],
         group: 'gestion',
     },
-    {
-        path: '/gestion/intereses',
-        label: 'Usuarios por proyecto',
-        element: <ProjectInterestsPage />,
-        permissions: ['projects:view'],
-        group: 'gestion',
-    },
+
     {
         path: '/gestion/guias',
         label: 'Guías',
@@ -84,8 +97,17 @@ export const appRoutes: AppRoute[] = [
             'guides:view',
             'guides:create',
             'guides:edit',
+            'guides:edit:own',
             'guides:delete',
+            'guides:delete:own',
         ],
+        group: 'gestion',
+    },
+    {
+        path: '/gestion/intereses',
+        label: 'Usuarios por proyecto',
+        element: <ProjectInterestsPage />,
+        permissions: ['projects:view'],
         group: 'gestion',
     },
     {

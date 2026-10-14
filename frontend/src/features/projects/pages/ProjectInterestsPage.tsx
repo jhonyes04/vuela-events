@@ -79,7 +79,7 @@ export const ProjectInterestsPage = () => {
 
     return (
         <section>
-            <PageTitle>Usuarios por proyecto</PageTitle>
+            <PageTitle icon={Users}>Usuarios por proyecto</PageTitle>
 
             <ListErrors
                 error={error}

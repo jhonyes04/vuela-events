@@ -1,4 +1,4 @@
-import { FileText, Link2 } from 'lucide-react';
+import { FileText, FolderOpen, Link2 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
 import { ResourceLinksTab } from '@/features/resources/components/ResourceLinksTab';
@@ -7,7 +7,7 @@ import { PageTitle } from '@/components/PageTitle';
 
 export const ResourcesPage = () => (
     <section>
-        <PageTitle>Recursos</PageTitle>
+        <PageTitle icon={FolderOpen}>Recursos</PageTitle>
 
         <Tabs defaultValue="enlaces">
             <TabsList className="flex h-auto w-full gap-2 bg-transparent p-0 sm:w-auto">

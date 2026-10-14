@@ -1,5 +1,5 @@
 import { useEffect, useState, type FormEvent } from 'react';
-import { CircleAlert } from 'lucide-react';
+import { CircleAlert, Settings } from 'lucide-react';
 import { toast } from 'sonner';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
@@ -126,7 +126,7 @@ export const EmailSettingsPage = () => {
     return (
         <section className="grid max-w-xl mx-auto gap-8">
             <div>
-                <PageTitle>Configuración de Correo</PageTitle>
+                <PageTitle icon={Settings}>Configuración de Correo</PageTitle>
 
                 {error && (
                     <Alert variant="destructive" className="mb-4">

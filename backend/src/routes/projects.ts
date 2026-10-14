@@ -46,6 +46,7 @@ const projectManageErrors = {
     not_found: [404, 'Proyecto no encontrado'],
     has_events: [409, 'No se puede eliminar: hay eventos con este proyecto'],
     guide_not_found: [400, 'Guía no válida'],
+    forbidden: [403, 'No puedes gestionar un proyecto que no creaste'],
 } as const;
 
 export const projectsRouter = Router();
@@ -58,7 +59,9 @@ projectsRouter.get(
         'projects:view',
         'projects:create',
         'projects:edit',
+        'projects:edit:own',
         'projects:delete',
+        'projects:delete:own',
         // El formulario de eventos necesita elegir proyecto.
         'events:create',
         'events:edit',
@@ -174,7 +177,7 @@ projectsRouter.post(
 
 projectsRouter.patch(
     '/:id',
-    requirePermission('projects:edit'),
+    requirePermission('projects:edit', 'projects:edit:own'),
     async (req, res) => {
         const actor = req.user;
 
@@ -193,7 +196,7 @@ projectsRouter.patch(
 
         try {
             const project = await updateProject(
-                actor.id,
+                actor,
                 params.data.id,
                 body.data,
             );
@@ -214,7 +217,7 @@ projectsRouter.patch(
 
 projectsRouter.delete(
     '/:id',
-    requirePermission('projects:delete'),
+    requirePermission('projects:delete', 'projects:delete:own'),
     async (req, res) => {
         const actor = req.user;
 
@@ -231,7 +234,7 @@ projectsRouter.delete(
         }
 
         try {
-            await deleteProject(actor.id, params.data.id);
+            await deleteProject(actor, params.data.id);
             res.status(204).end();
         } catch (e) {
             if (e instanceof ProjectManageError) {

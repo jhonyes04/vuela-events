@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { SlidersHorizontal } from 'lucide-react';
 import { PageTitle } from '@/components/PageTitle';
 import { ApiError } from '@/lib/api';
 import { useAuth } from '@/features/auth/hooks/context';
@@ -83,7 +84,7 @@ export const AppSettingsPage = () => {
 
     return (
         <section className="mx-auto grid w-full max-w-xl gap-6">
-            <PageTitle>Ajustes de la app</PageTitle>
+            <PageTitle icon={SlidersHorizontal}>Ajustes de la app</PageTitle>
 
             {user?.isSuperadmin && (
                 <div className="grid gap-4 rounded-xl border bg-card p-4 sm:p-6">

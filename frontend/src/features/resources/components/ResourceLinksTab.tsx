@@ -12,10 +12,21 @@ import {
     type ResourceLink,
 } from '@/features/resources/lib/resourceLinks';
 import { useResourceLinksStore } from '@/features/resources/store';
+import { canManageResource } from '@/lib/ownership';
 
 export const ResourceLinksTab = () => {
     const { user } = useAuth();
-    const canManage = user?.permissions.includes('resources:create') ?? false;
+    const canCreate = user?.permissions.includes('resources:create') ?? false;
+    const canManageAny =
+        canCreate ||
+        (user?.permissions.some((p) =>
+            [
+                'resources:edit',
+                'resources:edit:own',
+                'resources:delete',
+                'resources:delete:own',
+            ].includes(p),
+        ) ?? false);
     const links = useResourceLinksStore((s) => s.items);
     const loading = useResourceLinksStore((s) => s.loading);
     const error = useResourceLinksStore((s) => s.error);
@@ -44,12 +55,12 @@ export const ResourceLinksTab = () => {
     };
 
     // Quien no gestiona recursos no ve ni los inactivos ni los botones.
-    const visibleLinks = canManage ? links : links.filter((l) => l.active);
+    const visibleLinks = canManageAny ? links : links.filter((l) => l.active);
 
     return (
         <div>
             <div className="mb-4 flex flex-wrap items-center justify-end gap-3">
-                {canManage && (
+                {canCreate && (
                     <Button onClick={openCreate}>Nuevo enlace</Button>
                 )}
             </div>
@@ -70,45 +81,62 @@ export const ResourceLinksTab = () => {
                 </p>
             ) : (
                 <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                    {visibleLinks.map((link) => (
-                        <li
-                            key={link.id}
-                            className="flex flex-col gap-3 rounded-xl border bg-card p-4 sm:flex-row sm:items-center"
-                        >
-                            <div className="min-w-0 flex-1">
-                                <p className="truncate font-medium">
-                                    {link.title}
-                                </p>
-                                <a
-                                    href={link.url}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="flex items-center gap-1 truncate text-sm text-muted-foreground hover:underline"
-                                >
-                                    <ExternalLink className="size-3.5 shrink-0" />
-                                    <span className="truncate">
-                                        {link.url}
-                                    </span>
-                                </a>
-                            </div>
-                            <div className="flex flex-wrap items-center gap-2 sm:shrink-0">
-                                {!link.active && (
-                                    <Badge variant="secondary">
-                                        Inactivo
-                                    </Badge>
-                                )}
-                                {canManage && (
-                                    <>
+                    {visibleLinks.map((link) => {
+                        const canEditLink = canManageResource(
+                            user,
+                            link.createdById,
+                            'resources:edit',
+                            'resources:edit:own',
+                        );
+                        const canDeleteLink = canManageResource(
+                            user,
+                            link.createdById,
+                            'resources:delete',
+                            'resources:delete:own',
+                        );
+
+                        return (
+                            <li
+                                key={link.id}
+                                className="flex flex-col gap-3 rounded-xl border bg-card p-4 sm:flex-row sm:items-center"
+                            >
+                                <div className="min-w-0 flex-1">
+                                    <p className="truncate font-medium">
+                                        {link.title}
+                                    </p>
+                                    <a
+                                        href={link.url}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="flex items-center gap-1 truncate text-sm text-muted-foreground hover:underline"
+                                    >
+                                        <ExternalLink className="size-3.5 shrink-0" />
+                                        <span className="truncate">
+                                            {link.url}
+                                        </span>
+                                    </a>
+                                </div>
+                                <div className="flex flex-wrap items-center gap-2 sm:shrink-0">
+                                    {!link.active && (
+                                        <Badge variant="secondary">
+                                            Inactivo
+                                        </Badge>
+                                    )}
+                                    {canEditLink && (
                                         <IconTooltip label="Editar">
                                             <Button
                                                 variant="secondary"
                                                 size="icon"
                                                 aria-label="Editar"
-                                                onClick={() => openEdit(link)}
+                                                onClick={() =>
+                                                    openEdit(link)
+                                                }
                                             >
                                                 <Pencil className="size-4" />
                                             </Button>
                                         </IconTooltip>
+                                    )}
+                                    {canDeleteLink && (
                                         <IconTooltip label="Eliminar">
                                             <Button
                                                 variant="destructive"
@@ -121,15 +149,15 @@ export const ResourceLinksTab = () => {
                                                 <Trash2 className="size-4" />
                                             </Button>
                                         </IconTooltip>
-                                    </>
-                                )}
-                            </div>
-                        </li>
-                    ))}
+                                    )}
+                                </div>
+                            </li>
+                        );
+                    })}
                 </ul>
             )}
 
-            {canManage && (
+            {canManageAny && (
                 <ResourceLinkFormDialog
                     key={formKey}
                     open={formOpen}

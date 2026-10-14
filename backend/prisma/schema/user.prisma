@@ -26,6 +26,10 @@ model User {
     auditAsTarget           AuditLog[]      @relation("AuditTarget")
     emailSignatureImages    EmailSignatureImage[]
     projectPreferences      UserProjectPreference[]
+    createdProjects         Project[]
+    createdGuides           Guide[]
+    createdDocuments        Document[]
+    createdResourceLinks    ResourceLink[]
 
     @@map("users")
 }

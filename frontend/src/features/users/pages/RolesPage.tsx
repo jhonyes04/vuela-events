@@ -122,7 +122,7 @@ export const RolesPage = () => {
     return (
         <section>
             <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-                <PageTitle>Gestionar Roles</PageTitle>
+                <PageTitle icon={ShieldCheck}>Gestionar Roles</PageTitle>
                 <CreateRoleDialog
                     permissions={permissions}
                     onCreated={() => void load()}

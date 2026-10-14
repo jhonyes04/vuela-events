@@ -39,6 +39,7 @@ const updateDocumentSchema = z.strictObject({
 const documentManageErrors = {
     duplicate: [409, 'Ya existe un documento con ese título'],
     not_found: [404, 'Documento no encontrado'],
+    forbidden: [403, 'No puedes gestionar un documento que no creaste'],
 } as const;
 
 // Decodifica y valida el archivo (tamaño + firma de bytes); null si no venía ninguno.
@@ -78,7 +79,9 @@ documentRouter.get(
         'resources:view',
         'resources:create',
         'resources:edit',
+        'resources:edit:own',
         'resources:delete',
+        'resources:delete:own',
     ),
     async (_req, res) => {
         const documents = await listDocuments();
@@ -109,8 +112,7 @@ documentRouter.post(
 
         if (data === null || data === 'invalid') {
             res.status(400).json({
-                error:
-                    'El archivo debe ser PDF, Word, Excel u OpenDocument (.odt/.ods/.odp) de menos de 10MB',
+                error: 'El archivo debe ser PDF, Word, Excel u OpenDocument (.odt/.ods/.odp) de menos de 10MB',
             });
             return;
         }
@@ -137,7 +139,7 @@ documentRouter.post(
 
 documentRouter.patch(
     '/:id',
-    requirePermission('resources:edit'),
+    requirePermission('resources:edit', 'resources:edit:own'),
     async (req, res) => {
         const actor = req.user;
         if (!actor) {
@@ -159,14 +161,13 @@ documentRouter.patch(
 
         if (data === 'invalid') {
             res.status(400).json({
-                error:
-                    'El archivo debe ser PDF, Word, Excel u OpenDocument (.odt/.ods/.odp) de menos de 10MB',
+                error: 'El archivo debe ser PDF, Word, Excel u OpenDocument (.odt/.ods/.odp) de menos de 10MB',
             });
             return;
         }
 
         try {
-            const doc = await updateDocument(actor.id, params.data.id, {
+            const doc = await updateDocument(actor, params.data.id, {
                 title: body.data.title,
                 active: body.data.active,
                 ...(data && {
@@ -192,7 +193,7 @@ documentRouter.patch(
 
 documentRouter.delete(
     '/:id',
-    requirePermission('resources:delete'),
+    requirePermission('resources:delete', 'resources:delete:own'),
     async (req, res) => {
         const actor = req.user;
         if (!actor) {
@@ -207,7 +208,7 @@ documentRouter.delete(
         }
 
         try {
-            await deleteDocument(actor.id, params.data.id);
+            await deleteDocument(actor, params.data.id);
             res.status(204).end();
         } catch (e) {
             if (e instanceof DocumentManageError) {
@@ -226,7 +227,9 @@ documentRouter.get(
         'resources:view',
         'resources:create',
         'resources:edit',
+        'resources:edit:own',
         'resources:delete',
+        'resources:delete:own',
     ),
     async (req, res) => {
         const params = idParamsSchema.safeParse(req.params);
@@ -244,8 +247,7 @@ documentRouter.get(
         res.setHeader('Content-Type', doc.contentType);
         res.setHeader(
             'Content-Disposition',
-            "attachment; filename*=UTF-8''" +
-                encodeURIComponent(doc.fileName),
+            "attachment; filename*=UTF-8''" + encodeURIComponent(doc.fileName),
         );
         res.send(Buffer.from(doc.data));
     },

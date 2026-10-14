@@ -1,7 +1,9 @@
 import { prisma } from '../lib/prisma.js';
 import { recordAudit } from './audit.js';
+import { canManageResource } from '../lib/ownership.js';
+import type { AuthUser } from '../lib/authUser.js';
 
-export type DocumentManageFailure = 'duplicate' | 'not_found';
+export type DocumentManageFailure = 'duplicate' | 'not_found' | 'forbidden';
 
 export class DocumentManageError extends Error {
     readonly reason: DocumentManageFailure;
@@ -19,6 +21,7 @@ const documentListSelect = {
     contentType: true,
     size: true,
     active: true,
+    createdById: true,
 } as const;
 
 export const listDocuments = () =>
@@ -44,6 +47,7 @@ export const createDocument = async (
             contentType,
             size: data.length,
             data: new Uint8Array(data),
+            createdById: actorId,
         },
         select: documentListSelect,
     });
@@ -56,7 +60,7 @@ export const createDocument = async (
 };
 
 export const updateDocument = async (
-    actorId: string,
+    actor: Pick<AuthUser, 'id' | 'permissions'>,
     id: string,
     input: {
         title: string;
@@ -66,6 +70,17 @@ export const updateDocument = async (
 ) => {
     const doc = await prisma.document.findUnique({ where: { id } });
     if (!doc) throw new DocumentManageError('not_found');
+
+    if (
+        !canManageResource(
+            actor,
+            doc.createdById,
+            'resources:edit',
+            'resources:edit:own',
+        )
+    ) {
+        throw new DocumentManageError('forbidden');
+    }
 
     if (input.title !== doc.title) {
         const clash = await prisma.document.findUnique({
@@ -90,21 +105,35 @@ export const updateDocument = async (
     });
     await recordAudit({
         action: 'document_updated',
-        actorId,
+        actorId: actor.id,
         oldValue: doc.title.slice(0, 100),
         newValue: updated.title.slice(0, 100),
     });
     return updated;
 };
 
-export const deleteDocument = async (actorId: string, id: string) => {
+export const deleteDocument = async (
+    actor: Pick<AuthUser, 'id' | 'permissions'>,
+    id: string,
+) => {
     const doc = await prisma.document.findUnique({ where: { id } });
     if (!doc) throw new DocumentManageError('not_found');
+
+    if (
+        !canManageResource(
+            actor,
+            doc.createdById,
+            'resources:delete',
+            'resources:delete:own',
+        )
+    ) {
+        throw new DocumentManageError('forbidden');
+    }
 
     await prisma.document.delete({ where: { id } });
     await recordAudit({
         action: 'document_deleted',
-        actorId,
+        actorId: actor.id,
         oldValue: doc.title.slice(0, 100),
     });
 };

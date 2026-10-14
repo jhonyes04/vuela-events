@@ -1,9 +1,15 @@
 import { useEffect, useState } from 'react';
-import { Pencil, Trash2 } from 'lucide-react';
+import { Mail, Pencil, Trash2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { IconTooltip } from '@/components/IconTooltip';
 import { ConfirmDeleteDialog } from '@/components/ConfirmDeleteDialog';
+import { PageTitle } from '@/components/PageTitle';
+import { DataTable, type DataTableColumn } from '@/components/DataTable';
+import { PaginationControls } from '@/components/PaginationControls';
+import { usePagination } from '@/hooks/usePagination';
+import { useSort } from '@/hooks/useSort';
 import { ListErrors } from '@/features/users/components/ListErrors';
 import { EmailTemplateFormDialog } from '@/features/emailTemplates/components/EmailTemplateFormDialog';
 import {
@@ -11,8 +17,9 @@ import {
     type EmailTemplate,
 } from '@/features/emailTemplates/lib/emailTemplates';
 import { useEmailTemplatesStore } from '@/features/emailTemplates/store';
-import { PageTitle } from '@/components/PageTitle';
 import { stripHtml } from '@/lib/html';
+
+type SortKey = 'name' | 'subject' | 'active';
 
 export const EmailTemplatesPage = () => {
     const templates = useEmailTemplatesStore((s) => s.items);
@@ -21,6 +28,7 @@ export const EmailTemplatesPage = () => {
     const load = useEmailTemplatesStore((s) => s.load);
     const upsert = useEmailTemplatesStore((s) => s.upsert);
     const remove = useEmailTemplatesStore((s) => s.remove);
+    const [search, setSearch] = useState('');
     const [formOpen, setFormOpen] = useState(false);
     const [editing, setEditing] = useState<EmailTemplate | null>(null);
     const [deleting, setDeleting] = useState<EmailTemplate | null>(null);
@@ -40,11 +48,105 @@ export const EmailTemplatesPage = () => {
         setFormOpen(true);
     };
 
+    const query = search.trim().toLowerCase();
+    const filtered = query
+        ? templates.filter(
+              (t) =>
+                  t.name.toLowerCase().includes(query) ||
+                  stripHtml(t.subject).toLowerCase().includes(query),
+          )
+        : templates;
+
+    const { sorted, sort, toggleSort } = useSort<EmailTemplate, SortKey>(
+        filtered,
+        {
+            name: (a, b) => a.name.localeCompare(b.name),
+            subject: (a, b) =>
+                stripHtml(a.subject).localeCompare(stripHtml(b.subject)),
+            active: (a, b) => Number(a.active) - Number(b.active),
+        },
+        { key: 'name', dir: 'asc' },
+    );
+
+    const { paged, page, pageCount, pageSize, total, setPage, setPageSize } =
+        usePagination(sorted, 10);
+
+    const columns: DataTableColumn<EmailTemplate, SortKey>[] = [
+        {
+            key: 'name',
+            header: 'Nombre',
+            sortKey: 'name',
+            render: (template) => template.name,
+        },
+        {
+            key: 'subject',
+            header: 'Asunto',
+            sortKey: 'subject',
+            render: (template) => (
+                <span className="text-muted-foreground">
+                    {stripHtml(template.subject)}
+                </span>
+            ),
+        },
+        {
+            key: 'active',
+            header: 'Estado',
+            sortKey: 'active',
+            render: (template) =>
+                template.active ? (
+                    <Badge variant="outline">Activa</Badge>
+                ) : (
+                    <Badge variant="secondary">Inactiva</Badge>
+                ),
+        },
+        {
+            key: 'actions',
+            header: <span className="sr-only">Acciones</span>,
+            align: 'right',
+            cellClassName: 'flex justify-end gap-2',
+            render: (template) => (
+                <>
+                    <IconTooltip label="Editar">
+                        <Button
+                            variant="secondary"
+                            size="icon"
+                            aria-label="Editar"
+                            onClick={() => openEdit(template)}
+                        >
+                            <Pencil className="size-4" />
+                        </Button>
+                    </IconTooltip>
+                    <IconTooltip label="Eliminar">
+                        <Button
+                            variant="destructive"
+                            size="icon"
+                            aria-label="Eliminar"
+                            onClick={() => setDeleting(template)}
+                        >
+                            <Trash2 className="size-4" />
+                        </Button>
+                    </IconTooltip>
+                </>
+            ),
+        },
+    ];
+
     return (
         <section>
             <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-                <PageTitle>Gestionar Plantillas de correo</PageTitle>
+                <PageTitle icon={Mail} className="mb-0">
+                    Gestionar Plantillas de correo
+                </PageTitle>
                 <Button onClick={openCreate}>Nueva plantilla</Button>
+            </div>
+
+            <div className="mb-4">
+                <Input
+                    placeholder="Buscar por nombre o asunto…"
+                    className="bg-card w-64"
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                />
             </div>
 
             <ListErrors
@@ -57,57 +159,37 @@ export const EmailTemplatesPage = () => {
                 <p role="status" className="text-muted-foreground">
                     Cargando plantillas…
                 </p>
-            ) : templates.length === 0 ? (
-                <p className="text-muted-foreground">
-                    Todavía no hay plantillas.
-                </p>
             ) : (
-                <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                    {templates.map((template) => (
-                        <li
-                            key={template.id}
-                            className="grid min-w-0 gap-3 rounded-xl border bg-card p-4 sm:flex sm:items-center"
-                        >
-                            <div className="min-w-0 flex-1">
-                                <p className="font-medium break-words">
-                                    {template.name}
-                                </p>
-                                <p className="text-sm break-words text-muted-foreground">
-                                    {stripHtml(template.subject)}
-                                </p>
-                            </div>
-                            <div className="flex items-center gap-2 sm:shrink-0">
-                                {!template.active && (
-                                    <Badge variant="secondary">Inactiva</Badge>
-                                )}
-                                <div className="ml-auto flex gap-2">
-                                    <IconTooltip label="Editar">
-                                        <Button
-                                            variant="secondary"
-                                            size="icon"
-                                            aria-label="Editar"
-                                            onClick={() => openEdit(template)}
-                                        >
-                                            <Pencil className="size-4" />
-                                        </Button>
-                                    </IconTooltip>
-                                    <IconTooltip label="Eliminar">
-                                        <Button
-                                            variant="destructive"
-                                            size="icon"
-                                            aria-label="Eliminar"
-                                            onClick={() =>
-                                                setDeleting(template)
-                                            }
-                                        >
-                                            <Trash2 className="size-4" />
-                                        </Button>
-                                    </IconTooltip>
-                                </div>
-                            </div>
-                        </li>
-                    ))}
-                </ul>
+                <div className="rounded-xl border bg-card">
+                    <DataTable
+                        columns={columns}
+                        rows={paged}
+                        rowKey={(template) => template.id}
+                        sort={sort}
+                        onSort={toggleSort}
+                    />
+                </div>
+            )}
+
+            {!loading && paged.length === 0 && (
+                <p className="mt-4 text-muted-foreground">
+                    {query
+                        ? 'No hay plantillas que coincidan con la búsqueda.'
+                        : 'Todavía no hay plantillas.'}
+                </p>
+            )}
+
+            {!loading && total > 0 && (
+                <div className="mt-4">
+                    <PaginationControls
+                        page={page}
+                        pageCount={pageCount}
+                        pageSize={pageSize}
+                        total={total}
+                        onPageChange={setPage}
+                        onPageSizeChange={setPageSize}
+                    />
+                </div>
             )}
 
             <EmailTemplateFormDialog

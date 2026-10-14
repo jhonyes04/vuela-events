@@ -1,22 +1,33 @@
 import { useEffect, useState } from 'react';
-import { ExternalLink, Pencil, Trash2 } from 'lucide-react';
+import { BookOpen, ExternalLink, Pencil, Trash2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { IconTooltip } from '@/components/IconTooltip';
 import { ConfirmDeleteDialog } from '@/components/ConfirmDeleteDialog';
+import { PageTitle } from '@/components/PageTitle';
+import { DataTable, type DataTableColumn } from '@/components/DataTable';
+import { PaginationControls } from '@/components/PaginationControls';
+import { usePagination } from '@/hooks/usePagination';
+import { useSort } from '@/hooks/useSort';
 import { ListErrors } from '@/features/users/components/ListErrors';
 import { GuideFormDialog } from '@/features/guides/components/GuideFormDialog';
 import { deleteGuide, type Guide } from '@/features/guides/lib/guides';
 import { useGuidesStore } from '@/features/guides/store';
-import { PageTitle } from '@/components/PageTitle';
+import { useAuth } from '@/features/auth/hooks/context';
+import { canManageResource } from '@/lib/ownership';
+
+type SortKey = 'name' | 'url' | 'active';
 
 export const GuidesPage = () => {
+    const { user } = useAuth();
     const guides = useGuidesStore((s) => s.items);
     const loading = useGuidesStore((s) => s.loading);
     const error = useGuidesStore((s) => s.error);
     const load = useGuidesStore((s) => s.load);
     const upsert = useGuidesStore((s) => s.upsert);
     const remove = useGuidesStore((s) => s.remove);
+    const [search, setSearch] = useState('');
     const [formOpen, setFormOpen] = useState(false);
     const [formKey, setFormKey] = useState(0);
     const [editing, setEditing] = useState<Guide | null>(null);
@@ -39,11 +50,124 @@ export const GuidesPage = () => {
         setFormOpen(true);
     };
 
+    const query = search.trim().toLowerCase();
+    const filtered = query
+        ? guides.filter(
+              (g) =>
+                  g.name.toLowerCase().includes(query) ||
+                  g.url.toLowerCase().includes(query),
+          )
+        : guides;
+
+    const { sorted, sort, toggleSort } = useSort<Guide, SortKey>(
+        filtered,
+        {
+            name: (a, b) => a.name.localeCompare(b.name),
+            url: (a, b) => a.url.localeCompare(b.url),
+            active: (a, b) => Number(a.active) - Number(b.active),
+        },
+        { key: 'name', dir: 'asc' },
+    );
+
+    const { paged, page, pageCount, pageSize, total, setPage, setPageSize } =
+        usePagination(sorted, 10);
+
+    const columns: DataTableColumn<Guide, SortKey>[] = [
+        {
+            key: 'name',
+            header: 'Nombre',
+            sortKey: 'name',
+            render: (guide) => guide.name,
+        },
+        {
+            key: 'url',
+            header: 'URL',
+            sortKey: 'url',
+            render: (guide) => (
+                <a
+                    href={guide.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-1 text-muted-foreground hover:underline"
+                >
+                    <ExternalLink className="size-3.5 shrink-0" />
+                    <span className="truncate">{guide.url}</span>
+                </a>
+            ),
+        },
+        {
+            key: 'active',
+            header: 'Estado',
+            sortKey: 'active',
+            render: (guide) =>
+                guide.active ? (
+                    <Badge variant="outline">Activa</Badge>
+                ) : (
+                    <Badge variant="secondary">Inactiva</Badge>
+                ),
+        },
+        {
+            key: 'actions',
+            header: <span className="sr-only">Acciones</span>,
+            align: 'right',
+            cellClassName: 'flex justify-end gap-2',
+            render: (guide) => (
+                <>
+                    {canManageResource(
+                        user,
+                        guide.createdById,
+                        'guides:edit',
+                        'guides:edit:own',
+                    ) && (
+                        <IconTooltip label="Editar">
+                            <Button
+                                variant="secondary"
+                                size="icon"
+                                aria-label="Editar"
+                                onClick={() => openEdit(guide)}
+                            >
+                                <Pencil className="size-4" />
+                            </Button>
+                        </IconTooltip>
+                    )}
+                    {canManageResource(
+                        user,
+                        guide.createdById,
+                        'guides:delete',
+                        'guides:delete:own',
+                    ) && (
+                        <IconTooltip label="Eliminar">
+                            <Button
+                                variant="destructive"
+                                size="icon"
+                                aria-label="Eliminar"
+                                onClick={() => setDeleting(guide)}
+                            >
+                                <Trash2 className="size-4" />
+                            </Button>
+                        </IconTooltip>
+                    )}
+                </>
+            ),
+        },
+    ];
+
     return (
         <section>
             <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-                <PageTitle>Gestionar Guías</PageTitle>
+                <PageTitle icon={BookOpen} className="mb-0">
+                    Gestionar Guías
+                </PageTitle>
                 <Button onClick={openCreate}>Nueva guía</Button>
+            </div>
+
+            <div className="mb-4">
+                <Input
+                    placeholder="Buscar por nombre o URL…"
+                    className="bg-card w-64"
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                />
             </div>
 
             <ListErrors
@@ -56,61 +180,37 @@ export const GuidesPage = () => {
                 <p role="status" className="text-muted-foreground">
                     Cargando guías…
                 </p>
-            ) : guides.length === 0 ? (
-                <p className="text-muted-foreground">Todavía no hay guías.</p>
             ) : (
-                <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                    {guides.map((guide) => (
-                        <li
-                            key={guide.id}
-                            className="flex flex-col gap-3 rounded-xl border bg-card p-4 sm:flex-row sm:items-center"
-                        >
-                            <div className="min-w-0 flex-1">
-                                <p className="truncate font-medium">
-                                    {guide.name}
-                                </p>
-                                <a
-                                    href={guide.url}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="flex items-center gap-1 truncate text-sm text-muted-foreground hover:underline"
-                                >
-                                    <ExternalLink className="size-3.5 shrink-0" />
-                                    <span className="truncate">
-                                        {guide.url}
-                                    </span>
-                                </a>
-                            </div>
-                            <div className="flex items-center justify-end gap-2">
-                                {!guide.active && (
-                                    <Badge variant="secondary">
-                                        Inactiva
-                                    </Badge>
-                                )}
-                                <IconTooltip label="Editar">
-                                    <Button
-                                        variant="secondary"
-                                        size="icon"
-                                        aria-label="Editar"
-                                        onClick={() => openEdit(guide)}
-                                    >
-                                        <Pencil className="size-4" />
-                                    </Button>
-                                </IconTooltip>
-                                <IconTooltip label="Eliminar">
-                                    <Button
-                                        variant="destructive"
-                                        size="icon"
-                                        aria-label="Eliminar"
-                                        onClick={() => setDeleting(guide)}
-                                    >
-                                        <Trash2 className="size-4" />
-                                    </Button>
-                                </IconTooltip>
-                            </div>
-                        </li>
-                    ))}
-                </ul>
+                <div className="rounded-xl border bg-card">
+                    <DataTable
+                        columns={columns}
+                        rows={paged}
+                        rowKey={(guide) => guide.id}
+                        sort={sort}
+                        onSort={toggleSort}
+                    />
+                </div>
+            )}
+
+            {!loading && paged.length === 0 && (
+                <p className="mt-4 text-muted-foreground">
+                    {query
+                        ? 'No hay guías que coincidan con la búsqueda.'
+                        : 'Todavía no hay guías.'}
+                </p>
+            )}
+
+            {!loading && total > 0 && (
+                <div className="mt-4">
+                    <PaginationControls
+                        page={page}
+                        pageCount={pageCount}
+                        pageSize={pageSize}
+                        total={total}
+                        onPageChange={setPage}
+                        onPageSizeChange={setPageSize}
+                    />
+                </div>
             )}
 
             <GuideFormDialog

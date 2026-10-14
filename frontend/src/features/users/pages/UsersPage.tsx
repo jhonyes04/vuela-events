@@ -1,5 +1,11 @@
 import { useEffect, useState } from 'react';
-import { Pencil, FolderKanban, Trash2, CircleCheck } from 'lucide-react';
+import {
+    Pencil,
+    FolderKanban,
+    Trash2,
+    CircleCheck,
+    UserCog,
+} from 'lucide-react';
 import { OverlayScrollbarsComponent } from 'overlayscrollbars-react';
 import { toast } from 'sonner';
 import { useAuth } from '@/features/auth/hooks/context';
@@ -263,7 +269,7 @@ export const UsersPage = () => {
 
     return (
         <section>
-            <PageTitle>Gestionar Usuarios</PageTitle>
+            <PageTitle icon={UserCog}>Gestionar Usuarios</PageTitle>
 
             <ListErrors
                 error={error}

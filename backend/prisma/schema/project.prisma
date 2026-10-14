@@ -5,9 +5,12 @@ model Project {
     closingInstructions     String?     @db.Text
     color                   String      @db.VarChar(20)
     active                  Boolean     @default(true)
+    createdById             String?     @db.Uuid
     createdAt               DateTime    @default(now())
     updatedAt               DateTime    @updatedAt
     
+    createdBy               User?       @relation(fields: [createdById], references: [id], onDelete: SetNull)
+
     events                  Event[]
     userPreferences         UserProjectPreference[]
     guides                  ProjectGuide[]

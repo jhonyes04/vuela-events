@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Trash2 } from 'lucide-react';
+import { History, Trash2 } from 'lucide-react';
 import { OverlayScrollbarsComponent } from 'overlayscrollbars-react';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -239,7 +239,7 @@ export const AuditPage = () => {
 
     return (
         <section>
-            <PageTitle>Auditoría</PageTitle>
+            <PageTitle icon={History}>Auditoría</PageTitle>
 
             <ListErrors
                 error={error}

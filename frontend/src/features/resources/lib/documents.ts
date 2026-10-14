@@ -7,6 +7,7 @@ export interface Document {
     contentType: string;
     size: number;
     active: boolean;
+    createdById: string | null;
 }
 
 export interface DocumentCreateInput {

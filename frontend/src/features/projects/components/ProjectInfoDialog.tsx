@@ -93,7 +93,7 @@ export const ProjectInfoDialog = ({
                     <Separator className="data-horizontal:h-1 bg-yellow-400/30 rounded-full" />
 
                     <TabsContent value="opening" className="mt-2 grid gap-1.5">
-                        <span className="text-muted-foreground">
+                        <span className="font-bold">
                             Cómo dar de alta la actividad en Ágora
                         </span>
                         {project.openingInstructions && (
@@ -117,7 +117,7 @@ export const ProjectInfoDialog = ({
                         )}
                     </TabsContent>
                     <TabsContent value="closing" className="mt-2 grid gap-1.5">
-                        <span className="text-muted-foreground">
+                        <span className="font-bold">
                             Cómo cerrar la actividad en Ágora
                         </span>
                         {project.closingInstructions && (

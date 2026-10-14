@@ -11,6 +11,7 @@ import {
     ShieldCheck,
     SlidersHorizontal,
     FolderKanban,
+    FolderOpen,
     UserIcon,
     UserCog,
     Users,
@@ -39,6 +40,7 @@ const ROUTE_ICONS: Record<string, LucideIcon> = {
     '/gestion/proyectos': FolderKanban,
     '/gestion/intereses': Users,
     '/gestion/guias': BookOpen,
+    '/gestion/recursos': FolderOpen,
     '/gestion/plantillas-correo': Mail,
     '/estadisticas': BarChart3,
     '/admin/usuarios': UserCog,
@@ -169,20 +171,21 @@ export const UserMenuSheet = () => {
                                         </NavLink>
                                     }
                                 />
-                                {user.roleId === ROLE_IDS.AIL && (
-                                    <SheetClose
-                                        nativeButton={false}
-                                        render={
-                                            <NavLink
-                                                to="/mis-eventos"
-                                                className={navClass}
-                                            >
-                                                <CalendarCheck className="size-4" />
-                                                Mis eventos
-                                            </NavLink>
-                                        }
-                                    />
-                                )}
+                                {user.roleId !== ROLE_IDS.ADMIN &&
+                                    user.roleId !== ROLE_IDS.DT && (
+                                        <SheetClose
+                                            nativeButton={false}
+                                            render={
+                                                <NavLink
+                                                    to="/mis-eventos"
+                                                    className={navClass}
+                                                >
+                                                    <CalendarCheck className="size-4" />
+                                                    Mis eventos
+                                                </NavLink>
+                                            }
+                                        />
+                                    )}
                             </div>
 
                             <RouteGroup

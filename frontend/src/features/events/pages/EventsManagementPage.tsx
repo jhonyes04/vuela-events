@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { ClipboardList, Pencil, Trash2, Users } from 'lucide-react';
+import { Calendar, ClipboardList, Pencil, Trash2, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { IconTooltip } from '@/components/IconTooltip';
 import { AttendeesDialog } from '@/features/events/components/AttendeesDialog';
@@ -69,7 +69,7 @@ export const EventsManagementPage = () => {
 
     return (
         <section>
-            <PageTitle>Gestionar Eventos</PageTitle>
+            <PageTitle icon={Calendar}>Gestionar Eventos</PageTitle>
 
             <EventsTable
                 events={events}

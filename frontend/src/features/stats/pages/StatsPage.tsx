@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { CalendarDays, Gauge, Ticket, Users } from 'lucide-react';
+import { BarChart3, CalendarDays, Gauge, Ticket, Users } from 'lucide-react';
 import { Label } from '@/components/ui/label';
 import { ComboboxField } from '@/components/ComboboxField';
 import { Kpi } from '@/features/stats/components/StatsChartKit';
@@ -69,7 +69,7 @@ export const StatsPage = () => {
         <section className="mx-auto grid w-full min-w-0 max-w-6xl grid-cols-1 gap-8">
             <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
                 <div className="grid gap-1">
-                    <PageTitle>Estadísticas</PageTitle>
+                    <PageTitle icon={BarChart3}>Estadísticas</PageTitle>
                     <p className="text-sm text-muted-foreground">
                         Eventos, inscripciones y personas atendidas.
                     </p>

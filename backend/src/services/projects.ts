@@ -1,6 +1,8 @@
 import { prisma } from '../lib/prisma.js';
 import { recordAudit } from './audit.js';
 import { sanitizeEmailHtml } from './emailSignature.js';
+import { canManageResource } from '../lib/ownership.js';
+import type { AuthUser } from '../lib/authUser.js';
 
 export const PROJECT_COLORS = [
     'yellow',
@@ -32,7 +34,8 @@ export type ProjectManageFailure =
     | 'duplicate'
     | 'not_found'
     | 'has_events'
-    | 'guide_not_found';
+    | 'guide_not_found'
+    | 'forbidden';
 
 export class ProjectManageError extends Error {
     readonly reason: ProjectManageFailure;
@@ -52,6 +55,7 @@ const projectSelect = {
     closingInstructions: true,
     color: true,
     active: true,
+    createdById: true,
     guides: {
         select: { guide: { select: { id: true, name: true, url: true } } },
     },
@@ -112,6 +116,7 @@ export const createProject = async (
                 ? sanitizeEmailHtml(closingInstructions) || null
                 : null,
             color,
+            createdById: actorId,
             guides: { create: guideIds.map((guideId) => ({ guideId })) },
         },
         select: projectSelect,
@@ -127,7 +132,7 @@ export const createProject = async (
 };
 
 export const updateProject = async (
-    actorId: string,
+    actor: Pick<AuthUser, 'id' | 'permissions'>,
     id: string,
     input: {
         name: string;
@@ -142,6 +147,17 @@ export const updateProject = async (
 
     if (!project) {
         throw new ProjectManageError('not_found');
+    }
+
+    if (
+        !canManageResource(
+            actor,
+            project.createdById,
+            'projects:edit',
+            'projects:edit:own',
+        )
+    ) {
+        throw new ProjectManageError('forbidden');
     }
 
     if (input.name !== project.name) {
@@ -185,7 +201,7 @@ export const updateProject = async (
 
     await recordAudit({
         action: 'project_updated',
-        actorId,
+        actorId: actor.id,
         oldValue: project.name.slice(0, 100),
         newValue: updated.name.slice(0, 100),
     });
@@ -193,11 +209,25 @@ export const updateProject = async (
     return flattenGuides(updated);
 };
 
-export const deleteProject = async (actorId: string, id: string) => {
+export const deleteProject = async (
+    actor: Pick<AuthUser, 'id' | 'permissions'>,
+    id: string,
+) => {
     const project = await prisma.project.findUnique({ where: { id } });
 
     if (!project) {
         throw new ProjectManageError('not_found');
+    }
+
+    if (
+        !canManageResource(
+            actor,
+            project.createdById,
+            'projects:delete',
+            'projects:delete:own',
+        )
+    ) {
+        throw new ProjectManageError('forbidden');
     }
 
     const eventsCount = await prisma.event.count({
@@ -212,7 +242,7 @@ export const deleteProject = async (actorId: string, id: string) => {
 
     await recordAudit({
         action: 'project_deleted',
-        actorId,
+        actorId: actor.id,
         oldValue: project.name.slice(0, 100),
     });
 };

@@ -5,6 +5,7 @@ export interface Guide {
     name: string;
     url: string;
     active: boolean;
+    createdById: string | null;
 }
 
 export interface GuideInput {

@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { Calendar, FolderOpen, type LucideIcon } from 'lucide-react';
 import { NavLink } from 'react-router';
 import { useAuth } from '@/features/auth/hooks/context';
 import logo from '@/assets/logo.svg';
@@ -10,9 +11,16 @@ import { useAppSettingsStore } from '@/features/appSettings/store';
 
 const navClass = ({ isActive }: { isActive: boolean }) =>
     cn(
-        'shrink-0 rounded-md px-3 py-2 text-sm font-medium',
+        'shrink-0 flex items-center gap-1.5 rounded-md px-3 py-2 text-sm font-medium',
         isActive ? 'bg-brand-ink text-white' : 'hover:bg-black/10',
     );
+
+// Mismos iconos que en el menú del avatar, para que Eventos/Recursos se
+// reconozcan igual en el nav principal.
+const MAIN_ROUTE_ICONS: Record<string, LucideIcon> = {
+    '/': Calendar,
+    '/recursos': FolderOpen,
+};
 
 export const Header = () => {
     const { user } = useAuth();
@@ -51,16 +59,21 @@ export const Header = () => {
                             aria-label="Principal"
                             className="hidden flex-1 items-center gap-1 overflow-x-auto sm:flex"
                         >
-                            {mainRoutes.map((route) => (
-                                <NavLink
-                                    key={route.path}
-                                    to={route.path}
-                                    end={route.path === '/'}
-                                    className={navClass}
-                                >
-                                    {route.label}
-                                </NavLink>
-                            ))}
+                            {mainRoutes.map((route) => {
+                                const Icon = MAIN_ROUTE_ICONS[route.path];
+
+                                return (
+                                    <NavLink
+                                        key={route.path}
+                                        to={route.path}
+                                        end={route.path === '/'}
+                                        className={navClass}
+                                    >
+                                        {Icon && <Icon className="size-4" />}
+                                        {route.label}
+                                    </NavLink>
+                                );
+                            })}
                         </nav>
                     )}
 
@@ -76,16 +89,21 @@ export const Header = () => {
                         aria-label="Principal"
                         className="flex items-center justify-center gap-1 overflow-x-auto pt-2 sm:hidden"
                     >
-                        {mainRoutes.map((route) => (
-                            <NavLink
-                                key={route.path}
-                                to={route.path}
-                                end={route.path === '/'}
-                                className={navClass}
-                            >
-                                {route.label}
-                            </NavLink>
-                        ))}
+                        {mainRoutes.map((route) => {
+                            const Icon = MAIN_ROUTE_ICONS[route.path];
+
+                            return (
+                                <NavLink
+                                    key={route.path}
+                                    to={route.path}
+                                    end={route.path === '/'}
+                                    className={navClass}
+                                >
+                                    {Icon && <Icon className="size-4" />}
+                                    {route.label}
+                                </NavLink>
+                            );
+                        })}
                     </nav>
                 )}
             </div>

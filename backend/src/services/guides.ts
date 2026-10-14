@@ -1,7 +1,13 @@
 import { prisma } from '../lib/prisma.js';
 import { recordAudit } from './audit.js';
+import { canManageResource } from '../lib/ownership.js';
+import type { AuthUser } from '../lib/authUser.js';
 
-export type GuideManageFealure = 'duplicate' | 'not_found' | 'has_projects';
+export type GuideManageFealure =
+    | 'duplicate'
+    | 'not_found'
+    | 'has_projects'
+    | 'forbidden';
 
 export class GuideManageError extends Error {
     readonly reason: GuideManageFealure;
@@ -19,6 +25,7 @@ const guideSelect = {
     name: true,
     url: true,
     active: true,
+    createdById: true,
 } as const;
 
 export const listGuides = () =>
@@ -39,7 +46,7 @@ export const createGuide = async (
     }
 
     const guide = await prisma.guide.create({
-        data: { name, url },
+        data: { name, url, createdById: actorId },
         select: guideSelect,
     });
 
@@ -53,7 +60,7 @@ export const createGuide = async (
 };
 
 export const updateGuide = async (
-    actorId: string,
+    actor: Pick<AuthUser, 'id' | 'permissions'>,
     id: string,
     input: { name: string; url: string; active: boolean },
 ) => {
@@ -61,6 +68,17 @@ export const updateGuide = async (
 
     if (!guide) {
         throw new GuideManageError('not_found');
+    }
+
+    if (
+        !canManageResource(
+            actor,
+            guide.createdById,
+            'guides:edit',
+            'guides:edit:own',
+        )
+    ) {
+        throw new GuideManageError('forbidden');
     }
 
     if (input.name !== guide.name) {
@@ -81,7 +99,7 @@ export const updateGuide = async (
 
     await recordAudit({
         action: 'guide_updated',
-        actorId,
+        actorId: actor.id,
         oldValue: guide.name.slice(0, 100),
         newValue: updated.name.slice(0, 100),
     });
@@ -89,11 +107,25 @@ export const updateGuide = async (
     return updated;
 };
 
-export const deleteGuide = async (actorId: string, id: string) => {
+export const deleteGuide = async (
+    actor: Pick<AuthUser, 'id' | 'permissions'>,
+    id: string,
+) => {
     const guide = await prisma.guide.findUnique({ where: { id } });
 
     if (!guide) {
         throw new GuideManageError('not_found');
+    }
+
+    if (
+        !canManageResource(
+            actor,
+            guide.createdById,
+            'guides:delete',
+            'guides:delete:own',
+        )
+    ) {
+        throw new GuideManageError('forbidden');
     }
 
     const projectsCount = await prisma.project.count({
@@ -108,7 +140,7 @@ export const deleteGuide = async (actorId: string, id: string) => {
 
     await recordAudit({
         action: 'guide_deleted',
-        actorId,
+        actorId: actor.id,
         oldValue: guide.name.slice(0, 100),
     });
 };

@@ -5,6 +5,7 @@ export interface ResourceLink {
     title: string;
     url: string;
     active: boolean;
+    createdById: string | null;
 }
 
 export interface ResourceLinkInput {

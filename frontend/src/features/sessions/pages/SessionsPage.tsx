@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Trash2 } from 'lucide-react';
+import { Monitor, Trash2 } from 'lucide-react';
 import { OverlayScrollbarsComponent } from 'overlayscrollbars-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -133,7 +133,7 @@ export const SessionsPage = () => {
 
     return (
         <section>
-            <PageTitle>Sesiones activas</PageTitle>
+            <PageTitle icon={Monitor}>Sesiones activas</PageTitle>
 
             <ListErrors
                 error={error}

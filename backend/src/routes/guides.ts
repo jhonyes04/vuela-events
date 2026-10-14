@@ -37,6 +37,7 @@ const guideManageErrors = {
     duplicate: [409, 'Ya existe una guía con ese nombre'],
     not_found: [404, 'Guía no encontrada'],
     has_projects: [409, 'No se puede eliminar: hay proyectos con esta guía'],
+    forbidden: [403, 'No puedes gestionar una guía que no creaste'],
 } as const;
 
 export const guidesRouter = Router();
@@ -49,7 +50,9 @@ guidesRouter.get(
         'guides:view',
         'guides:create',
         'guides:edit',
+        'guides:edit:own',
         'guides:delete',
+        'guides:delete:own',
         // El formulario de eventos necesita elegir guía.
         'events:create',
         'events:edit',
@@ -98,7 +101,7 @@ guidesRouter.post('/', requirePermission('guides:create'), async (req, res) => {
 
 guidesRouter.patch(
     '/:id',
-    requirePermission('guides:edit'),
+    requirePermission('guides:edit', 'guides:edit:own'),
     async (req, res) => {
         const actor = req.user;
 
@@ -116,11 +119,7 @@ guidesRouter.patch(
         }
 
         try {
-            const guide = await updateGuide(
-                actor.id,
-                params.data.id,
-                body.data,
-            );
+            const guide = await updateGuide(actor, params.data.id, body.data);
 
             res.json({ guide });
         } catch (e) {
@@ -138,7 +137,7 @@ guidesRouter.patch(
 
 guidesRouter.delete(
     '/:id',
-    requirePermission('guides:delete'),
+    requirePermission('guides:delete', 'guides:delete:own'),
     async (req, res) => {
         const actor = req.user;
 
@@ -155,7 +154,7 @@ guidesRouter.delete(
         }
 
         try {
-            await deleteGuide(actor.id, params.data.id);
+            await deleteGuide(actor, params.data.id);
             res.status(204).end();
         } catch (e) {
             if (e instanceof GuideManageError) {

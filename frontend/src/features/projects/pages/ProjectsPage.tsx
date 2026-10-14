@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Pencil, Trash2 } from 'lucide-react';
+import { FolderKanban, Pencil, Trash2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { IconTooltip } from '@/components/IconTooltip';
@@ -10,9 +10,12 @@ import { ProjectFormDialog } from '@/features/projects/components/ProjectFormDia
 import { deleteProject, type Project } from '@/features/projects/lib/projects';
 import { PROJECT_COLOR_STYLES } from '@/features/projects/lib/colors';
 import { useProjectsStore } from '@/features/projects/store';
+import { useAuth } from '@/features/auth/hooks/context';
+import { canManageResource } from '@/lib/ownership';
 import { stripHtml } from '@/lib/html';
 
 export const ProjectsPage = () => {
+    const { user } = useAuth();
     const projects = useProjectsStore((s) => s.items);
     const loading = useProjectsStore((s) => s.loading);
     const error = useProjectsStore((s) => s.error);
@@ -44,7 +47,7 @@ export const ProjectsPage = () => {
     return (
         <section>
             <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-                <PageTitle>Gestionar Proyectos</PageTitle>
+                <PageTitle icon={FolderKanban}>Gestionar Proyectos</PageTitle>
                 <Button onClick={openCreate}>Nuevo proyecto</Button>
             </div>
 
@@ -83,9 +86,11 @@ export const ProjectsPage = () => {
                                             .map((guide) => guide.name)
                                             .join(', ')}
                                     </p>
-                                    {project.description && (
+                                    {project.openingInstructions && (
                                         <p className="truncate text-xs text-muted-foreground">
-                                            {stripHtml(project.description)}
+                                            {stripHtml(
+                                                project.openingInstructions,
+                                            )}
                                         </p>
                                     )}
                                 </div>
@@ -94,26 +99,40 @@ export const ProjectsPage = () => {
                                 {!project.active && (
                                     <Badge variant="secondary">Inactiva</Badge>
                                 )}
-                                <IconTooltip label="Editar">
-                                    <Button
-                                        variant="secondary"
-                                        size="icon"
-                                        aria-label="Editar"
-                                        onClick={() => openEdit(project)}
-                                    >
-                                        <Pencil className="size-4" />
-                                    </Button>
-                                </IconTooltip>
-                                <IconTooltip label="Eliminar">
-                                    <Button
-                                        variant="destructive"
-                                        size="icon"
-                                        aria-label="Eliminar"
-                                        onClick={() => setDeleting(project)}
-                                    >
-                                        <Trash2 className="size-4" />
-                                    </Button>
-                                </IconTooltip>
+                                {canManageResource(
+                                    user,
+                                    project.createdById,
+                                    'projects:edit',
+                                    'projects:edit:own',
+                                ) && (
+                                    <IconTooltip label="Editar">
+                                        <Button
+                                            variant="secondary"
+                                            size="icon"
+                                            aria-label="Editar"
+                                            onClick={() => openEdit(project)}
+                                        >
+                                            <Pencil className="size-4" />
+                                        </Button>
+                                    </IconTooltip>
+                                )}
+                                {canManageResource(
+                                    user,
+                                    project.createdById,
+                                    'projects:delete',
+                                    'projects:delete:own',
+                                ) && (
+                                    <IconTooltip label="Eliminar">
+                                        <Button
+                                            variant="destructive"
+                                            size="icon"
+                                            aria-label="Eliminar"
+                                            onClick={() => setDeleting(project)}
+                                        >
+                                            <Trash2 className="size-4" />
+                                        </Button>
+                                    </IconTooltip>
+                                )}
                             </div>
                         </li>
                     ))}

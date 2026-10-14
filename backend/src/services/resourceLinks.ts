@@ -1,7 +1,9 @@
 import { prisma } from '../lib/prisma.js';
 import { recordAudit } from './audit.js';
+import { canManageResource } from '../lib/ownership.js';
+import type { AuthUser } from '../lib/authUser.js';
 
-export type ResourceLinkManageFailure = 'duplicate' | 'not_found';
+export type ResourceLinkManageFailure = 'duplicate' | 'not_found' | 'forbidden';
 
 export class ResourceLinkManageError extends Error {
     readonly reason: ResourceLinkManageFailure;
@@ -19,6 +21,7 @@ const resourceLinkSelect = {
     title: true,
     url: true,
     active: true,
+    createdById: true,
 } as const;
 
 export const listResourceLinks = () =>
@@ -39,7 +42,7 @@ export const createResourceLink = async (
     }
 
     const link = await prisma.resourceLink.create({
-        data: { title, url },
+        data: { title, url, createdById: actorId },
         select: resourceLinkSelect,
     });
 
@@ -53,7 +56,7 @@ export const createResourceLink = async (
 };
 
 export const updateResourceLink = async (
-    actorId: string,
+    actor: Pick<AuthUser, 'id' | 'permissions'>,
     id: string,
     input: { title: string; url: string; active: boolean },
 ) => {
@@ -61,6 +64,17 @@ export const updateResourceLink = async (
 
     if (!link) {
         throw new ResourceLinkManageError('not_found');
+    }
+
+    if (
+        !canManageResource(
+            actor,
+            link.createdById,
+            'resources:edit',
+            'resources:edit:own',
+        )
+    ) {
+        throw new ResourceLinkManageError('forbidden');
     }
 
     if (input.title !== link.title) {
@@ -81,7 +95,7 @@ export const updateResourceLink = async (
 
     await recordAudit({
         action: 'resource_link_updated',
-        actorId,
+        actorId: actor.id,
         oldValue: link.title.slice(0, 100),
         newValue: updated.title.slice(0, 100),
     });
@@ -89,18 +103,32 @@ export const updateResourceLink = async (
     return updated;
 };
 
-export const deleteResourceLink = async (actorId: string, id: string) => {
+export const deleteResourceLink = async (
+    actor: Pick<AuthUser, 'id' | 'permissions'>,
+    id: string,
+) => {
     const link = await prisma.resourceLink.findUnique({ where: { id } });
 
     if (!link) {
         throw new ResourceLinkManageError('not_found');
     }
 
+    if (
+        !canManageResource(
+            actor,
+            link.createdById,
+            'resources:delete',
+            'resources:delete:own',
+        )
+    ) {
+        throw new ResourceLinkManageError('forbidden');
+    }
+
     await prisma.resourceLink.delete({ where: { id } });
 
     await recordAudit({
         action: 'resource_link_deleted',
-        actorId,
+        actorId: actor.id,
         oldValue: link.title.slice(0, 100),
     });
 };

@@ -3,8 +3,11 @@ model ResourceLink {
     title           String          @unique @db.VarChar(100)
     url             String          @db.VarChar(2048)
     active          Boolean         @default(true)
+    createdById     String?         @db.Uuid
     createdAt       DateTime        @default(now())
     updatedAt       DateTime        @updatedAt
+
+    createdBy       User?           @relation(fields: [createdById], references: [id], onDelete: SetNull)
 
     @@map("resource_links")
 }

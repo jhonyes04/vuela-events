@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { UserIcon } from 'lucide-react';
 import { PageTitle } from '@/components/PageTitle';
 import { useAuth } from '@/features/auth/hooks/context';
 import { ProfileForm } from '@/features/profile/components/ProfileForm';
@@ -18,7 +19,7 @@ export function OnboardingPage() {
     if (pendingUser) {
         return (
             <section className="mx-auto w-full max-w-md rounded-xl border bg-white p-5 sm:p-8">
-                <PageTitle>Completa tu perfil</PageTitle>
+                <PageTitle icon={UserIcon}>Completa tu perfil</PageTitle>
                 <p className="mb-6 text-muted-foreground">
                     Un último paso: elige qué tipos de eventos te interesan.
                 </p>
@@ -32,7 +33,7 @@ export function OnboardingPage() {
 
     return (
         <section className="mx-auto w-full max-w-md rounded-xl border bg-white p-5 sm:p-8">
-            <PageTitle>Completa tu perfil</PageTitle>
+            <PageTitle icon={UserIcon}>Completa tu perfil</PageTitle>
             <p className="mb-6 text-muted-foreground">
                 Es tu primer acceso. Escribe tu nombre y apellidos y confirma tu
                 Punto Vuela. Podrás cambiarlos cuando quieras desde «Mi perfil».
