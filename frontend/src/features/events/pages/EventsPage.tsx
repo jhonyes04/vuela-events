@@ -1,5 +1,10 @@
 import { useState } from 'react';
-import { Calendar, ChevronLeft, ChevronRight, CircleAlert } from 'lucide-react';
+import {
+    CalendarRange,
+    ChevronLeft,
+    ChevronRight,
+    CircleAlert,
+} from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '@/features/auth/hooks/context';
 import { IconTooltip } from '@/components/IconTooltip';
@@ -136,7 +141,7 @@ export function EventsPage() {
     return (
         <section>
             <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-                <PageTitle icon={Calendar} className="mb-0">
+                <PageTitle icon={CalendarRange} className="mb-0">
                     Eventos
                 </PageTitle>
                 <div className="sm:hidden">{createButton}</div>

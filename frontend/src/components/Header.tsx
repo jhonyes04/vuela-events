@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { Calendar, FolderOpen, type LucideIcon } from 'lucide-react';
+import { CalendarRange, FolderOpen, type LucideIcon } from 'lucide-react';
 import { NavLink } from 'react-router';
 import { useAuth } from '@/features/auth/hooks/context';
 import logo from '@/assets/logo.svg';
@@ -18,7 +18,7 @@ const navClass = ({ isActive }: { isActive: boolean }) =>
 // Mismos iconos que en el menú del avatar, para que Eventos/Recursos se
 // reconozcan igual en el nav principal.
 const MAIN_ROUTE_ICONS: Record<string, LucideIcon> = {
-    '/': Calendar,
+    '/': CalendarRange,
     '/recursos': FolderOpen,
 };
 
@@ -46,11 +46,7 @@ export const Header = () => {
             <div className="mx-auto max-w-6xl px-4 py-2">
                 <div className="flex items-center gap-3">
                     <span className="flex items-center gap-2 text-xl font-semibold tracking-tight">
-                        <img
-                            src={logo}
-                            alt=""
-                            className="size-7 rounded-md"
-                        />
+                        <img src={logo} alt="" className="size-7 rounded-md" />
                         Vuela Events
                     </span>
 
