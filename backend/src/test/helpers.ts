@@ -50,7 +50,12 @@ export const createUser = (
 
 // Guía de prueba: por defecto activa, para poder usarla al crear eventos.
 export const createGuide = (
-    opts: { name?: string; url?: string; active?: boolean } = {},
+    opts: {
+        name?: string;
+        url?: string;
+        active?: boolean;
+        createdById?: string;
+    } = {},
 ) => {
     const n = randomBytes(4).toString('hex');
 
@@ -59,6 +64,7 @@ export const createGuide = (
             name: opts.name ?? `Guía ${n}`,
             url: opts.url ?? `https://example.com/guia-${n}`,
             active: opts.active ?? true,
+            createdById: opts.createdById ?? null,
         },
     });
 };
@@ -71,6 +77,7 @@ export const createProject = async (
         color?: string;
         active?: boolean;
         guideIds?: string[];
+        createdById?: string;
     } = {},
 ) => {
     const n = randomBytes(4).toString('hex');
@@ -82,7 +89,77 @@ export const createProject = async (
             color: opts.color ?? 'amber',
             guides: { create: guideIds.map((guideId) => ({ guideId })) },
             active: opts.active ?? true,
+            createdById: opts.createdById ?? null,
         },
+    });
+};
+
+// Documento de prueba (fixture, no pasa por el endpoint real).
+export const createDocument = (
+    opts: {
+        title?: string;
+        fileName?: string;
+        contentType?: string;
+        active?: boolean;
+        createdById?: string;
+    } = {},
+) => {
+    const n = randomBytes(4).toString('hex');
+
+    return prisma.document.create({
+        data: {
+            title: opts.title ?? `Documento ${n}`,
+            fileName: opts.fileName ?? `archivo-${n}.pdf`,
+            contentType: opts.contentType ?? 'application/pdf',
+            size: 4,
+            data: new Uint8Array(Buffer.from('test')),
+            active: opts.active ?? true,
+            createdById: opts.createdById ?? null,
+        },
+    });
+};
+
+// Enlace de recurso de prueba (fixture, no pasa por el endpoint real).
+export const createResourceLink = (
+    opts: {
+        title?: string;
+        url?: string;
+        active?: boolean;
+        createdById?: string;
+    } = {},
+) => {
+    const n = randomBytes(4).toString('hex');
+
+    return prisma.resourceLink.create({
+        data: {
+            title: opts.title ?? `Enlace ${n}`,
+            url: opts.url ?? `https://example.com/enlace-${n}`,
+            active: opts.active ?? true,
+            createdById: opts.createdById ?? null,
+        },
+    });
+};
+
+// Rol de prueba con un conjunto de permisos a medida (p. ej. probar el
+// permiso "propios" sin el de "todos"). Upsert: roles/permisos no se
+// vacían en resetDb, así que puede llamarse una vez por archivo en before().
+export const createCustomRole = async (
+    id: string,
+    permissionIds: string[],
+): Promise<void> => {
+    await prisma.role.upsert({
+        where: { id },
+        update: {},
+        create: { id, name: id },
+    });
+
+    await prisma.rolePermission.deleteMany({ where: { roleId: id } });
+
+    await prisma.rolePermission.createMany({
+        data: permissionIds.map((permissionId) => ({
+            roleId: id,
+            permissionId,
+        })),
     });
 };
 
