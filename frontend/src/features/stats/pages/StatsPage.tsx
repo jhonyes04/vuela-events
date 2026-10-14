@@ -1,7 +1,16 @@
 import { useEffect, useState } from 'react';
-import { BarChart3, CalendarDays, Gauge, Ticket, Users } from 'lucide-react';
+import {
+    BarChart3,
+    CalendarDays,
+    Gauge,
+    RefreshCw,
+    Ticket,
+    Users,
+} from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { ComboboxField } from '@/components/ComboboxField';
+import { IconTooltip } from '@/components/IconTooltip';
 import { Kpi } from '@/features/stats/components/StatsChartKit';
 import { EventsSection } from '@/features/stats/components/EventsSection';
 import { RegistrationsSection } from '@/features/stats/components/RegistrationsSection';
@@ -74,9 +83,22 @@ export const StatsPage = () => {
         <section className="mx-auto grid w-full min-w-0 max-w-6xl grid-cols-1 gap-8">
             <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
                 <div className="grid gap-1">
-                    <PageTitle icon={BarChart3}>Estadísticas</PageTitle>
+                    <div className="flex items-center gap-2">
+                        <PageTitle icon={BarChart3}>Estadísticas</PageTitle>
+                        <IconTooltip label="Actualizar estadísticas">
+                            <Button
+                                variant="default"
+                                size="icon-sm"
+                                onClick={() => void loadStats(year)}
+                                className="mb-6"
+                            >
+                                <RefreshCw className="size-4" />
+                            </Button>
+                        </IconTooltip>
+                    </div>
                     <p className="text-sm text-muted-foreground">
-                        Eventos, inscripciones y personas atendidas.
+                        Atendidas, eventos, inscripciones, ocupación y
+                        participantes.
                     </p>
                 </div>
                 <div className="grid w-full grid-cols-1 gap-3 sm:w-[min(44rem,100%)] sm:grid-cols-[8rem_10rem_1fr]">
@@ -187,9 +209,7 @@ export const StatsPage = () => {
                 {group === 'Inscripciones' && (
                     <RegistrationsSection section={section} stats={stats} />
                 )}
-                {group === 'Ocupación' && (
-                    <OccupancySection stats={stats} />
-                )}
+                {group === 'Ocupación' && <OccupancySection stats={stats} />}
                 {group === 'Participantes' && (
                     <>
                         <UsersSection section={section} stats={stats} />
