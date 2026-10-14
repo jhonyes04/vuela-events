@@ -176,7 +176,8 @@ const ProjectFormBody = ({
                                     value.map((id) => (
                                         <ComboboxChip
                                             key={id}
-                                            className="text-sm"
+                                            className="text-sm text-white bg-green-800"
+                                            removeClassName="hover:bg-transparent hover:text-white"
                                         >
                                             {activeGuides.find(
                                                 (guide) => guide.id === id,
