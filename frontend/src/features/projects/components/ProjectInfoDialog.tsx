@@ -8,17 +8,33 @@ import {
 } from '@/components/ui/dialog';
 import { Card, CardContent } from '@/components/ui/card';
 import { buttonVariants } from '@/components/ui/button';
-import { BookOpen, ClipboardList } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Separator } from '@/components/ui/separator';
+import { BookOpen, ClipboardCheck, ClipboardList } from 'lucide-react';
+import { OverlayScrollbarsComponent } from 'overlayscrollbars-react';
+import { scrollbarOptions } from '@/lib/overlayScrollbarsOptions';
 
 interface ProjectInfoDialogProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
     project: {
         name: string;
-        description: string | null;
+        openingInstructions: string | null;
+        closingInstructions: string | null;
         guides: { name: string; url: string }[];
     };
 }
+
+const instructionsContentClassName = cn(
+    'min-w-0 text-sm break-words',
+    '[&_p:empty]:min-h-[1em]',
+    '[&_h2]:text-lg [&_h2]:font-semibold',
+    '[&_h3]:text-base [&_h3]:font-semibold',
+    '[&_ul]:list-disc [&_ul]:pl-5',
+    '[&_ol]:list-decimal [&_ol]:pl-5',
+    '[&_a]:text-primary [&_a]:underline',
+    '[&_img]:my-2 [&_img]:h-auto [&_img]:max-w-full',
+);
 
 export const ProjectInfoDialog = ({
     open,
@@ -55,30 +71,76 @@ export const ProjectInfoDialog = ({
                 ))}
             </div>
 
-            {project.description && (
-                <div className="grid gap-1.5">
-                    <h4 className="flex items-center gap-2 text-xs font-bold tracking-wide text-muted-foreground uppercase">
-                        <ClipboardList className="size-4 shrink-0 text-brand-green" />
-                        Cómo dar de alta la actividad en Ágora
-                    </h4>
-                    <Card size="default">
-                        <CardContent
-                            className={cn(
-                                'min-w-0 text-sm break-words',
-                                '[&_p:empty]:min-h-[1em]',
-                                '[&_h2]:text-lg [&_h2]:font-semibold',
-                                '[&_h3]:text-base [&_h3]:font-semibold',
-                                '[&_ul]:list-disc [&_ul]:pl-5',
-                                '[&_ol]:list-decimal [&_ol]:pl-5',
-                                '[&_a]:text-primary [&_a]:underline',
-                                '[&_img]:my-2 [&_img]:h-auto [&_img]:max-w-full',
-                            )}
-                            dangerouslySetInnerHTML={{
-                                __html: project.description,
-                            }}
-                        />
-                    </Card>
-                </div>
+            {(project.openingInstructions || project.closingInstructions) && (
+                <Tabs defaultValue="opening">
+                    <TabsList className="flex h-auto w-full gap-2 bg-transparent p-0 sm:w-auto">
+                        <TabsTrigger
+                            value="opening"
+                            className="h-9 flex-1 gap-2 rounded-lg border bg-card px-4 text-sm font-medium shadow-none data-active:border-transparent data-active:bg-brand-yellow data-active:text-brand-ink sm:flex-none sm:px-5"
+                        >
+                            <ClipboardList className="size-4 shrink-0" />
+                            Dar de alta
+                        </TabsTrigger>
+                        <TabsTrigger
+                            value="closing"
+                            className="h-9 flex-1 gap-2 rounded-lg border bg-card px-4 text-sm font-medium shadow-none data-active:border-transparent data-active:bg-brand-yellow data-active:text-brand-ink sm:flex-none sm:px-5"
+                        >
+                            <ClipboardCheck className="size-4 shrink-0" />
+                            Cerrar actividad
+                        </TabsTrigger>
+                    </TabsList>
+
+                    <Separator className="data-horizontal:h-1 bg-yellow-400/30 rounded-full" />
+
+                    <TabsContent value="opening" className="mt-2 grid gap-1.5">
+                        <span className="text-muted-foreground">
+                            Cómo dar de alta la actividad en Ágora
+                        </span>
+                        {project.openingInstructions && (
+                            <Card
+                                size="default"
+                                className="max-h-100 min-h-100 overflow-hidden"
+                            >
+                                <OverlayScrollbarsComponent
+                                    className="h-full"
+                                    options={scrollbarOptions}
+                                    defer
+                                >
+                                    <CardContent
+                                        className={instructionsContentClassName}
+                                        dangerouslySetInnerHTML={{
+                                            __html: project.openingInstructions,
+                                        }}
+                                    />
+                                </OverlayScrollbarsComponent>
+                            </Card>
+                        )}
+                    </TabsContent>
+                    <TabsContent value="closing" className="mt-2 grid gap-1.5">
+                        <span className="text-muted-foreground">
+                            Cómo cerrar la actividad en Ágora
+                        </span>
+                        {project.closingInstructions && (
+                            <Card
+                                size="default"
+                                className="max-h-100 min-h-100 overflow-hidden"
+                            >
+                                <OverlayScrollbarsComponent
+                                    className="h-full"
+                                    options={scrollbarOptions}
+                                    defer
+                                >
+                                    <CardContent
+                                        className={instructionsContentClassName}
+                                        dangerouslySetInnerHTML={{
+                                            __html: project.closingInstructions,
+                                        }}
+                                    />
+                                </OverlayScrollbarsComponent>
+                            </Card>
+                        )}
+                    </TabsContent>
+                </Tabs>
             )}
         </DialogContent>
     </Dialog>

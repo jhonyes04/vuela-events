@@ -18,6 +18,8 @@ import { TextStyle } from '@tiptap/extension-text-style';
 import Link from '@tiptap/extension-link';
 import TextAlign from '@tiptap/extension-text-align';
 import Image from '@tiptap/extension-image';
+import { OverlayScrollbarsComponent } from 'overlayscrollbars-react';
+import { scrollbarOptions } from '@/lib/overlayScrollbarsOptions';
 import {
     AlignCenter,
     AlignJustify,
@@ -532,23 +534,31 @@ export const RichTextEditor = ({
                     }}
                 />
             )}
-            <EditorContent
-                editor={editor}
+            <OverlayScrollbarsComponent
+                options={scrollbarOptions}
+                defer
                 className={cn(
-                    'min-h-32 border border-input bg-transparent px-3 py-2 text-sm outline-none',
+                    'border border-input bg-transparent',
                     hasPlaceholders ? 'border-b-0' : 'rounded-b-lg',
                     'focus-within:border-ring focus-within:ring-3 focus-within:ring-ring/50',
-                    '[&_.tiptap]:outline-none',
-                    '[&_h2]:text-lg [&_h2]:font-semibold',
-                    '[&_h3]:text-base [&_h3]:font-semibold',
-                    '[&_ul]:list-disc [&_ul]:pl-5',
-                    '[&_ol]:list-decimal [&_ol]:pl-5',
-                    '[&_a]:text-primary [&_a]:underline',
-                    'min-w-0 break-words',
-                    '[&_img]:my-2 [&_img]:h-auto [&_img]:max-w-full',
                     contentClassName,
                 )}
-            />
+            >
+                <EditorContent
+                    editor={editor}
+                    className={cn(
+                        'min-h-32 px-3 py-2 text-sm outline-none',
+                        '[&_.tiptap]:outline-none',
+                        '[&_h2]:text-lg [&_h2]:font-semibold',
+                        '[&_h3]:text-base [&_h3]:font-semibold',
+                        '[&_ul]:list-disc [&_ul]:pl-5',
+                        '[&_ol]:list-decimal [&_ol]:pl-5',
+                        '[&_a]:text-primary [&_a]:underline',
+                        'min-w-0 break-words',
+                        '[&_img]:my-2 [&_img]:h-auto [&_img]:max-w-full',
+                    )}
+                />
+            </OverlayScrollbarsComponent>
             {hasPlaceholders && (
                 <PlaceholderPalette
                     editor={editor}

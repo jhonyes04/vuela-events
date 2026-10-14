@@ -48,7 +48,8 @@ export class ProjectManageError extends Error {
 const projectSelect = {
     id: true,
     name: true,
-    description: true,
+    openingInstructions: true,
+    closingInstructions: true,
     color: true,
     active: true,
     guides: {
@@ -86,7 +87,8 @@ export const listProjects = async () => {
 export const createProject = async (
     actorId: string,
     name: string,
-    description: string | null,
+    openingInstructions: string | null,
+    closingInstructions: string | null,
     color: ProjectColor,
     guideIds: string[],
 ) => {
@@ -103,8 +105,11 @@ export const createProject = async (
     const project = await prisma.project.create({
         data: {
             name,
-            description: description
-                ? sanitizeEmailHtml(description) || null
+            openingInstructions: openingInstructions
+                ? sanitizeEmailHtml(openingInstructions) || null
+                : null,
+            closingInstructions: closingInstructions
+                ? sanitizeEmailHtml(closingInstructions) || null
                 : null,
             color,
             guides: { create: guideIds.map((guideId) => ({ guideId })) },
@@ -126,7 +131,8 @@ export const updateProject = async (
     id: string,
     input: {
         name: string;
-        description: string | null;
+        openingInstructions: string | null;
+        closingInstructions: string | null;
         color: ProjectColor;
         guideIds: string[];
         active: boolean;
@@ -164,8 +170,11 @@ export const updateProject = async (
             where: { id },
             data: {
                 name: input.name,
-                description: input.description
-                    ? sanitizeEmailHtml(input.description) || null
+                openingInstructions: input.openingInstructions
+                    ? sanitizeEmailHtml(input.openingInstructions) || null
+                    : null,
+                closingInstructions: input.closingInstructions
+                    ? sanitizeEmailHtml(input.closingInstructions) || null
                     : null,
                 color: input.color,
                 active: input.active,

@@ -10,7 +10,8 @@ export interface ProjectGuide {
 export interface Project {
     id: string;
     name: string;
-    description: string | null;
+    openingInstructions: string | null;
+    closingInstructions: string | null;
     color: ProjectColor;
     active: boolean;
     guides: ProjectGuide[];
@@ -18,7 +19,8 @@ export interface Project {
 
 export interface ProjectInput {
     name: string;
-    description: string | null;
+    openingInstructions: string | null;
+    closingInstructions: string | null;
     color: ProjectColor;
     guideIds: string[];
 }

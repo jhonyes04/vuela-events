@@ -1,5 +1,6 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { toast } from 'sonner';
+import { ClipboardCheck, ClipboardList } from 'lucide-react';
 import { RichTextEditor } from '@/components/RichTextEditor';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -25,6 +26,7 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Separator } from '@/components/ui/separator';
 import { ApiError } from '@/lib/api';
 import { cn } from '@/lib/utils';
 import {
@@ -38,6 +40,7 @@ import {
     type ProjectColor,
 } from '@/features/projects/lib/colors';
 import { useGuidesStore } from '@/features/guides/store';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const EMPTY_EDITOR_HTML = '<p></p>';
 
@@ -55,7 +58,12 @@ const ProjectFormBody = ({
 }: ProjectFormBodyProps) => {
     const chipsAnchor = useComboboxAnchor();
     const [name, setName] = useState(project?.name ?? '');
-    const [description, setDescription] = useState(project?.description ?? '');
+    const [openingInstructions, setOpeningInstructions] = useState(
+        project?.openingInstructions ?? '',
+    );
+    const [closingInstructions, setClosingInstructions] = useState(
+        project?.closingInstructions ?? '',
+    );
     const [color, setColor] = useState<ProjectColor>(
         project?.color ?? PROJECT_COLORS[0],
     );
@@ -91,8 +99,14 @@ const ProjectFormBody = ({
         try {
             const payload = {
                 name,
-                description:
-                    description === EMPTY_EDITOR_HTML ? null : description,
+                openingInstructions:
+                    openingInstructions === EMPTY_EDITOR_HTML
+                        ? null
+                        : openingInstructions,
+                closingInstructions:
+                    closingInstructions === EMPTY_EDITOR_HTML
+                        ? null
+                        : closingInstructions,
                 color,
                 guideIds: [...guideIds],
             };
@@ -221,15 +235,48 @@ const ProjectFormBody = ({
                         ))}
                     </div>
                 </fieldset>
-                <div className="grid gap-1.5">
-                    <Label htmlFor="project-description">
-                        Cómo dar de alta la actividad en Ágora
-                    </Label>
-                    <RichTextEditor
-                        value={description}
-                        onChange={setDescription}
-                    />
-                </div>
+
+                <Tabs defaultValue="opening">
+                    <TabsList className="flex h-auto w-full gap-2 bg-transparent p-0 sm:w-auto">
+                        <TabsTrigger
+                            value="opening"
+                            className="h-9 flex-1 gap-2 rounded-lg border bg-card px-4 text-sm font-medium shadow-none data-active:border-transparent data-active:bg-brand-yellow data-active:text-brand-ink sm:flex-none sm:px-5"
+                        >
+                            <ClipboardList className="size-4 shrink-0" />
+                            Dar de alta
+                        </TabsTrigger>
+                        <TabsTrigger
+                            value="closing"
+                            className="h-9 flex-1 gap-2 rounded-lg border bg-card px-4 text-sm font-medium shadow-none data-active:border-transparent data-active:bg-brand-yellow data-active:text-brand-ink sm:flex-none sm:px-5"
+                        >
+                            <ClipboardCheck className="size-4 shrink-0" />
+                            Cerrar actividad
+                        </TabsTrigger>
+                    </TabsList>
+
+                    <Separator className="data-horizontal:h-1 bg-yellow-400/30 rounded-full" />
+
+                    <TabsContent value="opening" className="mt-2 grid gap-1.5">
+                        <Label htmlFor="project-opening-instructions">
+                            Cómo dar de alta la actividad en Ágora
+                        </Label>
+                        <RichTextEditor
+                            value={openingInstructions}
+                            onChange={setOpeningInstructions}
+                            contentClassName="max-h-100 min-h-100"
+                        />
+                    </TabsContent>
+                    <TabsContent value="closing" className="mt-2 grid gap-1.5">
+                        <Label htmlFor="project-closing-instructions">
+                            Cómo cerrar la actividad en Ágora
+                        </Label>
+                        <RichTextEditor
+                            value={closingInstructions}
+                            onChange={setClosingInstructions}
+                            contentClassName="max-h-100 min-h-100"
+                        />
+                    </TabsContent>
+                </Tabs>
 
                 {project && (
                     <label className="flex items-center gap-2 text-sm">

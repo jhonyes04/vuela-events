@@ -21,7 +21,8 @@ export interface EventItem {
     project: {
         id: string;
         name: string;
-        description: string | null;
+        openingInstructions: string | null;
+        closingInstructions: string | null;
         color: ProjectColor;
         guides: { id: string; name: string; url: string }[];
     };

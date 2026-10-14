@@ -142,7 +142,8 @@ const eventSelect = {
         select: {
             id: true,
             name: true,
-            description: true,
+            openingInstructions: true,
+            closingInstructions: true,
             color: true,
             guides: {
                 select: {
