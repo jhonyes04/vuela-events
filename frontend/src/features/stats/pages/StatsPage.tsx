@@ -122,15 +122,10 @@ export const StatsPage = () => {
     return (
         <>
             <section className="mx-auto grid w-full min-w-0 max-w-6xl grid-cols-1 gap-8">
-                <header className="grid gap-4">
-                    <div className="flex items-center justify-between gap-2">
-                        <div className="flex flex-col">
-                            <PageTitle icon={BarChart3}>Estadísticas</PageTitle>
-                            <p className="text-sm text-muted-foreground">
-                                Atendidas, eventos, inscripciones, ocupación y
-                                participaciones.
-                            </p>
-                        </div>
+                <header>
+                    <div className="flex items-start justify-between">
+                        <PageTitle icon={BarChart3}>Estadísticas</PageTitle>
+
                         <div className="flex items-center gap-2">
                             <IconTooltip label="Actualizar estadísticas">
                                 <Button
@@ -158,11 +153,11 @@ export const StatsPage = () => {
                         </div>
                     </div>
 
-                    <div className="grid w-full grid-cols-1 gap-3 sm:w-[min(44rem,100%)] sm:grid-cols-[8rem_10rem_1fr]">
+                    <div className="grid w-full grid-cols-1 gap-3 sm:w-[min(44rem,100%)] sm:grid-cols-[8rem_10rem_1fr] ms-auto">
                         <div className="grid gap-1.5">
                             <Label
                                 htmlFor="stats-year"
-                                className="text-xs font-medium text-muted-foreground"
+                                className="text-xs font-bold text-black"
                             >
                                 Año
                             </Label>
@@ -187,7 +182,7 @@ export const StatsPage = () => {
                         <div className="grid gap-1.5">
                             <Label
                                 htmlFor="stats-group"
-                                className="text-xs font-medium text-muted-foreground"
+                                className="text-xs font-bold text-black"
                             >
                                 Tipo
                             </Label>
@@ -207,7 +202,7 @@ export const StatsPage = () => {
                             <div className="grid gap-1.5">
                                 <Label
                                     htmlFor="stats-section"
-                                    className="text-xs font-medium text-muted-foreground"
+                                    className="text-xs font-bold text-black"
                                 >
                                     Estadística
                                 </Label>
