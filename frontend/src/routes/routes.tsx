@@ -31,14 +31,6 @@ export const appRoutes: AppRoute[] = [
         path: '/recursos',
         label: 'Recursos',
         element: <ResourcesPage />,
-        permissions: [
-            'resources:view',
-            'resources:create',
-            'resources:edit',
-            'resources:edit:own',
-            'resources:delete',
-            'resources:delete:own',
-        ],
     },
     { path: '/perfil', label: 'Mi perfil', element: <ProfilePage /> },
     // Visibilidad (no admin) se controla donde se usa, no vía permissions: es
@@ -75,21 +67,6 @@ export const appRoutes: AppRoute[] = [
         group: 'gestion',
     },
     {
-        path: '/gestion/proyectos',
-        label: 'Proyectos',
-        element: <ProjectsPage />,
-        permissions: [
-            'projects:view',
-            'projects:create',
-            'projects:edit',
-            'projects:edit:own',
-            'projects:delete',
-            'projects:delete:own',
-        ],
-        group: 'gestion',
-    },
-
-    {
         path: '/gestion/guias',
         label: 'Guías',
         element: <GuidesPage />,
@@ -100,6 +77,20 @@ export const appRoutes: AppRoute[] = [
             'guides:edit:own',
             'guides:delete',
             'guides:delete:own',
+        ],
+        group: 'gestion',
+    },
+    {
+        path: '/gestion/proyectos',
+        label: 'Proyectos',
+        element: <ProjectsPage />,
+        permissions: [
+            'projects:view',
+            'projects:create',
+            'projects:edit',
+            'projects:edit:own',
+            'projects:delete',
+            'projects:delete:own',
         ],
         group: 'gestion',
     },

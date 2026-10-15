@@ -44,14 +44,6 @@ resourceLinkRouter.use(requireAuth);
 
 resourceLinkRouter.get(
     '/',
-    requirePermission(
-        'resources:view',
-        'resources:create',
-        'resources:edit',
-        'resources:edit:own',
-        'resources:delete',
-        'resources:delete:own',
-    ),
 
     async (_req, res) => {
         const links = await listResourceLinks();
