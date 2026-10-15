@@ -133,6 +133,19 @@ export const unregisterFromEvent = async (
     userId: string,
     eventId: string,
 ): Promise<void> => {
+    const event = await prisma.event.findUnique({
+        where: { id: eventId },
+        select: { endsAt: true },
+    });
+
+    if (!event) {
+        throw new RegistrationError('not_found');
+    }
+
+    if (event.endsAt <= new Date()) {
+        throw new RegistrationError('event_ended');
+    }
+
     const { count } = await prisma.registration.deleteMany({
         where: { eventId, userId },
     });
