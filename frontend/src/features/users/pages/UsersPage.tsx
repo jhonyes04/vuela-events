@@ -3,8 +3,11 @@ import {
     Pencil,
     FolderKanban,
     Trash2,
-    CircleCheck,
     UserCog,
+    CircleCheck,
+    CircleX,
+    UserCheck,
+    UserX,
 } from 'lucide-react';
 import { OverlayScrollbarsComponent } from 'overlayscrollbars-react';
 import { toast } from 'sonner';
@@ -60,16 +63,20 @@ export const UsersPage = () => {
         sorted: sortedUsers,
         sort,
         toggleSort,
-    } = useSort<AdminUser, 'name' | 'lastName' | 'email' | 'role' | 'active'>(
+    } = useSort<
+        AdminUser,
+        'puntoVuela' | 'lastName' | 'email' | 'role' | 'active'
+    >(
         users,
         {
-            name: (a, b) => a.name.localeCompare(b.name),
+            puntoVuela: (a, b) =>
+                (a.puntoVuela ?? '').localeCompare(b.puntoVuela ?? ''),
             lastName: (a, b) => a.lastName.localeCompare(b.lastName),
             email: (a, b) => a.email.localeCompare(b.email),
             role: (a, b) => a.role.name.localeCompare(b.role.name),
             active: (a, b) => Number(a.active) - Number(b.active),
         },
-        { key: 'lastName', dir: 'asc' },
+        { key: 'puntoVuela', dir: 'asc' },
     );
 
     const { paged, page, pageCount, pageSize, total, setPage, setPageSize } =
@@ -77,19 +84,19 @@ export const UsersPage = () => {
 
     const columns: DataTableColumn<
         AdminUser,
-        'name' | 'lastName' | 'email' | 'role' | 'active'
+        'puntoVuela' | 'lastName' | 'email' | 'role' | 'active'
     >[] = [
         {
-            key: 'name',
-            header: 'Nombre',
-            sortKey: 'name',
-            render: (u) => u.name,
+            key: 'puntoVuela',
+            header: 'Punto Vuela',
+            sortKey: 'puntoVuela',
+            render: (u) => u.puntoVuela ?? '—',
         },
         {
-            key: 'lastName',
-            header: 'Apellidos',
+            key: 'fullName',
+            header: 'Nombre y apellidos',
             sortKey: 'lastName',
-            render: (u) => u.lastName,
+            render: (u) => `${u.name} ${u.lastName}`,
         },
         {
             key: 'email',
@@ -126,18 +133,21 @@ export const UsersPage = () => {
             key: 'active',
             header: 'Estado',
             sortKey: 'active',
-            render: (u) => (u.active ? 'Activo' : 'Desactivado'),
-        },
-        {
-            key: 'superadmin',
-            header: 'Superadmin',
-            align: 'left',
             render: (u) =>
-                u.isSuperadmin && (
-                    <CircleCheck
-                        className="mx-auto size-4 text-brand-green"
-                        aria-label="Superadmin"
-                    />
+                u.active ? (
+                    <IconTooltip label="Activo">
+                        <CircleCheck
+                            className="size-4 text-brand-green mx-auto"
+                            aria-label="Activo"
+                        />
+                    </IconTooltip>
+                ) : (
+                    <IconTooltip label="Desactivado">
+                        <CircleX
+                            className="size-4 text-destructive mx-auto"
+                            aria-label="Desactivado"
+                        />
+                    </IconTooltip>
                 ),
         },
         {
@@ -179,14 +189,28 @@ export const UsersPage = () => {
                                 </Button>
                             </IconTooltip>
                         )}
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            disabled={isSelf || busy}
-                            onClick={() => void toggleActive(u.id, !u.active)}
+                        <IconTooltip
+                            label={u.active ? 'Desactivar' : 'Activar'}
                         >
-                            {u.active ? 'Desactivar' : 'Activar'}
-                        </Button>
+                            <Button
+                                variant="default"
+                                size="icon"
+                                aria-label={u.active ? 'Desactivar' : 'Activar'}
+                                disabled={isSelf || busy}
+                                className={
+                                    u.active ? 'bg-green-600' : 'bg-destructive'
+                                }
+                                onClick={() =>
+                                    void toggleActive(u.id, !u.active)
+                                }
+                            >
+                                {u.active ? (
+                                    <UserX className="size-4" />
+                                ) : (
+                                    <UserCheck className="size-4" />
+                                )}
+                            </Button>
+                        </IconTooltip>
                         <IconTooltip label="Eliminar">
                             <Button
                                 variant="destructive"
