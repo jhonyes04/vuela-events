@@ -49,7 +49,7 @@ export const ProfilePage = () => {
                     />
                 </div>
 
-                {user.roleId === 'ail' && (
+                {user.roleId !== 'admin' && user.roleId !== 'dt' && (
                     <div className="rounded-xl border bg-card p-4 sm:p-6">
                         <ProjectPreferencesSection />
                     </div>
