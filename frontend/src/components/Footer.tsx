@@ -14,7 +14,7 @@ export const Footer = ({ onAdminStarClick }: FooterProps = {}) => (
             </p>
             <div className="flex items-center gap-1.5">
                 <div className="flex flex-col items-end gap-0 5 text-white/40">
-                    <span className="flex items-center gap-1 5">Juannma</span>
+                    <span className="flex items-center gap-1 5">Juanma</span>
                     <span>Punto Vuela Almáchar</span>
                 </div>
                 {onAdminStarClick ? (
@@ -24,7 +24,10 @@ export const Footer = ({ onAdminStarClick }: FooterProps = {}) => (
                         aria-label="Iniciar sesión como superadmin"
                         className="shrink-0 transition-opacity hover:opacity-80"
                     >
-                        <Star className="size-4 text-yellow-300" fill="currentColor" />
+                        <Star
+                            className="size-4 text-yellow-300"
+                            fill="currentColor"
+                        />
                     </button>
                 ) : (
                     <Star
