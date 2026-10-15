@@ -120,7 +120,8 @@ export const Kpi = ({
     </Card>
 );
 
-// Barras verticales redondeadas con el valor encima (trimestre, año).
+// Barras verticales redondeadas con el valor encima (trimestre, año). Los
+// puntos en 0 no aportan nada al verlos y recargan el eje, así que se omiten.
 export const BarSeries = ({
     data,
     config,
@@ -132,7 +133,9 @@ export const BarSeries = ({
 }) => (
     <ChartContainer config={config} className="h-72 w-full">
         <BarChart
-            data={data.map((p) => ({ label: labelOf(p.key), count: p.count }))}
+            data={data
+                .filter((p) => p.count !== 0)
+                .map((p) => ({ label: labelOf(p.key), count: p.count }))}
             margin={{ top: 16, left: 0, right: 8 }}
         >
             <CartesianGrid vertical={false} strokeDasharray="3 3" />
@@ -250,48 +253,53 @@ export const HorizontalBars = <T extends NamedGroup>({
     metric: keyof Omit<T, 'id' | 'name' | 'color'>;
     config: ChartConfig;
     maxHeight?: number;
-}) => (
-    <ChartContainer
-        config={config}
-        className="w-full"
-        style={{ height: Math.min(maxHeight, Math.max(120, data.length * 44)) }}
-    >
-        <BarChart
-            data={data.map((g) => ({ label: g.name, value: Number(g[metric]) }))}
-            layout="vertical"
-            margin={{ left: 8, right: 32 }}
+}) => {
+    // Las filas en 0 no aportan nada al verlas y ocupan espacio igual.
+    const rows = data.filter((g) => Number(g[metric]) !== 0);
+
+    return (
+        <ChartContainer
+            config={config}
+            className="w-full"
+            style={{ height: Math.min(maxHeight, Math.max(120, rows.length * 44)) }}
         >
-            <XAxis type="number" hide />
-            <YAxis
-                dataKey="label"
-                type="category"
-                width={120}
-                tickLine={false}
-                axisLine={false}
-            />
-            <ChartTooltip
-                cursor={{ fill: 'var(--muted)' }}
-                content={<ChartTooltipContent />}
-            />
-            <Bar
-                dataKey="value"
-                radius={[0, 6, 6, 0]}
-                barSize={14}
-                minPointSize={3}
+            <BarChart
+                data={rows.map((g) => ({ label: g.name, value: Number(g[metric]) }))}
+                layout="vertical"
+                margin={{ left: 8, right: 32 }}
             >
-                {data.map((g) => (
-                    <Cell key={g.id} fill={groupFill(g.color)} />
-                ))}
-                <LabelList
-                    dataKey="value"
-                    position="right"
-                    fontSize={12}
-                    className="fill-muted-foreground"
+                <XAxis type="number" hide />
+                <YAxis
+                    dataKey="label"
+                    type="category"
+                    width={120}
+                    tickLine={false}
+                    axisLine={false}
                 />
-            </Bar>
-        </BarChart>
-    </ChartContainer>
-);
+                <ChartTooltip
+                    cursor={{ fill: 'var(--muted)' }}
+                    content={<ChartTooltipContent />}
+                />
+                <Bar
+                    dataKey="value"
+                    radius={[0, 6, 6, 0]}
+                    barSize={14}
+                    minPointSize={3}
+                >
+                    {rows.map((g) => (
+                        <Cell key={g.id} fill={groupFill(g.color)} />
+                    ))}
+                    <LabelList
+                        dataKey="value"
+                        position="right"
+                        fontSize={12}
+                        className="fill-muted-foreground"
+                    />
+                </Bar>
+            </BarChart>
+        </ChartContainer>
+    );
+};
 
 // Donut con el total en el centro y leyenda con porcentajes.
 export const StatusDonut = ({ stats }: { stats: StatsSummary }) => {
@@ -313,6 +321,8 @@ export const StatusDonut = ({ stats }: { stats: StatsSummary }) => {
         },
     ] as const;
     const total = items.reduce((sum, i) => sum + i.value, 0);
+    // Un estado en 0 no aporta nada al verlo ni en el donut ni en la leyenda.
+    const visibleItems = items.filter((i) => i.value !== 0);
 
     return (
         <div className="grid gap-6 sm:grid-cols-2 sm:items-center">
@@ -326,7 +336,7 @@ export const StatusDonut = ({ stats }: { stats: StatsSummary }) => {
                             content={<ChartTooltipContent hideLabel />}
                         />
                         <Pie
-                            data={items.map((i) => ({
+                            data={visibleItems.map((i) => ({
                                 name: i.key,
                                 value: i.value,
                                 fill: `var(--color-${i.key})`,
@@ -350,7 +360,7 @@ export const StatusDonut = ({ stats }: { stats: StatsSummary }) => {
                 </div>
             </div>
             <ul className="grid gap-4">
-                {items.map((i) => (
+                {visibleItems.map((i) => (
                     <li
                         key={i.key}
                         className="flex items-center justify-between gap-3 text-sm"

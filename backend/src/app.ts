@@ -68,6 +68,8 @@ export function createApp(options: AppOptions = {}) {
 
     // Documentos adjuntan el archivo en base64 dentro del JSON: necesitan más margen que el resto.
     app.use('/api/documents', express.json({ limit: '14mb' }));
+    // El PDF de estadísticas con gráficos reales sube varias capturas PNG en base64.
+    app.use('/api/stats', express.json({ limit: '30mb' }));
     app.use(express.json({ limit: '500kb' }));
 
     app.use(sessionMiddleware);

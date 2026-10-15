@@ -1,10 +1,7 @@
 import PDFDocument from 'pdfkit';
 import { prisma } from '../lib/prisma.js';
 import { getSignatureImage } from './profile.js';
-import {
-    isDinamizadorTitle,
-    type DinamizadorTitle,
-} from '../lib/authUser.js';
+import { isDinamizadorTitle, type DinamizadorTitle } from '../lib/authUser.js';
 import {
     DIPUTACIONES_LOGO,
     DIPUTACIONES_LOGO_RATIO,
@@ -186,7 +183,7 @@ const renderPdf = ({
         const logoWidth = 130;
         const logoHeight = logoWidth * PUNTOS_VUELA_LOGO_RATIO;
 
-        doc.image(PUNTOS_VUELA_LOGO, doc.page.margins.left, doc.y, {
+        doc.image(PUNTOS_VUELA_LOGO, 30, doc.y, {
             width: logoWidth,
         });
         doc.y += logoHeight + 15;
