@@ -2,6 +2,10 @@ import { prisma } from '../lib/prisma.js';
 import { recordAudit } from './audit.js';
 import { sanitizeEmailHtml } from './emailSignature.js';
 import { canManageResource } from '../lib/ownership.js';
+import { logger } from '../lib/logger.js';
+import { renderNotificationEmail } from '../lib/emailTemplateRender.js';
+import { sendNoReplyEmail } from './noReplyEmail.js';
+import { env } from '../config/env.js';
 import type { AuthUser } from '../lib/authUser.js';
 
 export const PROJECT_COLORS = [
@@ -88,6 +92,45 @@ export const listProjects = async () => {
     return projects.map(flattenGuides);
 };
 
+// En segundo plano: no bloquea la respuesta de crear el proyecto (puede ser
+// a cientos de usuarios). Best-effort, igual criterio que notifyRegistrationChange.
+const notifyProjectCreated = async (
+    project: { name: string },
+    excludeUserId: string,
+) => {
+    try {
+        const assignment = await prisma.emailTemplateAssignment.findUnique({
+            where: { slot: 'proyecto_nuevo' },
+            select: { template: true },
+        });
+
+        if (!assignment?.template) return;
+
+        const users = await prisma.user.findMany({
+            where: { active: true, id: { not: excludeUserId } },
+            select: { email: true },
+        });
+
+        if (users.length === 0) return;
+
+        const { subject, body } = renderNotificationEmail(assignment.template, {
+            proyecto: project.name,
+            enlacePerfil: `${env.FRONTEND_ORIGIN}/perfil`,
+        });
+
+        await sendNoReplyEmail({
+            to: users.map((user) => user.email),
+            subject,
+            html: body,
+        });
+    } catch (e) {
+        logger.error(
+            { err: e },
+            'No se pudo enviar el aviso de proyecto_nuevo',
+        );
+    }
+};
+
 export const createProject = async (
     actorId: string,
     name: string,
@@ -127,6 +170,8 @@ export const createProject = async (
         actorId,
         newValue: project.name.slice(0, 100),
     });
+
+    void notifyProjectCreated(project, actorId);
 
     return flattenGuides(project);
 };

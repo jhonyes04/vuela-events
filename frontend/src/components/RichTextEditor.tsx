@@ -1,5 +1,8 @@
 import {
+    useEffect,
     useRef,
+    useState,
+    type FormEvent,
     type PointerEvent as ReactPointerEvent,
     type ReactNode,
 } from 'react';
@@ -37,7 +40,16 @@ import {
     Underline as UnderlineIcon,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import {
+    Dialog,
+    DialogContent,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
 import { IconTooltip } from '@/components/IconTooltip';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
 import { config } from '@/config';
 
@@ -74,18 +86,100 @@ const ToolbarButton = ({
 
 const Divider = () => <div className="mx-0.5 w-px self-stretch bg-border" />;
 
-const setLink = (editor: Editor) => {
-    const previousUrl = editor.getAttributes('link').href as string | undefined;
-    const url = window.prompt('URL del enlace', previousUrl ?? '');
-
-    if (url === null) return;
-
-    if (url === '') {
-        editor.chain().focus().extendMarkRange('link').unsetLink().run();
-        return;
+const isValidHttpUrl = (value: string): boolean => {
+    try {
+        const url = new URL(value);
+        return url.protocol === 'http:' || url.protocol === 'https:';
+    } catch {
+        return false;
     }
+};
 
-    editor.chain().focus().extendMarkRange('link').setLink({ href: url }).run();
+interface LinkDialogProps {
+    open: boolean;
+    initialValue: string;
+    hasLink: boolean;
+    onOpenChange: (open: boolean) => void;
+    onSubmit: (url: string) => void;
+    onRemove: () => void;
+}
+
+const LinkDialog = ({
+    open,
+    initialValue,
+    hasLink,
+    onOpenChange,
+    onSubmit,
+    onRemove,
+}: LinkDialogProps) => {
+    const [value, setValue] = useState(initialValue);
+    const [touched, setTouched] = useState(false);
+
+    useEffect(() => {
+        if (open) {
+            setValue(initialValue);
+            setTouched(false);
+        }
+    }, [open, initialValue]);
+
+    const isValid = isValidHttpUrl(value);
+
+    const handleSubmit = (e: FormEvent) => {
+        e.preventDefault();
+        setTouched(true);
+        if (!isValid) return;
+        onSubmit(value.trim());
+    };
+
+    return (
+        <Dialog open={open} onOpenChange={onOpenChange}>
+            {open && (
+                <DialogContent className="sm:max-w-sm">
+                    <DialogHeader>
+                        <DialogTitle>Insertar enlace</DialogTitle>
+                    </DialogHeader>
+                    <form
+                        id="link-dialog-form"
+                        onSubmit={handleSubmit}
+                        className="grid gap-1.5"
+                        noValidate
+                    >
+                        <Label htmlFor="link-dialog-url">URL</Label>
+                        <Input
+                            id="link-dialog-url"
+                            type="url"
+                            autoFocus
+                            placeholder="https://…"
+                            value={value}
+                            onChange={(e) => setValue(e.target.value)}
+                            onBlur={() => setTouched(true)}
+                            aria-invalid={touched && !isValid}
+                        />
+                        {touched && !isValid && (
+                            <p className="text-sm text-destructive">
+                                Introduce una URL válida (http/https).
+                            </p>
+                        )}
+                    </form>
+                    <DialogFooter>
+                        {hasLink && (
+                            <Button
+                                type="button"
+                                variant="outline"
+                                className="mr-auto"
+                                onClick={onRemove}
+                            >
+                                Quitar enlace
+                            </Button>
+                        )}
+                        <Button type="submit" form="link-dialog-form">
+                            Insertar
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            )}
+        </Dialog>
+    );
 };
 
 const FONT_SIZES = ['10px', '12px', '14px', '16px', '18px', '24px', '32px'];
@@ -126,10 +220,11 @@ interface ToolbarState {
 interface ToolbarProps {
     editor: Editor;
     state: ToolbarState;
+    onLinkClick: () => void;
     onImageClick?: () => void;
 }
 
-const Toolbar = ({ editor, state, onImageClick }: ToolbarProps) => (
+const Toolbar = ({ editor, state, onLinkClick, onImageClick }: ToolbarProps) => (
     <div
         role="toolbar"
         aria-label="Formato de texto"
@@ -264,7 +359,7 @@ const Toolbar = ({ editor, state, onImageClick }: ToolbarProps) => (
         <ToolbarButton
             label="Enlace"
             active={state.link}
-            onClick={() => setLink(editor)}
+            onClick={onLinkClick}
         >
             <LinkIcon className="size-4" />
         </ToolbarButton>
@@ -446,6 +541,7 @@ export const RichTextEditor = ({
     onImageUpload,
 }: RichTextEditorProps) => {
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const [linkDialogOpen, setLinkDialogOpen] = useState(false);
     const editor = useEditor({
         extensions: [
             StarterKit.configure({
@@ -514,6 +610,7 @@ export const RichTextEditor = ({
             <Toolbar
                 editor={editor}
                 state={toolbarState}
+                onLinkClick={() => setLinkDialogOpen(true)}
                 onImageClick={
                     onImageUpload
                         ? () => fileInputRef.current?.click()
@@ -565,6 +662,33 @@ export const RichTextEditor = ({
                     placeholders={placeholders}
                 />
             )}
+            <LinkDialog
+                open={linkDialogOpen}
+                initialValue={
+                    (editor.getAttributes('link').href as string | undefined) ??
+                    ''
+                }
+                hasLink={toolbarState.link}
+                onOpenChange={setLinkDialogOpen}
+                onSubmit={(url) => {
+                    editor
+                        .chain()
+                        .focus()
+                        .extendMarkRange('link')
+                        .setLink({ href: url })
+                        .run();
+                    setLinkDialogOpen(false);
+                }}
+                onRemove={() => {
+                    editor
+                        .chain()
+                        .focus()
+                        .extendMarkRange('link')
+                        .unsetLink()
+                        .run();
+                    setLinkDialogOpen(false);
+                }}
+            />
         </div>
     );
 };

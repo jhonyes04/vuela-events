@@ -108,7 +108,6 @@ const ROLE_PERMISSIONS: Record<string, string[]> = {
         'email:view',
         'email:create',
         'email:edit',
-        'email:delete',
         'email:send',
         'stats:view',
     ],

@@ -1,0 +1,13 @@
+// Config SMTP de la cuenta propia del sistema (noreply@vuelaevents.es)
+model NoReplySmtpConfig {
+    id              String      @id @db.VarChar(20)
+    host            String      @db.VarChar(255)
+    port            Int         
+    secure          Boolean     @default(true)
+    user            String      @db.VarChar(255)
+    password        String      @db.Text
+    fromName        String      @db.VarChar(100)
+    updatedAt       DateTime    @updatedAt
+
+    @@map("noreply_smtp_config")
+}

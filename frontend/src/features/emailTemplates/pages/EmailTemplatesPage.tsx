@@ -10,6 +10,7 @@ import { DataTable, type DataTableColumn } from '@/components/DataTable';
 import { PaginationControls } from '@/components/PaginationControls';
 import { usePagination } from '@/hooks/usePagination';
 import { useSort } from '@/hooks/useSort';
+import { useAuth } from '@/features/auth/hooks/context';
 import { ListErrors } from '@/features/users/components/ListErrors';
 import { EmailTemplateFormDialog } from '@/features/emailTemplates/components/EmailTemplateFormDialog';
 import {
@@ -19,9 +20,20 @@ import {
 import { useEmailTemplatesStore } from '@/features/emailTemplates/store';
 import { stripHtml } from '@/lib/html';
 
-type SortKey = 'name' | 'subject' | 'active';
+type SortKey = 'name' | 'subject' | 'active' | 'category';
+
+const CATEGORY_LABELS: Record<EmailTemplate['category'], string> = {
+    dinamizacion: 'Dinamización',
+    administracion: 'Administración',
+};
+
+const CATEGORY_BADGE_CLASS: Record<EmailTemplate['category'], string> = {
+    dinamizacion: 'border-yellow-300/80 bg-yellow-300/50 text-black',
+    administracion: 'border-red-500/30 bg-red-500/10 text-red-600',
+};
 
 export const EmailTemplatesPage = () => {
+    const { user } = useAuth();
     const templates = useEmailTemplatesStore((s) => s.items);
     const loading = useEmailTemplatesStore((s) => s.loading);
     const error = useEmailTemplatesStore((s) => s.error);
@@ -37,6 +49,8 @@ export const EmailTemplatesPage = () => {
     useEffect(() => {
         void load(true);
     }, [load]);
+
+    const canDelete = user?.permissions.includes('email:delete') ?? false;
 
     const openCreate = () => {
         setEditing(null);
@@ -64,6 +78,10 @@ export const EmailTemplatesPage = () => {
             subject: (a, b) =>
                 stripHtml(a.subject).localeCompare(stripHtml(b.subject)),
             active: (a, b) => Number(a.active) - Number(b.active),
+            category: (a, b) =>
+                CATEGORY_LABELS[a.category].localeCompare(
+                    CATEGORY_LABELS[b.category],
+                ),
         },
         { key: 'name', dir: 'asc' },
     );
@@ -94,10 +112,28 @@ export const EmailTemplatesPage = () => {
             sortKey: 'active',
             render: (template) =>
                 template.active ? (
-                    <Badge variant="outline">Activa</Badge>
+                    <Badge
+                        variant="outline"
+                        className="border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+                    >
+                        Activa
+                    </Badge>
                 ) : (
-                    <Badge variant="secondary">Inactiva</Badge>
+                    <Badge variant="destructive">Inactiva</Badge>
                 ),
+        },
+        {
+            key: 'category',
+            header: 'Categoría',
+            sortKey: 'category',
+            render: (template) => (
+                <Badge
+                    variant="outline"
+                    className={CATEGORY_BADGE_CLASS[template.category]}
+                >
+                    {CATEGORY_LABELS[template.category]}
+                </Badge>
+            ),
         },
         {
             key: 'actions',
@@ -116,16 +152,18 @@ export const EmailTemplatesPage = () => {
                             <Pencil className="size-4" />
                         </Button>
                     </IconTooltip>
-                    <IconTooltip label="Eliminar">
-                        <Button
-                            variant="destructive"
-                            size="icon"
-                            aria-label="Eliminar"
-                            onClick={() => setDeleting(template)}
-                        >
-                            <Trash2 className="size-4" />
-                        </Button>
-                    </IconTooltip>
+                    {canDelete && (
+                        <IconTooltip label="Eliminar">
+                            <Button
+                                variant="destructive"
+                                size="icon"
+                                aria-label="Eliminar"
+                                onClick={() => setDeleting(template)}
+                            >
+                                <Trash2 className="size-4" />
+                            </Button>
+                        </IconTooltip>
+                    )}
                 </>
             ),
         },

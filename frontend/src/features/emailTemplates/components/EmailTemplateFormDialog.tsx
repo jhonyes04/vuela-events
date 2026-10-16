@@ -12,15 +12,18 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import {
     RichTextEditor,
     type EditorPlaceholder,
 } from '@/components/RichTextEditor';
+import { useAuth } from '@/features/auth/hooks/context';
 import { ApiError } from '@/lib/api';
 import {
     createEmailTemplate,
     updateEmailTemplate,
     type EmailTemplate,
+    type EmailTemplateCategory,
 } from '@/features/emailTemplates/lib/emailTemplates';
 
 const EVENT_PLACEHOLDERS: EditorPlaceholder[] = [
@@ -30,6 +33,18 @@ const EVENT_PLACEHOLDERS: EditorPlaceholder[] = [
     { token: '{{horaFin}}', label: 'Hora de fin' },
     { token: '{{lugar}}', label: 'Lugar' },
     { token: '{{proyecto}}', label: 'Proyecto' },
+    { token: '{{enlacePerfil}}', label: 'Enlace a tu perfil' },
+];
+
+const MAINTENANCE_PLACEHOLDERS: EditorPlaceholder[] = [
+    { token: '{{desde}}', label: 'Desde' },
+    { token: '{{hasta}}', label: 'Hasta' },
+    { token: '{{motivo}}', label: 'Motivo' },
+];
+
+const CATEGORY_OPTIONS: { value: EmailTemplateCategory; label: string }[] = [
+    { value: 'dinamizacion', label: 'Dinamización' },
+    { value: 'administracion', label: 'Administración' },
 ];
 
 interface EmailTemplateFormBodyProps {
@@ -47,7 +62,15 @@ const EmailTemplateFormBody = ({
     const [subject, setSubject] = useState(template?.subject ?? '');
     const [body, setBody] = useState(template?.body ?? '');
     const [active, setActive] = useState(template?.active ?? true);
+    const [category, setCategory] = useState<EmailTemplateCategory>(
+        template?.category ?? 'administracion',
+    );
     const [submitting, setSubmitting] = useState(false);
+    const { user } = useAuth();
+    const isAdmin = user?.roleId === 'admin';
+    const placeholders = isAdmin
+        ? [...EVENT_PLACEHOLDERS, ...MAINTENANCE_PLACEHOLDERS]
+        : EVENT_PLACEHOLDERS;
 
     const handleSubmit = async (e: FormEvent) => {
         e.preventDefault();
@@ -60,8 +83,14 @@ const EmailTemplateFormBody = ({
                       subject,
                       body,
                       active,
+                      ...(isAdmin && { category }),
                   })
-                : await createEmailTemplate({ name, subject, body });
+                : await createEmailTemplate({
+                      name,
+                      subject,
+                      body,
+                      ...(isAdmin && { category }),
+                  });
 
             toast.success(
                 template ? 'Plantilla actualizada.' : 'Plantilla creada.',
@@ -111,6 +140,36 @@ const EmailTemplateFormBody = ({
                     />
                 </div>
 
+                {isAdmin && (
+                    <div className="grid gap-1.5">
+                        <Label>Categoría</Label>
+                        <RadioGroup
+                            className="flex flex-wrap gap-4"
+                            value={category}
+                            onValueChange={(value) =>
+                                setCategory(value as EmailTemplateCategory)
+                            }
+                        >
+                            {CATEGORY_OPTIONS.map((option) => (
+                                <div
+                                    key={option.value}
+                                    className="flex items-center gap-2"
+                                >
+                                    <RadioGroupItem
+                                        id={`email-template-category-${option.value}`}
+                                        value={option.value}
+                                    />
+                                    <Label
+                                        htmlFor={`email-template-category-${option.value}`}
+                                    >
+                                        {option.label}
+                                    </Label>
+                                </div>
+                            ))}
+                        </RadioGroup>
+                    </div>
+                )}
+
                 <div className="grid gap-1.5">
                     <Label htmlFor="email-template-subject">Asunto *</Label>
                     <Input
@@ -128,7 +187,7 @@ const EmailTemplateFormBody = ({
                     <RichTextEditor
                         value={body}
                         onChange={setBody}
-                        placeholders={EVENT_PLACEHOLDERS}
+                        placeholders={placeholders}
                     />
                 </div>
 
@@ -142,7 +201,6 @@ const EmailTemplateFormBody = ({
                         {active ? 'Activa' : 'Desactivada'}
                     </label>
                 )}
-
             </form>
 
             <DialogFooter>

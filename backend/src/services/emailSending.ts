@@ -5,7 +5,14 @@ const SMTP_CONFIG_ID = 'default';
 
 // Huecos de envío conocidos por el código (los botones de "Enviar..." están
 // escritos a mano); la plantilla asignada a cada uno sí es dato, no código.
-export const SLOT_IDS = ['convocatoria', 'parte_firmas'] as const;
+export const SLOT_IDS = [
+    'convocatoria',
+    'parte_firmas',
+    'inscripcion',
+    'cancelacion_inscripcion',
+    'proyecto_nuevo',
+    'mantenimiento',
+] as const;
 export type SlotId = (typeof SLOT_IDS)[number];
 
 export type EmailSettingsFailure = 'not_found';

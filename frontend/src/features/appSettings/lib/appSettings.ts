@@ -20,6 +20,12 @@ export const setMaintenanceMode = (
 ): Promise<{ maintenanceMode: boolean }> =>
     api.patch('/app-settings/maintenance-mode', { maintenanceMode });
 
+export const sendMaintenanceNotice = (input: {
+    from: string;
+    to: string;
+    reason: string;
+}): Promise<void> => api.post('/app-settings/maintenance-notice', input);
+
 // Sin autenticar: lo consulta App.tsx antes de saber quién es el usuario.
 export const getMaintenanceStatus = (): Promise<{ maintenanceMode: boolean }> =>
     api.get('/maintenance-status');

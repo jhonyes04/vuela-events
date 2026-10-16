@@ -1,6 +1,9 @@
 import { prisma } from '../lib/prisma.js';
 import { Prisma } from '../generated/prisma/client.js';
 import { recordAudit } from './audit.js';
+import { logger } from '../lib/logger.js';
+import { renderEmail } from '../lib/emailTemplateRender.js';
+import { sendNoReplyEmail } from './noReplyEmail.js';
 
 export type RegistrationFailure =
     | 'not_found'
@@ -20,6 +23,34 @@ export class RegistrationError extends Error {
     }
 }
 
+// Aviso best-effort: si no hay plantilla asignada o falla el envío, no debe
+// tumbar la inscripción/cancelación (es una notificación, no el efecto principal).
+const notifyRegistrationChange = async (
+    slot: 'inscripcion' | 'cancelacion_inscripcion',
+    event: {
+        title: string;
+        location: string | null;
+        startsAt: Date;
+        endsAt: Date;
+    },
+    userEmail: string,
+) => {
+    try {
+        const assignment = await prisma.emailTemplateAssignment.findUnique({
+            where: { slot },
+            select: { template: true },
+        });
+
+        if (!assignment?.template) return;
+
+        const { subject, body } = renderEmail(assignment.template, event);
+
+        await sendNoReplyEmail({ to: [userEmail], subject, html: body });
+    } catch (e) {
+        logger.error({ err: e }, `No se pudo enviar el aviso de ${slot}`);
+    }
+};
+
 export const registerForEvent = async (
     userId: string,
     eventId: string,
@@ -30,7 +61,7 @@ export const registerForEvent = async (
     },
 ) => {
     try {
-        return await prisma.$transaction(async (tx) => {
+        const result = await prisma.$transaction(async (tx) => {
             await tx.$queryRaw`SELECT 1 FROM "events" WHERE "id" = ${eventId}::uuid FOR UPDATE`;
 
             const event = await tx.event.findUnique({
@@ -38,7 +69,9 @@ export const registerForEvent = async (
                 select: {
                     capacity: true,
                     endsAt: true,
+                    startsAt: true,
                     title: true,
+                    location: true,
                     projectId: true,
                 },
             });
@@ -53,7 +86,7 @@ export const registerForEvent = async (
 
             const registrant = await tx.user.findUnique({
                 where: { id: userId },
-                select: { roleId: true },
+                select: { roleId: true, email: true },
             });
 
             if (registrant?.roleId === 'admin') {
@@ -88,8 +121,6 @@ export const registerForEvent = async (
                 select: { id: true, eventId: true, createdAt: true },
             });
 
-            // Al inscribirse (por su cuenta o de la mano de un admin/DT) a un
-            // proyecto que no tenía marcado como interés, se marca solo.
             if (registrant?.roleId === 'ail') {
                 await tx.userProjectPreference.upsert({
                     where: {
@@ -108,15 +139,24 @@ export const registerForEvent = async (
             await tx.auditLog.create({
                 data: {
                     actorId,
-                    // Solo se registra el objetivo cuando lo da de alta otra persona (admin).
                     ...(actorId !== userId && { targetId: userId }),
                     action: 'event_registered',
                     newValue: event.title.slice(0, 100),
                 },
             });
 
-            return registration;
+            return { registration, event, userEmail: registrant?.email };
         });
+
+        if (result.userEmail) {
+            await notifyRegistrationChange(
+                'inscripcion',
+                result.event,
+                result.userEmail,
+            );
+        }
+
+        return result.registration;
     } catch (e) {
         if (
             e instanceof Prisma.PrismaClientKnownRequestError &&
@@ -135,7 +175,7 @@ export const unregisterFromEvent = async (
 ): Promise<void> => {
     const event = await prisma.event.findUnique({
         where: { id: eventId },
-        select: { endsAt: true },
+        select: { title: true, location: true, startsAt: true, endsAt: true },
     });
 
     if (!event) {
@@ -159,6 +199,19 @@ export const unregisterFromEvent = async (
         actorId: userId,
         newValue: eventId,
     });
+
+    const user = await prisma.user.findUnique({
+        where: { id: userId },
+        select: { email: true },
+    });
+
+    if (user) {
+        await notifyRegistrationChange(
+            'cancelacion_inscripcion',
+            event,
+            user.email,
+        );
+    }
 };
 
 export const unregisterRegistration = async (
@@ -169,7 +222,18 @@ export const unregisterRegistration = async (
 ): Promise<void> => {
     const registration = await prisma.registration.findFirst({
         where: { id: registrationId, eventId },
-        select: { userId: true, event: { select: { endsAt: true } } },
+        select: {
+            userId: true,
+            user: { select: { email: true } },
+            event: {
+                select: {
+                    endsAt: true,
+                    title: true,
+                    location: true,
+                    startsAt: true,
+                },
+            },
+        },
     });
 
     if (!registration) {
@@ -188,6 +252,12 @@ export const unregisterRegistration = async (
         targetId: registration.userId,
         newValue: eventId,
     });
+
+    await notifyRegistrationChange(
+        'cancelacion_inscripcion',
+        registration.event,
+        registration.user.email,
+    );
 };
 
 export interface Attendee {

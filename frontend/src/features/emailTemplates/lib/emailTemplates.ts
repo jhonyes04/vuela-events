@@ -1,17 +1,22 @@
 import { api } from '@/lib/api';
 
+export type EmailTemplateCategory = 'dinamizacion' | 'administracion';
+
 export interface EmailTemplate {
     id: string;
     name: string;
     subject: string;
     body: string;
     active: boolean;
+    category: EmailTemplateCategory;
 }
 
 export interface EmailTemplateInput {
     name: string;
     subject: string;
     body: string;
+    // Solo lo usa el backend si el actor es admin.
+    category?: EmailTemplateCategory;
 }
 
 export interface EmailTemplateUpdateInput extends EmailTemplateInput {

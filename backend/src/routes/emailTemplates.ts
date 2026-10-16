@@ -15,6 +15,7 @@ const createEmailTemplateSchema = z.strictObject({
     name: z.string().trim().min(2).max(100),
     subject: z.string().trim().min(2).max(200),
     body: z.string().trim().min(1).max(50_000),
+    category: z.enum(['dinamizacion', 'administracion']).optional(),
 });
 
 const updateEmailTemplateSchema = z.strictObject({
@@ -22,11 +23,13 @@ const updateEmailTemplateSchema = z.strictObject({
     subject: z.string().trim().min(2).max(200),
     body: z.string().trim().min(1).max(50_000),
     active: z.boolean(),
+    category: z.enum(['dinamizacion', 'administracion']).optional(),
 });
 
 const emailTemplateManageErrors = {
     duplicate: [409, 'Ya existe una plantilla con ese nombre'],
     not_found: [404, 'Plantilla no encontrada'],
+    forbidden: [403, 'No tienes permiso sobre esta plantilla'],
 } as const;
 
 export const emailTemplatesRouter = Router();
@@ -41,8 +44,15 @@ emailTemplatesRouter.get(
         'email:edit',
         'email:delete',
     ),
-    async (_req, res) => {
-        const templates = await listEmailTemplates();
+    async (req, res) => {
+        const actor = req.user;
+
+        if (!actor) {
+            res.status(401).json({ error: 'Autenticación requerida' });
+            return;
+        }
+
+        const templates = await listEmailTemplates(actor);
 
         res.json({ templates });
     },
@@ -68,10 +78,11 @@ emailTemplatesRouter.post(
 
         try {
             const template = await createEmailTemplate(
-                actor.id,
+                actor,
                 body.data.name,
                 body.data.subject,
                 body.data.body,
+                body.data.category,
             );
 
             res.status(201).json({ template });
@@ -109,7 +120,7 @@ emailTemplatesRouter.patch(
 
         try {
             const template = await updateEmailTemplate(
-                actor.id,
+                actor,
                 params.data.id,
                 body.data,
             );
@@ -147,7 +158,7 @@ emailTemplatesRouter.delete(
         }
 
         try {
-            await deleteEmailTemplate(actor.id, params.data.id);
+            await deleteEmailTemplate(actor, params.data.id);
             res.status(204).end();
         } catch (e) {
             if (e instanceof EmailTemplateManageError) {

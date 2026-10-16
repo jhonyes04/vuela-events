@@ -55,7 +55,7 @@ const buildPlaceholders = (
     horaInicio: (event) => timeFormat.format(event.startsAt),
     horaFin: (event) => timeFormat.format(event.endsAt),
     lugar: (event) =>
-        escape ? escapeHtml(event.location ?? '') : event.location ?? '',
+        escape ? escapeHtml(event.location ?? '') : (event.location ?? ''),
     proyecto: (event) => (escape ? escapeHtml(event.title) : event.title),
 });
 
@@ -82,3 +82,25 @@ export const renderEmail = (
     subject: applyPlaceholders(template.subject, event, SUBJECT_PLACEHOLDERS),
     body: applyPlaceholders(template.body, event, BODY_PLACEHOLDERS),
 });
+
+// Para plantillas no atadas a un evento (inscripción, proyecto nuevo,
+// mantenimiento): placeholders libres, {{clave}} -> valor ya formateado por
+// quien llama. El valor se escapa siempre en el cuerpo HTML; en el asunto no.
+export const renderNotificationEmail = (
+    template: { subject: string; body: string },
+    data: Record<string, string>,
+): { subject: string; body: string } => {
+    const applyGeneric = (text: string, escape: boolean): string =>
+        text.replace(/\{\{(\w+)\}\}/g, (match, key: string) => {
+            const value = data[key];
+
+            if (value === undefined) return match;
+
+            return escape ? escapeHtml(value) : value;
+        });
+
+    return {
+        subject: applyGeneric(template.subject, false),
+        body: applyGeneric(template.body, true),
+    };
+};
