@@ -275,7 +275,7 @@ const EventDetailBody = ({
                         </Alert>
                     )}
                     <DialogFooter>
-                        <div className="flex gap-2 sm:mr-auto">
+                        <div className="flex gap-2 ms-auto">
                             {canDelete && (
                                 <Button
                                     variant="destructive"

@@ -6,6 +6,8 @@ export type SlotId =
     | 'inscripcion'
     | 'cancelacion_inscripcion'
     | 'proyecto_nuevo'
+    | 'evento_nuevo'
+    | 'evento_cancelado'
     | 'mantenimiento';
 
 export interface SmtpConfig {

@@ -31,6 +31,7 @@ export interface RenderableEvent {
     location: string | null;
     startsAt: Date;
     endsAt: Date;
+    projectName: string;
 }
 
 const HTML_ESCAPES: Record<string, string> = {
@@ -56,8 +57,17 @@ const buildPlaceholders = (
     horaFin: (event) => timeFormat.format(event.endsAt),
     lugar: (event) =>
         escape ? escapeHtml(event.location ?? '') : (event.location ?? ''),
-    proyecto: (event) => (escape ? escapeHtml(event.title) : event.title),
+    // proyecto = nombre real del proyecto; evento = título de la sesión
+    // concreta (pueden no coincidir: un proyecto tiene varias sesiones).
+    proyecto: (event) =>
+        escape ? escapeHtml(event.projectName) : event.projectName,
+    evento: (event) => (escape ? escapeHtml(event.title) : event.title),
 });
+
+// Para listar sesiones sueltas (aviso de evento nuevo, posible serie): solo
+// números y meses en español, nunca contiene HTML, no hace falta escapar.
+export const formatSessionDateTime = (startsAt: Date, endsAt: Date): string =>
+    `${dateFormat.format(startsAt)}, de ${timeFormat.format(startsAt)} a ${timeFormat.format(endsAt)}`;
 
 const SUBJECT_PLACEHOLDERS = buildPlaceholders(false);
 const BODY_PLACEHOLDERS = buildPlaceholders(true);

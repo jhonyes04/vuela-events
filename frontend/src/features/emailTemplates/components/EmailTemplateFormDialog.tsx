@@ -29,11 +29,13 @@ import {
 const EVENT_PLACEHOLDERS: EditorPlaceholder[] = [
     { token: '{{saludo}}', label: 'Saludo' },
     { token: '{{fecha}}', label: 'Fecha' },
-    { token: '{{horaInicio}}', label: 'Hora de inicio' },
-    { token: '{{horaFin}}', label: 'Hora de fin' },
+    { token: '{{horaInicio}}', label: 'Hora inicio' },
+    { token: '{{horaFin}}', label: 'Hora fin' },
     { token: '{{lugar}}', label: 'Lugar' },
     { token: '{{proyecto}}', label: 'Proyecto' },
-    { token: '{{enlacePerfil}}', label: 'Enlace a tu perfil' },
+    { token: '{{evento}}', label: 'Evento' },
+    { token: '{{fechas}}', label: 'Fecha(s)' },
+    { token: '{{enlacePerfil}}', label: 'Enlace perfil' },
 ];
 
 const MAINTENANCE_PLACEHOLDERS: EditorPlaceholder[] = [
@@ -109,7 +111,7 @@ const EmailTemplateFormBody = ({
     };
 
     return (
-        <DialogContent className="sm:max-w-2xl">
+        <DialogContent className="sm:max-w-3xl">
             <DialogHeader>
                 <DialogTitle>
                     {template ? 'Editar plantilla' : 'Nueva plantilla'}

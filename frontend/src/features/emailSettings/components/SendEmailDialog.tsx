@@ -1,5 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Circle, CircleAlert, CircleCheck, CircleXIcon } from 'lucide-react';
+import {
+    CircleAlert,
+    CircleCheck,
+    CircleXIcon,
+    CircleDashed,
+} from 'lucide-react';
 import { createPortal } from 'react-dom';
 import { OverlayScrollbarsComponent } from 'overlayscrollbars-react';
 import { Alert, AlertTitle } from '@/components/ui/alert';
@@ -223,7 +228,7 @@ const SendEmailBody = ({
                                                                 className="mt-0.5 size-4 shrink-0 text-muted-foreground"
                                                             />
                                                         ) : (
-                                                            <Circle className="mt-0.5 size-4 shrink-0 text-muted-foreground/40" />
+                                                            <CircleDashed className="mt-0.5 size-4 shrink-0 text-muted-foreground/40" />
                                                         )}
                                                         <span
                                                             className={

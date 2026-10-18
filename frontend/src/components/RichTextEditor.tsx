@@ -1,5 +1,4 @@
 import {
-    useEffect,
     useRef,
     useState,
     type FormEvent,
@@ -126,16 +125,22 @@ const LinkDialog = ({
     const [value, setValue] = useState(initialValue);
     const [label, setLabel] = useState(initialLabel);
     const [touched, setTouched] = useState(false);
+    const [prevMode, setPrevMode] = useState(mode);
     const open = mode !== null;
     const isButton = mode === 'button';
 
-    useEffect(() => {
-        if (open) {
+    // Reinicia el formulario al abrir (nuevo mode tras estar en null): ajustar
+    // estado durante el render evita el efecto y el render en cascada que
+    // provocaba (ver react.dev "Adjusting state when a prop changes").
+    if (mode !== prevMode) {
+        setPrevMode(mode);
+
+        if (mode !== null) {
             setValue(initialValue);
             setLabel(initialLabel);
             setTouched(false);
         }
-    }, [open, initialValue, initialLabel]);
+    }
 
     const isUrlValid = isValidLinkValue(value);
     const isLabelValid = !isButton || label.trim().length > 0;
@@ -180,9 +185,7 @@ const LinkDialog = ({
                                     autoFocus
                                     placeholder="Ir a mi perfil"
                                     value={label}
-                                    onChange={(e) =>
-                                        setLabel(e.target.value)
-                                    }
+                                    onChange={(e) => setLabel(e.target.value)}
                                     onBlur={() => setTouched(true)}
                                     aria-invalid={touched && !isLabelValid}
                                 />
@@ -205,8 +208,8 @@ const LinkDialog = ({
                         />
                         {touched && !isUrlValid && (
                             <p className="text-sm text-destructive">
-                                Introduce una URL válida (http/https) o un
-                                token de plantilla, p. ej. {'{{enlace}}'}.
+                                Introduce una URL válida (http/https) o un token
+                                de plantilla, p. ej. {'{{enlace}}'}.
                             </p>
                         )}
                     </form>
@@ -480,24 +483,28 @@ const PlaceholderPalette = ({
     editor,
     placeholders,
 }: PlaceholderPaletteProps) => (
-    <div className="flex flex-wrap items-center gap-1.5 rounded-b-lg border border-t-0 border-input bg-muted/50 p-2">
-        <span className="text-xs font-medium text-muted-foreground">
+    <div className="rounded-b-lg border border-t-0 border-input bg-green-900/75 p-2 text-center">
+        <span className="font-medium text-white">
             Arrastra o haz clic para insertar:
         </span>
-        {placeholders.map(({ token, label }) => (
-            <button
-                key={token}
-                type="button"
-                draggable
-                onDragStart={(e) => e.dataTransfer.setData('text/plain', token)}
-                onClick={() =>
-                    editor.chain().focus().insertContent(token).run()
-                }
-                className="cursor-grab rounded-full border border-border bg-background px-2 py-0.5 text-xs font-medium hover:bg-muted active:cursor-grabbing"
-            >
-                {label}
-            </button>
-        ))}
+        <div className="flex flex-wrap items-center justify-center gap-1.5 mt-2">
+            {placeholders.map(({ token, label }) => (
+                <button
+                    key={token}
+                    type="button"
+                    draggable
+                    onDragStart={(e) =>
+                        e.dataTransfer.setData('text/plain', token)
+                    }
+                    onClick={() =>
+                        editor.chain().focus().insertContent(token).run()
+                    }
+                    className="cursor-grab rounded-full border border-border bg-background px-2 py-0.5 text-xs font-medium hover:bg-muted active:cursor-grabbing"
+                >
+                    {label}
+                </button>
+            ))}
+        </div>
     </div>
 );
 
@@ -626,8 +633,9 @@ export const RichTextEditor = ({
     onImageUpload,
 }: RichTextEditorProps) => {
     const fileInputRef = useRef<HTMLInputElement>(null);
-    const [linkDialogMode, setLinkDialogMode] =
-        useState<LinkDialogMode | null>(null);
+    const [linkDialogMode, setLinkDialogMode] = useState<LinkDialogMode | null>(
+        null,
+    );
     const editor = useEditor({
         extensions: [
             StarterKit.configure({

@@ -157,12 +157,20 @@ export const startBulkSend = async (
 
     const event = await prisma.event.findUnique({
         where: { id: input.eventId },
-        select: { title: true, location: true, startsAt: true, endsAt: true },
+        select: {
+            title: true,
+            location: true,
+            startsAt: true,
+            endsAt: true,
+            project: { select: { name: true } },
+        },
     });
 
     if (!event) {
         throw new StartSendError('event_not_found');
     }
+
+    const renderableEvent = { ...event, projectName: event.project.name };
 
     // Resuelto por inscripción, acotado a este evento: así nadie puede
     // colar el id de inscripción de otro evento para enviarse algo ajeno.
@@ -177,7 +185,7 @@ export const startBulkSend = async (
     }));
 
     const template = assignment.template;
-    const { subject, body } = renderEmail(template, event);
+    const { subject, body } = renderEmail(template, renderableEvent);
 
     // Se resuelve antes de cualquier efecto: si falla, no se consume el borrador.
     const signature = await getEmailSignatureForSend(input.actorId);

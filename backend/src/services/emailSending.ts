@@ -11,6 +11,8 @@ export const SLOT_IDS = [
     'inscripcion',
     'cancelacion_inscripcion',
     'proyecto_nuevo',
+    'evento_nuevo',
+    'evento_cancelado',
     'mantenimiento',
 ] as const;
 export type SlotId = (typeof SLOT_IDS)[number];

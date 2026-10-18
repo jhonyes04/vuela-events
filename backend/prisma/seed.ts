@@ -123,24 +123,85 @@ const SMTP_CONFIG = {
     secure: false,
 };
 
-const EMAIL_TEMPLATES: { name: string; subject: string; body: string; active: boolean }[] = [
+type EmailTemplateCategory = 'dinamizacion' | 'administracion';
+
+const EMAIL_TEMPLATES: {
+    name: string;
+    subject: string;
+    body: string;
+    active: boolean;
+    category: EmailTemplateCategory;
+}[] = [
     {
         name: 'Acta de asistencia',
-        subject: 'Acta de asistencia {{proyecto}} {{fecha}}',
-        body: '<p>{{saludo}} a tod@s.</p><p></p><p>En adjunto os dejo el acta de asistencia correspondiente a la sesión de <strong>{{proyecto}}</strong> del pasado día <strong>{{fecha}}</strong>.</p><p></p><p>Muchas gracias por vuestro trabajo.</p><p></p><p>Un abrazo.</p>',
+        subject: 'Acta de asistencia {{evento}} {{fecha}}',
+        body: '<p>{{saludo}} a tod@s.</p><p></p><p>En adjunto os dejo el acta de asistencia correspondiente a la sesión de <strong>{{evento}}</strong> del pasado día <strong>{{fecha}}</strong>.</p><p></p><p>Muchas gracias por vuestro trabajo.</p><p></p><p>Un abrazo.</p>',
         active: true,
+        category: 'dinamizacion',
     },
     {
         name: 'Convocatorias',
-        subject: 'Convocatoria asistencia {{proyecto}}',
+        subject: 'Convocatoria asistencia {{evento}}',
         body: '<p>{{saludo}} a tod@s:</p><p></p><p>El motivo de mi email es para comunicaros que se os convoca para el día<strong>&nbsp;{{fecha}} </strong>en horario de<strong> {{horaInicio}} a {{horaFin}} horas,</strong>&nbsp;en el<strong>&nbsp;{{lugar}}</strong>&nbsp;para que impartáis&nbsp;los talleres propuestos dentro del proyecto "Vuela con Salud".</p><p></p><p>Muchas gracias por vuestra implicación y buen hacer.</p><p></p><p>Un abrazo.</p>',
         active: true,
+        category: 'dinamizacion',
+    },
+    {
+        name: 'Inscripción a evento',
+        subject: 'Inscripción confirmada: {{evento}}',
+        body: '<p>{{saludo}}</p><p></p><p>Inscripción confirmada:</p><p></p><ul><li><p>Evento: <strong>{{evento}}</strong> </p></li><li><p>Lugar: <strong>{{lugar}}</strong></p></li><li><p>Fecha: <strong>{{fecha}}</strong></p></li><li><p>Horario: <strong>{{horaInicio}}</strong> a <strong>{{horaFin}}</strong></p></li></ul><p></p><p>Nos vemos allí,</p><p></p><p>Un saludo</p>',
+        active: true,
+        category: 'administracion',
+    },
+    {
+        name: 'Cancelación de Inscripción',
+        subject: 'Inscripción cancelada: {{evento}}',
+        body: '<p>{{saludo}}</p><p></p><p>Inscripción cancelada:</p><p></p><ul><li><p>Evento: <strong>{{evento}}</strong></p></li><li><p>Lugar: <strong>{{lugar}}</strong></p></li><li><p>Fecha: <strong>{{fecha}}</strong></p></li></ul><p></p><p>Nos vemos allí,</p><p></p><p>Un saludo</p>',
+        active: true,
+        category: 'administracion',
+    },
+    {
+        name: 'Proyecto nuevo',
+        subject: 'Nuevo proyecto disponible: {{proyecto}}',
+        body: '<p>Hola:</p><p></p><p>Se ha creado un nuevo proyecto, <strong>{{proyecto}}</strong>. Si te interesa participar, puedes marcarlo como de tu interés desde tu perfil de la aplicación haciendo clic en el siguiente botón y te avisaremos de sus próximas sesiones.</p><p></p><p></p><p style="text-align:center"><a href="{{enlacePerfil}}" style="background-color:rgb(244, 214, 78);color:rgb(36, 37, 41);padding:10px 20px;border-radius:6px;text-decoration:none;display:inline-block"><strong>Ir a mi perfil</strong></a></p><p></p><p>Un saludo</p>',
+        active: true,
+        category: 'administracion',
+    },
+    {
+        name: 'Evento nuevo de un proyecto',
+        subject: 'Nuevo evento {{evento}} dentro del proyecto {{proyecto}}',
+        body: '<p>Hola:</p><p></p><p>Se ha programado un nuevo evento dentro del proyecto <strong>{{proyecto}}</strong>, un proyecto que marcaste como de tu interés. A continuación se muestran los datos el evento:</p><p></p><ul><li><p>Evento: <strong>{{evento}}</strong></p></li><li><p>Lugar: <strong>{{lugar}}</strong>.</p></li></ul><ul><li><p>Fechas:</p><p><strong>{{fechas}}</strong></p></li></ul><p></p><p>Puedes inscribirte desde la aplicación.</p><p></p><p>Un saludo</p>',
+        active: true,
+        category: 'administracion',
+    },
+    {
+        name: 'Evento o serie cancelados',
+        subject: 'Evento {{evento}} cancelado',
+        body: '<p>Hola:</p><p></p><p>Te avisamos de que se ha cancelado tu inscripción porque se ha eliminado el siguiente evento de <strong>{{proyecto}}</strong>:</p><p></p><ul><li><p>Evento: <strong>{{evento}}</strong></p></li><li><p>Lugar: <strong>{{lugar}}</strong>.</p></li><li><p>Fechas canceladas:</p><p><strong>{{fechas}}</strong></p></li></ul><p></p><p>Disculpa las molestias.</p><p></p><p>Un saludo</p>',
+        active: true,
+        category: 'administracion',
+    },
+    {
+        name: 'Mantenimiento',
+        subject: 'Mantenimiento programado de Vuela Events',
+        body: '<p>Hola:</p><p></p><p>Te avisamos de que la aplicación estará en mantenimiento desde el {{desde}} hasta el {{hasta}}.</p><p></p><p>Motivo: {{motivo}}</p><p></p><p>Durante ese tiempo no podrás acceder a la aplicación. Disculpa las molestias.</p><p></p><p>Un saludo</p>',
+        active: true,
+        category: 'administracion',
     },
 ];
 
 const EMAIL_ASSIGNMENTS = [
     { slot: 'convocatoria', templateName: 'Convocatorias' },
     { slot: 'parte_firmas', templateName: 'Acta de asistencia' },
+    { slot: 'inscripcion', templateName: 'Inscripción a evento' },
+    {
+        slot: 'cancelacion_inscripcion',
+        templateName: 'Cancelación de Inscripción',
+    },
+    { slot: 'proyecto_nuevo', templateName: 'Proyecto nuevo' },
+    { slot: 'evento_nuevo', templateName: 'Evento nuevo de un proyecto' },
+    { slot: 'evento_cancelado', templateName: 'Evento o serie cancelados' },
+    { slot: 'mantenimiento', templateName: 'Mantenimiento' },
 ];
 
 const main = async () => {

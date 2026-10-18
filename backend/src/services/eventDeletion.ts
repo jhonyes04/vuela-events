@@ -1,4 +1,5 @@
 import { prisma } from '../lib/prisma.js';
+import { notifyEventCancelled } from './eventNotify.js';
 
 export type EventDeleteFailure = 'not_found' | 'forbidden';
 
@@ -19,20 +20,21 @@ export const deleteEvent = async (
     actor: { id: string; roleId: string },
     eventId: string,
 ): Promise<void> => {
-    await prisma.$transaction(async (tx) => {
+    const event = await prisma.$transaction(async (tx) => {
         const event = await tx.event.findUnique({
             where: { id: eventId },
             select: {
                 title: true,
+                location: true,
                 startsAt: true,
+                endsAt: true,
                 createdById: true,
-                // Solo las inscripciones visibles: los DT nunca cuentan.
-                _count: {
-                    select: {
-                        registrations: {
-                            where: { user: { roleId: { not: 'dt' } } },
-                        },
-                    },
+                project: { select: { name: true } },
+                // Solo las inscripciones visibles: los DT nunca cuentan, ni
+                // para el recuento de auditoría ni para el aviso de cancelación.
+                registrations: {
+                    where: { user: { roleId: { not: 'dt' } } },
+                    select: { user: { select: { email: true } } },
                 },
             },
         });
@@ -57,11 +59,26 @@ export const deleteEvent = async (
                     100,
                 ),
                 newValue:
-                    event._count.registrations === 1
+                    event.registrations.length === 1
                         ? '1 inscripción'
-                        : `${event._count.registrations} inscripciones`,
+                        : `${event.registrations.length} inscripciones`,
             },
         });
+
+        return event;
+    });
+
+    void notifyEventCancelled({
+        title: event.title,
+        location: event.location,
+        projectName: event.project.name,
+        sessions: [
+            {
+                startsAt: event.startsAt,
+                endsAt: event.endsAt,
+                registrantEmails: event.registrations.map((r) => r.user.email),
+            },
+        ],
     });
 };
 
@@ -71,18 +88,19 @@ export const deleteEventSeries = async (
     actor: { id: string; roleId: string },
     seriesId: string,
 ): Promise<{ deletedCount: number }> => {
-    return prisma.$transaction(async (tx) => {
+    const events = await prisma.$transaction(async (tx) => {
         const events = await tx.event.findMany({
             where: { seriesId, startsAt: { gt: new Date() } },
             select: {
                 title: true,
+                location: true,
+                startsAt: true,
+                endsAt: true,
                 createdById: true,
-                _count: {
-                    select: {
-                        registrations: {
-                            where: { user: { roleId: { not: 'dt' } } },
-                        },
-                    },
+                project: { select: { name: true } },
+                registrations: {
+                    where: { user: { roleId: { not: 'dt' } } },
+                    select: { user: { select: { email: true } } },
                 },
             },
         });
@@ -98,7 +116,7 @@ export const deleteEventSeries = async (
         }
 
         const totalRegistrations = events.reduce(
-            (sum, e) => sum + e._count.registrations,
+            (sum, e) => sum + e.registrations.length,
             0,
         );
 
@@ -122,6 +140,21 @@ export const deleteEventSeries = async (
             },
         });
 
-        return { deletedCount: events.length };
+        return events;
     });
+
+    const first = events[0]!;
+
+    void notifyEventCancelled({
+        title: first.title,
+        location: first.location,
+        projectName: first.project.name,
+        sessions: events.map((event) => ({
+            startsAt: event.startsAt,
+            endsAt: event.endsAt,
+            registrantEmails: event.registrations.map((r) => r.user.email),
+        })),
+    });
+
+    return { deletedCount: events.length };
 };

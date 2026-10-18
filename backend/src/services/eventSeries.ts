@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { prisma } from '../lib/prisma.js';
 import { expandRecurrence, type RecurrenceRule } from '../lib/recurrence.js';
+import { notifyEventCreated } from './eventNotify.js';
 
 export interface SeriesInput {
     title: string;
@@ -45,6 +46,19 @@ export const createEventSeries = async (
             },
         });
     });
+
+    void notifyEventCreated(
+        {
+            title: input.title,
+            location: input.location,
+            projectId: input.projectId,
+            sessions: sessions.map((session) => ({
+                startsAt: session.startsAt,
+                endsAt: session.endsAt,
+            })),
+        },
+        actorId,
+    );
 
     return {
         seriesId,

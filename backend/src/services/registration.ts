@@ -2,7 +2,10 @@ import { prisma } from '../lib/prisma.js';
 import { Prisma } from '../generated/prisma/client.js';
 import { recordAudit } from './audit.js';
 import { logger } from '../lib/logger.js';
-import { renderEmail } from '../lib/emailTemplateRender.js';
+import {
+    renderEmail,
+    type RenderableEvent,
+} from '../lib/emailTemplateRender.js';
 import { sendNoReplyEmail } from './noReplyEmail.js';
 
 export type RegistrationFailure =
@@ -27,12 +30,7 @@ export class RegistrationError extends Error {
 // tumbar la inscripción/cancelación (es una notificación, no el efecto principal).
 const notifyRegistrationChange = async (
     slot: 'inscripcion' | 'cancelacion_inscripcion',
-    event: {
-        title: string;
-        location: string | null;
-        startsAt: Date;
-        endsAt: Date;
-    },
+    event: RenderableEvent,
     userEmail: string,
 ) => {
     try {
@@ -73,6 +71,7 @@ export const registerForEvent = async (
                     title: true,
                     location: true,
                     projectId: true,
+                    project: { select: { name: true } },
                 },
             });
 
@@ -151,7 +150,7 @@ export const registerForEvent = async (
         if (result.userEmail) {
             void notifyRegistrationChange(
                 'inscripcion',
-                result.event,
+                { ...result.event, projectName: result.event.project.name },
                 result.userEmail,
             );
         }
@@ -175,7 +174,13 @@ export const unregisterFromEvent = async (
 ): Promise<void> => {
     const event = await prisma.event.findUnique({
         where: { id: eventId },
-        select: { title: true, location: true, startsAt: true, endsAt: true },
+        select: {
+            title: true,
+            location: true,
+            startsAt: true,
+            endsAt: true,
+            project: { select: { name: true } },
+        },
     });
 
     if (!event) {
@@ -208,7 +213,7 @@ export const unregisterFromEvent = async (
     if (user) {
         void notifyRegistrationChange(
             'cancelacion_inscripcion',
-            event,
+            { ...event, projectName: event.project.name },
             user.email,
         );
     }
@@ -231,6 +236,7 @@ export const unregisterRegistration = async (
                     title: true,
                     location: true,
                     startsAt: true,
+                    project: { select: { name: true } },
                 },
             },
         },
@@ -255,7 +261,10 @@ export const unregisterRegistration = async (
 
     void notifyRegistrationChange(
         'cancelacion_inscripcion',
-        registration.event,
+        {
+            ...registration.event,
+            projectName: registration.event.project.name,
+        },
         registration.user.email,
     );
 };

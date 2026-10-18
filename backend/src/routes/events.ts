@@ -17,6 +17,7 @@ import {
     EventDeleteError,
 } from '../services/eventDeletion.js';
 import { createEventSeries } from '../services/eventSeries.js';
+import { notifyEventCreated } from '../services/eventNotify.js';
 import {
     listAttendees,
     listRegistrationCandidates,
@@ -336,6 +337,16 @@ eventsRouter.post(
             actorId: actor.id,
             newValue: event.title.slice(0, 100),
         });
+
+        void notifyEventCreated(
+            {
+                title: event.title,
+                location: event.location,
+                projectId: event.project.id,
+                sessions: [{ startsAt: event.startsAt, endsAt: event.endsAt }],
+            },
+            actor.id,
+        );
 
         res.status(201).json({ event: flattenEventProject(event) });
     },

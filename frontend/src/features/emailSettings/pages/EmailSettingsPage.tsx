@@ -27,6 +27,8 @@ const SLOT_LABELS: Record<SlotId, string> = {
     inscripcion: 'Inscripción a evento',
     cancelacion_inscripcion: 'Cancelación de inscripción',
     proyecto_nuevo: 'Proyecto nuevo',
+    evento_nuevo: 'Evento nuevo de un proyecto',
+    evento_cancelado: 'Evento o serie cancelados',
     mantenimiento: 'Aviso de mantenimiento',
 };
 
@@ -38,6 +40,8 @@ const SLOT_SENDER: Record<SlotId, SmtpSender> = {
     inscripcion: 'noreply',
     cancelacion_inscripcion: 'noreply',
     proyecto_nuevo: 'noreply',
+    evento_nuevo: 'noreply',
+    evento_cancelado: 'noreply',
     mantenimiento: 'noreply',
 };
 
