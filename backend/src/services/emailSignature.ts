@@ -37,6 +37,23 @@ const sanitizeOptions: sanitizeHtml.IOptions = {
             'text-align': [/^(left|center|right|justify)$/],
             'font-size': [/^(10|12|14|16|18|24|32)px$/],
         },
+        // Estilos de botón, solo en <a>: fondo/color planos y esquinas redondeadas.
+        // El navegador normaliza los hex a rgb(...) al serializar el editor, así
+        // que hay que admitir ambos formatos.
+        a: {
+            'background-color': [
+                /^#[0-9a-fA-F]{3,8}$/,
+                /^rgb\(\s*\d{1,3}\s*,\s*\d{1,3}\s*,\s*\d{1,3}\s*\)$/,
+            ],
+            color: [
+                /^#[0-9a-fA-F]{3,8}$/,
+                /^rgb\(\s*\d{1,3}\s*,\s*\d{1,3}\s*,\s*\d{1,3}\s*\)$/,
+            ],
+            padding: [/^\d{1,3}px( \d{1,3}px){0,3}$/],
+            'border-radius': [/^\d{1,3}px$/],
+            'text-decoration': [/^none$/],
+            display: [/^inline-block$/],
+        },
     },
     allowedSchemes: ['http', 'https', 'mailto'],
     // Una <img> que no apunte a una imagen propia ya subida se descarta entera.

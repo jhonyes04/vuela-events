@@ -36,6 +36,7 @@ import {
     Link as LinkIcon,
     List,
     ListOrdered,
+    MousePointerClick,
     Strikethrough,
     Underline as UnderlineIcon,
 } from 'lucide-react';
@@ -86,7 +87,13 @@ const ToolbarButton = ({
 
 const Divider = () => <div className="mx-0.5 w-px self-stretch bg-border" />;
 
-const isValidHttpUrl = (value: string): boolean => {
+const MERGE_TOKEN_RE = /^\{\{\w+\}\}$/;
+
+// Admite una URL http(s) normal o un token de plantilla tipo {{enlacePerfil}},
+// que el backend sustituye antes de enviar el correo.
+const isValidLinkValue = (value: string): boolean => {
+    if (MERGE_TOKEN_RE.test(value)) return true;
+
     try {
         const url = new URL(value);
         return url.protocol === 'http:' || url.protocol === 'https:';
@@ -95,40 +102,55 @@ const isValidHttpUrl = (value: string): boolean => {
     }
 };
 
+type LinkDialogMode = 'link' | 'button';
+
 interface LinkDialogProps {
-    open: boolean;
+    mode: LinkDialogMode | null;
     initialValue: string;
+    initialLabel: string;
     hasLink: boolean;
     onOpenChange: (open: boolean) => void;
-    onSubmit: (url: string) => void;
+    onSubmit: (url: string, label: string) => void;
     onRemove: () => void;
 }
 
 const LinkDialog = ({
-    open,
+    mode,
     initialValue,
+    initialLabel,
     hasLink,
     onOpenChange,
     onSubmit,
     onRemove,
 }: LinkDialogProps) => {
     const [value, setValue] = useState(initialValue);
+    const [label, setLabel] = useState(initialLabel);
     const [touched, setTouched] = useState(false);
+    const open = mode !== null;
+    const isButton = mode === 'button';
 
     useEffect(() => {
         if (open) {
             setValue(initialValue);
+            setLabel(initialLabel);
             setTouched(false);
         }
-    }, [open, initialValue]);
+    }, [open, initialValue, initialLabel]);
 
-    const isValid = isValidHttpUrl(value);
+    const isUrlValid = isValidLinkValue(value);
+    const isLabelValid = !isButton || label.trim().length > 0;
+    const isValid = isUrlValid && isLabelValid;
 
     const handleSubmit = (e: FormEvent) => {
+        // stopPropagation: este <form> vive dentro de un Dialog portado a
+        // document.body, pero en el árbol de React sigue colgando del <form>
+        // de la plantilla. Sin cortar la propagación, el submit sintético
+        // burbujea hasta ese formulario exterior y lo envía también.
         e.preventDefault();
+        e.stopPropagation();
         setTouched(true);
         if (!isValid) return;
-        onSubmit(value.trim());
+        onSubmit(value.trim(), label.trim());
     };
 
     return (
@@ -136,7 +158,11 @@ const LinkDialog = ({
             {open && (
                 <DialogContent className="sm:max-w-sm">
                     <DialogHeader>
-                        <DialogTitle>Insertar enlace</DialogTitle>
+                        <DialogTitle>
+                            {mode === 'button'
+                                ? 'Insertar botón'
+                                : 'Insertar enlace'}
+                        </DialogTitle>
                     </DialogHeader>
                     <form
                         id="link-dialog-form"
@@ -144,20 +170,43 @@ const LinkDialog = ({
                         className="grid gap-1.5"
                         noValidate
                     >
+                        {isButton && (
+                            <>
+                                <Label htmlFor="link-dialog-label">
+                                    Texto del botón
+                                </Label>
+                                <Input
+                                    id="link-dialog-label"
+                                    autoFocus
+                                    placeholder="Ir a mi perfil"
+                                    value={label}
+                                    onChange={(e) =>
+                                        setLabel(e.target.value)
+                                    }
+                                    onBlur={() => setTouched(true)}
+                                    aria-invalid={touched && !isLabelValid}
+                                />
+                                {touched && !isLabelValid && (
+                                    <p className="text-sm text-destructive">
+                                        Escribe el texto del botón.
+                                    </p>
+                                )}
+                            </>
+                        )}
                         <Label htmlFor="link-dialog-url">URL</Label>
                         <Input
                             id="link-dialog-url"
-                            type="url"
-                            autoFocus
-                            placeholder="https://…"
+                            autoFocus={!isButton}
+                            placeholder="https://… o {{token}}"
                             value={value}
                             onChange={(e) => setValue(e.target.value)}
                             onBlur={() => setTouched(true)}
-                            aria-invalid={touched && !isValid}
+                            aria-invalid={touched && !isUrlValid}
                         />
-                        {touched && !isValid && (
+                        {touched && !isUrlValid && (
                             <p className="text-sm text-destructive">
-                                Introduce una URL válida (http/https).
+                                Introduce una URL válida (http/https) o un
+                                token de plantilla, p. ej. {'{{enlace}}'}.
                             </p>
                         )}
                     </form>
@@ -200,6 +249,27 @@ const FontSize = TextStyle.extend({
     },
 });
 
+// Estilo fijo para que un enlace se vea como botón; debe coincidir con lo que
+// admite el saneador del backend (backend/src/services/emailSignature.ts).
+const BUTTON_LINK_STYLE =
+    'background-color:#f4d64e;color:#242529;padding:10px 20px;border-radius:6px;text-decoration:none;display:inline-block;';
+
+// Guarda el estilo de botón como style="…" en el <a> (igual que FontSize con el span).
+const LinkWithButton = Link.extend({
+    addAttributes() {
+        return {
+            ...this.parent?.(),
+            buttonStyle: {
+                default: null,
+                parseHTML: (el) =>
+                    el.style.backgroundColor ? el.getAttribute('style') : null,
+                renderHTML: (attrs) =>
+                    attrs.buttonStyle ? { style: attrs.buttonStyle } : {},
+            },
+        };
+    },
+});
+
 interface ToolbarState {
     bold: boolean;
     italic: boolean;
@@ -214,6 +284,7 @@ interface ToolbarState {
     alignRight: boolean;
     alignJustify: boolean;
     link: boolean;
+    buttonLink: boolean;
     fontSize: string;
 }
 
@@ -221,10 +292,17 @@ interface ToolbarProps {
     editor: Editor;
     state: ToolbarState;
     onLinkClick: () => void;
+    onButtonClick: () => void;
     onImageClick?: () => void;
 }
 
-const Toolbar = ({ editor, state, onLinkClick, onImageClick }: ToolbarProps) => (
+const Toolbar = ({
+    editor,
+    state,
+    onLinkClick,
+    onButtonClick,
+    onImageClick,
+}: ToolbarProps) => (
     <div
         role="toolbar"
         aria-label="Formato de texto"
@@ -358,10 +436,17 @@ const Toolbar = ({ editor, state, onLinkClick, onImageClick }: ToolbarProps) => 
 
         <ToolbarButton
             label="Enlace"
-            active={state.link}
+            active={state.link && !state.buttonLink}
             onClick={onLinkClick}
         >
             <LinkIcon className="size-4" />
+        </ToolbarButton>
+        <ToolbarButton
+            label="Insertar botón"
+            active={state.buttonLink}
+            onClick={onButtonClick}
+        >
+            <MousePointerClick className="size-4" />
         </ToolbarButton>
         {onImageClick && (
             <>
@@ -541,7 +626,8 @@ export const RichTextEditor = ({
     onImageUpload,
 }: RichTextEditorProps) => {
     const fileInputRef = useRef<HTMLInputElement>(null);
-    const [linkDialogOpen, setLinkDialogOpen] = useState(false);
+    const [linkDialogMode, setLinkDialogMode] =
+        useState<LinkDialogMode | null>(null);
     const editor = useEditor({
         extensions: [
             StarterKit.configure({
@@ -551,7 +637,7 @@ export const RichTextEditor = ({
             }),
             FontSize,
             Underline,
-            Link.configure({ openOnClick: false, autolink: true }),
+            LinkWithButton.configure({ openOnClick: false, autolink: true }),
             TextAlign.configure({ types: ['heading', 'paragraph'] }),
             ResizableImage.configure({ inline: false, allowBase64: true }),
         ],
@@ -578,6 +664,7 @@ export const RichTextEditor = ({
             alignRight: editor?.isActive({ textAlign: 'right' }) ?? false,
             alignJustify: editor?.isActive({ textAlign: 'justify' }) ?? false,
             link: editor?.isActive('link') ?? false,
+            buttonLink: Boolean(editor?.getAttributes('link').buttonStyle),
             fontSize:
                 (editor?.getAttributes('textStyle').fontSize as string) ?? '',
         }),
@@ -610,7 +697,8 @@ export const RichTextEditor = ({
             <Toolbar
                 editor={editor}
                 state={toolbarState}
-                onLinkClick={() => setLinkDialogOpen(true)}
+                onLinkClick={() => setLinkDialogMode('link')}
+                onButtonClick={() => setLinkDialogMode('button')}
                 onImageClick={
                     onImageUpload
                         ? () => fileInputRef.current?.click()
@@ -663,21 +751,49 @@ export const RichTextEditor = ({
                 />
             )}
             <LinkDialog
-                open={linkDialogOpen}
+                mode={linkDialogMode}
                 initialValue={
                     (editor.getAttributes('link').href as string | undefined) ??
                     ''
                 }
+                initialLabel={editor.state.doc.textBetween(
+                    editor.state.selection.from,
+                    editor.state.selection.to,
+                    ' ',
+                )}
                 hasLink={toolbarState.link}
-                onOpenChange={setLinkDialogOpen}
-                onSubmit={(url) => {
-                    editor
-                        .chain()
-                        .focus()
-                        .extendMarkRange('link')
-                        .setLink({ href: url })
-                        .run();
-                    setLinkDialogOpen(false);
+                onOpenChange={(open) => !open && setLinkDialogMode(null)}
+                onSubmit={(url, label) => {
+                    if (linkDialogMode === 'button') {
+                        // insertContent reemplaza la selección (o inserta en
+                        // el cursor si no hay nada seleccionado) con el texto
+                        // ya marcado como link+botón en un solo paso.
+                        editor
+                            .chain()
+                            .focus()
+                            .insertContent({
+                                type: 'text',
+                                text: label,
+                                marks: [
+                                    {
+                                        type: 'link',
+                                        attrs: {
+                                            href: url,
+                                            buttonStyle: BUTTON_LINK_STYLE,
+                                        },
+                                    },
+                                ],
+                            })
+                            .run();
+                    } else {
+                        editor
+                            .chain()
+                            .focus()
+                            .extendMarkRange('link')
+                            .setMark('link', { href: url, buttonStyle: null })
+                            .run();
+                    }
+                    setLinkDialogMode(null);
                 }}
                 onRemove={() => {
                     editor
@@ -686,7 +802,7 @@ export const RichTextEditor = ({
                         .extendMarkRange('link')
                         .unsetLink()
                         .run();
-                    setLinkDialogOpen(false);
+                    setLinkDialogMode(null);
                 }}
             />
         </div>
