@@ -176,19 +176,20 @@ export const UsersPage = () => {
                                 <Pencil className="size-4" />
                             </Button>
                         </IconTooltip>
-                        {u.role.id === ROLE_IDS.AIL && (
-                            <IconTooltip label="Proyectos de interés">
-                                <Button
-                                    variant="secondary"
-                                    size="icon"
-                                    aria-label="Proyectos de interés"
-                                    disabled={busy}
-                                    onClick={() => setEditingProjects(u)}
-                                >
-                                    <FolderKanban className="size-4" />
-                                </Button>
-                            </IconTooltip>
-                        )}
+                        {u.role.id !== ROLE_IDS.DT &&
+                            u.role.id !== ROLE_IDS.ADMIN && (
+                                <IconTooltip label="Proyectos de interés">
+                                    <Button
+                                        variant="secondary"
+                                        size="icon"
+                                        aria-label="Proyectos de interés"
+                                        disabled={busy}
+                                        onClick={() => setEditingProjects(u)}
+                                    >
+                                        <FolderKanban className="size-4" />
+                                    </Button>
+                                </IconTooltip>
+                            )}
                         <IconTooltip
                             label={u.active ? 'Desactivar' : 'Activar'}
                         >
