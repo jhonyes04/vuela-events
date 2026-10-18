@@ -10,8 +10,12 @@ import {
     setUserMenuStyle,
     setMaintenanceMode,
     invalidateMaintenanceModeCache,
-    sendMaintenanceNotice,
 } from '../services/appSettings.js';
+import {
+    getMaintenanceNoticeJob,
+    startMaintenanceNotice,
+    StartMaintenanceNoticeError,
+} from '../services/maintenanceNoticeJob.js';
 
 const userMenuStyleSchema = z.strictObject({
     userMenuStyle: z.enum(['dropdown', 'sheet']),
@@ -24,8 +28,18 @@ const maintenanceModeSchema = z.strictObject({
 const maintenanceNoticeSchema = z.strictObject({
     from: z.iso.datetime(),
     to: z.iso.datetime(),
-    reason: z.string().trim().min(1).max(500),
+    reason: z.string().trim().min(1).max(5_000),
 });
+
+const jobIdParamsSchema = z.object({ jobId: z.uuid() });
+
+const startMaintenanceNoticeErrors = {
+    template_not_assigned: [
+        409,
+        'No hay ninguna plantilla asignada al aviso de mantenimiento',
+    ],
+    no_recipients: [400, 'No hay destinatarios activos'],
+} as const;
 
 export const appSettingsRouter = Router();
 
@@ -76,6 +90,13 @@ appSettingsRouter.post(
     '/maintenance-notice',
     requireSuperadmin,
     async (req, res) => {
+        const actor = req.user;
+
+        if (!actor) {
+            res.status(401).json({ error: 'Autenticación requerida' });
+            return;
+        }
+
         const body = maintenanceNoticeSchema.safeParse(req.body);
 
         if (!body.success) {
@@ -84,19 +105,49 @@ appSettingsRouter.post(
         }
 
         try {
-            await sendMaintenanceNotice(
+            const { jobId } = await startMaintenanceNotice(
+                actor.id,
                 new Date(body.data.from),
                 new Date(body.data.to),
                 body.data.reason,
             );
-        } catch {
-            res.status(400).json({
-                error: 'No se pudo enviar el aviso (¿hay plantilla asignada?)',
-            });
 
-            return;
+            res.status(202).json({ jobId });
+        } catch (e) {
+            if (e instanceof StartMaintenanceNoticeError) {
+                const [status, error] =
+                    startMaintenanceNoticeErrors[e.reason];
+
+                res.status(status).json({ error });
+                return;
+            }
+
+            throw e;
         }
-
-        res.status(204).end();
     },
 );
+
+appSettingsRouter.get('/maintenance-notice/:jobId', (req, res) => {
+    const actor = req.user;
+
+    if (!actor) {
+        res.status(401).json({ error: 'Autenticación requerida' });
+        return;
+    }
+
+    const params = jobIdParamsSchema.safeParse(req.params);
+
+    if (!params.success) {
+        res.status(400).json({ error: 'Solicitud no válida' });
+        return;
+    }
+
+    const job = getMaintenanceNoticeJob(params.data.jobId, actor.id);
+
+    if (!job) {
+        res.status(404).json({ error: 'Envío no encontrado' });
+        return;
+    }
+
+    res.json({ job });
+});

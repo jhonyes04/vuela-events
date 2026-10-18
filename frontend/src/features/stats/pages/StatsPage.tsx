@@ -11,8 +11,8 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { Spinner } from '@/components/ui/spinner';
 import { ComboboxField } from '@/components/ComboboxField';
+import { FullScreenSpinner } from '@/components/FullScreenSpinner';
 import { IconTooltip } from '@/components/IconTooltip';
 import { Kpi } from '@/features/stats/components/StatsChartKit';
 import { EventsSection } from '@/features/stats/components/EventsSection';
@@ -292,16 +292,7 @@ export const StatsPage = () => {
                 }}
             />
 
-            {working && (
-                <div className="fixed inset-0 isolate z-50 grid place-items-center bg-black/50 supports-backdrop-filter:backdrop-blur-xs">
-                    <div className="flex flex-col items-center gap-3">
-                        <Spinner className="size-16 text-white" />
-                        <p className="text-sm font-medium text-white">
-                            Generando PDF
-                        </p>
-                    </div>
-                </div>
-            )}
+            {working && <FullScreenSpinner label="Generando PDF" />}
 
             {captureSections && (
                 <StatsCaptureView

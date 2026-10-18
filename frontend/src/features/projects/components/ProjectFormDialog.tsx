@@ -2,6 +2,7 @@ import { useEffect, useState, type FormEvent } from 'react';
 import { toast } from 'sonner';
 import { ClipboardCheck, ClipboardList } from 'lucide-react';
 import { RichTextEditor } from '@/components/RichTextEditor';
+import { FullScreenSpinner } from '@/components/FullScreenSpinner';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
@@ -132,171 +133,175 @@ const ProjectFormBody = ({
     };
 
     return (
-        <DialogContent className="sm:max-w-3xl">
-            <DialogHeader>
-                <DialogTitle>
-                    {project ? 'Editar proyecto' : 'Nuevo proyecto'}
-                </DialogTitle>
-                <DialogDescription>
-                    El color se usa para diferenciarlo en el calendario.
-                </DialogDescription>
-            </DialogHeader>
+        <>
+            <DialogContent className="sm:max-w-3xl">
+                <DialogHeader>
+                    <DialogTitle>
+                        {project ? 'Editar proyecto' : 'Nuevo proyecto'}
+                    </DialogTitle>
+                    <DialogDescription>
+                        El color se usa para diferenciarlo en el calendario.
+                    </DialogDescription>
+                </DialogHeader>
 
-            <form
-                id="project-form"
-                onSubmit={(e) => void handleSubmit(e)}
-                className="grid gap-4"
-            >
-                <div className="grid gap-1.5">
-                    <Label htmlFor="project-name">Nombre *</Label>
-                    <Input
-                        id="project-name"
-                        required
-                        minLength={2}
-                        maxLength={80}
-                        value={name}
-                        onChange={(e) => setName(e.target.value)}
-                    />
-                </div>
-
-                <div className="grid gap-1.5">
-                    <Label htmlFor="project-guides">Guías *</Label>
-                    <Combobox
-                        items={activeGuides.map((guide) => ({
-                            value: guide.id,
-                            label: guide.name,
-                        }))}
-                        multiple
-                        value={[...guideIds]}
-                        onValueChange={(ids) => setGuideIds(new Set(ids))}
-                    >
-                        <ComboboxChips ref={chipsAnchor} id="project-guides">
-                            <ComboboxValue>
-                                {(value: string[]) =>
-                                    value.map((id) => (
-                                        <ComboboxChip
-                                            key={id}
-                                            className="text-sm text-white bg-green-800"
-                                            removeClassName="hover:bg-transparent hover:text-white"
-                                        >
-                                            {activeGuides.find(
-                                                (guide) => guide.id === id,
-                                            )?.name ?? id}
-                                        </ComboboxChip>
-                                    ))
-                                }
-                            </ComboboxValue>
-                            <ComboboxChipsInput
-                                placeholder={
-                                    guideIds.size === 0
-                                        ? 'Buscar una guía…'
-                                        : undefined
-                                }
-                            />
-                        </ComboboxChips>
-                        <ComboboxContent anchor={chipsAnchor}>
-                            <ComboboxEmpty>
-                                No se encontraron guías
-                            </ComboboxEmpty>
-                            <ComboboxList>
-                                {(item: { value: string; label: string }) => (
-                                    <ComboboxItem
-                                        key={item.value}
-                                        value={item.value}
-                                        className="text-sm"
-                                    >
-                                        {item.label}
-                                    </ComboboxItem>
-                                )}
-                            </ComboboxList>
-                        </ComboboxContent>
-                    </Combobox>
-                </div>
-
-                <fieldset className="grid gap-1.5">
-                    <legend className="mb-1.5 text-sm font-medium">
-                        Color
-                    </legend>
-                    <div className="flex flex-wrap gap-2">
-                        {PROJECT_COLORS.map((c) => (
-                            <button
-                                key={c}
-                                type="button"
-                                aria-label={PROJECT_COLOR_STYLES[c].label}
-                                aria-pressed={color === c}
-                                onClick={() => setColor(c)}
-                                className={cn(
-                                    'size-8 rounded-full ring-offset-2 ring-offset-background',
-                                    PROJECT_COLOR_STYLES[c].swatch,
-                                    color === c
-                                        ? 'ring-2 ring-ring'
-                                        : 'hover:ring-2 hover:ring-border',
-                                )}
-                            />
-                        ))}
+                <form
+                    id="project-form"
+                    onSubmit={(e) => void handleSubmit(e)}
+                    className="grid gap-4"
+                >
+                    <div className="grid gap-1.5">
+                        <Label htmlFor="project-name">Nombre *</Label>
+                        <Input
+                            id="project-name"
+                            required
+                            minLength={2}
+                            maxLength={80}
+                            value={name}
+                            onChange={(e) => setName(e.target.value)}
+                        />
                     </div>
-                </fieldset>
 
-                <Tabs defaultValue="opening">
-                    <TabsList className="flex h-auto w-full gap-2 bg-transparent p-0 sm:w-auto">
-                        <TabsTrigger
-                            value="opening"
-                            className="h-9 flex-1 gap-2 rounded-lg border bg-card px-4 text-sm font-medium shadow-none data-active:border-transparent data-active:bg-brand-yellow data-active:text-brand-ink sm:flex-none sm:px-5"
+                    <div className="grid gap-1.5">
+                        <Label htmlFor="project-guides">Guías *</Label>
+                        <Combobox
+                            items={activeGuides.map((guide) => ({
+                                value: guide.id,
+                                label: guide.name,
+                            }))}
+                            multiple
+                            value={[...guideIds]}
+                            onValueChange={(ids) => setGuideIds(new Set(ids))}
                         >
-                            <ClipboardList className="size-4 shrink-0" />
-                            Dar de alta
-                        </TabsTrigger>
-                        <TabsTrigger
-                            value="closing"
-                            className="h-9 flex-1 gap-2 rounded-lg border bg-card px-4 text-sm font-medium shadow-none data-active:border-transparent data-active:bg-brand-yellow data-active:text-brand-ink sm:flex-none sm:px-5"
-                        >
-                            <ClipboardCheck className="size-4 shrink-0" />
-                            Cerrar actividad
-                        </TabsTrigger>
-                    </TabsList>
+                            <ComboboxChips ref={chipsAnchor} id="project-guides">
+                                <ComboboxValue>
+                                    {(value: string[]) =>
+                                        value.map((id) => (
+                                            <ComboboxChip
+                                                key={id}
+                                                className="text-sm text-white bg-green-800"
+                                                removeClassName="hover:bg-transparent hover:text-white"
+                                            >
+                                                {activeGuides.find(
+                                                    (guide) => guide.id === id,
+                                                )?.name ?? id}
+                                            </ComboboxChip>
+                                        ))
+                                    }
+                                </ComboboxValue>
+                                <ComboboxChipsInput
+                                    placeholder={
+                                        guideIds.size === 0
+                                            ? 'Buscar una guía…'
+                                            : undefined
+                                    }
+                                />
+                            </ComboboxChips>
+                            <ComboboxContent anchor={chipsAnchor}>
+                                <ComboboxEmpty>
+                                    No se encontraron guías
+                                </ComboboxEmpty>
+                                <ComboboxList>
+                                    {(item: { value: string; label: string }) => (
+                                        <ComboboxItem
+                                            key={item.value}
+                                            value={item.value}
+                                            className="text-sm"
+                                        >
+                                            {item.label}
+                                        </ComboboxItem>
+                                    )}
+                                </ComboboxList>
+                            </ComboboxContent>
+                        </Combobox>
+                    </div>
 
-                    <Separator className="data-horizontal:h-1 bg-yellow-400/30 rounded-full" />
+                    <fieldset className="grid gap-1.5">
+                        <legend className="mb-1.5 text-sm font-medium">
+                            Color
+                        </legend>
+                        <div className="flex flex-wrap gap-2">
+                            {PROJECT_COLORS.map((c) => (
+                                <button
+                                    key={c}
+                                    type="button"
+                                    aria-label={PROJECT_COLOR_STYLES[c].label}
+                                    aria-pressed={color === c}
+                                    onClick={() => setColor(c)}
+                                    className={cn(
+                                        'size-8 rounded-full ring-offset-2 ring-offset-background',
+                                        PROJECT_COLOR_STYLES[c].swatch,
+                                        color === c
+                                            ? 'ring-2 ring-ring'
+                                            : 'hover:ring-2 hover:ring-border',
+                                    )}
+                                />
+                            ))}
+                        </div>
+                    </fieldset>
 
-                    <TabsContent value="opening" className="mt-2 grid gap-1.5">
-                        <Label htmlFor="project-opening-instructions">
-                            Cómo dar de alta la actividad en Ágora
-                        </Label>
-                        <RichTextEditor
-                            value={openingInstructions}
-                            onChange={setOpeningInstructions}
-                            contentClassName="max-h-100 min-h-100"
-                        />
-                    </TabsContent>
-                    <TabsContent value="closing" className="mt-2 grid gap-1.5">
-                        <Label htmlFor="project-closing-instructions">
-                            Cómo cerrar la actividad en Ágora
-                        </Label>
-                        <RichTextEditor
-                            value={closingInstructions}
-                            onChange={setClosingInstructions}
-                            contentClassName="max-h-100 min-h-100"
-                        />
-                    </TabsContent>
-                </Tabs>
+                    <Tabs defaultValue="opening">
+                        <TabsList className="flex h-auto w-full gap-2 bg-transparent p-0 sm:w-auto">
+                            <TabsTrigger
+                                value="opening"
+                                className="h-9 flex-1 gap-2 rounded-lg border bg-card px-4 text-sm font-medium shadow-none data-active:border-transparent data-active:bg-brand-yellow data-active:text-brand-ink sm:flex-none sm:px-5"
+                            >
+                                <ClipboardList className="size-4 shrink-0" />
+                                Dar de alta
+                            </TabsTrigger>
+                            <TabsTrigger
+                                value="closing"
+                                className="h-9 flex-1 gap-2 rounded-lg border bg-card px-4 text-sm font-medium shadow-none data-active:border-transparent data-active:bg-brand-yellow data-active:text-brand-ink sm:flex-none sm:px-5"
+                            >
+                                <ClipboardCheck className="size-4 shrink-0" />
+                                Cerrar actividad
+                            </TabsTrigger>
+                        </TabsList>
 
-                {project && (
-                    <label className="flex items-center gap-2 text-sm">
-                        <Checkbox
-                            checked={active}
-                            disabled={submitting}
-                            onCheckedChange={setActive}
-                        />
-                        {active ? 'Activo' : 'Desactivado'}
-                    </label>
-                )}
-            </form>
+                        <Separator className="data-horizontal:h-1 bg-yellow-400/30 rounded-full" />
 
-            <DialogFooter>
-                <Button type="submit" form="project-form" disabled={submitting}>
-                    {submitting ? 'Guardando…' : 'Guardar'}
-                </Button>
-            </DialogFooter>
-        </DialogContent>
+                        <TabsContent value="opening" className="mt-2 grid gap-1.5">
+                            <Label htmlFor="project-opening-instructions">
+                                Cómo dar de alta la actividad en Ágora
+                            </Label>
+                            <RichTextEditor
+                                value={openingInstructions}
+                                onChange={setOpeningInstructions}
+                                contentClassName="max-h-100 min-h-100"
+                            />
+                        </TabsContent>
+                        <TabsContent value="closing" className="mt-2 grid gap-1.5">
+                            <Label htmlFor="project-closing-instructions">
+                                Cómo cerrar la actividad en Ágora
+                            </Label>
+                            <RichTextEditor
+                                value={closingInstructions}
+                                onChange={setClosingInstructions}
+                                contentClassName="max-h-100 min-h-100"
+                            />
+                        </TabsContent>
+                    </Tabs>
+
+                    {project && (
+                        <label className="flex items-center gap-2 text-sm">
+                            <Checkbox
+                                checked={active}
+                                disabled={submitting}
+                                onCheckedChange={setActive}
+                            />
+                            {active ? 'Activo' : 'Desactivado'}
+                        </label>
+                    )}
+                </form>
+
+                <DialogFooter>
+                    <Button type="submit" form="project-form" disabled={submitting}>
+                        {submitting ? 'Guardando…' : 'Guardar'}
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+
+            {submitting && <FullScreenSpinner label="Guardando proyecto…" />}
+        </>
     );
 };
 

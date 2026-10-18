@@ -20,11 +20,50 @@ export const setMaintenanceMode = (
 ): Promise<{ maintenanceMode: boolean }> =>
     api.patch('/app-settings/maintenance-mode', { maintenanceMode });
 
-export const sendMaintenanceNotice = (input: {
+export const startMaintenanceNotice = async (input: {
     from: string;
     to: string;
     reason: string;
-}): Promise<void> => api.post('/app-settings/maintenance-notice', input);
+}): Promise<string> => {
+    const { jobId } = await api.post<{ jobId: string }>(
+        '/app-settings/maintenance-notice',
+        input,
+    );
+
+    return jobId;
+};
+
+export interface MaintenanceNoticeResult {
+    email: string;
+    ok: boolean;
+    error?: string;
+    label: string;
+}
+
+export interface MaintenanceNoticeRecipient {
+    email: string;
+    label: string;
+}
+
+export interface MaintenanceNoticeJobStatus {
+    id: string;
+    total: number;
+    sent: number;
+    failed: number;
+    done: boolean;
+    recipients: MaintenanceNoticeRecipient[];
+    results: MaintenanceNoticeResult[];
+}
+
+export const getMaintenanceNoticeJobStatus = async (
+    jobId: string,
+): Promise<MaintenanceNoticeJobStatus> => {
+    const { job } = await api.get<{ job: MaintenanceNoticeJobStatus }>(
+        `/app-settings/maintenance-notice/${jobId}`,
+    );
+
+    return job;
+};
 
 // Sin autenticar: lo consulta App.tsx antes de saber quién es el usuario.
 export const getMaintenanceStatus = (): Promise<{ maintenanceMode: boolean }> =>

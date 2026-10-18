@@ -1,8 +1,13 @@
 import nodemailer from 'nodemailer';
 import { prisma } from '../lib/prisma.js';
 import { encrypt, decrypt } from '../lib/crypto.js';
-import { wrapNoReplyEmailHtml } from '../lib/noReplyEmailTemplate.js';
+import {
+    wrapNoReplyEmailHtml,
+    NOREPLY_LOGO_CID,
+} from '../lib/noReplyEmailTemplate.js';
 import { recordAudit } from './audit.js';
+import { logger } from '../lib/logger.js';
+import { VUELA_EVENTS_LOGO } from '../assets/vuelaEventsLogo.js';
 
 const NOREPLY_CONFIG_ID = 'default';
 
@@ -65,10 +70,17 @@ const getDecryptedNoReplyPassword = async (): Promise<string | null> => {
     return row?.password ? decrypt(row.password) : null;
 };
 
+export interface NoReplySendResult {
+    email: string;
+    ok: boolean;
+    error?: string;
+}
+
 export const sendNoReplyEmail = async (input: {
     to: string[];
     subject: string;
     html: string;
+    onProgress?: (result: NoReplySendResult) => void;
 }): Promise<void> => {
     const config = await prisma.noReplySmtpConfig.findUnique({
         where: { id: NOREPLY_CONFIG_ID },
@@ -88,12 +100,35 @@ export const sendNoReplyEmail = async (input: {
 
     try {
         for (const to of input.to) {
-            await transporter.sendMail({
-                from: { name: config.fromName, address: config.user },
-                to,
-                subject: input.subject,
-                html: wrapNoReplyEmailHtml(input.html),
-            });
+            try {
+                await transporter.sendMail({
+                    from: { name: config.fromName, address: config.user },
+                    to,
+                    subject: input.subject,
+                    html: wrapNoReplyEmailHtml(input.html),
+                    attachments: [
+                        {
+                            cid: NOREPLY_LOGO_CID,
+                            filename: 'vuela-events-logo.png',
+                            content: VUELA_EVENTS_LOGO,
+                            contentType: 'image/png',
+                        },
+                    ],
+                });
+
+                input.onProgress?.({ email: to, ok: true });
+            } catch (e) {
+                logger.error(
+                    { err: e, to },
+                    'No se pudo enviar a un destinatario',
+                );
+                input.onProgress?.({
+                    email: to,
+                    ok: false,
+                    error:
+                        e instanceof Error ? e.message : 'Error desconocido',
+                });
+            }
         }
     } finally {
         transporter.close();

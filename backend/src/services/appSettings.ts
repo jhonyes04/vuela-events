@@ -1,7 +1,4 @@
 import { prisma } from '../lib/prisma.js';
-import { logger } from '../lib/logger.js';
-import { renderNotificationEmail } from '../lib/emailTemplateRender.js';
-import { sendNoReplyEmail } from './noReplyEmail.js';
 
 const APP_SETTINGS_ID = 'default';
 
@@ -65,53 +62,4 @@ export const isMaintenanceModeActive = async (): Promise<boolean> => {
 // El PATCH del propio ajuste debe reflejarse ya en la próxima request.
 export const invalidateMaintenanceModeCache = (): void => {
     cached = null;
-};
-
-const maintenanceDateTimeFormat = new Intl.DateTimeFormat('es-ES', {
-    timeZone: 'Europe/Madrid',
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-    hourCycle: 'h23',
-});
-
-export const sendMaintenanceNotice = async (
-    from: Date,
-    to: Date,
-    reason: string,
-): Promise<void> => {
-    const assignment = await prisma.emailTemplateAssignment.findUnique({
-        where: { slot: 'mantenimiento' },
-        select: { template: true },
-    });
-
-    if (!assignment?.template)
-        throw new Error('No hay plantilla asignada al aviso de mantenimiento');
-
-    const users = await prisma.user.findMany({
-        where: { active: true },
-        select: { email: true },
-    });
-
-    if (users.length === 0) return;
-
-    const { subject, body } = renderNotificationEmail(assignment.template, {
-        desde: maintenanceDateTimeFormat.format(from),
-        hasta: maintenanceDateTimeFormat.format(to),
-        motivo: reason,
-    });
-
-    try {
-        await sendNoReplyEmail({
-            to: users.map((user) => user.email),
-            subject,
-            html: body,
-        });
-    } catch (e) {
-        logger.error({ err: e }, 'No se pudo enviar el aviso de mantenimiento');
-
-        throw e;
-    }
 };

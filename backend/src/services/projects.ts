@@ -107,7 +107,11 @@ const notifyProjectCreated = async (
         if (!assignment?.template) return;
 
         const users = await prisma.user.findMany({
-            where: { active: true, id: { not: excludeUserId } },
+            where: {
+                active: true,
+                id: { not: excludeUserId },
+                email: { not: { startsWith: 'demo-' } },
+            },
             select: { email: true },
         });
 

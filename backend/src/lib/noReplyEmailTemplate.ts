@@ -1,8 +1,6 @@
-// Envoltorio HTML para todo lo que sale por noReplyEmail.ts: cabecera con el
-// nombre (sin logo: ni data URI ni adjunto inline se mostraban en pruebas
-// reales), el cuerpo de la plantilla tal cual, firma fija del sistema (no hay
-// una persona detrás) y aviso de "no responder". Estilos inline a propósito:
-// es HTML de correo, no un componente — los clientes de correo ignoran <style>.
+export const NOREPLY_LOGO_CID = 'vuela-events-logo';
+
+// Envoltorio HTML para todo lo que sale por noReplyEmail.ts
 export const wrapNoReplyEmailHtml = (
     bodyHtml: string,
 ): string => `<!doctype html>
@@ -13,8 +11,17 @@ export const wrapNoReplyEmailHtml = (
         <td align="center">
           <table role="presentation" width="100%" style="max-width:560px;background-color:#ffffff;border-radius:12px;overflow:hidden;" cellpadding="0" cellspacing="0">
             <tr>
-              <td style="background-color:#f4d64e;padding:18px 24px;text-align:center;">
-                <span style="font-size:19px;font-weight:700;color:#242529;letter-spacing:-0.01em;">Vuela Events</span>
+              <td style="background-color:#f4d64e;padding:18px 24px;">
+                <table role="presentation" cellpadding="0" cellspacing="0" align="center">
+                  <tr>
+                    <td style="vertical-align:middle;padding-right:10px;">
+                      <img src="cid:${NOREPLY_LOGO_CID}" width="28" height="28" alt="" style="display:block;border-radius:6px;" />
+                    </td>
+                    <td style="vertical-align:middle;">
+                      <span style="font-size:19px;font-weight:700;color:#242529;letter-spacing:-0.01em;">Vuela Events</span>
+                    </td>
+                  </tr>
+                </table>
               </td>
             </tr>
             <tr>

@@ -149,7 +149,7 @@ export const registerForEvent = async (
         });
 
         if (result.userEmail) {
-            await notifyRegistrationChange(
+            void notifyRegistrationChange(
                 'inscripcion',
                 result.event,
                 result.userEmail,
@@ -206,7 +206,7 @@ export const unregisterFromEvent = async (
     });
 
     if (user) {
-        await notifyRegistrationChange(
+        void notifyRegistrationChange(
             'cancelacion_inscripcion',
             event,
             user.email,
@@ -253,7 +253,7 @@ export const unregisterRegistration = async (
         newValue: eventId,
     });
 
-    await notifyRegistrationChange(
+    void notifyRegistrationChange(
         'cancelacion_inscripcion',
         registration.event,
         registration.user.email,

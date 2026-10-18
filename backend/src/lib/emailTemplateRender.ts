@@ -85,10 +85,13 @@ export const renderEmail = (
 
 // Para plantillas no atadas a un evento (inscripción, proyecto nuevo,
 // mantenimiento): placeholders libres, {{clave}} -> valor ya formateado por
-// quien llama. El valor se escapa siempre en el cuerpo HTML; en el asunto no.
+// quien llama. El valor se escapa en el cuerpo HTML salvo que su clave esté
+// en rawKeys (HTML ya saneado por quien llama, p. ej. un campo de editor
+// enriquecido); en el asunto nunca se escapa.
 export const renderNotificationEmail = (
     template: { subject: string; body: string },
     data: Record<string, string>,
+    rawKeys: string[] = [],
 ): { subject: string; body: string } => {
     const applyGeneric = (text: string, escape: boolean): string =>
         text.replace(/\{\{(\w+)\}\}/g, (match, key: string) => {
@@ -96,7 +99,9 @@ export const renderNotificationEmail = (
 
             if (value === undefined) return match;
 
-            return escape ? escapeHtml(value) : value;
+            return escape && !rawKeys.includes(key)
+                ? escapeHtml(value)
+                : value;
         });
 
     return {

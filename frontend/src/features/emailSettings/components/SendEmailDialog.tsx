@@ -1,16 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { CircleAlert, CircleCheck } from 'lucide-react';
+import { Circle, CircleAlert, CircleCheck, CircleXIcon } from 'lucide-react';
+import { createPortal } from 'react-dom';
+import { OverlayScrollbarsComponent } from 'overlayscrollbars-react';
 import { Alert, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
-import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
-} from '@/components/ui/dialog';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
+import { Spinner } from '@/components/ui/spinner';
+import { scrollbarOptions } from '@/lib/overlayScrollbarsOptions';
 import { ApiError } from '@/lib/api';
 import {
     getSendJobStatus,
@@ -22,6 +19,9 @@ import type { SlotId } from '@/features/emailSettings/lib/emailSettings';
 import { personLabel, type Attendee } from '@/features/events/lib/events';
 
 const POLL_MS = 2000;
+// A partir de este número de destinatarios, la lista deja de crecer y pasa
+// a hacer scroll (max-h-60 ≈ 10 filas con el tamaño de texto actual).
+const MAX_VISIBLE_RECIPIENTS = 10;
 
 interface SendEmailBodyProps {
     slot: SlotId;
@@ -35,6 +35,10 @@ interface SendEmailBodyProps {
     onClose: () => void;
 }
 
+// Portal a document.body, igual que FullScreenSpinner/MaintenanceNoticeProgress:
+// la app vive dentro de OverlayScrollbarsComponent (App.tsx), que atraparía un
+// position:fixed normal. Sin usar el Dialog compartido a propósito: así este
+// overlay tiene su propio fondo (bg-black/50) sin afectar a los demás diálogos.
 const SendEmailBody = ({
     slot,
     slotLabel,
@@ -50,12 +54,7 @@ const SendEmailBody = ({
         () => recipients.map((r) => r.id),
         [recipients],
     );
-    const recipientById = useMemo(
-        () => new Map(recipients.map((r) => [r.id, r])),
-        [recipients],
-    );
     const [error, setError] = useState<string | null>(null);
-    const [starting, setStarting] = useState(true);
     const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
     const poll = (jobId: string) => {
@@ -91,14 +90,11 @@ const SendEmailBody = ({
                     ? err.message
                     : 'No se pudo iniciar el envío',
             );
-        } finally {
-            setStarting(false);
         }
     };
 
     const handleRetry = () => {
         setError(null);
-        setStarting(true);
         void handleSend();
     };
 
@@ -118,6 +114,9 @@ const SendEmailBody = ({
 
     const finished = status?.done ?? false;
     const results = status?.results ?? [];
+    const resultByRegistrationId = new Map(
+        results.map((r) => [r.registrationId, r]),
+    );
     const processedIds = new Set(results.map((r) => r.registrationId));
     const pending = recipients.filter((r) => !processedIds.has(r.id));
     const current = pending[0];
@@ -127,50 +126,37 @@ const SendEmailBody = ({
     const processed = status ? status.sent + status.failed : 0;
     const progressPct = total > 0 ? (processed / total) * 100 : 0;
 
-    return (
-        <DialogContent className="sm:max-w-md">
-            <DialogHeader>
-                <DialogTitle>Enviar {slotLabel.toLowerCase()}</DialogTitle>
-                <DialogDescription>
-                    {recipients.length}{' '}
-                    {recipients.length === 1
-                        ? 'destinatario seleccionado'
-                        : 'destinatarios seleccionados'}
-                    .
-                </DialogDescription>
-            </DialogHeader>
+    return createPortal(
+        <div className="fixed inset-0 isolate z-[100] grid place-items-center bg-black/50 p-4 supports-backdrop-filter:backdrop-blur-xs">
+            <div className="grid w-full max-w-md gap-4 rounded-xl bg-card p-5 text-card-foreground">
+                <div className="grid gap-1">
+                    <h2 className="text-sm font-medium">
+                        Enviar {slotLabel.toLowerCase()}
+                    </h2>
+                    <p className="text-sm text-muted-foreground">
+                        {recipients.length}{' '}
+                        {recipients.length === 1
+                            ? 'destinatario seleccionado'
+                            : 'destinatarios seleccionados'}
+                        .
+                    </p>
+                </div>
 
-            {!error && (
-                <div className="grid gap-4">
-                    <div className="grid gap-1.5">
-                        <div className="flex items-center justify-between text-sm">
-                            <span className="text-muted-foreground">
-                                Progreso general
-                            </span>
-                            <span className="tabular-nums">
-                                {processed} de {total}
-                            </span>
-                        </div>
-                        <Progress value={progressPct} />
-                    </div>
-
-                    {!finished && (
+                {!error && (
+                    <div className="grid gap-4">
                         <div className="grid gap-1.5">
-                            <p className="truncate text-sm text-muted-foreground">
-                                {starting
-                                    ? 'Arrancando…'
-                                    : current
-                                      ? `Enviando a ${personLabel(current)}…`
-                                      : 'Terminando…'}
-                            </p>
-                            <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
-                                <div className="h-full w-1/3 animate-[indeterminate-sweep_1.2s_ease-in-out_infinite] rounded-full bg-primary" />
+                            <div className="flex items-center justify-between text-sm">
+                                <span className="text-muted-foreground">
+                                    Progreso general
+                                </span>
+                                <span className="tabular-nums">
+                                    {processed} de {total}
+                                </span>
                             </div>
+                            <Progress value={progressPct} />
                         </div>
-                    )}
 
-                    {finished && (
-                        <div className="grid gap-3">
+                        {finished && (
                             <Alert
                                 variant={
                                     failed.length > 0
@@ -189,76 +175,110 @@ const SendEmailBody = ({
                                         `, ${failed.length} fallidos`}
                                 </AlertTitle>
                             </Alert>
+                        )}
 
-                            {succeeded.length > 0 && (
-                                <div className="grid gap-1">
-                                    <p className="text-xs font-medium text-muted-foreground">
-                                        Enviados correctamente
-                                    </p>
-                                    <ul className="grid max-h-28 gap-1 overflow-y-auto rounded-lg bg-muted/50 p-2 text-sm">
-                                        {succeeded.map((r) => {
-                                            const recipient = recipientById.get(
-                                                r.registrationId,
-                                            );
+                        {recipients.length > 0 && (
+                            <Card size="sm">
+                                <CardHeader>
+                                    <CardTitle className="text-xs font-medium text-muted-foreground">
+                                        Destinatarios ({recipients.length})
+                                    </CardTitle>
+                                </CardHeader>
 
-                                            return (
-                                                <li key={r.registrationId}>
-                                                    {recipient
-                                                        ? personLabel(recipient)
-                                                        : 'Destinatario'}
-                                                </li>
-                                            );
-                                        })}
-                                    </ul>
-                                </div>
-                            )}
+                                <CardContent>
+                                    <OverlayScrollbarsComponent
+                                        options={scrollbarOptions}
+                                        defer
+                                        className={
+                                            recipients.length >
+                                            MAX_VISIBLE_RECIPIENTS
+                                                ? 'max-h-60'
+                                                : undefined
+                                        }
+                                    >
+                                        <ul className="grid gap-1 text-sm">
+                                            {recipients.map((recipient) => {
+                                                const result =
+                                                    resultByRegistrationId.get(
+                                                        recipient.id,
+                                                    );
+                                                const isCurrent =
+                                                    recipient.id ===
+                                                    current?.id;
 
-                            {failed.length > 0 && (
-                                <div className="grid gap-1">
-                                    <p className="text-xs font-medium text-destructive">
-                                        Fallidos
-                                    </p>
-                                    <ul className="grid max-h-28 gap-1 overflow-y-auto rounded-lg bg-destructive/10 p-2 text-sm">
-                                        {failed.map((r) => {
-                                            const recipient = recipientById.get(
-                                                r.registrationId,
-                                            );
+                                                return (
+                                                    <li
+                                                        key={recipient.id}
+                                                        className="flex items-start gap-2"
+                                                    >
+                                                        {result ? (
+                                                            result.ok ? (
+                                                                <CircleCheck className="mt-0.5 size-4 shrink-0 text-emerald-600" />
+                                                            ) : (
+                                                                <CircleXIcon className="mt-0.5 size-4 shrink-0 text-destructive" />
+                                                            )
+                                                        ) : isCurrent ? (
+                                                            <Spinner
+                                                                variant="icon"
+                                                                className="mt-0.5 size-4 shrink-0 text-muted-foreground"
+                                                            />
+                                                        ) : (
+                                                            <Circle className="mt-0.5 size-4 shrink-0 text-muted-foreground/40" />
+                                                        )}
+                                                        <span
+                                                            className={
+                                                                result
+                                                                    ? undefined
+                                                                    : 'text-muted-foreground'
+                                                            }
+                                                        >
+                                                            {personLabel(
+                                                                recipient,
+                                                            )}
+                                                            {result?.ok ===
+                                                                false &&
+                                                                result.error && (
+                                                                    <span className="text-muted-foreground">
+                                                                        {' '}
+                                                                        —{' '}
+                                                                        {
+                                                                            result.error
+                                                                        }
+                                                                    </span>
+                                                                )}
+                                                        </span>
+                                                    </li>
+                                                );
+                                            })}
+                                        </ul>
+                                    </OverlayScrollbarsComponent>
+                                </CardContent>
+                            </Card>
+                        )}
+                    </div>
+                )}
 
-                                            return (
-                                                <li key={r.registrationId}>
-                                                    {recipient
-                                                        ? personLabel(recipient)
-                                                        : 'Destinatario'}
-                                                </li>
-                                            );
-                                        })}
-                                    </ul>
-                                </div>
-                            )}
-                        </div>
+                {error && (
+                    <Alert variant="destructive">
+                        <CircleAlert />
+                        <AlertTitle>{error}</AlertTitle>
+                    </Alert>
+                )}
+
+                <div className="flex justify-end">
+                    {error ? (
+                        <Button type="button" onClick={handleRetry}>
+                            Reintentar
+                        </Button>
+                    ) : (
+                        <Button disabled={!finished} onClick={onClose}>
+                            Cerrar
+                        </Button>
                     )}
                 </div>
-            )}
-
-            {error && (
-                <Alert variant="destructive">
-                    <CircleAlert />
-                    <AlertTitle>{error}</AlertTitle>
-                </Alert>
-            )}
-
-            <DialogFooter>
-                {error ? (
-                    <Button type="button" onClick={handleRetry}>
-                        Reintentar
-                    </Button>
-                ) : (
-                    <Button disabled={!finished} onClick={onClose}>
-                        Cerrar
-                    </Button>
-                )}
-            </DialogFooter>
-        </DialogContent>
+            </div>
+        </div>,
+        document.body,
     );
 };
 
@@ -290,28 +310,28 @@ export const SendEmailDialog = ({
 }: SendEmailDialogProps) => {
     const [status, setStatus] = useState<SendJobStatus | null>(null);
 
-    const handleOpenChange = (next: boolean) => {
-        onOpenChange(next);
+    const handleClose = () => {
+        onOpenChange(false);
 
-        if (!next && status?.done) {
+        if (status?.done) {
             onFinishedClose();
         }
     };
 
+    if (!open) return null;
+
     return (
-        <Dialog open={open} onOpenChange={handleOpenChange}>
-            <SendEmailBody
-                key={slot}
-                slot={slot}
-                slotLabel={slotLabel}
-                eventId={eventId}
-                recipients={recipients}
-                reportDraftId={reportDraftId}
-                onDraftRejected={onDraftRejected}
-                status={status}
-                setStatus={setStatus}
-                onClose={() => handleOpenChange(false)}
-            />
-        </Dialog>
+        <SendEmailBody
+            key={slot}
+            slot={slot}
+            slotLabel={slotLabel}
+            eventId={eventId}
+            recipients={recipients}
+            reportDraftId={reportDraftId}
+            onDraftRejected={onDraftRejected}
+            status={status}
+            setStatus={setStatus}
+            onClose={handleClose}
+        />
     );
 };
