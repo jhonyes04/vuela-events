@@ -142,14 +142,14 @@ const EMAIL_TEMPLATES: {
     {
         name: 'Convocatorias',
         subject: 'Convocatoria asistencia {{evento}}',
-        body: '<p>{{saludo}} a tod@s:</p><p></p><p>El motivo de mi email es para comunicaros que se os convoca para el día<strong>&nbsp;{{fecha}} </strong>en horario de<strong> {{horaInicio}} a {{horaFin}} horas,</strong>&nbsp;en el<strong>&nbsp;{{lugar}}</strong>&nbsp;para que impartáis&nbsp;los talleres propuestos dentro del proyecto "Vuela con Salud".</p><p></p><p>Muchas gracias por vuestra implicación y buen hacer.</p><p></p><p>Un abrazo.</p>',
+        body: '<p>{{saludo}} a tod@s:</p><p></p><p>El motivo de mi email es para comunicaros que se os convoca para el día<strong> {{fecha}} </strong>en horario de<strong> {{horaInicio}} a {{horaFin}} horas,</strong> en el<strong> {{lugar}}</strong> para que impartáis los talleres propuestos dentro del proyecto "Vuela con Salud".</p><p></p><p>Muchas gracias por vuestra implicación y buen hacer.</p><p></p><p>Un abrazo.</p>',
         active: true,
         category: 'dinamizacion',
     },
     {
         name: 'Inscripción a evento',
         subject: 'Inscripción confirmada: {{evento}}',
-        body: '<p>{{saludo}}</p><p></p><p>Inscripción confirmada:</p><p></p><ul><li><p>Evento: <strong>{{evento}}</strong> </p></li><li><p>Lugar: <strong>{{lugar}}</strong></p></li><li><p>Fecha: <strong>{{fecha}}</strong></p></li><li><p>Horario: <strong>{{horaInicio}}</strong> a <strong>{{horaFin}}</strong></p></li></ul><p></p><p>Nos vemos allí,</p><p></p><p>Un saludo</p>',
+        body: '<p>{{saludo}}</p><p></p><p>Inscripción confirmada:</p><p></p><ul><li><p>Evento: <strong>{{evento}}</strong> </p></li><li><p>Lugar: <strong>{{lugar}}</strong></p></li><li><p>Fecha: <strong>{{fecha}}</strong></p></li><li><p>Horario: <strong>{{horaInicio}}</strong> a <strong>{{horaFin}}</strong></p></li></ul><p></p><p>Puedes agregar el evento a <a href="{{calendarUrl}}">Google Calendar</a></p><p></p><p>Nos vemos allí,</p><p></p><p>Un saludo</p>',
         active: true,
         category: 'administracion',
     },

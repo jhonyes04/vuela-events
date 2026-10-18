@@ -35,6 +35,7 @@ const EVENT_PLACEHOLDERS: EditorPlaceholder[] = [
     { token: '{{proyecto}}', label: 'Proyecto' },
     { token: '{{evento}}', label: 'Evento' },
     { token: '{{fechas}}', label: 'Fecha(s)' },
+    { token: '{{calendarUrl}}', label: 'Enlace Google Calendar' },
     { token: '{{enlacePerfil}}', label: 'Enlace perfil' },
 ];
 

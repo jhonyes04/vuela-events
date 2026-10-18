@@ -45,6 +45,21 @@ const HTML_ESCAPES: Record<string, string> = {
 const escapeHtml = (s: string): string =>
     s.replace(/[&<>"']/g, (c) => HTML_ESCAPES[c] ?? c);
 
+const toGCalDate = (date: Date): string =>
+    date.toISOString().replace(/[-:]|\.\d{3}/g, '');
+
+const buildGoogleCalendarUrl = (event: RenderableEvent): string => {
+    const params = new URLSearchParams({
+        action: 'TEMPLATE',
+        text: event.title,
+        dates: `${toGCalDate(event.startsAt)}/${toGCalDate(event.endsAt)}`,
+    });
+
+    if (event.location) params.set('location', event.location);
+
+    return `https://calendar.google.com/calendar/render?${params.toString()}`;
+};
+
 // title/location vienen de un evento y pueden contener cualquier texto:
 // se escapan al insertarse en el cuerpo HTML, pero no en el asunto (texto plano).
 const buildPlaceholders = (
@@ -62,6 +77,11 @@ const buildPlaceholders = (
     proyecto: (event) =>
         escape ? escapeHtml(event.projectName) : event.projectName,
     evento: (event) => (escape ? escapeHtml(event.title) : event.title),
+    calendarUrl: (event) => {
+        const url = buildGoogleCalendarUrl(event);
+
+        return escape ? escapeHtml(url) : url;
+    },
 });
 
 // Para listar sesiones sueltas (aviso de evento nuevo, posible serie): solo
