@@ -33,7 +33,7 @@ const capturedImageSchema = z.object({
 
 const pdfImagesBodySchema = z.object({
     year: z.number().int().nullable(),
-    images: z.record(z.enum(PRINT_SECTION_IDS), capturedImageSchema),
+    images: z.partialRecord(z.enum(PRINT_SECTION_IDS), capturedImageSchema),
     kpiImages: z
         .object({
             events: capturedImageSchema,

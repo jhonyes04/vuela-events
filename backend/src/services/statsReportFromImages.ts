@@ -1,5 +1,4 @@
 import PDFDocument from 'pdfkit';
-import { getStats } from './stats.js';
 import {
     drawReportHeader,
     GROUP_OF,
@@ -10,7 +9,6 @@ import {
     type CapturedImage,
     type KpiImages,
     type PrintSectionId,
-    type Stats,
 } from './statsReportShared.js';
 
 export type { CapturedImage, KpiImages } from './statsReportShared.js';
@@ -64,8 +62,7 @@ const drawPageNumbers = (doc: PDFKit.PDFDocument) => {
 export const generateStatsReportFromImages = async (
     input: GenerateStatsReportFromImagesInput,
 ): Promise<{ pdf: Buffer; filename: string }> => {
-    const stats = await getStats(input.now, input.year);
-    const pdf = await renderPdf(stats, input);
+    const pdf = await renderPdf(input);
     const yearLabel =
         input.year === null ? 'todos los años' : String(input.year);
 
@@ -76,7 +73,6 @@ export const generateStatsReportFromImages = async (
 };
 
 const renderPdf = (
-    stats: Stats,
     input: GenerateStatsReportFromImagesInput,
 ): Promise<Buffer> => {
     return new Promise((resolve, reject) => {
@@ -89,7 +85,19 @@ const renderPdf = (
         doc.on('end', () => resolve(Buffer.concat(chunks)));
         doc.on('error', reject);
 
-        drawReportHeader(doc, stats, input.year, input.now, input.kpiImages);
+        const hasGroup = (group: string) =>
+            PRINT_SECTION_IDS.some(
+                (id) => GROUP_OF[id] === group && input.images[id],
+            );
+
+        const kpiImages: KpiImages | undefined = input.kpiImages && {
+            events: hasGroup('Eventos') ? input.kpiImages.events : undefined,
+            attended: hasGroup('Atendidos')
+                ? input.kpiImages.attended
+                : undefined,
+        };
+
+        drawReportHeader(doc, input.year, input.now, kpiImages);
 
         let currentGroup: string | null = null;
 

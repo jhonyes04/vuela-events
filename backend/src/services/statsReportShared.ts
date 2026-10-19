@@ -148,29 +148,19 @@ export const sectionTitle = (doc: PDFKit.PDFDocument, text: string) => {
     doc.fillColor('black');
 };
 
-const kpiRow = (
-    doc: PDFKit.PDFDocument,
-    items: { label: string; value: string }[],
-) => {
-    doc.font('Helvetica').fontSize(10).fillColor('black');
-    doc.text(items.map((i) => `${i.label}: ${i.value}`).join('      '));
-    doc.moveDown(0.6);
-};
-
 const KPI_IMAGE_MAX_HEIGHT = 170;
 
 export interface KpiImages {
-    events: CapturedImage;
-    attended: CapturedImage;
+    events?: CapturedImage;
+    attended?: CapturedImage;
 }
 
-// Logo + título + período + fecha de generación + KPIs. Si llegan las
-// capturas de las cards de Eventos y Atendidos (con su sparkline, tal cual
-// se ven en pantalla) se dibujan una al lado de otra, cada una ocupando la
-// mitad del ancho; si no, el resumen cae a texto plano.
+// Logo + título + período + fecha de generación + KPIs. Dibuja solo las
+// cards (Eventos/Atendidos) cuyas capturas llegan, una al lado de otra si
+// llegan las dos, o a todo el ancho si llega una sola — refleja qué
+// secciones se eligieron al generar el PDF.
 export const drawReportHeader = (
     doc: PDFKit.PDFDocument,
-    stats: Stats,
     year: number | null,
     now: Date,
     kpiImages?: KpiImages,
@@ -195,37 +185,34 @@ export const drawReportHeader = (
     doc.fillColor('black');
     doc.moveDown(0.5);
 
-    if (kpiImages) {
+    const kpiEntries = [kpiImages?.events, kpiImages?.attended].filter(
+        (img): img is CapturedImage => !!img,
+    );
+
+    if (kpiEntries.length > 0) {
         const left = doc.page.margins.left;
-        const colWidth = halfWidth(doc);
+        const width =
+            kpiEntries.length === 2
+                ? halfWidth(doc)
+                : doc.page.width - left - doc.page.margins.right;
         const rowHeight = Math.max(
-            imageHeightAt(kpiImages.events, colWidth, KPI_IMAGE_MAX_HEIGHT),
-            imageHeightAt(kpiImages.attended, colWidth, KPI_IMAGE_MAX_HEIGHT),
+            ...kpiEntries.map((img) =>
+                imageHeightAt(img, width, KPI_IMAGE_MAX_HEIGHT),
+            ),
         );
 
-        placeImageAt(
-            doc,
-            kpiImages.events,
-            left,
-            doc.y,
-            colWidth,
-            KPI_IMAGE_MAX_HEIGHT,
-        );
-        placeImageAt(
-            doc,
-            kpiImages.attended,
-            left + colWidth + COLUMN_GAP,
-            doc.y,
-            colWidth,
-            KPI_IMAGE_MAX_HEIGHT,
-        );
+        kpiEntries.forEach((img, i) => {
+            placeImageAt(
+                doc,
+                img,
+                left + i * (width + COLUMN_GAP),
+                doc.y,
+                width,
+                KPI_IMAGE_MAX_HEIGHT,
+            );
+        });
 
         doc.x = left;
         doc.y += rowHeight + 10;
-    } else {
-        kpiRow(doc, [
-            { label: 'Eventos', value: String(stats.totals.events) },
-            { label: 'Atendidos', value: String(stats.totals.attended) },
-        ]);
     }
 };

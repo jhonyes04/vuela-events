@@ -9,6 +9,7 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog';
 import { PdfCanvasPreview } from '@/features/reports/components/PdfCanvasPreview';
+import { Card, CardContent } from '@/components/ui/card';
 
 interface ReportPreviewDialogProps {
     title: string;
@@ -33,7 +34,6 @@ const printPdf = (url: string) => {
     document.body.appendChild(iframe);
 };
 
-// Visualiza el parte de firmas generado, tal y como se va a enviar.
 export const ReportPreviewDialog = ({
     title,
     subtitle,
@@ -49,11 +49,15 @@ export const ReportPreviewDialog = ({
                 <DialogDescription>{subtitle}</DialogDescription>
             </DialogHeader>
 
-            <PdfCanvasPreview
-                url={url}
-                title={filename}
-                className="h-[60vh] w-full overflow-y-auto"
-            />
+            <Card>
+                <CardContent>
+                    <PdfCanvasPreview
+                        url={url}
+                        title={filename}
+                        className="h-[60vh] w-full"
+                    />
+                </CardContent>
+            </Card>
 
             <DialogFooter>
                 <a
