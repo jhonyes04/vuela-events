@@ -77,7 +77,11 @@ export const ReportPreviewDialog = ({
                     <Download className="size-4" />
                     Descargar
                 </a>
-                <Button variant="secondary" onClick={() => printPdf(url)}>
+                <Button
+                    variant="secondary"
+                    className="hidden sm:inline-flex"
+                    onClick={() => printPdf(url)}
+                >
                     <Printer className="size-4" />
                     Imprimir
                 </Button>
