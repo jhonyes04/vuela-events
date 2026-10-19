@@ -24,7 +24,7 @@ import { AttendedSection } from '@/features/stats/components/AttendedSection';
 import { PendingSection } from '@/features/stats/components/PendingSection';
 import { StatsPdfDialog } from '@/features/stats/components/StatsPdfDialog';
 import { StatsCaptureView } from '@/features/stats/components/StatsCaptureView';
-import { ReportPreviewDialog } from '@/features/events/components/ReportPreviewDialog';
+import { ReportPreviewDialog } from '@/features/reports/components/ReportPreviewDialog';
 import { useStatsReportDraft } from '@/features/stats/hooks/useStatsReportDraft';
 import type {
     CapturedImage,
@@ -305,6 +305,8 @@ export const StatsPage = () => {
 
             {draft && (
                 <ReportPreviewDialog
+                    title="Informe de estadísticas en PDF"
+                    subtitle="Revisa las estadísticas para comprobar que son los datos solicitados."
                     open={previewOpen}
                     onOpenChange={(open) => {
                         setPreviewOpen(open);

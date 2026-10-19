@@ -16,7 +16,7 @@ import { IconTooltip } from '@/components/IconTooltip';
 import { AttendeeChips } from '@/features/events/components/AttendeeChips';
 import { AddParticipantsDialog } from '@/features/events/components/AddParticipantsDialog';
 import { SendEmailDialog } from '@/features/emailSettings/components/SendEmailDialog';
-import { ReportPreviewDialog } from '@/features/events/components/ReportPreviewDialog';
+import { ReportPreviewDialog } from '@/features/reports/components/ReportPreviewDialog';
 import { useAttendees } from '@/features/events/hooks/useAttendees';
 import { useReportDraft } from '@/features/events/hooks/useReportDraft';
 import { scrollbarOptions } from '@/lib/overlayScrollbarsOptions';
@@ -190,6 +190,9 @@ const AttendeesBody = ({ event, onCloseAll }: AttendeesBodyProps) => {
 
             {draft && (
                 <ReportPreviewDialog
+                    title="Parte de firmas generado"
+                    subtitle="Revisa el acta antes de enviarla: es exactamente el PDF que
+                    recibirán los destinatarios."
                     open={previewOpen}
                     onOpenChange={setPreviewOpen}
                     url={draft.url}
