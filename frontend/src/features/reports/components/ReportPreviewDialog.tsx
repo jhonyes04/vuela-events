@@ -64,7 +64,7 @@ export const ReportPreviewDialog = ({
                     href={url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className={`${buttonVariants({ variant: 'secondary' })} me-auto`}
+                    className={`${buttonVariants({ variant: 'secondary' })} sm:me-auto`}
                 >
                     <ExternalLink className="size-4" />
                     Abrir en otra pestaña
