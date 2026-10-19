@@ -18,12 +18,16 @@ interface ProjectPreferencesSectionProps {
     continueLabel?: string;
     onContinue?: () => void;
     userId?: string;
+    deferred?: boolean;
+    onSelectionChange?: (ids: string[]) => void;
 }
 
 export const ProjectPreferencesSection = ({
     continueLabel = 'Continuar',
     onContinue,
     userId,
+    deferred = false,
+    onSelectionChange,
 }: ProjectPreferencesSectionProps = {}) => {
     const [options, setOptions] = useState<ProjectOption[]>([]);
     const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -45,21 +49,25 @@ export const ProjectPreferencesSection = ({
     }, [userId]);
 
     const toggle = async (id: string) => {
-        const previous = selected;
         const next = new Set(selected);
 
         if (next.has(id)) next.delete(id);
         else next.add(id);
 
+        if (deferred) {
+            setSelected(next);
+            onSelectionChange?.([...next]);
+
+            return;
+        }
+
+        const previous = selected;
         setSelected(next);
         setSavingId(id);
 
         try {
-            if (userId) {
-                await setUserProjectPreferences(userId, [...next]);
-            } else {
-                await setProjectPreferences([...next]);
-            }
+            if (userId) await setUserProjectPreferences(userId, [...next]);
+            else await setProjectPreferences([...next]);
         } catch (e) {
             setSelected(previous);
             toast.error(

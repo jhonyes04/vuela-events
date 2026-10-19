@@ -12,6 +12,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { ProjectPreferencesSection } from '@/features/profile/components/ProjectPreferencesSection';
 import { ApiError } from '@/lib/api';
 import {
     cleanText,
@@ -22,7 +23,10 @@ import {
     type DinamizadorTitle,
 } from '@/features/profile/lib/profile';
 import { ROLE_IDS, type Role } from '@/features/users/lib/roles';
-import { updateUserProfile } from '@/features/users/lib/users';
+import {
+    updateUserProfile,
+    setUserProjectPreferences,
+} from '@/features/users/lib/users';
 
 export interface EditableUser {
     id: string;
@@ -54,6 +58,7 @@ const EditUserBody = ({
     const [dinamizadorTitle, setDinamizadorTitle] =
         useState<DinamizadorTitle | null>(user.dinamizadorTitle);
     const [submitting, setSubmitting] = useState(false);
+    const [projectIds, setProjectIds] = useState<string[] | null>(null);
 
     // Igual que en "Mi perfil": solo lo necesita quien envía correos y no es admin.
     const role = roles.find((r) => r.id === user.role.id);
@@ -61,6 +66,9 @@ const EditUserBody = ({
         user.role.id !== ROLE_IDS.ADMIN &&
         (role?.permissions.some((p) => p.permissionId === 'email:send') ??
             false);
+
+    const needsProjects =
+        user.role.id !== ROLE_IDS.DT && user.role.id !== ROLE_IDS.ADMIN;
 
     const handleSubmit = async (e: FormEvent) => {
         e.preventDefault();
@@ -95,6 +103,9 @@ const EditUserBody = ({
                 dinamizadorTitle: needsTitle ? dinamizadorTitle : null,
             });
 
+            if (needsProjects && projectIds !== null)
+                await setUserProjectPreferences(user.id, projectIds);
+
             toast.success('Usuario actualizado.');
             onSaved();
             onOpenChange(false);
@@ -110,7 +121,7 @@ const EditUserBody = ({
     };
 
     return (
-        <DialogContent>
+        <DialogContent className="sm:max-w-2xl">
             <DialogHeader>
                 <DialogTitle>Editar usuario</DialogTitle>
                 <DialogDescription>{user.email}</DialogDescription>
@@ -180,6 +191,15 @@ const EditUserBody = ({
                                 </div>
                             ))}
                         </RadioGroup>
+                    </div>
+                )}
+                {needsProjects && (
+                    <div className="border-t py-2">
+                        <ProjectPreferencesSection
+                            userId={user.id}
+                            deferred
+                            onSelectionChange={setProjectIds}
+                        />
                     </div>
                 )}
 

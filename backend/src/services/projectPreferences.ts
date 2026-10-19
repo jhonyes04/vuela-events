@@ -87,7 +87,9 @@ export const listProjectInterestedUsers = async (): Promise<
             name: true,
             color: true,
             userPreferences: {
-                where: { user: { roleId: 'ail', active: true } },
+                where: {
+                    user: { roleId: { notIn: ['dt', 'admin'] }, active: true },
+                },
                 select: {
                     user: {
                         select: {

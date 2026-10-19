@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import {
     Pencil,
-    FolderKanban,
     Trash2,
     UserCog,
     CircleCheck,
@@ -17,14 +16,13 @@ import { ConfirmDeleteDialog } from '@/components/ConfirmDeleteDialog';
 import { DataTable, type DataTableColumn } from '@/components/DataTable';
 import { IconTooltip } from '@/components/IconTooltip';
 import { EditUserDialog } from '@/features/users/components/EditUserDialog';
-import { EditUserProjectsDialog } from '@/features/users/components/EditUserProjectsDialog';
 import { ListErrors } from '@/features/users/components/ListErrors';
 import { PaginationControls } from '@/components/PaginationControls';
 import { usePagination } from '@/hooks/usePagination';
 import { useSort } from '@/hooks/useSort';
 import { scrollbarOptions } from '@/lib/overlayScrollbarsOptions';
 import { useRolesStore } from '@/features/users/store';
-import { ROLE_IDS } from '@/features/users/lib/roles';
+
 import { api, ApiError } from '@/lib/api';
 import type { DinamizadorTitle } from '@/features/profile/lib/profile';
 import { PageTitle } from '@/components/PageTitle';
@@ -54,9 +52,6 @@ export const UsersPage = () => {
     const [error, setError] = useState<string | null>(null);
     const [busyId, setBusyId] = useState<string | null>(null);
     const [editing, setEditing] = useState<AdminUser | null>(null);
-    const [editingProjects, setEditingProjects] = useState<AdminUser | null>(
-        null,
-    );
     const [deleting, setDeleting] = useState<AdminUser | null>(null);
 
     const {
@@ -176,20 +171,7 @@ export const UsersPage = () => {
                                 <Pencil className="size-4" />
                             </Button>
                         </IconTooltip>
-                        {u.role.id !== ROLE_IDS.DT &&
-                            u.role.id !== ROLE_IDS.ADMIN && (
-                                <IconTooltip label="Proyectos de interés">
-                                    <Button
-                                        variant="secondary"
-                                        size="icon"
-                                        aria-label="Proyectos de interés"
-                                        disabled={busy}
-                                        onClick={() => setEditingProjects(u)}
-                                    >
-                                        <FolderKanban className="size-4" />
-                                    </Button>
-                                </IconTooltip>
-                            )}
+
                         <IconTooltip
                             label={u.active ? 'Desactivar' : 'Activar'}
                         >
@@ -341,12 +323,6 @@ export const UsersPage = () => {
                 user={editing}
                 roles={roles}
                 onSaved={() => void load()}
-            />
-
-            <EditUserProjectsDialog
-                open={editingProjects !== null}
-                onOpenChange={(open) => !open && setEditingProjects(null)}
-                user={editingProjects}
             />
 
             {deleting && (
