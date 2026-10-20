@@ -21,12 +21,15 @@ interface DateTimePickerProps {
     // 'YYYY-MM-DDTHH:mm'
     value: string;
     onChange: (value: string) => void;
+    // Sin restricción si no se pasa.
+    minDate?: Date;
 }
 
 export const DateTimePicker = ({
     id,
     value,
     onChange,
+    minDate,
 }: DateTimePickerProps) => {
     const [open, setOpen] = useState(false);
     const datePart = value.split('T')[0] ?? '';
@@ -51,6 +54,9 @@ export const DateTimePicker = ({
                     id={id}
                     type="datetime-local"
                     step={900}
+                    min={
+                        minDate ? `${formatDateKey(minDate)}T00:00` : undefined
+                    }
                     className="[&::-webkit-calendar-picker-indicator]:hidden"
                     value={value}
                     onChange={(e) => onChange(e.target.value)}
@@ -82,6 +88,7 @@ export const DateTimePicker = ({
                     onSelect={pickDate}
                     locale={es}
                     weekStartsOn={1}
+                    disabled={minDate ? { before: minDate } : undefined}
                 />
                 <div className="border-t p-3">
                     <Input

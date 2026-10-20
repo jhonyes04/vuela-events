@@ -22,10 +22,12 @@ export function CalendarGrid({
     weeks,
     events,
     onSelectEvent,
+    onSelectDay,
 }: {
     weeks: CalendarDay[][];
     events: EventItem[];
     onSelectEvent: (event: EventItem) => void;
+    onSelectDay?: (dayKey: string) => void;
 }) {
     const byDay = useMemo(
         () => new Map(groupByDay(events).map((g) => [g.key, g.events])),
@@ -67,9 +69,22 @@ export function CalendarGrid({
                         return (
                             <div
                                 key={day.key}
+                                role={onSelectDay ? 'button' : undefined}
+                                tabIndex={onSelectDay ? 0 : undefined}
+                                onClick={() => onSelectDay?.(day.key)}
+                                onKeyDown={(e) => {
+                                    if (
+                                        onSelectDay &&
+                                        (e.key === 'Enter' || e.key === ' ')
+                                    ) {
+                                        e.preventDefault();
+                                        onSelectDay(day.key);
+                                    }
+                                }}
                                 className={cn(
                                     'min-h-16 min-w-0 border-r p-1 last:border-r-0 md:min-h-28',
                                     !day.inMonth && 'bg-muted/40',
+                                    onSelectDay && 'cursor-pointer',
                                 )}
                             >
                                 <span
@@ -97,7 +112,8 @@ export function CalendarGrid({
                                                     'block w-full cursor-pointer truncate rounded px-1.5 py-0.5 text-left text-xs font-medium',
                                                     hasEnded(event)
                                                         ? 'bg-gray-400 text-white'
-                                                        : eventColor(event).chip,
+                                                        : eventColor(event)
+                                                              .chip,
                                                     event.registered &&
                                                         'ring-2 ring-brand-green',
                                                 )}
@@ -155,8 +171,9 @@ export function CalendarGrid({
                                                             'size-4 rounded-full',
                                                             hasEnded(event)
                                                                 ? 'bg-gray-400'
-                                                                : eventColor(event)
-                                                                      .dot,
+                                                                : eventColor(
+                                                                      event,
+                                                                  ).dot,
                                                         )}
                                                     />
                                                 </button>

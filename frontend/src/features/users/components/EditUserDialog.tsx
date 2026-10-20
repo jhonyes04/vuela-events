@@ -204,6 +204,14 @@ const EditUserBody = ({
                 )}
 
                 <DialogFooter>
+                    <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => onOpenChange(false)}
+                        disabled={submitting}
+                    >
+                        Cancelar
+                    </Button>
                     <Button type="submit" disabled={submitting}>
                         {submitting ? 'Guardando…' : 'Guardar'}
                     </Button>

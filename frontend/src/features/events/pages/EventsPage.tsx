@@ -8,7 +8,10 @@ import {
 import { toast } from 'sonner';
 import { useAuth } from '@/features/auth/hooks/context';
 import { IconTooltip } from '@/components/IconTooltip';
-import { CreateEventDialog } from '@/features/events/components/CreateEventDialog';
+import {
+    CreateEventDialog,
+    CreateEventOnDayDialog,
+} from '@/features/events/components/CreateEventDialog';
 import { CalendarGrid } from '@/features/events/components/CalendarGrid';
 import { CalendarLegend } from '@/features/events/components/CalendarLegend';
 import { EventCard } from '@/features/events/components/EventCard';
@@ -35,6 +38,7 @@ import {
 export function EventsPage() {
     const { user } = useAuth();
     const canCreate = user?.permissions.includes('events:create') ?? false;
+    const canBackdate = user?.permissions.includes('events:backdate') ?? false;
     const anchor = useEventsStore((s) => s.anchor);
     const setAnchor = useEventsStore((s) => s.setAnchor);
 
@@ -50,6 +54,8 @@ export function EventsPage() {
     // Se guarda el id y una copia: al recargar, la ficha se refresca con el dato nuevo, pero no se cierra mientras llega.
     const [selectedId, setSelectedId] = useState<string | null>(null);
     const [snapshot, setSnapshot] = useState<EventItem | null>(null);
+    const [createDayKey, setCreateDayKey] = useState<string | null>(null);
+
     const selectedEvent =
         selectedId === null
             ? null
@@ -94,6 +100,14 @@ export function EventsPage() {
 
     const todayKey = today();
     const weeks = buildMonthGrid(year, monthIndex, todayKey);
+
+    const handleSelectDay = (key: string) => {
+        if (!canBackdate && key < todayKey) {
+            toast.error('No se pueden crear eventos en días pasados.');
+            return;
+        }
+        setCreateDayKey(key);
+    };
     const prevLabel = 'Mes anterior';
     const nextLabel = 'Mes siguiente';
 
@@ -183,6 +197,7 @@ export function EventsPage() {
                         weeks={weeks}
                         events={events}
                         onSelectEvent={openEvent}
+                        onSelectDay={canCreate ? handleSelectDay : undefined}
                     />
                     <CalendarLegend events={events} />
 
@@ -215,6 +230,16 @@ export function EventsPage() {
                 onClose={closeEvent}
                 onChanged={reload}
                 onDeleted={handleDeleted}
+            />
+
+            <CreateEventOnDayDialog
+                open={createDayKey !== null}
+                onOpenChange={(open) => !open && setCreateDayKey(null)}
+                initialDate={createDayKey}
+                onCreated={(result) => {
+                    setCreateDayKey(null);
+                    handleCreated(result);
+                }}
             />
         </section>
     );

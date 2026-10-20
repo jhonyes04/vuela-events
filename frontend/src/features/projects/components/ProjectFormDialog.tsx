@@ -294,6 +294,14 @@ const ProjectFormBody = ({
                 </form>
 
                 <DialogFooter>
+                    <Button
+                        type="button"
+                        variant="outline"
+                        onClick={onClose}
+                        disabled={submitting}
+                    >
+                        Cancelar
+                    </Button>
                     <Button type="submit" form="project-form" disabled={submitting}>
                         {submitting ? 'Guardando…' : 'Guardar'}
                     </Button>

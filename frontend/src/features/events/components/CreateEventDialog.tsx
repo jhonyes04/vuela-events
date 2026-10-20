@@ -12,6 +12,7 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { useAuth } from '@/features/auth/hooks/context';
 import {
     EventBasicFields,
     Field,
@@ -22,6 +23,7 @@ import { api, ApiError } from '@/lib/api';
 import { useProjectsStore } from '@/features/projects/store';
 import {
     createRecurringEvents,
+    dayKey,
     madridLocalToIso,
     MAX_OCCURRENCES,
     previewRecurrence,
@@ -55,12 +57,19 @@ function EventFormBody({
     const isEdit = event !== null;
     const idPrefix = isEdit ? 'edit-ev-' : 'ev-';
     const fieldId = (name: string) => `${idPrefix}${name}`;
+    const { user } = useAuth();
+    const canBackdate = user?.permissions.includes('events:backdate') ?? false;
+    const minDate = canBackdate ? undefined : new Date();
 
     const [values, setValues] = useState<FormValues>(
         event
             ? valuesFromEvent(event)
             : initialDate
-              ? { ...EMPTY_FORM_VALUES, startsAt: `${initialDate}T09:00` }
+              ? {
+                    ...EMPTY_FORM_VALUES,
+                    startsAt: `${initialDate}T09:00`,
+                    endsAt: `${initialDate}T10:00`,
+                }
               : EMPTY_FORM_VALUES,
     );
     const [submitting, setSubmitting] = useState(false);
@@ -121,6 +130,19 @@ function EventFormBody({
                     return;
                 }
 
+                const todayKey = dayKey(new Date().toISOString());
+                const newDay = dayKey(startsAt);
+                const originalDay = dayKey(event.startsAt);
+
+                if (
+                    !canBackdate &&
+                    newDay < todayKey &&
+                    newDay !== originalDay
+                ) {
+                    toast.error('No se pueden crear eventos en días pasados');
+                    return;
+                }
+
                 setSubmitting(true);
                 await updateEventById(event.id, {
                     ...common,
@@ -139,6 +161,13 @@ function EventFormBody({
                     toast.error(
                         'La hora de fin debe ser posterior a la de inicio',
                     );
+                    return;
+                }
+
+                const todayKey = dayKey(new Date().toISOString());
+
+                if (!canBackdate && values.from < todayKey) {
+                    toast.error('No se pueden crear eventos en días pasados');
                     return;
                 }
 
@@ -177,6 +206,14 @@ function EventFormBody({
                 toast.error(
                     'La fecha de fin debe ser posterior a la de inicio',
                 );
+                return;
+            }
+
+            if (
+                !canBackdate &&
+                dayKey(startsAt) < dayKey(new Date().toISOString())
+            ) {
+                toast.error('No se pueden crear eventos en días pasados');
                 return;
             }
 
@@ -247,12 +284,14 @@ function EventFormBody({
                         onChangeText={set}
                         preview={preview}
                         sessionsLabel={sessionsLabel}
+                        minDate={minDate}
                     />
                 ) : (
                     <SingleSessionFields
                         fieldId={fieldId}
                         values={values}
                         setValues={setValues}
+                        minDate={minDate}
                     />
                 )}
 
@@ -285,6 +324,14 @@ function EventFormBody({
             </form>
 
             <DialogFooter>
+                <Button
+                    type="button"
+                    variant="outline"
+                    onClick={onClose}
+                    disabled={submitting}
+                >
+                    Cancelar
+                </Button>
                 <Button
                     type="submit"
                     form={fieldId('form')}

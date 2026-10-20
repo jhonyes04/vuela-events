@@ -112,6 +112,14 @@ const ResourceLinkFormBody = ({
 
             <DialogFooter>
                 <Button
+                    type="button"
+                    variant="outline"
+                    onClick={onClose}
+                    disabled={submitting}
+                >
+                    Cancelar
+                </Button>
+                <Button
                     type="submit"
                     form="resource-link-form"
                     disabled={submitting}

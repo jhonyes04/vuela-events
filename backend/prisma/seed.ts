@@ -15,6 +15,10 @@ const PERMISSIONS: { id: string; description: string }[] = [
     { id: 'events:view', description: 'Ver gestión de eventos' },
     { id: 'events:edit', description: 'Editar eventos' },
     { id: 'events:delete', description: 'Eliminar eventos' },
+    {
+        id: 'events:backdate',
+        description: 'Crear o editar eventos en fechas pasadas',
+    },
     { id: 'attendees:view', description: 'Ver participantes para inscribir' },
     { id: 'attendees:add', description: 'Inscribir participantes manualmente' },
     { id: 'attendees:delete', description: 'Quitar participantes de un evento' },
@@ -57,6 +61,7 @@ const ROLE_PERMISSIONS: Record<string, string[]> = {
         'events:view',
         'events:edit',
         'events:delete',
+        'events:backdate',
         'attendees:view',
         'attendees:add',
         'attendees:delete',

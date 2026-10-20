@@ -1,11 +1,7 @@
 import { useMemo } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { PROJECT_COLOR_STYLES } from '@/features/projects/lib/colors';
-import {
-    hasEnded,
-    isFull,
-    type EventItem,
-} from '@/features/events/lib/events';
+import { hasEnded, isFull, type EventItem } from '@/features/events/lib/events';
 
 interface CalendarLegendProps {
     events: EventItem[];
@@ -14,7 +10,11 @@ interface CalendarLegendProps {
 // Leyenda de lo que se ve: proyectos de los eventos visibles, y completo/finalizado si los hay.
 export const CalendarLegend = ({ events }: CalendarLegendProps) => {
     const projects = useMemo(() => {
-        const byId = new Map(events.map((e) => [e.project.id, e.project]));
+        const byId = new Map(
+            events
+                .filter((event) => !hasEnded(event))
+                .map((event) => [event.project.id, event.project]),
+        );
 
         return [...byId.values()].sort((a, b) => a.name.localeCompare(b.name));
     }, [events]);
@@ -23,9 +23,7 @@ export const CalendarLegend = ({ events }: CalendarLegendProps) => {
 
     const anyEnded = events.some((event) => hasEnded(event));
     // Un evento finalizado ya no cuenta como "Completo": prioridad a finalizado.
-    const anyFull = events.some(
-        (event) => isFull(event) && !hasEnded(event),
-    );
+    const anyFull = events.some((event) => isFull(event) && !hasEnded(event));
 
     return (
         <div
@@ -43,7 +41,9 @@ export const CalendarLegend = ({ events }: CalendarLegendProps) => {
                     {project.name}
                 </Badge>
             ))}
-            {anyFull && <Badge className="bg-red-500 text-white">Completo</Badge>}
+            {anyFull && (
+                <Badge className="bg-red-500 text-white">Completo</Badge>
+            )}
             {anyEnded && (
                 <Badge className="bg-gray-400 text-white">Finalizado</Badge>
             )}

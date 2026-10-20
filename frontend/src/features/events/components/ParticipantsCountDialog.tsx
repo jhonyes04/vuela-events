@@ -104,6 +104,14 @@ const ParticipantsCountBody = ({
             <DialogFooter>
                 <Button
                     type="button"
+                    variant="outline"
+                    onClick={() => onOpenChange(false)}
+                    disabled={submitting}
+                >
+                    Cancelar
+                </Button>
+                <Button
+                    type="button"
                     disabled={submitting}
                     onClick={() => void handleSave()}
                 >

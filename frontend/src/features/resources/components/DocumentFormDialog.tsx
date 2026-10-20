@@ -143,6 +143,14 @@ const DocumentFormBody = ({
             </form>
 
             <DialogFooter>
+                <Button
+                    type="button"
+                    variant="outline"
+                    onClick={onClose}
+                    disabled={submitting}
+                >
+                    Cancelar
+                </Button>
                 <Button type="submit" form="document-form" disabled={submitting}>
                     {submitting ? 'Guardando…' : 'Guardar'}
                 </Button>

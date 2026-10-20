@@ -8,6 +8,7 @@ import {
 } from '../middleware/auth.js';
 import {
     isRealDate,
+    madridDayKey,
     MAX_OCCURRENCES,
     RecurrenceError,
 } from '../lib/recurrence.js';
@@ -323,6 +324,16 @@ eventsRouter.post(
             projectId,
         } = body.data;
 
+        if (
+            !actor.permissions.includes('events:backdate') &&
+            madridDayKey(new Date(startsAt)) < madridDayKey(new Date())
+        ) {
+            res.status(400).json({
+                error: 'No se pueden crear eventos en días pasados',
+            });
+            return;
+        }
+
         if (!(await isActiveProject(projectId))) {
             res.status(400).json({ error: 'Proyecto no válido' });
             return;
@@ -401,11 +412,26 @@ eventsRouter.patch(
 
         const exists = await prisma.event.findUnique({
             where: { id: params.data.id },
-            select: { id: true },
+            select: { id: true, startsAt: true },
         });
 
         if (!exists) {
             res.status(404).json({ error: 'Evento no encontrado' });
+            return;
+        }
+
+        const todayDay = madridDayKey(new Date());
+        const newDay = madridDayKey(new Date(startsAt));
+        const currentDay = madridDayKey(exists.startsAt);
+
+        if (
+            !actor.permissions.includes('events:backdate') &&
+            newDay < todayDay &&
+            newDay !== currentDay
+        ) {
+            res.status(400).json({
+                error: 'No se pueden crear eventos en días pasados',
+            });
             return;
         }
 
@@ -515,6 +541,16 @@ eventsRouter.post(
         }
 
         const { from, to, weekdays, startTime, endTime, ...fields } = body.data;
+
+        if (
+            !actor.permissions.includes('events:backdate') &&
+            from < madridDayKey(new Date())
+        ) {
+            res.status(400).json({
+                error: 'No se pueden crear eventos en días pasados',
+            });
+            return;
+        }
 
         if (!(await isActiveProject(fields.projectId))) {
             res.status(400).json({ error: 'Proyecto no válido' });

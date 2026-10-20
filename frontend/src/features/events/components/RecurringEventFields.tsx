@@ -18,6 +18,8 @@ interface RecurringEventFieldsProps {
     ) => (e: { target: { value: string } }) => void;
     preview: RecurrencePreview | null;
     sessionsLabel: string;
+    // Sin restricción (p. ej. admin) si no se pasa.
+    minDate?: Date;
 }
 
 // Rango de fechas, días de la semana y horas de una serie recurrente, más el
@@ -29,6 +31,7 @@ export function RecurringEventFields({
     onChangeText,
     preview,
     sessionsLabel,
+    minDate,
 }: RecurringEventFieldsProps) {
     const toggleWeekday = (day: number) =>
         setValues((v) => ({
@@ -45,6 +48,7 @@ export function RecurringEventFields({
                     <DatePicker
                         id={fieldId('from')}
                         value={values.from}
+                        minDate={minDate}
                         onChange={(v) =>
                             setValues((val) => ({ ...val, from: v }))
                         }
@@ -54,6 +58,7 @@ export function RecurringEventFields({
                     <DatePicker
                         id={fieldId('to')}
                         value={values.to}
+                        minDate={minDate}
                         onChange={(v) => setValues((val) => ({ ...val, to: v }))}
                     />
                 </Field>

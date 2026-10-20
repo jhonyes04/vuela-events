@@ -20,9 +20,16 @@ interface DatePickerProps {
     // 'YYYY-MM-DD'
     value: string;
     onChange: (value: string) => void;
+    // Sin restricción si no se pasa.
+    minDate?: Date;
 }
 
-export const DatePicker = ({ id, value, onChange }: DatePickerProps) => {
+export const DatePicker = ({
+    id,
+    value,
+    onChange,
+    minDate,
+}: DatePickerProps) => {
     const [open, setOpen] = useState(false);
     const selected = value ? parseDateKey(value) : undefined;
 
@@ -39,6 +46,7 @@ export const DatePicker = ({ id, value, onChange }: DatePickerProps) => {
                 <InputGroupInput
                     id={id}
                     type="date"
+                    min={minDate ? formatDateKey(minDate) : undefined}
                     className="[&::-webkit-calendar-picker-indicator]:hidden"
                     value={value}
                     onChange={(e) => onChange(e.target.value)}
@@ -70,6 +78,7 @@ export const DatePicker = ({ id, value, onChange }: DatePickerProps) => {
                     onSelect={pickDate}
                     locale={es}
                     weekStartsOn={1}
+                    disabled={minDate ? { before: minDate } : undefined}
                 />
             </PopoverContent>
         </Popover>

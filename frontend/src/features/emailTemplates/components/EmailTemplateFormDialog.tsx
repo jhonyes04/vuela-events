@@ -208,6 +208,14 @@ const EmailTemplateFormBody = ({
 
             <DialogFooter>
                 <Button
+                    type="button"
+                    variant="outline"
+                    onClick={onClose}
+                    disabled={submitting}
+                >
+                    Cancelar
+                </Button>
+                <Button
                     type="submit"
                     form="email-template-form"
                     disabled={submitting}

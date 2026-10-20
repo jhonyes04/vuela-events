@@ -108,6 +108,14 @@ const GuideFormBody = ({ guide, onSaved, onClose }: GuideFormBodyProps) => {
             </form>
 
             <DialogFooter>
+                <Button
+                    type="button"
+                    variant="outline"
+                    onClick={onClose}
+                    disabled={submitting}
+                >
+                    Cancelar
+                </Button>
                 <Button type="submit" form="guide-form" disabled={submitting}>
                     {submitting ? 'Guardando…' : 'Guardar'}
                 </Button>

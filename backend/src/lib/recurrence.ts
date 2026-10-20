@@ -44,6 +44,16 @@ const wallClockFormat = new Intl.DateTimeFormat('en-CA', {
     hourCycle: 'h23',
 });
 
+const dayKeyFormat = new Intl.DateTimeFormat('en-CA', {
+    timeZone: TZ,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+});
+
+// 'YYYY-MM-DD' del día de Madrid en que cae ese instante.
+export const madridDayKey = (date: Date): string => dayKeyFormat.format(date);
+
 // Diferencia entre la hora de pared de Madrid y UTC en ese instante.
 const madridOffsetMs = (instant: Date): number => {
     const parts = wallClockFormat.formatToParts(instant);
