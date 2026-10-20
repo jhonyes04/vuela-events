@@ -3,11 +3,13 @@ import { Eye, FileText, FolderOpen, Link2, Pencil, Trash2 } from 'lucide-react';
 import { useAuth } from '@/features/auth/hooks/context';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { IconTooltip } from '@/components/IconTooltip';
 import { ConfirmDeleteDialog } from '@/components/ConfirmDeleteDialog';
 import { PageTitle } from '@/components/PageTitle';
 import { ListErrors } from '@/features/users/components/ListErrors';
 import { DataTable, type DataTableColumn } from '@/components/DataTable';
+import { ComboboxField } from '@/components/ComboboxField';
 import { PaginationControls } from '@/components/PaginationControls';
 import { usePagination } from '@/hooks/usePagination';
 import { useSort } from '@/hooks/useSort';
@@ -40,6 +42,13 @@ interface ResourceRow {
 }
 
 type SortKey = 'title' | 'kind';
+type KindFilter = '' | ResourceKind;
+
+const KIND_FILTER_LABELS: Record<KindFilter, string> = {
+    '': 'Todos los tipos',
+    document: 'Documentos',
+    link: 'Enlaces',
+};
 
 const formatSize = (bytes: number): string =>
     bytes < 1024 * 1024
@@ -69,12 +78,14 @@ export const ResourcesManagementPage = () => {
     const [editingDocument, setEditingDocument] = useState<Document | null>(
         null,
     );
+    const [kindFilter, setKindFilter] = useState<KindFilter>('');
 
     const [linkFormOpen, setLinkFormOpen] = useState(false);
     const [linkFormKey, setLinkFormKey] = useState(0);
     const [editingLink, setEditingLink] = useState<ResourceLink | null>(null);
 
     const [deleting, setDeleting] = useState<ResourceRow | null>(null);
+    const [search, setSearch] = useState('');
 
     const reload = () => {
         void loadDocuments(true);
@@ -110,8 +121,21 @@ export const ResourcesManagementPage = () => {
         })),
     ];
 
+    const filtered = rows.filter((row) => {
+        if (kindFilter && row.kind !== kindFilter) return false;
+
+        if (!search) return true;
+
+        const q = search.trim().toLowerCase();
+
+        return (
+            row.title.toLowerCase().includes(q) ||
+            row.detail.toLowerCase().includes(q)
+        );
+    });
+
     const { sorted, sort, toggleSort } = useSort<ResourceRow, SortKey>(
-        rows,
+        filtered,
         {
             title: (a, b) => a.title.localeCompare(b.title),
             kind: (a, b) => a.kind.localeCompare(b.kind),
@@ -161,7 +185,10 @@ export const ResourcesManagementPage = () => {
             sortKey: 'kind',
             cellClassName: 'whitespace-nowrap',
             render: (row) => (
-                <Badge variant="secondary" className="gap-1">
+                <Badge
+                    variant="outline"
+                    className={`${row.kind === 'document' ? 'bg-blue-300' : 'bg-green-300'} gap-1`}
+                >
                     {row.kind === 'document' ? (
                         <FileText className="size-3.5" />
                     ) : (
@@ -189,9 +216,19 @@ export const ResourcesManagementPage = () => {
             header: 'Estado',
             render: (row) =>
                 row.active ? (
-                    <Badge variant="outline">Activo</Badge>
+                    <Badge
+                        variant="outline"
+                        className="border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+                    >
+                        Activo
+                    </Badge>
                 ) : (
-                    <Badge variant="secondary">Inactivo</Badge>
+                    <Badge
+                        variant="outline"
+                        className="border-red-500/30 bg-red-500/10 text-red-600 dark:text-red-400"
+                    >
+                        Inactivo
+                    </Badge>
                 ),
         },
         {
@@ -257,14 +294,21 @@ export const ResourcesManagementPage = () => {
 
     return (
         <section>
-            <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+            <div className="mb-4 sm:mb-0 flex flex-wrap items-center justify-between gap-3">
                 <PageTitle icon={FolderOpen}>Gestionar Recursos</PageTitle>
                 {canCreate && (
-                    <div className="flex gap-2">
-                        <Button variant="secondary" onClick={openCreateLink}>
+                    <div className="flex gap-2 w-full sm:w-auto">
+                        <Button
+                            variant="secondary"
+                            className="w-[calc(50%-0.25rem)] sm:w-auto"
+                            onClick={openCreateLink}
+                        >
                             Nuevo enlace
                         </Button>
-                        <Button onClick={openCreateDocument}>
+                        <Button
+                            className="w-[calc(50%-0.25rem)] sm:w-auto"
+                            onClick={openCreateDocument}
+                        >
                             Nuevo documento
                         </Button>
                     </div>
@@ -272,6 +316,27 @@ export const ResourcesManagementPage = () => {
             </div>
 
             <ListErrors error={error} actionError={null} onRetry={reload} />
+
+            <div className="mb-4 flex flex-wrap items-center gap-2">
+                <Input
+                    placeholder="Buscar por título…"
+                    className="bg-card w-full sm:w-56"
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                />
+                <ComboboxField
+                    className="w-full sm:w-40 bg-card"
+                    items={['', 'document', 'link'] as KindFilter[]}
+                    getValue={(key) => key}
+                    getLabel={(key) => KIND_FILTER_LABELS[key]}
+                    value={kindFilter}
+                    onValueChange={(value) =>
+                        setKindFilter(value as KindFilter)
+                    }
+                    searchable={false}
+                    placeholder="Todos los tipos"
+                />
+            </div>
 
             {loading ? (
                 <p role="status" className="text-muted-foreground">
@@ -289,9 +354,15 @@ export const ResourcesManagementPage = () => {
                 </div>
             )}
 
-            {!loading && paged.length === 0 && (
+            {!loading && rows.length === 0 && (
                 <p className="mt-4 text-muted-foreground">
                     Todavía no hay recursos.
+                </p>
+            )}
+
+            {!loading && rows.length > 0 && sorted.length === 0 && (
+                <p className="mt-4 text-muted-foreground">
+                    No hay recursos que coincidan con la búsqueda.
                 </p>
             )}
 
@@ -309,7 +380,7 @@ export const ResourcesManagementPage = () => {
             )}
 
             <DocumentFormDialog
-                key={documentFormKey}
+                key={`document-${documentFormKey}`}
                 open={documentFormOpen}
                 onOpenChange={setDocumentFormOpen}
                 document={editingDocument}
@@ -317,7 +388,7 @@ export const ResourcesManagementPage = () => {
             />
 
             <ResourceLinkFormDialog
-                key={linkFormKey}
+                key={`link-${linkFormKey}`}
                 open={linkFormOpen}
                 onOpenChange={setLinkFormOpen}
                 link={editingLink}

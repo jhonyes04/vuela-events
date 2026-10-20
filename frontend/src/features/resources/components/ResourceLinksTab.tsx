@@ -14,7 +14,11 @@ import {
 import { useResourceLinksStore } from '@/features/resources/store';
 import { canManageResource } from '@/lib/ownership';
 
-export const ResourceLinksTab = () => {
+interface ResourceLinksTabProps {
+    search: string;
+}
+
+export const ResourceLinksTab = ({ search }: ResourceLinksTabProps) => {
     const { user } = useAuth();
     const canCreate = user?.permissions.includes('resources:create') ?? false;
     const canManageAny =
@@ -55,7 +59,18 @@ export const ResourceLinksTab = () => {
     };
 
     // Quien no gestiona recursos no ve ni los inactivos ni los botones.
-    const visibleLinks = canManageAny ? links : links.filter((l) => l.active);
+    const visibleLinks = (
+        canManageAny ? links : links.filter((l) => l.active)
+    ).filter((l) => {
+        if (!search) return true;
+
+        const q = search.trim().toLowerCase();
+
+        return (
+            l.title.toLowerCase().includes(q) ||
+            l.url.toLowerCase().includes(q)
+        );
+    });
 
     return (
         <div>

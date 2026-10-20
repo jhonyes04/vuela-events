@@ -83,6 +83,8 @@ export const GuidesPage = () => {
             key: 'url',
             header: 'URL',
             sortKey: 'url',
+            headerClassName: 'hidden sm:table-cell',
+            cellClassName: 'hidden sm:table-cell',
             render: (guide) => (
                 <a
                     href={guide.url}
@@ -101,9 +103,19 @@ export const GuidesPage = () => {
             sortKey: 'active',
             render: (guide) =>
                 guide.active ? (
-                    <Badge variant="outline">Activa</Badge>
+                    <Badge
+                        variant="outline"
+                        className="border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+                    >
+                        Activa
+                    </Badge>
                 ) : (
-                    <Badge variant="secondary">Inactiva</Badge>
+                    <Badge
+                        variant="outline"
+                        className="border-red-500/30 bg-red-500/10 text-red-600 dark:text-red-400"
+                    >
+                        Inactiva
+                    </Badge>
                 ),
         },
         {
@@ -164,7 +176,7 @@ export const GuidesPage = () => {
             <div className="mb-4">
                 <Input
                     placeholder="Buscar por nombre o URL…"
-                    className="bg-card w-64"
+                    className="w-full sm:w-64 bg-card"
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
                 />

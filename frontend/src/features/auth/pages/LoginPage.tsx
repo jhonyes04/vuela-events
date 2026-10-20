@@ -26,9 +26,10 @@ export const LoginPage = () => {
                     <h2 className="mb-2 text-3xl font-semibold text-white">
                         Vuela Events
                     </h2>
-                    <p className="max-w-xs text-sm text-white/80">
-                        Talleres y eventos de Puntos Vuela: consulta el
-                        calendario, inscríbete y gestiona tu asistencia.
+                    <p className="max-w-md text-sm text-white/80">
+                        Talleres y eventos de Puntos Vuela (Axarquía y Sierra de
+                        las Nieves): consulta el calendario, inscríbete y
+                        gestiona tu asistencia.
                     </p>
                 </div>
             </div>

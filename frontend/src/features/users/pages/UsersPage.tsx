@@ -1,13 +1,5 @@
 import { useEffect, useState } from 'react';
-import {
-    Pencil,
-    Trash2,
-    UserCog,
-    CircleCheck,
-    CircleX,
-    UserCheck,
-    UserX,
-} from 'lucide-react';
+import { Pencil, Trash2, UserCog, UserCheck, UserX } from 'lucide-react';
 import { OverlayScrollbarsComponent } from 'overlayscrollbars-react';
 import { toast } from 'sonner';
 import { useAuth } from '@/features/auth/hooks/context';
@@ -128,22 +120,32 @@ export const UsersPage = () => {
             key: 'active',
             header: 'Estado',
             sortKey: 'active',
-            render: (u) =>
-                u.active ? (
-                    <IconTooltip label="Activo">
-                        <CircleCheck
-                            className="size-4 text-brand-green mx-auto"
-                            aria-label="Activo"
-                        />
+            render: (user) => {
+                const isSelf = user.id === me?.id;
+                const busy = busyId === user.id;
+
+                return (
+                    <IconTooltip label={user.active ? 'Desactivar' : 'Activar'}>
+                        <Button
+                            type="button"
+                            variant="default"
+                            size="icon"
+                            disabled={isSelf || busy}
+                            aria-label={user.active ? 'Desactivar' : 'Activar'}
+                            onClick={() =>
+                                void toggleActive(user.id, !user.active)
+                            }
+                            className={`mx-auto disabled:cursor-not-allowed disabled:opacity-50 ${user.active ? 'bg-green-600' : 'bg-destructive'}`}
+                        >
+                            {user.active ? (
+                                <UserCheck className="size-4 text-white" />
+                            ) : (
+                                <UserX className="size-4 text-white" />
+                            )}
+                        </Button>
                     </IconTooltip>
-                ) : (
-                    <IconTooltip label="Desactivado">
-                        <CircleX
-                            className="size-4 text-destructive mx-auto"
-                            aria-label="Desactivado"
-                        />
-                    </IconTooltip>
-                ),
+                );
+            },
         },
         {
             key: 'actions',
@@ -169,29 +171,6 @@ export const UsersPage = () => {
                                 onClick={() => setEditing(u)}
                             >
                                 <Pencil className="size-4" />
-                            </Button>
-                        </IconTooltip>
-
-                        <IconTooltip
-                            label={u.active ? 'Desactivar' : 'Activar'}
-                        >
-                            <Button
-                                variant="default"
-                                size="icon"
-                                aria-label={u.active ? 'Desactivar' : 'Activar'}
-                                disabled={isSelf || busy}
-                                className={
-                                    u.active ? 'bg-green-600' : 'bg-destructive'
-                                }
-                                onClick={() =>
-                                    void toggleActive(u.id, !u.active)
-                                }
-                            >
-                                {u.active ? (
-                                    <UserX className="size-4" />
-                                ) : (
-                                    <UserCheck className="size-4" />
-                                )}
                             </Button>
                         </IconTooltip>
                         <IconTooltip label="Eliminar">

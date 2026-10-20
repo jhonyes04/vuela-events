@@ -1,10 +1,14 @@
 import { useEffect, useState } from 'react';
 import { FolderKanban, Pencil, Trash2 } from 'lucide-react';
+import { OverlayScrollbarsComponent } from 'overlayscrollbars-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { IconTooltip } from '@/components/IconTooltip';
+import { Input } from '@/components/ui/input';
 import { ConfirmDeleteDialog } from '@/components/ConfirmDeleteDialog';
+import { DataTable, type DataTableColumn } from '@/components/DataTable';
+import { IconTooltip } from '@/components/IconTooltip';
 import { PageTitle } from '@/components/PageTitle';
+import { PaginationControls } from '@/components/PaginationControls';
 import { ListErrors } from '@/features/users/components/ListErrors';
 import { ProjectFormDialog } from '@/features/projects/components/ProjectFormDialog';
 import { deleteProject, type Project } from '@/features/projects/lib/projects';
@@ -13,6 +17,11 @@ import { useProjectsStore } from '@/features/projects/store';
 import { useAuth } from '@/features/auth/hooks/context';
 import { canManageResource } from '@/lib/ownership';
 import { stripHtml } from '@/lib/html';
+import { scrollbarOptions } from '@/lib/overlayScrollbarsOptions';
+import { usePagination } from '@/hooks/usePagination';
+import { useSort } from '@/hooks/useSort';
+
+const CHARACTERS_LENGTH = 130;
 
 export const ProjectsPage = () => {
     const { user } = useAuth();
@@ -26,6 +35,7 @@ export const ProjectsPage = () => {
     const [formKey, setFormKey] = useState(0);
     const [editing, setEditing] = useState<Project | null>(null);
     const [deleting, setDeleting] = useState<Project | null>(null);
+    const [search, setSearch] = useState('');
 
     // Al entrar se refresca, pero la lista en caché se ve mientras tanto.
     useEffect(() => {
@@ -44,6 +54,145 @@ export const ProjectsPage = () => {
         setFormOpen(true);
     };
 
+    const filtered = projects.filter((p) => {
+        if (!search) return true;
+
+        const q = search.trim().toLowerCase();
+
+        return (
+            p.name.toLowerCase().includes(q) ||
+            p.guides.some((g) => g.name.toLowerCase().includes(q))
+        );
+    });
+
+    const { sorted, sort, toggleSort } = useSort<Project, 'name' | 'active'>(
+        filtered,
+        {
+            name: (a, b) => a.name.localeCompare(b.name),
+            active: (a, b) => Number(a.active) - Number(b.active),
+        },
+        { key: 'name', dir: 'asc' },
+    );
+
+    const { paged, page, pageCount, pageSize, total, setPage, setPageSize } =
+        usePagination(sorted, 10);
+
+    const columns: DataTableColumn<Project, 'name' | 'active'>[] = [
+        {
+            key: 'name',
+            header: 'Nombre',
+            sortKey: 'name',
+            render: (p) => (
+                <div className="flex min-w-0 items-center gap-2">
+                    <span
+                        className={`size-4 shrink-0 rounded-full ${PROJECT_COLOR_STYLES[p.color].swatch}`}
+                    />
+                    <span className="truncate font-medium">{p.name}</span>
+                </div>
+            ),
+        },
+        {
+            key: 'guides',
+            header: 'Guías',
+            headerClassName: 'hidden sm:inline-block',
+            cellClassName: 'hidden sm:inline-block max-w-xs truncate',
+            render: (p) => {
+                const text =
+                    p.guides.map((guide) => guide.name).join(', ') || '-';
+
+                return (
+                    text.slice(0, CHARACTERS_LENGTH) +
+                    (text.length > CHARACTERS_LENGTH ? '…' : '')
+                );
+            },
+        },
+        {
+            key: 'openingInstructions',
+            header: 'Observaciones',
+            headerClassName: 'hidden sm:inline-block',
+            cellClassName: 'hidden sm:inline-block max-w-xs truncate',
+            render: (p) => {
+                if (!p.openingInstructions) return '—';
+
+                const text = stripHtml(p.openingInstructions);
+                const match = text.match(/observaciones\s*:?/i);
+                const relevant = match
+                    ? text.slice(match.index! + match[0].length).trim()
+                    : text;
+
+                return relevant
+                    ? relevant.slice(0, CHARACTERS_LENGTH) +
+                          (relevant.length > CHARACTERS_LENGTH ? '…' : '')
+                    : '—';
+            },
+        },
+        {
+            key: 'active',
+            header: 'Estado',
+            sortKey: 'active',
+            render: (p) =>
+                p.active ? (
+                    <Badge
+                        variant="default"
+                        className="border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+                    >
+                        Activo
+                    </Badge>
+                ) : (
+                    <Badge
+                        variant="default"
+                        className="border-red-500/30 bg-red-500/10 text-red-600 dark:text-red-400"
+                    >
+                        Desactivado
+                    </Badge>
+                ),
+        },
+        {
+            key: 'actions',
+            header: <span className="sr-only">Acciones</span>,
+            align: 'right',
+            cellClassName: 'flex justify-end gap-2',
+            render: (p) => (
+                <>
+                    {canManageResource(
+                        user,
+                        p.createdById,
+                        'projects:edit',
+                        'projects:edit:own',
+                    ) && (
+                        <IconTooltip label="Editar">
+                            <Button
+                                variant="secondary"
+                                size="icon"
+                                aria-label="Editar"
+                                onClick={() => openEdit(p)}
+                            >
+                                <Pencil className="size-4" />
+                            </Button>
+                        </IconTooltip>
+                    )}
+                    {canManageResource(
+                        user,
+                        p.createdById,
+                        'projects:delete',
+                        'projects:delete:own',
+                    ) && (
+                        <IconTooltip label="Eliminar">
+                            <Button
+                                variant="destructive"
+                                size="icon"
+                                aria-label="Eliminar"
+                                onClick={() => setDeleting(p)}
+                            >
+                                <Trash2 className="size-4" />
+                            </Button>
+                        </IconTooltip>
+                    )}
+                </>
+            ),
+        },
+    ];
+
     return (
         <section>
             <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
@@ -57,86 +206,52 @@ export const ProjectsPage = () => {
                 onRetry={() => void load(true)}
             />
 
+            <div className="mb-4">
+                <Input
+                    placeholder="Buscar por nombre o guía…"
+                    className="bg-card w-full sm:w-56"
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                />
+            </div>
+
             {loading ? (
                 <p role="status" className="text-muted-foreground">
                     Cargando proyectos…
                 </p>
-            ) : projects.length === 0 ? (
-                <p className="text-muted-foreground">
-                    Todavía no hay proyectos.
-                </p>
             ) : (
-                <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                    {projects.map((project) => (
-                        <li
-                            key={project.id}
-                            className="flex flex-col gap-3 rounded-xl border bg-card p-4 sm:flex-row sm:items-center"
-                        >
-                            <div className="flex min-w-0 flex-1 items-center gap-3">
-                                <span
-                                    className={`size-4 shrink-0 rounded-full ${PROJECT_COLOR_STYLES[project.color].swatch}`}
-                                />
-                                <div className="min-w-0 flex-1">
-                                    <p className="truncate font-medium">
-                                        {project.name}
-                                    </p>
-                                    <p className="truncate text-xs text-muted-foreground">
-                                        Guías:{' '}
-                                        {project.guides
-                                            .map((guide) => guide.name)
-                                            .join(', ')}
-                                    </p>
-                                    {project.openingInstructions && (
-                                        <p className="truncate text-xs text-muted-foreground">
-                                            {stripHtml(
-                                                project.openingInstructions,
-                                            )}
-                                        </p>
-                                    )}
-                                </div>
-                            </div>
-                            <div className="flex items-center justify-end gap-2">
-                                {!project.active && (
-                                    <Badge variant="secondary">Inactiva</Badge>
-                                )}
-                                {canManageResource(
-                                    user,
-                                    project.createdById,
-                                    'projects:edit',
-                                    'projects:edit:own',
-                                ) && (
-                                    <IconTooltip label="Editar">
-                                        <Button
-                                            variant="secondary"
-                                            size="icon"
-                                            aria-label="Editar"
-                                            onClick={() => openEdit(project)}
-                                        >
-                                            <Pencil className="size-4" />
-                                        </Button>
-                                    </IconTooltip>
-                                )}
-                                {canManageResource(
-                                    user,
-                                    project.createdById,
-                                    'projects:delete',
-                                    'projects:delete:own',
-                                ) && (
-                                    <IconTooltip label="Eliminar">
-                                        <Button
-                                            variant="destructive"
-                                            size="icon"
-                                            aria-label="Eliminar"
-                                            onClick={() => setDeleting(project)}
-                                        >
-                                            <Trash2 className="size-4" />
-                                        </Button>
-                                    </IconTooltip>
-                                )}
-                            </div>
-                        </li>
-                    ))}
-                </ul>
+                <OverlayScrollbarsComponent
+                    className="rounded-xl border bg-card"
+                    options={scrollbarOptions}
+                    defer
+                >
+                    <DataTable
+                        columns={columns}
+                        rows={paged}
+                        rowKey={(p) => p.id}
+                        sort={sort}
+                        onSort={toggleSort}
+                    />
+                </OverlayScrollbarsComponent>
+            )}
+
+            {!loading && sorted.length === 0 && (
+                <p className="mt-4 text-muted-foreground">
+                    No hay proyectos que coincidan con la búsqueda.
+                </p>
+            )}
+
+            {!loading && sorted.length > 0 && (
+                <div className="mt-4">
+                    <PaginationControls
+                        page={page}
+                        pageCount={pageCount}
+                        pageSize={pageSize}
+                        total={total}
+                        onPageChange={setPage}
+                        onPageSizeChange={setPageSize}
+                    />
+                </div>
             )}
 
             <ProjectFormDialog

@@ -20,7 +20,11 @@ const formatSize = (bytes: number): string =>
         ? `${Math.round(bytes / 1024)} KB`
         : `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 
-export const DocumentsTab = () => {
+interface DocumentsTabProps {
+    search: string;
+}
+
+export const DocumentsTab = ({ search }: DocumentsTabProps) => {
     const { user } = useAuth();
     const canCreate = user?.permissions.includes('resources:create') ?? false;
     const canManageAny =
@@ -60,9 +64,18 @@ export const DocumentsTab = () => {
         setFormOpen(true);
     };
 
-    const visibleDocuments = canManageAny
-        ? documents
-        : documents.filter((d) => d.active);
+    const visibleDocuments = (
+        canManageAny ? documents : documents.filter((d) => d.active)
+    ).filter((d) => {
+        if (!search) return true;
+
+        const q = search.trim().toLowerCase();
+
+        return (
+            d.title.toLowerCase().includes(q) ||
+            d.fileName.toLowerCase().includes(q)
+        );
+    });
 
     return (
         <div>

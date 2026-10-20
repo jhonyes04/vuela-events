@@ -119,7 +119,12 @@ export const EmailTemplatesPage = () => {
                         Activa
                     </Badge>
                 ) : (
-                    <Badge variant="destructive">Inactiva</Badge>
+                    <Badge
+                        variant="outline"
+                        className="border-red-500/30 bg-red-500/10 text-red-600 dark:text-red-400"
+                    >
+                        Inactiva
+                    </Badge>
                 ),
         },
         {

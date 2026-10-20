@@ -214,12 +214,12 @@ export const EventsTable = ({
             <div className="mb-4 flex flex-wrap items-center gap-2">
                 <Input
                     placeholder={searchPlaceholder}
-                    className="bg-card w-56"
+                    className="bg-card w-full sm:w-56"
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
                 />
                 <ComboboxField
-                    className="w-48 bg-card"
+                    className="w-full sm:w-48 bg-card"
                     items={projectOptions}
                     getValue={(c) => c.id}
                     getLabel={(c) => c.name}
@@ -238,7 +238,7 @@ export const EventsTable = ({
                     placeholder="Todos los proyectos"
                 />
                 <ComboboxField
-                    className="w-40 bg-card"
+                    className="w-[calc(50%-0.25rem)] sm:w-40 bg-card"
                     items={['', ...months]}
                     getValue={(key) => key}
                     getLabel={(key) =>
@@ -249,7 +249,7 @@ export const EventsTable = ({
                     placeholder="Todos los meses"
                 />
                 <ComboboxField
-                    className="w-32 bg-card"
+                    className="w-[calc(50%-0.25rem)] sm:w-32 bg-card"
                     items={TIME_FILTERS}
                     getValue={(t) => t}
                     getLabel={(t) => TIME_FILTER_LABELS[t]}

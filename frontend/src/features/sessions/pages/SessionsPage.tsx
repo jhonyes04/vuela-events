@@ -82,6 +82,8 @@ export const SessionsPage = () => {
             key: 'user',
             header: 'Usuario',
             sortKey: 'user',
+            headerClassName: 'hidden sm:inline-block',
+            cellClassName: 'hidden sm:inline-block',
             render: (s) => (
                 <>
                     {s.userName}
