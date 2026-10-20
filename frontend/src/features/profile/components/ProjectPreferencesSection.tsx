@@ -12,7 +12,8 @@ import {
     getUserProjectPreferences,
     setUserProjectPreferences,
 } from '@/features/users/lib/users';
-import { projectChipClass } from '@/features/projects/lib/colors';
+import { getProjectColorChip } from '@/features/projects/lib/colors';
+import { cn } from '@/lib/utils';
 
 interface ProjectPreferencesSectionProps {
     continueLabel?: string;
@@ -108,6 +109,7 @@ export const ProjectPreferencesSection = ({
                 <div className="flex flex-wrap gap-2">
                     {options.map((option) => {
                         const isChecked = selected.has(option.id);
+                        const chip = getProjectColorChip(option.color);
 
                         return (
                             <button
@@ -116,11 +118,13 @@ export const ProjectPreferencesSection = ({
                                 aria-pressed={isChecked}
                                 disabled={savingId === option.id}
                                 onClick={() => void toggle(option.id)}
-                                className={`cursor-pointer rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${
+                                className={cn(
+                                    'cursor-pointer rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-60',
                                     isChecked
-                                        ? projectChipClass(option.color)
-                                        : 'border text-muted-foreground hover:bg-muted'
-                                }`}
+                                        ? chip.className
+                                        : 'border text-muted-foreground hover:bg-muted',
+                                )}
+                                style={isChecked ? chip.style : undefined}
                             >
                                 {option.name}
                             </button>

@@ -38,8 +38,9 @@ import {
 import {
     PROJECT_COLORS,
     PROJECT_COLOR_STYLES,
-    type ProjectColor,
+    isCustomProjectColor,
 } from '@/features/projects/lib/colors';
+import { ColorPicker } from '@/components/ColorPicker';
 import { useGuidesStore } from '@/features/guides/store';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
@@ -65,7 +66,7 @@ const ProjectFormBody = ({
     const [closingInstructions, setClosingInstructions] = useState(
         project?.closingInstructions ?? EMPTY_EDITOR_HTML,
     );
-    const [color, setColor] = useState<ProjectColor>(
+    const [color, setColor] = useState<string>(
         project?.color ?? PROJECT_COLORS[0],
     );
     const [guideIds, setGuideIds] = useState<Set<string>>(
@@ -172,7 +173,10 @@ const ProjectFormBody = ({
                             value={[...guideIds]}
                             onValueChange={(ids) => setGuideIds(new Set(ids))}
                         >
-                            <ComboboxChips ref={chipsAnchor} id="project-guides">
+                            <ComboboxChips
+                                ref={chipsAnchor}
+                                id="project-guides"
+                            >
                                 <ComboboxValue>
                                     {(value: string[]) =>
                                         value.map((id) => (
@@ -201,7 +205,10 @@ const ProjectFormBody = ({
                                     No se encontraron guías
                                 </ComboboxEmpty>
                                 <ComboboxList>
-                                    {(item: { value: string; label: string }) => (
+                                    {(item: {
+                                        value: string;
+                                        label: string;
+                                    }) => (
                                         <ComboboxItem
                                             key={item.value}
                                             value={item.value}
@@ -219,7 +226,7 @@ const ProjectFormBody = ({
                         <legend className="mb-1.5 text-sm font-medium">
                             Color
                         </legend>
-                        <div className="flex flex-wrap gap-2">
+                        <div className="flex flex-wrap items-center gap-2">
                             {PROJECT_COLORS.map((c) => (
                                 <button
                                     key={c}
@@ -236,6 +243,21 @@ const ProjectFormBody = ({
                                     )}
                                 />
                             ))}
+                            <ColorPicker
+                                aria-label="Color personalizado"
+                                value={
+                                    isCustomProjectColor(color)
+                                        ? color
+                                        : '#999999'
+                                }
+                                onChange={setColor}
+                                className={cn(
+                                    'rounded-lg ring-offset-2 ring-offset-background',
+                                    isCustomProjectColor(color)
+                                        ? 'ring-2 ring-ring'
+                                        : 'hover:ring-2 hover:ring-border',
+                                )}
+                            />
                         </div>
                     </fieldset>
 
@@ -259,7 +281,10 @@ const ProjectFormBody = ({
 
                         <Separator className="data-horizontal:h-1 bg-yellow-400/30 rounded-full" />
 
-                        <TabsContent value="opening" className="mt-2 grid gap-1.5">
+                        <TabsContent
+                            value="opening"
+                            className="mt-2 grid gap-1.5"
+                        >
                             <Label htmlFor="project-opening-instructions">
                                 Cómo dar de alta la actividad en Ágora
                             </Label>
@@ -269,7 +294,10 @@ const ProjectFormBody = ({
                                 contentClassName="max-h-100 min-h-100"
                             />
                         </TabsContent>
-                        <TabsContent value="closing" className="mt-2 grid gap-1.5">
+                        <TabsContent
+                            value="closing"
+                            className="mt-2 grid gap-1.5"
+                        >
                             <Label htmlFor="project-closing-instructions">
                                 Cómo cerrar la actividad en Ágora
                             </Label>
@@ -302,7 +330,11 @@ const ProjectFormBody = ({
                     >
                         Cancelar
                     </Button>
-                    <Button type="submit" form="project-form" disabled={submitting}>
+                    <Button
+                        type="submit"
+                        form="project-form"
+                        disabled={submitting}
+                    >
                         {submitting ? 'Guardando…' : 'Guardar'}
                     </Button>
                 </DialogFooter>

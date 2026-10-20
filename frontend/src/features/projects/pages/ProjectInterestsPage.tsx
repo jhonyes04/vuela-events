@@ -19,7 +19,10 @@ import {
     removeProjectInterestedUser,
     type ProjectInterests,
 } from '@/features/projects/lib/projects';
-import { PROJECT_COLOR_STYLES } from '@/features/projects/lib/colors';
+import {
+    getProjectColorBorder,
+    getProjectColorTint,
+} from '@/features/projects/lib/colors';
 import { AddProjectInterestDialog } from '@/features/projects/components/AddProjectInterestDialog';
 import { personLabel } from '@/features/events/lib/events';
 import { cn } from '@/lib/utils';
@@ -98,7 +101,8 @@ export const ProjectInterestsPage = () => {
             ) : (
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                     {projects.map((project) => {
-                        const colorStyle = PROJECT_COLOR_STYLES[project.color];
+                        const border = getProjectColorBorder(project.color);
+                        const tint = getProjectColorTint(project.color);
                         const projectSelected =
                             selected[project.id] ?? new Set<string>();
 
@@ -107,14 +111,16 @@ export const ProjectInterestsPage = () => {
                                 key={project.id}
                                 className={cn(
                                     'flex h-full flex-col gap-0 overflow-hidden border-t-4 py-0',
-                                    colorStyle.border,
+                                    border.className,
                                 )}
+                                style={border.style}
                             >
                                 <CardHeader
                                     className={cn(
                                         'flex items-center justify-between px-4! py-4!',
-                                        colorStyle.tint,
+                                        tint.className,
                                     )}
+                                    style={tint.style}
                                 >
                                     <h3 className="font-heading text-base leading-snug font-semibold">
                                         {project.name}

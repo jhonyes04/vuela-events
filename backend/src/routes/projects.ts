@@ -24,11 +24,16 @@ const projectUserParamsSchema = z.object({
 });
 const addInterestedUserSchema = z.strictObject({ userId: z.uuid() });
 
+const hexColorSchema = z
+    .string()
+    .regex(/^#[0-9a-f]{6}$/i, 'Color hex inválido');
+const projectColorSchema = z.union([z.enum(PROJECT_COLORS), hexColorSchema]);
+
 const createProjectSchema = z.strictObject({
     name: z.string().trim().min(2).max(80),
     openingInstructions: z.string().max(20000).nullable().optional(),
     closingInstructions: z.string().max(20000).nullable().optional(),
-    color: z.enum(PROJECT_COLORS),
+    color: projectColorSchema,
     guideIds: z.array(z.uuid()).min(1),
 });
 
@@ -36,7 +41,7 @@ const updateProjectSchema = z.strictObject({
     name: z.string().trim().min(2).max(80),
     openingInstructions: z.string().max(20000).nullable(),
     closingInstructions: z.string().max(20000).nullable(),
-    color: z.enum(PROJECT_COLORS),
+    color: projectColorSchema,
     guideIds: z.array(z.uuid()).min(1),
     active: z.boolean(),
 });

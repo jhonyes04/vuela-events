@@ -12,7 +12,8 @@ import { PaginationControls } from '@/components/PaginationControls';
 import { ListErrors } from '@/features/users/components/ListErrors';
 import { ProjectFormDialog } from '@/features/projects/components/ProjectFormDialog';
 import { deleteProject, type Project } from '@/features/projects/lib/projects';
-import { PROJECT_COLOR_STYLES } from '@/features/projects/lib/colors';
+import { getProjectColorSwatch } from '@/features/projects/lib/colors';
+import { cn } from '@/lib/utils';
 import { useProjectsStore } from '@/features/projects/store';
 import { useAuth } from '@/features/auth/hooks/context';
 import { canManageResource } from '@/lib/ownership';
@@ -82,14 +83,24 @@ export const ProjectsPage = () => {
             key: 'name',
             header: 'Nombre',
             sortKey: 'name',
-            render: (p) => (
-                <div className="flex min-w-0 items-center gap-2">
-                    <span
-                        className={`size-4 shrink-0 rounded-full ${PROJECT_COLOR_STYLES[p.color].swatch}`}
-                    />
-                    <span className="truncate font-medium">{p.name}</span>
-                </div>
-            ),
+            render: (p) => {
+                const swatch = getProjectColorSwatch(p.color);
+
+                return (
+                    <div className="flex min-w-0 items-center gap-2">
+                        <span
+                            className={cn(
+                                'size-4 shrink-0 rounded-full',
+                                swatch.className,
+                            )}
+                            style={swatch.style}
+                        />
+                        <span className="truncate font-medium">
+                            {p.name}
+                        </span>
+                    </div>
+                );
+            },
         },
         {
             key: 'guides',

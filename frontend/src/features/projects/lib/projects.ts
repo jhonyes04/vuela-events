@@ -1,5 +1,4 @@
 import { api } from '@/lib/api';
-import type { ProjectColor } from '@/features/projects/lib/colors';
 
 export interface ProjectGuide {
     id: string;
@@ -12,7 +11,7 @@ export interface Project {
     name: string;
     openingInstructions: string | null;
     closingInstructions: string | null;
-    color: ProjectColor;
+    color: string;
     active: boolean;
     createdById: string | null;
     guides: ProjectGuide[];
@@ -22,7 +21,7 @@ export interface ProjectInput {
     name: string;
     openingInstructions: string | null;
     closingInstructions: string | null;
-    color: ProjectColor;
+    color: string;
     guideIds: string[];
 }
 
@@ -70,7 +69,7 @@ export interface ProjectInterestedUser {
 export interface ProjectInterests {
     id: string;
     name: string;
-    color: ProjectColor;
+    color: string;
     users: ProjectInterestedUser[];
 }
 

@@ -4,7 +4,7 @@ import { Label } from '@/components/ui/label';
 import { ComboboxField } from '@/components/ComboboxField';
 import { cn } from '@/lib/utils';
 import type { Project } from '@/features/projects/lib/projects';
-import { PROJECT_COLOR_STYLES } from '@/features/projects/lib/colors';
+import { getProjectColorSwatch } from '@/features/projects/lib/colors';
 import type { FormValues, TextField } from '@/features/events/lib/eventForm';
 
 export function Field({
@@ -76,14 +76,19 @@ export function EventBasicFields({
                     items={activeProjects}
                     getValue={(c) => c.id}
                     getLabel={(c) => c.name}
-                    getIndicator={(c) => (
-                        <span
-                            className={cn(
-                                'size-3 shrink-0 rounded-full',
-                                PROJECT_COLOR_STYLES[c.color].swatch,
-                            )}
-                        />
-                    )}
+                    getIndicator={(c) => {
+                        const swatch = getProjectColorSwatch(c.color);
+
+                        return (
+                            <span
+                                className={cn(
+                                    'size-3 shrink-0 rounded-full',
+                                    swatch.className,
+                                )}
+                                style={swatch.style}
+                            />
+                        );
+                    }}
                     value={values.projectId}
                     onValueChange={onProjectChange}
                     placeholder="Selecciona un proyecto"

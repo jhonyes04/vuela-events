@@ -99,50 +99,62 @@ export function CalendarGrid({
 
                                 {/* Pantallas grandes: etiquetas con hora y título. */}
                                 <ul className="mt-1 hidden gap-0.5 md:grid">
-                                    {list.slice(0, MAX_CHIPS).map((event) => (
-                                        <li key={event.id} className="min-w-0">
-                                            <button
-                                                type="button"
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    onSelectEvent(event);
-                                                }}
-                                                title={`${formatTime(event.startsAt)} ${event.title}`}
-                                                className={cn(
-                                                    'block w-full cursor-pointer truncate rounded px-1.5 py-0.5 text-left text-xs font-medium',
-                                                    hasEnded(event)
-                                                        ? 'bg-gray-400 text-white'
-                                                        : eventColor(event)
-                                                              .chip,
-                                                    event.registered &&
-                                                        'ring-2 ring-brand-green',
-                                                )}
+                                    {list.slice(0, MAX_CHIPS).map((event) => {
+                                        const ended = hasEnded(event);
+                                        const color = ended
+                                            ? null
+                                            : eventColor(event);
+
+                                        return (
+                                            <li
+                                                key={event.id}
+                                                className="min-w-0"
                                             >
-                                                <span className="tabular-nums">
-                                                    {formatTime(event.startsAt)}
-                                                </span>{' '}
-                                                {event.title}
-                                                {hasEnded(event) && (
-                                                    <>
-                                                        <CircleCheck
-                                                            aria-hidden="true"
-                                                            className="ml-1 inline size-3"
-                                                        />
+                                                <button
+                                                    type="button"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        onSelectEvent(event);
+                                                    }}
+                                                    title={`${formatTime(event.startsAt)} ${event.title}`}
+                                                    className={cn(
+                                                        'block w-full cursor-pointer truncate rounded px-1.5 py-0.5 text-left text-xs font-medium',
+                                                        ended
+                                                            ? 'bg-gray-400 text-white'
+                                                            : color!.chipClassName,
+                                                        event.registered &&
+                                                            'ring-2 ring-brand-green',
+                                                    )}
+                                                    style={color?.chipStyle}
+                                                >
+                                                    <span className="tabular-nums">
+                                                        {formatTime(
+                                                            event.startsAt,
+                                                        )}
+                                                    </span>{' '}
+                                                    {event.title}
+                                                    {ended && (
+                                                        <>
+                                                            <CircleCheck
+                                                                aria-hidden="true"
+                                                                className="ml-1 inline size-3"
+                                                            />
+                                                            <span className="sr-only">
+                                                                {' '}
+                                                                (finalizado)
+                                                            </span>
+                                                        </>
+                                                    )}
+                                                    {event.registered && (
                                                         <span className="sr-only">
                                                             {' '}
-                                                            (finalizado)
+                                                            (inscrito)
                                                         </span>
-                                                    </>
-                                                )}
-                                                {event.registered && (
-                                                    <span className="sr-only">
-                                                        {' '}
-                                                        (inscrito)
-                                                    </span>
-                                                )}
-                                            </button>
-                                        </li>
-                                    ))}
+                                                    )}
+                                                </button>
+                                            </li>
+                                        );
+                                    })}
                                     {count > MAX_CHIPS && (
                                         <li className="px-1.5 text-xs font-medium text-muted-foreground">
                                             +{count - MAX_CHIPS} más
@@ -155,29 +167,41 @@ export function CalendarGrid({
                                     <div className="mt-1 flex flex-wrap gap-0.5 md:hidden">
                                         {list
                                             .slice(0, MAX_DOTS)
-                                            .map((event) => (
-                                                <button
-                                                    key={event.id}
-                                                    type="button"
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        onSelectEvent(event);
-                                                    }}
-                                                    aria-label={`${formatTime(event.startsAt)} ${event.title}`}
-                                                    className="grid size-9 cursor-pointer place-items-center rounded-full"
-                                                >
-                                                    <span
-                                                        className={cn(
-                                                            'size-4 rounded-full',
-                                                            hasEnded(event)
-                                                                ? 'bg-gray-400'
-                                                                : eventColor(
-                                                                      event,
-                                                                  ).dot,
-                                                        )}
-                                                    />
-                                                </button>
-                                            ))}
+                                            .map((event) => {
+                                                const ended =
+                                                    hasEnded(event);
+                                                const color = ended
+                                                    ? null
+                                                    : eventColor(event);
+
+                                                return (
+                                                    <button
+                                                        key={event.id}
+                                                        type="button"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            onSelectEvent(
+                                                                event,
+                                                            );
+                                                        }}
+                                                        aria-label={`${formatTime(event.startsAt)} ${event.title}`}
+                                                        className="grid size-9 cursor-pointer place-items-center rounded-full"
+                                                    >
+                                                        <span
+                                                            className={cn(
+                                                                'size-4 rounded-full',
+                                                                ended
+                                                                    ? 'bg-gray-400'
+                                                                    : color!
+                                                                          .dotClassName,
+                                                            )}
+                                                            style={
+                                                                color?.dotStyle
+                                                            }
+                                                        />
+                                                    </button>
+                                                );
+                                            })}
                                     </div>
                                 )}
                             </div>

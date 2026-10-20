@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { Badge } from '@/components/ui/badge';
-import { PROJECT_COLOR_STYLES } from '@/features/projects/lib/colors';
+import { getProjectColorChip } from '@/features/projects/lib/colors';
 import { hasEnded, isFull, type EventItem } from '@/features/events/lib/events';
 
 interface CalendarLegendProps {
@@ -33,14 +33,19 @@ export const CalendarLegend = ({ events }: CalendarLegendProps) => {
             <span className="text-xs font-medium text-muted-foreground">
                 Leyenda:
             </span>
-            {projects.map((project) => (
-                <Badge
-                    key={project.id}
-                    className={PROJECT_COLOR_STYLES[project.color].chip}
-                >
-                    {project.name}
-                </Badge>
-            ))}
+            {projects.map((project) => {
+                const chip = getProjectColorChip(project.color);
+
+                return (
+                    <Badge
+                        key={project.id}
+                        className={chip.className}
+                        style={chip.style}
+                    >
+                        {project.name}
+                    </Badge>
+                );
+            })}
             {anyFull && (
                 <Badge className="bg-red-500 text-white">Completo</Badge>
             )}

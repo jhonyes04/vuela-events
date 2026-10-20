@@ -1,5 +1,4 @@
 import { api, downloadFile } from '@/lib/api';
-import type { ProjectColor } from '@/features/projects/lib/colors';
 
 export interface SentReport {
     id: string;
@@ -13,7 +12,7 @@ export interface SentReport {
         startsAt: string;
         endsAt: string;
         location: string | null;
-        project: { id: string; name: string; color: ProjectColor };
+        project: { id: string; name: string; color: string };
     };
 }
 

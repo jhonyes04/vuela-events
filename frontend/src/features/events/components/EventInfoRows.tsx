@@ -8,7 +8,7 @@ import {
     Users,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { PROJECT_COLOR_STYLES } from '@/features/projects/lib/colors';
+import { getProjectColorChip } from '@/features/projects/lib/colors';
 import {
     attendanceLabel,
     dayKey,
@@ -33,41 +33,45 @@ export const EventInfoRows = ({
     showOrganizer = false,
     trailing,
     projectTrailing,
-}: EventInfoRowsProps) => (
-    <div className="grid gap-1.5 text-sm text-muted-foreground">
-        <p className="flex flex-wrap items-center gap-2">
-            <FolderKanban className="size-4 shrink-0 text-brand-green" />
-            <Badge className={PROJECT_COLOR_STYLES[event.project.color].chip}>
-                {event.project.name}
-            </Badge>
-            {projectTrailing}
-        </p>
-        <p className="flex items-center gap-2">
-            <CalendarDays className="size-4 shrink-0 text-brand-green" />
-            {formatDayLabel(dayKey(event.startsAt))}
-        </p>
-        <p className="flex items-center gap-2">
-            <Clock className="size-4 shrink-0 text-brand-green" />
-            {formatTime(event.startsAt)} – {formatTime(event.endsAt)}
-        </p>
+}: EventInfoRowsProps) => {
+    const chip = getProjectColorChip(event.project.color);
 
-        {event.location && (
-            <p className="flex items-center gap-2">
-                <MapPin className="size-4 shrink-0 text-brand-green" />
-                {event.location}
+    return (
+        <div className="grid gap-1.5 text-sm text-muted-foreground">
+            <p className="flex flex-wrap items-center gap-2">
+                <FolderKanban className="size-4 shrink-0 text-brand-green" />
+                <Badge className={chip.className} style={chip.style}>
+                    {event.project.name}
+                </Badge>
+                {projectTrailing}
             </p>
-        )}
+            <p className="flex items-center gap-2">
+                <CalendarDays className="size-4 shrink-0 text-brand-green" />
+                {formatDayLabel(dayKey(event.startsAt))}
+            </p>
+            <p className="flex items-center gap-2">
+                <Clock className="size-4 shrink-0 text-brand-green" />
+                {formatTime(event.startsAt)} – {formatTime(event.endsAt)}
+            </p>
 
-        {showOrganizer && (
+            {event.location && (
+                <p className="flex items-center gap-2">
+                    <MapPin className="size-4 shrink-0 text-brand-green" />
+                    {event.location}
+                </p>
+            )}
+
+            {showOrganizer && (
+                <p className="flex items-center gap-2">
+                    <User className="size-4 shrink-0 text-brand-green" />
+                    {personLabel(event.createdBy)}
+                </p>
+            )}
             <p className="flex items-center gap-2">
-                <User className="size-4 shrink-0 text-brand-green" />
-                {personLabel(event.createdBy)}
+                <Users className="size-4 shrink-0 text-brand-green" />
+                {attendanceLabel(event)}
+                {trailing}
             </p>
-        )}
-        <p className="flex items-center gap-2">
-            <Users className="size-4 shrink-0 text-brand-green" />
-            {attendanceLabel(event)}
-            {trailing}
-        </p>
-    </div>
-);
+        </div>
+    );
+};

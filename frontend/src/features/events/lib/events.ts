@@ -1,5 +1,4 @@
 import { api } from '@/lib/api';
-import type { ProjectColor } from '@/features/projects/lib/colors';
 
 export interface EventItem {
     id: string;
@@ -23,7 +22,7 @@ export interface EventItem {
         name: string;
         openingInstructions: string | null;
         closingInstructions: string | null;
-        color: ProjectColor;
+        color: string;
         guides: { id: string; name: string; url: string }[];
     };
     _count: { registrations: number };

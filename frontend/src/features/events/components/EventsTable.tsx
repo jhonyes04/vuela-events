@@ -10,8 +10,8 @@ import { usePagination } from '@/hooks/usePagination';
 import { useSort } from '@/hooks/useSort';
 import { scrollbarOptions } from '@/lib/overlayScrollbarsOptions';
 import {
-    PROJECT_COLOR_STYLES,
-    type ProjectColor,
+    getProjectColorChip,
+    getProjectColorSwatch,
 } from '@/features/projects/lib/colors';
 import { cn } from '@/lib/utils';
 import {
@@ -51,7 +51,7 @@ const monthLabelFrom = (key: string): string => {
 interface ProjectFilterOption {
     id: string;
     name: string;
-    color: ProjectColor | null;
+    color: string | null;
 }
 
 interface EventsTableProps {
@@ -148,13 +148,15 @@ export const EventsTable = ({
             key: 'category',
             header: 'Proyecto',
             sortKey: 'category',
-            render: (event) => (
-                <Badge
-                    className={PROJECT_COLOR_STYLES[event.project.color].chip}
-                >
-                    {event.project.name}
-                </Badge>
-            ),
+            render: (event) => {
+                const chip = getProjectColorChip(event.project.color);
+
+                return (
+                    <Badge className={chip.className} style={chip.style}>
+                        {event.project.name}
+                    </Badge>
+                );
+            },
         },
         {
             key: 'startsAt',
@@ -223,16 +225,21 @@ export const EventsTable = ({
                     items={projectOptions}
                     getValue={(c) => c.id}
                     getLabel={(c) => c.name}
-                    getIndicator={(c) =>
-                        c.color && (
+                    getIndicator={(c) => {
+                        if (!c.color) return null;
+
+                        const swatch = getProjectColorSwatch(c.color);
+
+                        return (
                             <span
                                 className={cn(
                                     'size-3 shrink-0 rounded-full',
-                                    PROJECT_COLOR_STYLES[c.color].swatch,
+                                    swatch.className,
                                 )}
+                                style={swatch.style}
                             />
-                        )
-                    }
+                        );
+                    }}
                     value={projectFilter}
                     onValueChange={setProjectFilter}
                     placeholder="Todos los proyectos"

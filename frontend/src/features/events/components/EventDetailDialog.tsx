@@ -23,7 +23,10 @@ import { ConfirmDeleteDialog } from '@/components/ConfirmDeleteDialog';
 import { IconTooltip } from '@/components/IconTooltip';
 import { useAttendees } from '@/features/events/hooks/useAttendees';
 import { ProjectInfoDialog } from '@/features/projects/components/ProjectInfoDialog';
-import { PROJECT_COLOR_STYLES } from '@/features/projects/lib/colors';
+import {
+    getProjectColorBorder,
+    getProjectColorTint,
+} from '@/features/projects/lib/colors';
 import { ApiError } from '@/lib/api';
 import { cn } from '@/lib/utils';
 import { scrollbarOptions } from '@/lib/overlayScrollbarsOptions';
@@ -79,10 +82,19 @@ const EventDetailBody = ({
     // Un DT puede inscribirse aunque esté completo: no ocupa plaza.
     const blockedByCapacity = full && !isDt && !event.registered;
     const colorStyle = ended
-        ? { border: 'border-t-gray-400', tint: 'bg-gray-400/10' }
+        ? {
+              border: { className: 'border-t-gray-400' },
+              tint: { className: 'bg-gray-400/10' },
+          }
         : full
-          ? { border: 'border-t-red-500', tint: 'bg-red-500/10' }
-          : PROJECT_COLOR_STYLES[event.project.color];
+          ? {
+                border: { className: 'border-t-red-500' },
+                tint: { className: 'bg-red-500/10' },
+            }
+          : {
+                border: getProjectColorBorder(event.project.color),
+                tint: getProjectColorTint(event.project.color),
+            };
 
     // Al abrir la ficha de un evento completo, se avisa aunque el usuario
     // ya esté inscrito. El ref evita el doble aviso del StrictMode en dev.
@@ -141,13 +153,18 @@ const EventDetailBody = ({
                 }}
             >
                 <DialogContent
-                    className={cn('border-t-4 sm:max-w-lg', colorStyle.border)}
+                    className={cn(
+                        'border-t-4 sm:max-w-lg',
+                        colorStyle.border.className,
+                    )}
+                    style={colorStyle.border.style}
                 >
                     <DialogHeader
                         className={cn(
                             '-mx-4 -mt-4 rounded-t-xl px-4 pt-4 pb-3',
-                            colorStyle.tint,
+                            colorStyle.tint.className,
                         )}
+                        style={colorStyle.tint.style}
                     >
                         <DialogTitle>{event.title}</DialogTitle>
                         <DialogDescription>

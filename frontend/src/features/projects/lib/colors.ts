@@ -1,3 +1,5 @@
+import type { CSSProperties } from 'react';
+
 export const PROJECT_COLORS = [
     'yellow',
     'amber',
@@ -184,13 +186,6 @@ export const PROJECT_COLOR_STYLES: Record<ProjectColor, ProjectColorStyle> =
         },
     };
 
-// Para datos que no garantizan que el color siga en la paleta actual
-// (p. ej. proyectos guardados antes de quitar un color de PROJECT_COLORS).
-export const projectChipClass = (color: string): string =>
-    color in PROJECT_COLOR_STYLES
-        ? PROJECT_COLOR_STYLES[color as ProjectColor].chip
-        : 'bg-muted text-foreground';
-
 // Mismos colores en hex para las gráficas (Recharts no entiende clases de Tailwind).
 export const PROJECT_HEX: Record<ProjectColor, string> = {
     yellow: '#f4d64e',
@@ -204,3 +199,74 @@ export const PROJECT_HEX: Record<ProjectColor, string> = {
     lime: '#84cc16',
     fuchsia: '#d946ef',
 };
+
+const HEX_COLOR_REGEX = /^#[0-9a-f]{6}$/i;
+
+// Además de la paleta fija, un proyecto puede guardar un hex libre
+// (selector de color personalizado).
+export const isCustomProjectColor = (color: string): boolean =>
+    HEX_COLOR_REGEX.test(color);
+
+// Texto blanco o negro según la luminancia del fondo (fórmula YIQ).
+export const contrastTextColor = (hex: string): string => {
+    if (!HEX_COLOR_REGEX.test(hex)) return '#ffffff';
+
+    const r = parseInt(hex.slice(1, 3), 16);
+    const g = parseInt(hex.slice(3, 5), 16);
+    const b = parseInt(hex.slice(5, 7), 16);
+    const yiq = (r * 299 + g * 587 + b * 114) / 1000;
+
+    return yiq >= 150 ? '#000000' : '#ffffff';
+};
+
+export interface ProjectColorVisual {
+    className?: string;
+    style?: CSSProperties;
+}
+
+type ProjectColorVariant = 'chip' | 'swatch' | 'border' | 'tint';
+
+const customProjectColorVisual = (
+    hex: string,
+    variant: ProjectColorVariant,
+): ProjectColorVisual => {
+    switch (variant) {
+        case 'chip':
+            return {
+                style: {
+                    backgroundColor: hex,
+                    color: contrastTextColor(hex),
+                },
+            };
+        case 'swatch':
+            return { style: { backgroundColor: hex } };
+        case 'border':
+            return { style: { borderTopColor: hex } };
+        case 'tint':
+            // ~10% de opacidad, igual que el bg-<color>-500/10 de la paleta fija.
+            return { style: { backgroundColor: `${hex}1a` } };
+    }
+};
+
+// Resuelve el color de un proyecto (de la paleta fija o un hex libre) al
+// className/style que corresponde. Punto único para no repetir el if/else
+// "¿paleta o hex?" en cada sitio que pinta el color de un proyecto.
+const projectColorVisual = (
+    color: string,
+    variant: ProjectColorVariant,
+): ProjectColorVisual =>
+    color in PROJECT_COLOR_STYLES
+        ? { className: PROJECT_COLOR_STYLES[color as ProjectColor][variant] }
+        : customProjectColorVisual(color, variant);
+
+export const getProjectColorChip = (color: string): ProjectColorVisual =>
+    projectColorVisual(color, 'chip');
+
+export const getProjectColorSwatch = (color: string): ProjectColorVisual =>
+    projectColorVisual(color, 'swatch');
+
+export const getProjectColorBorder = (color: string): ProjectColorVisual =>
+    projectColorVisual(color, 'border');
+
+export const getProjectColorTint = (color: string): ProjectColorVisual =>
+    projectColorVisual(color, 'tint');

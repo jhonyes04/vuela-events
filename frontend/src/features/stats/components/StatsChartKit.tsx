@@ -25,6 +25,8 @@ import {
 import { Progress } from '@/components/ui/progress';
 import {
     PROJECT_HEX,
+    contrastTextColor,
+    isCustomProjectColor,
     type ProjectColor,
 } from '@/features/projects/lib/colors';
 import { percentOf } from '@/features/stats/lib/chartHelpers';
@@ -41,22 +43,14 @@ const STATUS_CONFIG = {
     future: { label: 'Próximos', color: 'var(--chart-1)' },
 } satisfies ChartConfig;
 
-// Los proyectos llevan su color; los grupos sin color (guías) usan el de la gráfica.
-const groupFill = (color: string | null): string =>
-    color && color in PROJECT_HEX
-        ? PROJECT_HEX[color as ProjectColor]
-        : 'var(--color-value)';
+// Los proyectos llevan su color (paleta fija o hex libre); los grupos sin
+// color (guías) usan el de la gráfica.
+const groupFill = (color: string | null): string => {
+    if (!color) return 'var(--color-value)';
+    if (color in PROJECT_HEX) return PROJECT_HEX[color as ProjectColor];
+    if (isCustomProjectColor(color)) return color;
 
-// Texto blanco o negro según la luminancia del fondo (fórmula YIQ).
-const contrastText = (hex: string): string => {
-    if (!/^#[0-9a-f]{6}$/i.test(hex)) return '#ffffff';
-
-    const r = parseInt(hex.slice(1, 3), 16);
-    const g = parseInt(hex.slice(3, 5), 16);
-    const b = parseInt(hex.slice(5, 7), 16);
-    const yiq = (r * 299 + g * 587 + b * 114) / 1000;
-
-    return yiq >= 150 ? '#000000' : '#ffffff';
+    return 'var(--color-value)';
 };
 
 // Mini gráfica de fondo de cada KPI: la tendencia mensual.
@@ -226,7 +220,7 @@ export const StackedHorizontalBars = ({
                             dataKey={p.id}
                             position="center"
                             fontSize={12}
-                            fill={contrastText(groupFill(p.color))}
+                            fill={contrastTextColor(groupFill(p.color))}
                         />
                     </Bar>
                 ))}

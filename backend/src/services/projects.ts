@@ -140,7 +140,7 @@ export const createProject = async (
     name: string,
     openingInstructions: string | null,
     closingInstructions: string | null,
-    color: ProjectColor,
+    color: string,
     guideIds: string[],
 ) => {
     const exists = await prisma.project.findUnique({ where: { name } });
@@ -187,7 +187,7 @@ export const updateProject = async (
         name: string;
         openingInstructions: string | null;
         closingInstructions: string | null;
-        color: ProjectColor;
+        color: string;
         guideIds: string[];
         active: boolean;
     },

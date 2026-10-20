@@ -2,7 +2,10 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { AttendeeChips } from '@/features/events/components/AttendeeChips';
 import { EventInfoRows } from '@/features/events/components/EventInfoRows';
-import { PROJECT_COLOR_STYLES } from '@/features/projects/lib/colors';
+import {
+    getProjectColorBorder,
+    getProjectColorTint,
+} from '@/features/projects/lib/colors';
 import { cn } from '@/lib/utils';
 import { hasEnded, isFull, type EventItem } from '@/features/events/lib/events';
 
@@ -59,19 +62,35 @@ export const EventCard = ({ event, onOpen }: EventCardProps) => {
     const full = isFull(event);
     const ended = hasEnded(event);
     const colorStyle = ended
-        ? { border: 'border-t-gray-400', tint: 'bg-gray-400/10' }
+        ? {
+              border: { className: 'border-t-gray-400' },
+              tint: { className: 'bg-gray-400/10' },
+          }
         : full
-          ? { border: 'border-t-red-500', tint: 'bg-red-500/10' }
-          : PROJECT_COLOR_STYLES[event.project.color];
+          ? {
+                border: { className: 'border-t-red-500' },
+                tint: { className: 'bg-red-500/10' },
+            }
+          : {
+                border: getProjectColorBorder(event.project.color),
+                tint: getProjectColorTint(event.project.color),
+            };
 
     return (
         <Card
             className={cn(
                 'group relative cursor-pointer gap-0 overflow-hidden border-t-4 py-0 transition-all hover:-translate-y-0.5 hover:shadow-lg',
-                colorStyle.border,
+                colorStyle.border.className,
             )}
+            style={colorStyle.border.style}
         >
-            <CardHeader className={cn('gap-1.5 px-4! py-4!', colorStyle.tint)}>
+            <CardHeader
+                className={cn(
+                    'gap-1.5 px-4! py-4!',
+                    colorStyle.tint.className,
+                )}
+                style={colorStyle.tint.style}
+            >
                 <div className="flex items-start justify-between gap-2">
                     <h3 className="font-heading text-base leading-snug font-semibold">
                         <button
