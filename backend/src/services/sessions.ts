@@ -18,6 +18,8 @@ export interface ActiveSession {
     sid: string;
     userId: string;
     userName: string;
+    name: string;
+    puntoVuela: string | null;
     userEmail: string;
     expire: Date;
     current: boolean;
@@ -34,6 +36,7 @@ export const listActiveSessions = async (
             userId: string;
             name: string;
             lastName: string;
+            puntoVuela: string | null;
             email: string;
             expire: Date;
         }[]
@@ -43,6 +46,7 @@ export const listActiveSessions = async (
             s.sess ->> 'userId' AS "userId",
             u.name,
             u."lastName",
+            u."puntoVuela",
             u.email,
             s.expire
         FROM session s
@@ -55,6 +59,8 @@ export const listActiveSessions = async (
         sid: row.sid,
         userId: row.userId,
         userName: `${row.name} ${row.lastName}`.trim(),
+        name: row.name,
+        puntoVuela: row.puntoVuela,
         userEmail: row.email,
         expire: row.expire,
         current: row.sid === currentSid,

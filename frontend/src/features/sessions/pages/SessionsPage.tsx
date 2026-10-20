@@ -82,11 +82,10 @@ export const SessionsPage = () => {
             key: 'user',
             header: 'Usuario',
             sortKey: 'user',
-            headerClassName: 'hidden sm:inline-block',
-            cellClassName: 'hidden sm:inline-block',
+
             render: (s) => (
                 <>
-                    {s.userName}
+                    {s.puntoVuela ? `${s.puntoVuela} (${s.name})` : s.userName}
                     {s.current && (
                         <Badge className="ml-2" variant="secondary">
                             Esta sesión
@@ -99,7 +98,8 @@ export const SessionsPage = () => {
             key: 'email',
             header: 'Correo',
             sortKey: 'email',
-            cellClassName: 'break-all',
+            headerClassName: 'hidden sm:inline-block',
+            cellClassName: 'hidden sm:inline-block breack-al',
             render: (s) => s.userEmail,
         },
         {
@@ -146,7 +146,7 @@ export const SessionsPage = () => {
             <div className="mb-4">
                 <Input
                     placeholder="Buscar por nombre o correo…"
-                    className="bg-card w-56"
+                    className="w-full sm:w-56 bg-card"
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
                 />

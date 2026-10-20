@@ -3,6 +3,8 @@ export interface ActiveSession {
     sid: string;
     userId: string;
     userName: string;
+    name: string;
+    puntoVuela: string | null;
     userEmail: string;
     expire: string;
     current: boolean;
