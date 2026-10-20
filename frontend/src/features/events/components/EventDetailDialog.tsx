@@ -134,15 +134,8 @@ const EventDetailBody = ({
 
     return (
         <>
-            {/* Mientras se confirma la eliminación se oculta la ficha. */}
             <Dialog
-                open={
-                    !confirmOpen &&
-                    !seriesConfirmOpen &&
-                    !participantsOpen &&
-                    !addOpen &&
-                    !deletingAttendee
-                }
+                open
                 onOpenChange={(open) => {
                     if (!open) onClose();
                 }}
