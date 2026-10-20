@@ -117,16 +117,16 @@ export const listProjectInterestedUsers = async (): Promise<
     }));
 };
 
-export interface AilUserOption {
+export interface EligibleUserOption {
     id: string;
     name: string;
     lastName: string;
     puntoVuela: string | null;
 }
 
-export const listAilUsers = (): Promise<AilUserOption[]> =>
+export const listEligibleUsers = (): Promise<EligibleUserOption[]> =>
     prisma.user.findMany({
-        where: { active: true, roleId: 'ail' },
+        where: { active: true, roleId: { notIn: ['dt', 'admin'] } },
         select: { id: true, name: true, lastName: true, puntoVuela: true },
         orderBy: [{ puntoVuela: 'asc' }, { name: 'asc' }, { lastName: 'asc' }],
     });

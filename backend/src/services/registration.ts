@@ -328,7 +328,7 @@ export const listRegistrationCandidates = async (
     const users = await prisma.user.findMany({
         where: {
             active: true,
-            roleId: 'ail',
+            roleId: { notIn: ['dt', 'admin'] },
             projectPreferences: { some: { projectId: event.projectId } },
         },
         select: {

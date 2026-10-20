@@ -82,16 +82,16 @@ export const listProjectInterests = async (): Promise<ProjectInterests[]> => {
     return projects;
 };
 
-export interface AilUserOption {
+export interface EligibleUserOption {
     id: string;
     name: string;
     lastName: string;
     puntoVuela: string | null;
 }
 
-export const listAilUsers = async (): Promise<AilUserOption[]> => {
-    const { users } = await api.get<{ users: AilUserOption[] }>(
-        '/projects/ail-users',
+export const listEligibleUsers = async (): Promise<EligibleUserOption[]> => {
+    const { users } = await api.get<{ users: EligibleUserOption[] }>(
+        '/projects/eligible-users',
     );
 
     return users;

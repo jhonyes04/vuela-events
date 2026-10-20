@@ -364,6 +364,34 @@ describe('inscripciones a eventos', () => {
 
         assert.equal(log.newValue, '1 inscripción');
     });
+
+    it('candidatos para inscribir manualmente: todos los roles menos dt y admin', async () => {
+        const { admin, event } = await setup();
+        const ail = await createUser('ail');
+        const dt = await createUser('dt');
+        const otherAdmin = await createUser('admin');
+
+        await prisma.userProjectPreference.createMany({
+            data: [ail.id, dt.id, otherAdmin.id].map((userId) => ({
+                userId,
+                projectId: event.projectId,
+            })),
+        });
+
+        const res = await api(
+            server.baseUrl,
+            'GET',
+            `/api/events/${event.id}/registration-candidates`,
+            { cookie: await sessionCookieFor(admin.id) },
+        );
+
+        assert.equal(res.status, 200);
+        const ids = res.body.candidates.map((c: { id: string }) => c.id);
+        assert.ok(ids.includes(ail.id));
+        assert.ok(!ids.includes(dt.id));
+        assert.ok(!ids.includes(otherAdmin.id));
+    });
+
     describe('lista de inscritos', () => {
         const attendeesOf = async (userId: string, eventId: string) =>
             api(server.baseUrl, 'GET', `/api/events/${eventId}/registrations`, {

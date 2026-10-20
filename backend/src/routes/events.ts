@@ -546,7 +546,7 @@ eventsRouter.delete(
     async (req, res) => {
         const actor = req.user;
         const params = idParamsSchema.safeParse(req.params);
-        const body = deleteReasonSchema.safeParse(req.body);
+        const body = deleteReasonSchema.safeParse(req.body ?? {});
 
         if (!actor) {
             res.status(401).json({ error: 'Autenticación requerida' });
@@ -585,7 +585,7 @@ eventsRouter.delete(
     async (req, res) => {
         const actor = req.user;
         const params = seriesParamsSchema.safeParse(req.params);
-        const body = deleteReasonSchema.safeParse(req.body);
+        const body = deleteReasonSchema.safeParse(req.body ?? {});
 
         if (!actor) {
             res.status(401).json({ error: 'Autenticación requerida' });

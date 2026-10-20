@@ -162,4 +162,25 @@ describe('proyectos: permisos propios y de todos.', () => {
 
         assert.equal(res.status, 200);
     });
+
+    it('GET /projects/eligible-users: todos los roles menos dt y admin', async () => {
+        const dt = await createUser('dt');
+        const ail = await createUser('ail');
+        const admin = await createUser('admin');
+        const custom = await createUser(ROLE_OWN_ONLY);
+
+        const res = await api(
+            server.baseUrl,
+            'GET',
+            '/api/projects/eligible-users',
+            { cookie: await sessionCookieFor(dt.id) },
+        );
+
+        assert.equal(res.status, 200);
+        const ids = res.body.users.map((u: { id: string }) => u.id);
+        assert.ok(ids.includes(ail.id));
+        assert.ok(ids.includes(custom.id));
+        assert.ok(!ids.includes(dt.id));
+        assert.ok(!ids.includes(admin.id));
+    });
 });

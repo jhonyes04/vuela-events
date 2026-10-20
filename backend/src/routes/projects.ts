@@ -12,7 +12,7 @@ import {
 import {
     addProjectPreference,
     ProjectPreferenceError,
-    listAilUsers,
+    listEligibleUsers,
     listProjectInterestedUsers,
     removeProjectPreference,
 } from '../services/projectPreferences.js';
@@ -82,10 +82,10 @@ projectsRouter.get(
 );
 
 projectsRouter.get(
-    '/ail-users',
+    '/eligible-users',
     requirePermission('projects:edit'),
     async (_req, res) => {
-        res.json({ users: await listAilUsers() });
+        res.json({ users: await listEligibleUsers() });
     },
 );
 

@@ -13,9 +13,9 @@ import {
 import { Input } from '@/components/ui/input';
 import {
     addProjectInterestedUser,
-    listAilUsers,
+    listEligibleUsers,
     listProjectInterests,
-    type AilUserOption,
+    type EligibleUserOption,
     type ProjectInterests,
 } from '@/features/projects/lib/projects';
 import { personLabel } from '@/features/events/lib/events';
@@ -33,7 +33,7 @@ const AddProjectInterestBody = ({
     onClose,
     onAdded,
 }: AddProjectInterestBodyProps) => {
-    const [candidates, setCandidates] = useState<AilUserOption[]>([]);
+    const [candidates, setCandidates] = useState<EligibleUserOption[]>([]);
     const [loading, setLoading] = useState(true);
     const [failed, setFailed] = useState(false);
     const [query, setQuery] = useState('');
@@ -41,7 +41,7 @@ const AddProjectInterestBody = ({
     const [submitting, setSubmitting] = useState(false);
 
     useEffect(() => {
-        listAilUsers()
+        listEligibleUsers()
             .then(setCandidates)
             .catch(() => setFailed(true))
             .finally(() => setLoading(false));
