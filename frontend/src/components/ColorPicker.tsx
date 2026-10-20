@@ -22,6 +22,20 @@ const ensureColorisInit = () => {
         alpha: false,
         clearButton: false,
     });
+
+    // El popup se posiciona una vez al abrir (fixed en coordenadas de
+    // página) y no sigue el scroll de contenedores internos (p. ej. el
+    // diálogo con scroll propio). Capture:true para oír el scroll de
+    // cualquier contenedor anidado, no solo el de window.
+    document.addEventListener(
+        'scroll',
+        () => {
+            if (document.querySelector('.clr-picker.clr-open')) {
+                Coloris.updatePosition();
+            }
+        },
+        true,
+    );
 };
 
 export interface ColorPickerProps {
