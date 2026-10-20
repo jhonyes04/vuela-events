@@ -185,6 +185,17 @@ const eventRegistrationParamsSchema = z.object({
 const idParamsSchema = z.object({ id: z.uuid() });
 const seriesParamsSchema = z.object({ seriesId: z.uuid() });
 
+// Motivo opcional
+const deleteReasonSchema = z.strictObject({
+    motivo: z
+        .string()
+        .trim()
+        .min(1)
+        .max(300)
+        .regex(NO_CONTROL_OR_TAGS)
+        .optional(),
+});
+
 const registrationErrors = {
     not_found: [404, 'Evento o inscripción no encontrados'],
     already_registered: [409, 'Ya estás inscrito en este evento'],
@@ -535,19 +546,20 @@ eventsRouter.delete(
     async (req, res) => {
         const actor = req.user;
         const params = idParamsSchema.safeParse(req.params);
+        const body = deleteReasonSchema.safeParse(req.body);
 
         if (!actor) {
             res.status(401).json({ error: 'Autenticación requerida' });
             return;
         }
 
-        if (!params.success) {
+        if (!params.success || !body.success) {
             res.status(400).json({ error: 'Solicitud no válida' });
             return;
         }
 
         try {
-            await deleteEvent(actor, params.data.id);
+            await deleteEvent(actor, params.data.id, body.data.motivo);
 
             res.status(204).end();
         } catch (e) {
@@ -573,19 +585,24 @@ eventsRouter.delete(
     async (req, res) => {
         const actor = req.user;
         const params = seriesParamsSchema.safeParse(req.params);
+        const body = deleteReasonSchema.safeParse(req.body);
 
         if (!actor) {
             res.status(401).json({ error: 'Autenticación requerida' });
             return;
         }
 
-        if (!params.success) {
+        if (!params.success || !body.success) {
             res.status(400).json({ error: 'Solicitud no válida' });
             return;
         }
 
         try {
-            const result = await deleteEventSeries(actor, params.data.seriesId);
+            const result = await deleteEventSeries(
+                actor,
+                params.data.seriesId,
+                body.data.motivo,
+            );
 
             res.status(200).json(result);
         } catch (e) {

@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { ConfirmDeleteDialog } from '@/components/ConfirmDeleteDialog';
 import {
     dayKey,
@@ -21,6 +22,7 @@ export const DeleteEventDialog = ({
     onDeleted,
 }: DeleteEventDialogProps) => {
     const registrations = event._count.registrations;
+    const [motivo, setMotivo] = useState<string>('');
 
     return (
         <ConfirmDeleteDialog
@@ -47,7 +49,13 @@ export const DeleteEventDialog = ({
             deletingLabel="Eliminando…"
             errorFallback="No se pudo eliminar la sesión"
             successLabel={`Sesión «${event.title}» eliminada.`}
-            onConfirm={() => deleteEventById(event.id)}
+            textField={{
+                label: 'Motivo (opcional, se incluye en el aviso a los inscritos)',
+                value: motivo,
+                onChange: setMotivo,
+                placeholder: 'Por qué se cancela...',
+            }}
+            onConfirm={() => deleteEventById(event.id, motivo || undefined)}
             onDeleted={onDeleted}
         />
     );

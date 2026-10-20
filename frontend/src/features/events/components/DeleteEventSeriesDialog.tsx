@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { ConfirmDeleteDialog } from '@/components/ConfirmDeleteDialog';
 import {
     deleteEventSeriesById,
@@ -16,31 +17,42 @@ export const DeleteEventSeriesDialog = ({
     open,
     onOpenChange,
     onDeleted,
-}: DeleteEventSeriesDialogProps) => (
-    <ConfirmDeleteDialog
-        open={open}
-        onOpenChange={onOpenChange}
-        title="Eliminar toda la serie"
-        description={
-            <>
-                Se eliminarán todas las sesiones futuras de «{event.title}» (las
-                que ya han pasado no se tocan). Esta acción no se puede
-                deshacer.
-            </>
-        }
-        confirmLabel="Eliminar serie"
-        deletingLabel="Eliminando…"
-        errorFallback="No se pudo eliminar la serie"
-        successLabel={(deletedCount) =>
-            `Se han eliminado ${deletedCount} sesión${deletedCount === 1 ? '' : 'es'} futura${deletedCount === 1 ? '' : 's'} de «${event.title}».`
-        }
-        onConfirm={async () => {
-            const { deletedCount } = await deleteEventSeriesById(
-                event.seriesId!,
-            );
+}: DeleteEventSeriesDialogProps) => {
+    const [motivo, setMotivo] = useState<string>('');
 
-            return deletedCount;
-        }}
-        onDeleted={onDeleted}
-    />
-);
+    return (
+        <ConfirmDeleteDialog
+            open={open}
+            onOpenChange={onOpenChange}
+            title="Eliminar toda la serie"
+            description={
+                <>
+                    Se eliminarán todas las sesiones futuras de «{event.title}»
+                    (las que ya han pasado no se tocan). Esta acción no se puede
+                    deshacer.
+                </>
+            }
+            confirmLabel="Eliminar serie"
+            deletingLabel="Eliminando…"
+            errorFallback="No se pudo eliminar la serie"
+            successLabel={(deletedCount) =>
+                `Se han eliminado ${deletedCount} sesión${deletedCount === 1 ? '' : 'es'} futura${deletedCount === 1 ? '' : 's'} de «${event.title}».`
+            }
+            textField={{
+                label: 'Motivo (opcional, se incluye en el aviso a los inscritos)',
+                value: motivo,
+                onChange: setMotivo,
+                placeholder: 'Por qué se cancela...',
+            }}
+            onConfirm={async () => {
+                const { deletedCount } = await deleteEventSeriesById(
+                    event.seriesId!,
+                    motivo || undefined,
+                );
+
+                return deletedCount;
+            }}
+            onDeleted={onDeleted}
+        />
+    );
+};

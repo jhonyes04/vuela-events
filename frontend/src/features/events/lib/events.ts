@@ -336,13 +336,14 @@ export const listMyEvents = async (): Promise<EventItem[]> => {
     return events;
 };
 
-export const deleteEventById = (id: string): Promise<void> =>
-    api.delete(`/events/${id}`);
+export const deleteEventById = (id: string, motivo?: string): Promise<void> =>
+    api.delete(`/events/${id}`, { motivo });
 
 export const deleteEventSeriesById = (
     seriesId: string,
+    motivo?: string,
 ): Promise<{ deletedCount: number }> =>
-    api.delete(`/events/series/${seriesId}`);
+    api.delete(`/events/series/${seriesId}`, { motivo });
 
 export const registerForEventById = async (id: string): Promise<void> => {
     await api.post<unknown>(`/events/${id}/registrations`);

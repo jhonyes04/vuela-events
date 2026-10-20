@@ -37,12 +37,12 @@ const EVENT_PLACEHOLDERS: EditorPlaceholder[] = [
     { token: '{{fechas}}', label: 'Fecha(s)' },
     { token: '{{calendarUrl}}', label: 'Enlace Google Calendar' },
     { token: '{{enlacePerfil}}', label: 'Enlace perfil' },
+    { token: '{{motivo}}', label: 'Motivo' },
 ];
 
 const MAINTENANCE_PLACEHOLDERS: EditorPlaceholder[] = [
     { token: '{{desde}}', label: 'Desde' },
     { token: '{{hasta}}', label: 'Hasta' },
-    { token: '{{motivo}}', label: 'Motivo' },
 ];
 
 const CATEGORY_OPTIONS: { value: EmailTemplateCategory; label: string }[] = [

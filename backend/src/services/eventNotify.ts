@@ -98,6 +98,7 @@ interface EventCancelledInput {
     title: string;
     location: string | null;
     projectName: string;
+    reason?: string;
     // Una sesión suelta, o todas las sesiones futuras eliminadas de una serie.
     sessions: CancelledSession[];
 }
@@ -122,7 +123,10 @@ export const notifyEventCancelled = async (event: EventCancelledInput) => {
 
                 const list = sessionsByEmail.get(email) ?? [];
 
-                list.push({ startsAt: session.startsAt, endsAt: session.endsAt });
+                list.push({
+                    startsAt: session.startsAt,
+                    endsAt: session.endsAt,
+                });
                 sessionsByEmail.set(email, list);
             }
         }
@@ -137,6 +141,7 @@ export const notifyEventCancelled = async (event: EventCancelledInput) => {
                     evento: event.title,
                     lugar: event.location ?? '',
                     fechas: buildFechasBlock(sessions),
+                    motivo: event.reason ?? '',
                 },
                 ['fechas'],
             );

@@ -12,6 +12,7 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { ApiError } from '@/lib/api';
 
 interface ConfirmDeleteDialogProps<T> {
@@ -22,12 +23,16 @@ interface ConfirmDeleteDialogProps<T> {
     confirmLabel: string;
     deletingLabel: string;
     errorFallback: string;
-    // Texto del toast al eliminar; puede depender del resultado de onConfirm.
     successLabel: string | ((result: T) => string);
     onConfirm: () => Promise<T>;
     onDeleted: (result: T) => void;
-    // Si se da, hay que escribir este texto exacto para poder confirmar.
     confirmText?: string;
+    textField?: {
+        label: string;
+        value: string;
+        onChange: (value: string) => void;
+        placeholder?: string;
+    };
 }
 
 export function ConfirmDeleteDialog<T>({
@@ -42,6 +47,7 @@ export function ConfirmDeleteDialog<T>({
     onConfirm,
     onDeleted,
     confirmText,
+    textField,
 }: ConfirmDeleteDialogProps<T>) {
     const [deleting, setDeleting] = useState(false);
     const [typed, setTyped] = useState('');
@@ -79,6 +85,22 @@ export function ConfirmDeleteDialog<T>({
                     </div>
                     <DialogDescription>{description}</DialogDescription>
                 </DialogHeader>
+
+                {textField && (
+                    <div className="grid gap-1.5">
+                        <Label htmlFor="confirm-delete-text-field">
+                            {textField.label}
+                        </Label>
+                        <Textarea
+                            id="confirm-delete-text-field"
+                            autoComplete="off"
+                            maxLength={300}
+                            value={textField.value}
+                            placeholder={textField.placeholder}
+                            onChange={(e) => textField.onChange(e.target.value)}
+                        />
+                    </div>
+                )}
 
                 {confirmText !== undefined && (
                     <div className="grid gap-1.5">

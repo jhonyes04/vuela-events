@@ -19,6 +19,7 @@ export class EventDeleteError extends Error {
 export const deleteEvent = async (
     actor: { id: string; roleId: string },
     eventId: string,
+    reason?: string,
 ): Promise<void> => {
     const event = await prisma.$transaction(async (tx) => {
         const event = await tx.event.findUnique({
@@ -54,10 +55,11 @@ export const deleteEvent = async (
                 actorId: actor.id,
                 action: 'event_deleted',
                 // oldValue admite 100 caracteres.
-                oldValue: `${event.startsAt.toISOString().slice(0, 10)} ${event.title}`.slice(
-                    0,
-                    100,
-                ),
+                oldValue:
+                    `${event.startsAt.toISOString().slice(0, 10)} ${event.title}`.slice(
+                        0,
+                        100,
+                    ),
                 newValue:
                     event.registrations.length === 1
                         ? '1 inscripción'
@@ -72,6 +74,7 @@ export const deleteEvent = async (
         title: event.title,
         location: event.location,
         projectName: event.project.name,
+        reason,
         sessions: [
             {
                 startsAt: event.startsAt,
@@ -87,6 +90,7 @@ export const deleteEvent = async (
 export const deleteEventSeries = async (
     actor: { id: string; roleId: string },
     seriesId: string,
+    reason?: string,
 ): Promise<{ deletedCount: number }> => {
     const events = await prisma.$transaction(async (tx) => {
         const events = await tx.event.findMany({
@@ -149,6 +153,7 @@ export const deleteEventSeries = async (
         title: first.title,
         location: first.location,
         projectName: first.project.name,
+        reason,
         sessions: events.map((event) => ({
             startsAt: event.startsAt,
             endsAt: event.endsAt,
