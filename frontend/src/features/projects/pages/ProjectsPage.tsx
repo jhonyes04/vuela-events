@@ -95,9 +95,7 @@ export const ProjectsPage = () => {
                             )}
                             style={swatch.style}
                         />
-                        <span className="truncate font-medium">
-                            {p.name}
-                        </span>
+                        <span className="truncate font-medium">{p.name}</span>
                     </div>
                 );
             },
@@ -105,8 +103,8 @@ export const ProjectsPage = () => {
         {
             key: 'guides',
             header: 'Guías',
-            headerClassName: 'hidden sm:inline-block',
-            cellClassName: 'hidden sm:inline-block max-w-xs truncate',
+            headerClassName: 'hidden sm:table-cell',
+            cellClassName: 'hidden sm:table-cell max-w-xs truncate',
             render: (p) => {
                 const text =
                     p.guides.map((guide) => guide.name).join(', ') || '-';
@@ -206,9 +204,11 @@ export const ProjectsPage = () => {
 
     return (
         <section>
-            <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+            <div className="flex flex-wrap items-center justify-between gap-3">
                 <PageTitle icon={FolderKanban}>Gestionar Proyectos</PageTitle>
-                <Button onClick={openCreate}>Nuevo proyecto</Button>
+                <Button onClick={openCreate} className="mb-4 sm:mb-0 ms-auto">
+                    Nuevo proyecto
+                </Button>
             </div>
 
             <ListErrors
