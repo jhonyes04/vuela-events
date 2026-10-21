@@ -39,6 +39,8 @@ export type ProjectManageFailure =
     | 'not_found'
     | 'has_events'
     | 'guide_not_found'
+    | 'resource_link_not_found'
+    | 'document_not_found'
     | 'forbidden';
 
 export class ProjectManageError extends Error {
@@ -63,16 +65,37 @@ const projectSelect = {
     guides: {
         select: { guide: { select: { id: true, name: true, url: true } } },
     },
+    resourceLinks: {
+        select: {
+            resourceLink: { select: { id: true, title: true, url: true } },
+        },
+    },
+    documents: {
+        select: {
+            document: { select: { id: true, title: true } },
+        },
+    },
 } as const;
 
 type RawProject = {
     guides: { guide: { id: string; name: string; url: string } }[];
+    resourceLinks: {
+        resourceLink: { id: string; title: string; url: string };
+    }[];
+    documents: { document: { id: string; title: string } }[];
     [key: string]: unknown;
 };
 
-const flattenGuides = <T extends RawProject>({ guides, ...rest }: T) => ({
+const flattenProject = <T extends RawProject>({
+    guides,
+    resourceLinks,
+    documents,
+    ...rest
+}: T) => ({
     ...rest,
-    guides: guides.map((g) => g.guide),
+    guides: guides.map((guide) => guide.guide),
+    resourceLinks: resourceLinks.map((resource) => resource.resourceLink),
+    documents: documents.map((document) => document.document),
 });
 
 const guidesExist = async (guideIds: string[]): Promise<boolean> => {
@@ -83,13 +106,31 @@ const guidesExist = async (guideIds: string[]): Promise<boolean> => {
     return count === guideIds.length;
 };
 
+const resourceLinksExist = async (
+    resourceLinkIds: string[],
+): Promise<boolean> => {
+    const count = await prisma.resourceLink.count({
+        where: { id: { in: resourceLinkIds } },
+    });
+
+    return count === resourceLinkIds.length;
+};
+
+const documentsExist = async (documentIds: string[]): Promise<boolean> => {
+    const count = await prisma.document.count({
+        where: { id: { in: documentIds } },
+    });
+
+    return count === documentIds.length;
+};
+
 export const listProjects = async () => {
     const projects = await prisma.project.findMany({
         orderBy: { name: 'asc' },
         select: projectSelect,
     });
 
-    return projects.map(flattenGuides);
+    return projects.map(flattenProject);
 };
 
 // En segundo plano: no bloquea la respuesta de crear el proyecto (puede ser
@@ -142,6 +183,8 @@ export const createProject = async (
     closingInstructions: string | null,
     color: string,
     guideIds: string[],
+    resourceLinkIds: string[],
+    documentIds: string[],
 ) => {
     const exists = await prisma.project.findUnique({ where: { name } });
 
@@ -151,6 +194,14 @@ export const createProject = async (
 
     if (!(await guidesExist(guideIds))) {
         throw new ProjectManageError('guide_not_found');
+    }
+
+    if (!(await resourceLinksExist(resourceLinkIds))) {
+        throw new ProjectManageError('resource_link_not_found');
+    }
+
+    if (!(await documentsExist(documentIds))) {
+        throw new ProjectManageError('document_not_found');
     }
 
     const project = await prisma.project.create({
@@ -165,6 +216,14 @@ export const createProject = async (
             color,
             createdById: actorId,
             guides: { create: guideIds.map((guideId) => ({ guideId })) },
+            resourceLinks: {
+                create: resourceLinkIds.map((resourceLinkId) => ({
+                    resourceLinkId,
+                })),
+            },
+            documents: {
+                create: documentIds.map((documentId) => ({ documentId })),
+            },
         },
         select: projectSelect,
     });
@@ -177,7 +236,7 @@ export const createProject = async (
 
     void notifyProjectCreated(project, actorId);
 
-    return flattenGuides(project);
+    return flattenProject(project);
 };
 
 export const updateProject = async (
@@ -189,6 +248,8 @@ export const updateProject = async (
         closingInstructions: string | null;
         color: string;
         guideIds: string[];
+        resourceLinkIds: string[];
+        documentIds: string[];
         active: boolean;
     },
 ) => {
@@ -223,12 +284,34 @@ export const updateProject = async (
         throw new ProjectManageError('guide_not_found');
     }
 
-    const [, , updated] = await prisma.$transaction([
+    if (!(await resourceLinksExist(input.resourceLinkIds))) {
+        throw new ProjectManageError('resource_link_not_found');
+    }
+
+    if (!(await documentsExist(input.documentIds))) {
+        throw new ProjectManageError('document_not_found');
+    }
+
+    const [, , , , , , updated] = await prisma.$transaction([
         prisma.projectGuide.deleteMany({ where: { projectId: id } }),
         prisma.projectGuide.createMany({
             data: input.guideIds.map((guideId) => ({
                 projectId: id,
                 guideId,
+            })),
+        }),
+        prisma.projectResourceLink.deleteMany({ where: { projectId: id } }),
+        prisma.projectResourceLink.createMany({
+            data: input.resourceLinkIds.map((resourceLinkId) => ({
+                projectId: id,
+                resourceLinkId,
+            })),
+        }),
+        prisma.projectDocument.deleteMany({ where: { projectId: id } }),
+        prisma.projectDocument.createMany({
+            data: input.documentIds.map((documentId) => ({
+                projectId: id,
+                documentId,
             })),
         }),
         prisma.project.update({
@@ -255,7 +338,7 @@ export const updateProject = async (
         newValue: updated.name.slice(0, 100),
     });
 
-    return flattenGuides(updated);
+    return flattenProject(updated);
 };
 
 export const deleteProject = async (

@@ -33,6 +33,8 @@ const event = (id: string, startsAt: string): EventItem => ({
         closingInstructions: null,
         color: 'amber',
         guides: [{ id: 'g', name: 'Guía', url: 'https://example.com' }],
+        resourceLinks: [],
+        documents: [],
     },
     _count: { registrations: 0 },
     registered: false,

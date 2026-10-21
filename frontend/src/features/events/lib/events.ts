@@ -24,6 +24,8 @@ export interface EventItem {
         closingInstructions: string | null;
         color: string;
         guides: { id: string; name: string; url: string }[];
+        resourceLinks: { id: string; title: string; url: string }[];
+        documents: { id: string; title: string }[];
     };
     _count: { registrations: number };
     registered: boolean;

@@ -1,0 +1,12 @@
+model ProjectResourceLink {
+    projectId               String          @db.Uuid
+    resourceLinkId          String          @db.Uuid
+    createdAt               DateTime        @default(now())
+
+    project                 Project         @relation(fields: [projectId], references: [id], onDelete: Cascade)
+    resourceLink            ResourceLink    @relation(fields: [resourceLinkId], references: [id], onDelete: Restrict)
+
+    @@id([projectId, resourceLinkId])
+    @@index([resourceLinkId])
+    @@map("project_resource_links")
+}

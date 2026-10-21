@@ -35,6 +35,8 @@ const createProjectSchema = z.strictObject({
     closingInstructions: z.string().max(20000).nullable().optional(),
     color: projectColorSchema,
     guideIds: z.array(z.uuid()).min(1),
+    resourceLinkIds: z.array(z.uuid()).default([]),
+    documentIds: z.array(z.uuid()).default([]),
 });
 
 const updateProjectSchema = z.strictObject({
@@ -43,6 +45,8 @@ const updateProjectSchema = z.strictObject({
     closingInstructions: z.string().max(20000).nullable(),
     color: projectColorSchema,
     guideIds: z.array(z.uuid()).min(1),
+    resourceLinkIds: z.array(z.uuid()).default([]),
+    documentIds: z.array(z.uuid()).default([]),
     active: z.boolean(),
 });
 
@@ -51,6 +55,8 @@ const projectManageErrors = {
     not_found: [404, 'Proyecto no encontrado'],
     has_events: [409, 'No se puede eliminar: hay eventos con este proyecto'],
     guide_not_found: [400, 'Guía no válida'],
+    resource_link_not_found: [400, 'Recurso no válido'],
+    document_not_found: [400, 'Documento no válido'],
     forbidden: [403, 'No puedes gestionar un proyecto que no creaste'],
 } as const;
 
@@ -164,6 +170,8 @@ projectsRouter.post(
                 body.data.closingInstructions ?? null,
                 body.data.color,
                 body.data.guideIds,
+                body.data.resourceLinkIds,
+                body.data.documentIds,
             );
 
             res.status(201).json({ project });

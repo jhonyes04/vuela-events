@@ -1,6 +1,6 @@
 import { useEffect, useState, type SubmitEvent } from 'react';
 import { toast } from 'sonner';
-import { ClipboardCheck, ClipboardList } from 'lucide-react';
+import { ClipboardCheck, ClipboardList, FileText, Link2 } from 'lucide-react';
 import { RichTextEditor } from '@/components/RichTextEditor';
 import { FullScreenSpinner } from '@/components/FullScreenSpinner';
 import { Button } from '@/components/ui/button';
@@ -42,8 +42,11 @@ import {
 } from '@/features/projects/lib/colors';
 import { ColorPicker } from '@/components/ColorPicker';
 import { useGuidesStore } from '@/features/guides/store';
+import { useResourceLinksStore } from '@/features/resources/store';
+import { useDocumentsStore } from '@/features/resources/documentsStore';
 import { useAppSettingsStore } from '@/features/appSettings/store';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Card, CardContent } from '@/components/ui/card';
 
 const EMPTY_EDITOR_HTML = '<p></p>';
 
@@ -66,6 +69,7 @@ const ProjectFormBody = ({
     onClose,
 }: ProjectFormBodyProps) => {
     const chipsAnchor = useComboboxAnchor();
+    const resourceChipsAnchor = useComboboxAnchor();
     const openingSections = useAppSettingsStore(
         (s) => s.projectOpeningSections,
     );
@@ -88,15 +92,37 @@ const ProjectFormBody = ({
     const [guideIds, setGuideIds] = useState<Set<string>>(
         new Set(project?.guides.map((guide) => guide.id) ?? []),
     );
+    const [resourceKeys, setResourceKeys] = useState<Set<string>>(
+        new Set([
+            ...(project?.resourceLinks.map(
+                (resource) => `link:${resource.id}`,
+            ) ?? []),
+            ...(project?.documents.map(
+                (document) => `document:${document.id}`,
+            ) ?? []),
+        ]),
+    );
     const [active, setActive] = useState(project?.active ?? true);
     const [submitting, setSubmitting] = useState(false);
 
     const guides = useGuidesStore((s) => s.items);
     const loadGuides = useGuidesStore((s) => s.load);
+    const resourceLinks = useResourceLinksStore((s) => s.items);
+    const loadResourceLinks = useResourceLinksStore((s) => s.load);
+    const documents = useDocumentsStore((s) => s.items);
+    const loadDocuments = useDocumentsStore((s) => s.load);
 
     useEffect(() => {
         void loadGuides();
     }, [loadGuides]);
+
+    useEffect(() => {
+        void loadResourceLinks();
+    }, [loadResourceLinks]);
+
+    useEffect(() => {
+        void loadDocuments();
+    }, [loadDocuments]);
 
     useEffect(() => {
         void loadAppSettings();
@@ -107,6 +133,29 @@ const ProjectFormBody = ({
     const activeGuides = guides.filter(
         (guide) => guide.active || guideIds.has(guide.id),
     );
+
+    const activeResourceLinks = resourceLinks.filter(
+        (resource) =>
+            resource.active || resourceKeys.has(`link:${resource.id}`),
+    );
+
+    const activeDocuments = documents.filter(
+        (document) =>
+            document.active || resourceKeys.has(`document:${document.id}`),
+    );
+
+    const resourceItems = [
+        ...activeResourceLinks.map((resource) => ({
+            value: `link:${resource.id}`,
+            label: resource.title,
+            kind: 'link' as const,
+        })),
+        ...activeDocuments.map((document) => ({
+            value: `document:${document.id}`,
+            label: document.title,
+            kind: 'document' as const,
+        })),
+    ];
 
     const handleSubmit = async (e: SubmitEvent) => {
         e.preventDefault();
@@ -119,6 +168,13 @@ const ProjectFormBody = ({
         setSubmitting(true);
 
         try {
+            const resourceLinkIds = [...resourceKeys]
+                .filter((key) => key.startsWith('link:'))
+                .map((key) => key.slice('link:'.length));
+            const documentIds = [...resourceKeys]
+                .filter((key) => key.startsWith('document:'))
+                .map((key) => key.slice('document:'.length));
+
             const payload = {
                 name,
                 openingInstructions:
@@ -131,6 +187,8 @@ const ProjectFormBody = ({
                         : closingInstructions,
                 color,
                 guideIds: [...guideIds],
+                resourceLinkIds,
+                documentIds,
             };
 
             const saved = project
@@ -202,8 +260,8 @@ const ProjectFormBody = ({
                                         value.map((id) => (
                                             <ComboboxChip
                                                 key={id}
-                                                className="text-sm text-white bg-green-800"
-                                                removeClassName="hover:bg-transparent hover:text-white"
+                                                className="text-black bg-amber-200"
+                                                removeClassName="hover:bg-transparent hover:text-black"
                                             >
                                                 {activeGuides.find(
                                                     (guide) => guide.id === id,
@@ -232,7 +290,8 @@ const ProjectFormBody = ({
                                         <ComboboxItem
                                             key={item.value}
                                             value={item.value}
-                                            className="text-sm"
+                                            // disabled={guideIds.has(item.value)}
+                                            className="cursor-pointer text-sm"
                                         >
                                             {item.label}
                                         </ComboboxItem>
@@ -242,11 +301,104 @@ const ProjectFormBody = ({
                         </Combobox>
                     </div>
 
+                    <div className="grid gap-1.5">
+                        <Label htmlFor="project-resources">Recursos</Label>
+                        <Combobox
+                            items={resourceItems}
+                            multiple
+                            value={[...resourceKeys]}
+                            onValueChange={(keys) =>
+                                setResourceKeys(new Set(keys))
+                            }
+                        >
+                            <ComboboxChips
+                                ref={resourceChipsAnchor}
+                                id="project-resources"
+                            >
+                                <ComboboxValue>
+                                    {(value: string[]) =>
+                                        value.map((key) => {
+                                            const item = resourceItems.find(
+                                                (i) => i.value === key,
+                                            );
+                                            const Icon =
+                                                item?.kind === 'document'
+                                                    ? FileText
+                                                    : Link2;
+
+                                            return (
+                                                <ComboboxChip
+                                                    key={key}
+                                                    className={`gap-1 ${item?.kind === 'document' ? 'bg-blue-300' : 'bg-green-300'}`}
+                                                    removeClassName="hover:bg-transparent hover:text-black"
+                                                >
+                                                    <Icon
+                                                        className={
+                                                            item?.kind ===
+                                                            'document'
+                                                                ? 'size-3.5 text-blue-600'
+                                                                : 'size-3.5 text-green-600'
+                                                        }
+                                                    />
+                                                    {item?.label ?? key}
+                                                </ComboboxChip>
+                                            );
+                                        })
+                                    }
+                                </ComboboxValue>
+                                <ComboboxChipsInput
+                                    placeholder={
+                                        resourceKeys.size === 0
+                                            ? 'Buscar un recurso…'
+                                            : undefined
+                                    }
+                                />
+                            </ComboboxChips>
+                            <ComboboxContent anchor={resourceChipsAnchor}>
+                                <ComboboxEmpty>
+                                    No se encontraron recursos
+                                </ComboboxEmpty>
+                                <ComboboxList>
+                                    {(item: {
+                                        value: string;
+                                        label: string;
+                                        kind: 'link' | 'document';
+                                    }) => {
+                                        const Icon =
+                                            item.kind === 'document'
+                                                ? FileText
+                                                : Link2;
+
+                                        return (
+                                            <ComboboxItem
+                                                key={item.value}
+                                                value={item.value}
+                                                // disabled={resourceKeys.has(
+                                                //     item.value,
+                                                // )}
+                                                className={`cursor-pointer gap-1.5 text-sm border ${item.kind === 'document' ? 'bg-blue-300' : 'bg-green-300'}`}
+                                            >
+                                                <Icon
+                                                    className={
+                                                        item.kind === 'document'
+                                                            ? 'size-3.5 text-blue-900'
+                                                            : 'size-3.5 text-green-900'
+                                                    }
+                                                />
+                                                {item.label}
+                                            </ComboboxItem>
+                                        );
+                                    }}
+                                </ComboboxList>
+                            </ComboboxContent>
+                        </Combobox>
+                    </div>
+
                     <fieldset className="grid gap-1.5">
                         <legend className="mb-1.5 text-sm font-medium">
                             Color
                         </legend>
-                        <div className="flex flex-wrap items-center gap-2">
+                        <div className="flex flex-wrap items-center border rounded-xl p-3 gap-2">
                             {PROJECT_COLORS.map((c) => (
                                 <button
                                     key={c}
@@ -255,7 +407,7 @@ const ProjectFormBody = ({
                                     aria-pressed={color === c}
                                     onClick={() => setColor(c)}
                                     className={cn(
-                                        'size-8 rounded-full ring-offset-2 ring-offset-background',
+                                        'cursor-pointer size-8 rounded-full ring-offset-2 ring-offset-background',
                                         PROJECT_COLOR_STYLES[c].swatch,
                                         color === c
                                             ? 'ring-2 ring-ring'
@@ -281,55 +433,59 @@ const ProjectFormBody = ({
                         </div>
                     </fieldset>
 
-                    <Tabs defaultValue="opening">
-                        <TabsList className="flex h-auto w-full gap-2 bg-transparent p-0 sm:w-auto">
-                            <TabsTrigger
-                                value="opening"
-                                className="h-9 flex-1 gap-2 rounded-lg border bg-card px-4 text-sm font-medium shadow-none data-active:border-transparent data-active:bg-brand-yellow data-active:text-brand-ink sm:flex-none sm:px-5"
-                            >
-                                <ClipboardList className="size-4 shrink-0" />
-                                Dar de alta
-                            </TabsTrigger>
-                            <TabsTrigger
-                                value="closing"
-                                className="h-9 flex-1 gap-2 rounded-lg border bg-card px-4 text-sm font-medium shadow-none data-active:border-transparent data-active:bg-brand-yellow data-active:text-brand-ink sm:flex-none sm:px-5"
-                            >
-                                <ClipboardCheck className="size-4 shrink-0" />
-                                Cerrar actividad
-                            </TabsTrigger>
-                        </TabsList>
+                    <Card>
+                        <CardContent>
+                            <Tabs defaultValue="opening">
+                                <TabsList className="flex h-auto w-full gap-2 bg-transparent p-0 sm:w-auto">
+                                    <TabsTrigger
+                                        value="opening"
+                                        className="cursor-pointer h-9 flex-1 gap-2 rounded-lg border bg-card px-4 text-sm font-medium shadow-none data-active:border-transparent data-active:bg-brand-yellow data-active:text-brand-ink sm:flex-none sm:px-5"
+                                    >
+                                        <ClipboardList className="size-4 shrink-0" />
+                                        Dar de alta
+                                    </TabsTrigger>
+                                    <TabsTrigger
+                                        value="closing"
+                                        className="cursor-pointer h-9 flex-1 gap-2 rounded-lg border bg-card px-4 text-sm font-medium shadow-none data-active:border-transparent data-active:bg-brand-yellow data-active:text-brand-ink sm:flex-none sm:px-5"
+                                    >
+                                        <ClipboardCheck className="size-4 shrink-0" />
+                                        Cerrar actividad
+                                    </TabsTrigger>
+                                </TabsList>
 
-                        <Separator className="data-horizontal:h-1 bg-yellow-400/30 rounded-full" />
+                                <Separator className="data-horizontal:h-1 bg-yellow-400/30 rounded-full" />
 
-                        <TabsContent
-                            value="opening"
-                            className="mt-2 grid gap-1.5"
-                        >
-                            <Label htmlFor="project-opening-instructions">
-                                Cómo dar de alta la actividad en Ágora
-                            </Label>
-                            <RichTextEditor
-                                value={openingInstructions}
-                                onChange={setOpeningInstructions}
-                                contentClassName="max-h-100 min-h-100"
-                                lockedHeadings
-                            />
-                        </TabsContent>
-                        <TabsContent
-                            value="closing"
-                            className="mt-2 grid gap-1.5"
-                        >
-                            <Label htmlFor="project-closing-instructions">
-                                Cómo cerrar la actividad en Ágora
-                            </Label>
-                            <RichTextEditor
-                                value={closingInstructions}
-                                onChange={setClosingInstructions}
-                                contentClassName="max-h-100 min-h-100"
-                                lockedHeadings
-                            />
-                        </TabsContent>
-                    </Tabs>
+                                <TabsContent
+                                    value="opening"
+                                    className="mt-2 grid gap-1.5"
+                                >
+                                    <Label htmlFor="project-opening-instructions">
+                                        Cómo dar de alta la actividad en Ágora
+                                    </Label>
+                                    <RichTextEditor
+                                        value={openingInstructions}
+                                        onChange={setOpeningInstructions}
+                                        contentClassName="max-h-100 min-h-100"
+                                        lockedHeadings
+                                    />
+                                </TabsContent>
+                                <TabsContent
+                                    value="closing"
+                                    className="mt-2 grid gap-1.5"
+                                >
+                                    <Label htmlFor="project-closing-instructions">
+                                        Cómo cerrar la actividad en Ágora
+                                    </Label>
+                                    <RichTextEditor
+                                        value={closingInstructions}
+                                        onChange={setClosingInstructions}
+                                        contentClassName="max-h-100 min-h-100"
+                                        lockedHeadings
+                                    />
+                                </TabsContent>
+                            </Tabs>
+                        </CardContent>
+                    </Card>
 
                     {project && (
                         <label className="flex items-center gap-2 text-sm">

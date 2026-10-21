@@ -9,5 +9,7 @@ model ResourceLink {
 
     createdBy       User?           @relation(fields: [createdById], references: [id], onDelete: SetNull)
 
+    projects        ProjectResourceLink[]
+
     @@map("resource_links")
 }

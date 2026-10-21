@@ -6,6 +6,17 @@ export interface ProjectGuide {
     url: string;
 }
 
+export interface ProjectResourceLink {
+    id: string;
+    title: string;
+    url: string;
+}
+
+export interface ProjectDocument {
+    id: string;
+    title: string;
+}
+
 export interface Project {
     id: string;
     name: string;
@@ -15,6 +26,8 @@ export interface Project {
     active: boolean;
     createdById: string | null;
     guides: ProjectGuide[];
+    resourceLinks: ProjectResourceLink[];
+    documents: ProjectDocument[];
 }
 
 export interface ProjectInput {
@@ -23,6 +36,8 @@ export interface ProjectInput {
     closingInstructions: string | null;
     color: string;
     guideIds: string[];
+    resourceLinkIds: string[];
+    documentIds: string[];
 }
 
 export interface ProjectUpdateInput extends ProjectInput {

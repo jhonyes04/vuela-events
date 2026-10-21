@@ -12,5 +12,7 @@ model Document {
 
     createdBy           User?           @relation(fields: [createdById], references: [id], onDelete: SetNull)
 
+    projects            ProjectDocument[]
+
     @@map("documents")
 }

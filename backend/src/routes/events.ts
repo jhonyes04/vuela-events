@@ -152,6 +152,18 @@ const eventSelect = {
                     guide: { select: { id: true, name: true, url: true } },
                 },
             },
+            resourceLinks: {
+                select: {
+                    resourceLink: {
+                        select: { id: true, title: true, url: true },
+                    },
+                },
+            },
+            documents: {
+                select: {
+                    document: { select: { id: true, title: true } },
+                },
+            },
         },
     },
     _count: {
@@ -165,6 +177,10 @@ const flattenEventProject = <
     T extends {
         project: {
             guides: { guide: { id: string; name: string; url: string } }[];
+            resourceLinks: {
+                resourceLink: { id: string; title: string; url: string };
+            }[];
+            documents: { document: { id: string; title: string } }[];
         };
     },
 >(
@@ -174,6 +190,10 @@ const flattenEventProject = <
     project: {
         ...event.project,
         guides: event.project.guides.map((guide) => guide.guide),
+        resourceLinks: event.project.resourceLinks.map(
+            (resource) => resource.resourceLink,
+        ),
+        documents: event.project.documents.map((document) => document.document),
     },
 });
 

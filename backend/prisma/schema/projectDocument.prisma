@@ -1,0 +1,12 @@
+model ProjectDocument {
+    projectId           String          @db.Uuid
+    documentId          String          @db.Uuid
+    createdAt           DateTime        @default(now())
+
+    project             Project         @relation(fields: [projectId], references: [id], onDelete: Cascade)
+    document            Document        @relation(fields: [documentId], references: [id], onDelete: Restrict)
+
+    @@id([projectId, documentId])
+    @@index([documentId])
+    @@map("project_documents")
+}
