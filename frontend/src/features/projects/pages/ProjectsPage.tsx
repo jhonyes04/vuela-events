@@ -118,8 +118,8 @@ export const ProjectsPage = () => {
         {
             key: 'openingInstructions',
             header: 'Observaciones',
-            headerClassName: 'hidden sm:inline-block',
-            cellClassName: 'hidden sm:inline-block max-w-xs truncate',
+            headerClassName: 'hidden sm:table-cell',
+            cellClassName: 'hidden sm:table-cell max-w-xs truncate',
             render: (p) => {
                 if (!p.openingInstructions) return '—';
 
