@@ -12,6 +12,7 @@ import {
     UserPlus,
     Users,
     type LucideIcon,
+    PackageOpen,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -33,18 +34,19 @@ interface CategoryStyle {
 
 // Mismo estilo neutro para todas las categorías: solo cambian el icono y la etiqueta.
 const CATEGORY_STYLES: Record<string, CategoryStyle> = {
-    events: { label: 'Eventos', icon: CalendarDays },
     attendees: { label: 'Asistencia', icon: UserPlus },
-    projects: { label: 'Proyectos', icon: FolderKanban },
-    guides: { label: 'Guías', icon: BookOpen },
-    email: { label: 'Correo', icon: Mail },
-    users: { label: 'Usuarios', icon: Users },
-    roles: { label: 'Roles', icon: ShieldCheck },
-    resources: { label: 'Recursos', icon: FolderOpen },
-    stats: { label: 'Estadísticas', icon: BarChart3 },
     audit: { label: 'Auditoría', icon: History },
-    settings: { label: 'Configuración', icon: SlidersHorizontal },
+    email: { label: 'Correo', icon: Mail },
+    events: { label: 'Eventos', icon: CalendarDays },
+    guides: { label: 'Guías', icon: BookOpen },
+    materials: { label: 'Materiales', icon: PackageOpen },
+    projects: { label: 'Proyectos', icon: FolderKanban },
+    resources: { label: 'Recursos', icon: FolderOpen },
+    roles: { label: 'Roles', icon: ShieldCheck },
     sessions: { label: 'Sesiones', icon: Monitor },
+    settings: { label: 'Configuración', icon: SlidersHorizontal },
+    stats: { label: 'Estadísticas', icon: BarChart3 },
+    users: { label: 'Usuarios', icon: Users },
 };
 
 const FALLBACK_STYLE: CategoryStyle = {

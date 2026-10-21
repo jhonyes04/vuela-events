@@ -18,6 +18,7 @@ import { projectsRouter } from './routes/projects.js';
 import { guidesRouter } from './routes/guides.js';
 import { resourceLinkRouter } from './routes/resourceLinks.js';
 import { documentRouter } from './routes/documents.js';
+import { materialRouter } from './routes/materials.js';
 import { emailTemplatesRouter } from './routes/emailTemplates.js';
 import { emailSettingsRouter } from './routes/emailSettings.js';
 import { emailSendsRouter } from './routes/emailSends.js';
@@ -93,6 +94,7 @@ export function createApp(options: AppOptions = {}) {
     app.use('/api/guides', guidesRouter);
     app.use('/api/resource-links', resourceLinkRouter);
     app.use('/api/documents', documentRouter);
+    app.use('/api/materials', materialRouter);
     app.use('/api/email-templates', emailTemplatesRouter);
     app.use('/api/email-settings', emailSettingsRouter);
     app.use('/api/email-sends', emailSendsRouter);

@@ -14,6 +14,7 @@ import { AuditPage } from '@/features/audit/pages/AuditPage';
 import { StatsPage } from '@/features/stats/pages/StatsPage';
 import { ResourcesPage } from '@/features/resources/pages/ResourcesPage';
 import { ResourcesManagementPage } from '@/features/resources/pages/ResourcesManagementPage';
+import { MaterialsPage } from '@/features/materials/pages/MaterialsPage';
 import { AppSettingsPage } from '@/features/appSettings/pages/AppSettingsPage';
 import { SessionsPage } from '@/features/sessions/pages/SessionsPage';
 
@@ -91,6 +92,20 @@ export const appRoutes: AppRoute[] = [
             'projects:edit:own',
             'projects:delete',
             'projects:delete:own',
+        ],
+        group: 'gestion',
+    },
+    {
+        path: '/gestion/materiales',
+        label: 'Materiales',
+        element: <MaterialsPage />,
+        permissions: [
+            'materials:view',
+            'materials:create',
+            'materials:edit',
+            'materials:edit:own',
+            'materials:delete',
+            'materials:delete:own',
         ],
         group: 'gestion',
     },

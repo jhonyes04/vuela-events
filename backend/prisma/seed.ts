@@ -40,6 +40,12 @@ const PERMISSIONS: { id: string; description: string }[] = [
     { id: 'resources:edit:own', description: 'Editar recursos propios' },
     { id: 'resources:delete', description: 'Eliminar recursos' },
     { id: 'resources:delete:own', description: 'Eliminar recursos propios' },
+    { id: 'materials:view', description: 'Ver materiales' },
+    { id: 'materials:create', description: 'Crear materiales' },
+    { id: 'materials:edit', description: 'Editar materiales' },
+    { id: 'materials:edit:own', description: 'Editar materiales propios' },
+    { id: 'materials:delete', description: 'Eliminar materiales' },
+    { id: 'materials:delete:own', description: 'Eliminar materiales propios' },
     { id: 'email:view', description: 'Ver plantillas de correo' },
     { id: 'email:create', description: 'Crear plantillas de correo' },
     { id: 'email:edit', description: 'Editar plantillas de correo' },
@@ -77,6 +83,10 @@ const ROLE_PERMISSIONS: Record<string, string[]> = {
         'resources:create',
         'resources:edit',
         'resources:delete',
+        'materials:view',
+        'materials:create',
+        'materials:edit',
+        'materials:delete',
         'email:view',
         'email:create',
         'email:edit',
@@ -110,6 +120,10 @@ const ROLE_PERMISSIONS: Record<string, string[]> = {
         'resources:create',
         'resources:edit',
         'resources:delete',
+        'materials:view',
+        'materials:create',
+        'materials:edit',
+        'materials:delete',
         'email:view',
         'email:create',
         'email:edit',
@@ -117,7 +131,11 @@ const ROLE_PERMISSIONS: Record<string, string[]> = {
         'stats:view',
     ],
     ail: [
-        'resources:view'
+        'resources:view',
+        'materials:view',
+        'materials:create',
+        'materials:edit:own',
+        'materials:delete:own',
     ],
 };
 
@@ -285,6 +303,10 @@ const main = async () => {
             data: { createdById: fallbackOwner.id },
         });
         await prisma.resourceLink.updateMany({
+            where: { createdById: null },
+            data: { createdById: fallbackOwner.id },
+        });
+        await prisma.material.updateMany({
             where: { createdById: null },
             data: { createdById: fallbackOwner.id },
         });
