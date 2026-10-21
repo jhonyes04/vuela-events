@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import {
+    Menu,
     SlidersHorizontal,
     Wrench,
     LayoutPanelLeft,
@@ -16,12 +17,19 @@ import {
     SidebarMenuItem,
     SidebarProvider,
 } from '@/components/ui/sidebar';
+import {
+    Sheet,
+    SheetContent,
+    SheetHeader,
+    SheetTitle,
+} from '@/components/ui/sheet';
 import { MaintenanceModeCard } from '@/features/appSettings/components/MaintenanceModeCard';
 import { MaintenanceNoticeCard } from '@/features/appSettings/components/MaintenanceNoticeCard';
 import { ProjectSectionsCard } from '@/features/appSettings/components/ProjectSectionsCard';
 import { UserMenuStyleCard } from '@/features/appSettings/components/UserMenuStyleCard';
 import { useAppSettingsStore } from '@/features/appSettings/store';
 import { useAuth } from '@/features/auth/hooks/context';
+import { Button } from '@/components/ui/button';
 
 type SettingsSectionId = 'maintenance' | 'projects' | 'interface';
 
@@ -56,6 +64,7 @@ export const AppSettingsPage = () => {
     const [activeSection, setActiveSection] = useState<SettingsSectionId>(
         sections[0].id,
     );
+    const [menuOpen, setMenuOpen] = useState(false);
 
     useEffect(() => {
         void loadStore().finally(() => setLoading(false));
@@ -69,43 +78,62 @@ export const AppSettingsPage = () => {
         setActiveSection(sections[0].id);
     }
 
-    return (
-        <section className="mx-auto grid w-full max-w-4xl gap-6">
-            <PageTitle icon={SlidersHorizontal}>Ajustes de la app</PageTitle>
+    const renderMenuItems = (onSelect: (id: SettingsSectionId) => void) =>
+        sections.map((section) => (
+            <SidebarMenuItem key={section.id} className="shrink-0">
+                <SidebarMenuButton
+                    className="min-h-10 cursor-pointer data-active:bg-brand-yellow data-active:text-brand-ink"
+                    isActive={activeSection === section.id}
+                    onClick={() => onSelect(section.id)}
+                >
+                    <section.icon />
+                    <span>{section.title}</span>
+                </SidebarMenuButton>
+            </SidebarMenuItem>
+        ));
 
-            <SidebarProvider className="min-h-0 w-full flex-col items-start gap-4 sm:flex-row sm:gap-6">
+    return (
+        <section className="mx-auto grid w-full">
+            <PageTitle icon={SlidersHorizontal}>Ajustes de la app</PageTitle>
+            <Button
+                type="button"
+                size="icon-sm"
+                className="fixed top-30 right-4 z-40 size-10 shrink-0 rounded-full shadow-lg sm:hidden"
+                aria-label="Abrir menú de ajustes"
+                onClick={() => setMenuOpen(true)}
+            >
+                <Menu />
+            </Button>
+
+            <SidebarProvider className="min-h-0 w-full sm:flex-row sm:gap-4">
                 <Sidebar
                     collapsible="none"
-                    className="h-auto w-full flex-row gap-1 overflow-x-auto bg-transparent p-0 sm:h-fit sm:w-48 sm:shrink-0 sm:flex-col sm:gap-0 sm:overflow-visible sm:rounded-xl sm:border sm:bg-card sm:p-2"
+                    className="hidden sm:flex sm:h-fit sm:w-50 sm:shrink-0 sm:flex-col sm:rounded-xl sm:border sm:bg-card sm:p-2"
                 >
-                    <SidebarContent className="overflow-visible">
+                    <SidebarContent>
                         <SidebarGroup className="p-0">
                             <SidebarGroupContent>
-                                <SidebarMenu className="flex-row gap-1 sm:flex-col sm:gap-0">
-                                    {sections.map((section) => (
-                                        <SidebarMenuItem
-                                            key={section.id}
-                                            className="shrink-0"
-                                        >
-                                            <SidebarMenuButton
-                                                className="cursor-pointer data-active:bg-brand-yellow data-active:text-brand-ink"
-                                                isActive={
-                                                    activeSection === section.id
-                                                }
-                                                onClick={() =>
-                                                    setActiveSection(section.id)
-                                                }
-                                            >
-                                                <section.icon />
-                                                <span>{section.title}</span>
-                                            </SidebarMenuButton>
-                                        </SidebarMenuItem>
-                                    ))}
+                                <SidebarMenu>
+                                    {renderMenuItems(setActiveSection)}
                                 </SidebarMenu>
                             </SidebarGroupContent>
                         </SidebarGroup>
                     </SidebarContent>
                 </Sidebar>
+
+                <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
+                    <SheetContent side="top" className="sm:hidden">
+                        <SheetHeader>
+                            <SheetTitle>Ajustes de la app</SheetTitle>
+                        </SheetHeader>
+                        <SidebarMenu className="gap-1 p-4 pt-0">
+                            {renderMenuItems((id) => {
+                                setActiveSection(id);
+                                setMenuOpen(false);
+                            })}
+                        </SidebarMenu>
+                    </SheetContent>
+                </Sheet>
 
                 <div className="grid w-full min-w-0 gap-4">
                     {activeSection === 'maintenance' && user?.isSuperadmin && (

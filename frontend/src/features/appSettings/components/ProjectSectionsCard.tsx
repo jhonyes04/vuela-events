@@ -167,14 +167,14 @@ export const ProjectSectionsCard = () => {
                 <TabsList className="flex h-auto w-full gap-2 bg-transparent p-0 sm:w-auto">
                     <TabsTrigger
                         value="opening"
-                        className="h-9 flex-1 gap-2 rounded-lg border bg-card px-4 text-sm font-medium shadow-none data-active:border-transparent data-active:bg-brand-yellow data-active:text-brand-ink sm:flex-none sm:px-5"
+                        className="cursor-pointer h-9 flex-1 gap-2 rounded-lg border bg-card px-4 text-sm font-medium shadow-none data-active:border-transparent data-active:bg-brand-yellow data-active:text-brand-ink sm:flex-none sm:px-5"
                     >
                         <ClipboardList className="size-4 shrink-0" />
                         Dar de alta
                     </TabsTrigger>
                     <TabsTrigger
                         value="closing"
-                        className="h-9 flex-1 gap-2 rounded-lg border bg-card px-4 text-sm font-medium shadow-none data-active:border-transparent data-active:bg-brand-yellow data-active:text-brand-ink sm:flex-none sm:px-5"
+                        className="cursor-pointer h-9 flex-1 gap-2 rounded-lg border bg-card px-4 text-sm font-medium shadow-none data-active:border-transparent data-active:bg-brand-yellow data-active:text-brand-ink sm:flex-none sm:px-5"
                     >
                         <ClipboardCheck className="size-4 shrink-0" />
                         Cerrar actividad
