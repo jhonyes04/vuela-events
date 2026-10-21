@@ -9,6 +9,7 @@ import {
     getAppSettings,
     setUserMenuStyle,
     setMaintenanceMode,
+    setProjectSections,
     invalidateMaintenanceModeCache,
 } from '../services/appSettings.js';
 import {
@@ -23,6 +24,11 @@ const userMenuStyleSchema = z.strictObject({
 
 const maintenanceModeSchema = z.strictObject({
     maintenanceMode: z.boolean(),
+});
+
+const projectSectionsSchema = z.strictObject({
+    projectOpeningSections: z.array(z.string().trim().min(1)).min(1),
+    projectClosingSections: z.array(z.string().trim().min(1)).min(1),
 });
 
 const maintenanceNoticeSchema = z.strictObject({
@@ -86,6 +92,26 @@ appSettingsRouter.patch(
     },
 );
 
+appSettingsRouter.patch(
+    '/project-sections',
+    requirePermission('settings:manage'),
+    async (req, res) => {
+        const body = projectSectionsSchema.safeParse(req.body);
+
+        if (!body.success) {
+            res.status(400).json({ error: 'Solicitud no válida' });
+            return;
+        }
+
+        res.json(
+            await setProjectSections(
+                body.data.projectOpeningSections,
+                body.data.projectClosingSections,
+            ),
+        );
+    },
+);
+
 appSettingsRouter.post(
     '/maintenance-notice',
     requireSuperadmin,
@@ -115,8 +141,7 @@ appSettingsRouter.post(
             res.status(202).json({ jobId });
         } catch (e) {
             if (e instanceof StartMaintenanceNoticeError) {
-                const [status, error] =
-                    startMaintenanceNoticeErrors[e.reason];
+                const [status, error] = startMaintenanceNoticeErrors[e.reason];
 
                 res.status(status).json({ error });
                 return;

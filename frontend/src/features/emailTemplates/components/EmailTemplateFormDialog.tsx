@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react';
+import { useState, type SubmitEvent } from 'react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -75,7 +75,7 @@ const EmailTemplateFormBody = ({
         ? [...EVENT_PLACEHOLDERS, ...MAINTENANCE_PLACEHOLDERS]
         : EVENT_PLACEHOLDERS;
 
-    const handleSubmit = async (e: FormEvent) => {
+    const handleSubmit = async (e: SubmitEvent) => {
         e.preventDefault();
         setSubmitting(true);
 

@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from 'react';
+import { useEffect, useState, type SubmitEvent } from 'react';
 import { toast } from 'sonner';
 import { ClipboardCheck, ClipboardList } from 'lucide-react';
 import { RichTextEditor } from '@/components/RichTextEditor';
@@ -42,9 +42,16 @@ import {
 } from '@/features/projects/lib/colors';
 import { ColorPicker } from '@/components/ColorPicker';
 import { useGuidesStore } from '@/features/guides/store';
+import { useAppSettingsStore } from '@/features/appSettings/store';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const EMPTY_EDITOR_HTML = '<p></p>';
+
+const boldSection = (text: string) =>
+    `<p data-locked-heading="true"><strong>${text}</strong></p>`;
+
+const buildTemplateHtml = (sections: string[]) =>
+    sections.map((section) => `${boldSection(section)}<p></p>`).join('');
 
 interface ProjectFormBodyProps {
     project: Project | null;
@@ -59,12 +66,21 @@ const ProjectFormBody = ({
     onClose,
 }: ProjectFormBodyProps) => {
     const chipsAnchor = useComboboxAnchor();
+    const openingSections = useAppSettingsStore(
+        (s) => s.projectOpeningSections,
+    );
+    const closingSections = useAppSettingsStore(
+        (s) => s.projectClosingSections,
+    );
+    const loadAppSettings = useAppSettingsStore((s) => s.load);
     const [name, setName] = useState(project?.name ?? '');
     const [openingInstructions, setOpeningInstructions] = useState(
-        project?.openingInstructions ?? EMPTY_EDITOR_HTML,
+        project?.openingInstructions ??
+            (project ? EMPTY_EDITOR_HTML : buildTemplateHtml(openingSections)),
     );
     const [closingInstructions, setClosingInstructions] = useState(
-        project?.closingInstructions ?? EMPTY_EDITOR_HTML,
+        project?.closingInstructions ??
+            (project ? EMPTY_EDITOR_HTML : buildTemplateHtml(closingSections)),
     );
     const [color, setColor] = useState<string>(
         project?.color ?? PROJECT_COLORS[0],
@@ -82,13 +98,17 @@ const ProjectFormBody = ({
         void loadGuides();
     }, [loadGuides]);
 
+    useEffect(() => {
+        void loadAppSettings();
+    }, [loadAppSettings]);
+
     // La guía actual del proyecto sigue disponible aunque se haya
     // desactivado después de asignarla.
     const activeGuides = guides.filter(
         (guide) => guide.active || guideIds.has(guide.id),
     );
 
-    const handleSubmit = async (e: FormEvent) => {
+    const handleSubmit = async (e: SubmitEvent) => {
         e.preventDefault();
 
         if (guideIds.size === 0) {
@@ -292,6 +312,7 @@ const ProjectFormBody = ({
                                 value={openingInstructions}
                                 onChange={setOpeningInstructions}
                                 contentClassName="max-h-100 min-h-100"
+                                lockedHeadings
                             />
                         </TabsContent>
                         <TabsContent
@@ -305,6 +326,7 @@ const ProjectFormBody = ({
                                 value={closingInstructions}
                                 onChange={setClosingInstructions}
                                 contentClassName="max-h-100 min-h-100"
+                                lockedHeadings
                             />
                         </TabsContent>
                     </Tabs>

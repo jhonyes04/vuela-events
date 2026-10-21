@@ -5,6 +5,8 @@ export type UserMenuStyle = 'dropdown' | 'sheet';
 export interface AppSettingsData {
     userMenuStyle: UserMenuStyle;
     maintenanceMode: boolean;
+    projectOpeningSections: string[];
+    projectClosingSections: string[];
 }
 
 export const getAppSettings = (): Promise<AppSettingsData> =>
@@ -19,6 +21,18 @@ export const setMaintenanceMode = (
     maintenanceMode: boolean,
 ): Promise<{ maintenanceMode: boolean }> =>
     api.patch('/app-settings/maintenance-mode', { maintenanceMode });
+
+export const setProjectSections = (
+    projectOpeningSections: string[],
+    projectClosingSections: string[],
+): Promise<{
+    projectOpeningSections: string[];
+    projectClosingSections: string[];
+}> =>
+    api.patch('/app-settings/project-sections', {
+        projectOpeningSections,
+        projectClosingSections,
+    });
 
 export const startMaintenanceNotice = async (input: {
     from: string;

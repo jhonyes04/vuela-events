@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react';
+import { useState, type SubmitEvent } from 'react';
 import { CircleAlert, CircleCheck, Eye, EyeOff } from 'lucide-react';
 import { toast } from 'sonner';
 import { Alert, AlertTitle } from '@/components/ui/alert';
@@ -24,7 +24,7 @@ export function AppPasswordSection({
     const [showPassword, setShowPassword] = useState(false);
     const [submitting, setSubmitting] = useState(false);
 
-    const handleSubmit = async (e: FormEvent) => {
+    const handleSubmit = async (e: SubmitEvent) => {
         e.preventDefault();
         setSubmitting(true);
 

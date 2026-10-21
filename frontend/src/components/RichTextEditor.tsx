@@ -1,12 +1,13 @@
 import {
     useRef,
     useState,
-    type FormEvent,
+    type SubmitEvent,
     type PointerEvent as ReactPointerEvent,
     type ReactNode,
 } from 'react';
 import {
     EditorContent,
+    Node,
     NodeViewWrapper,
     ReactNodeViewRenderer,
     useEditor,
@@ -20,6 +21,7 @@ import { TextStyle } from '@tiptap/extension-text-style';
 import Link from '@tiptap/extension-link';
 import TextAlign from '@tiptap/extension-text-align';
 import Image from '@tiptap/extension-image';
+import { Plugin, PluginKey } from '@tiptap/pm/state';
 import { OverlayScrollbarsComponent } from 'overlayscrollbars-react';
 import { scrollbarOptions } from '@/lib/overlayScrollbarsOptions';
 import {
@@ -146,7 +148,7 @@ const LinkDialog = ({
     const isLabelValid = !isButton || label.trim().length > 0;
     const isValid = isUrlValid && isLabelValid;
 
-    const handleSubmit = (e: FormEvent) => {
+    const handleSubmit = (e: SubmitEvent) => {
         // stopPropagation: este <form> vive dentro de un Dialog portado a
         // document.body, pero en el árbol de React sigue colgando del <form>
         // de la plantilla. Sin cortar la propagación, el submit sintético
@@ -270,6 +272,67 @@ const LinkWithButton = Link.extend({
                     attrs.buttonStyle ? { style: attrs.buttonStyle } : {},
             },
         };
+    },
+});
+
+// Párrafo fijo no editable ni borrable
+// El HTML persistido lleva data-locked-heading="true" para reconstruirse igual al recargar
+const LockedHeading = Node.create({
+    name: 'lockedHeading',
+    group: 'block',
+    atom: true,
+    selectable: true,
+    draggable: false,
+    content: '',
+
+    addAttributes() {
+        return {
+            text: { default: '' },
+        };
+    },
+
+    parseHTML() {
+        return [
+            {
+                tag: 'p[data-locked-heading]',
+                // Por encima de la prioridad por defecto (50) de Paragraph:
+                // su regla "tag: 'p'" sin atributo también matchearía este
+                // párrafo y ganaría por registrarse antes en el schema.
+                priority: 100,
+                getAttrs: (el) => ({
+                    text: (el as HTMLElement).textContent?.trim() ?? '',
+                }),
+            },
+        ];
+    },
+
+    renderHTML({ node }) {
+        return [
+            'p',
+            { 'data-locked-heading': 'true' },
+            ['strong', {}, node.attrs.text as string],
+        ];
+    },
+
+    addProseMirrorPlugins() {
+        return [
+            new Plugin({
+                key: new PluginKey('lockedHeadingGuard'),
+                filterTransaction: (tr, state) => {
+                    if (!tr.docChanged) return true;
+
+                    const count = (doc: typeof tr.doc) => {
+                        let n = 0;
+                        doc.descendants((node) => {
+                            if (node.type.name === 'lockedHeading') n++;
+                        });
+                        return n;
+                    };
+
+                    return count(tr.doc) >= count(state.doc);
+                },
+            }),
+        ];
     },
 });
 
@@ -621,6 +684,9 @@ interface RichTextEditorProps {
     contentClassName?: string;
     placeholders?: EditorPlaceholder[];
     onImageUpload?: (file: File) => Promise<string | null>;
+    // Activa el nodo LockedHeading (párrafos con data-locked-heading="true"
+    // no editables ni borrables). No afecta a otros usos de este componente.
+    lockedHeadings?: boolean;
 }
 
 // Editor de texto enriquecido reutilizable; el valor entra y sale como HTML.
@@ -631,6 +697,7 @@ export const RichTextEditor = ({
     contentClassName = 'min-h-75',
     placeholders,
     onImageUpload,
+    lockedHeadings,
 }: RichTextEditorProps) => {
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [linkDialogMode, setLinkDialogMode] = useState<LinkDialogMode | null>(
@@ -648,6 +715,7 @@ export const RichTextEditor = ({
             LinkWithButton.configure({ openOnClick: false, autolink: true }),
             TextAlign.configure({ types: ['heading', 'paragraph'] }),
             ResizableImage.configure({ inline: false, allowBase64: true }),
+            ...(lockedHeadings ? [LockedHeading] : []),
         ],
         content: value,
         editorProps: {

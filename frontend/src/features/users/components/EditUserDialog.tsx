@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react';
+import { useState, type SubmitEvent } from 'react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import {
@@ -70,7 +70,7 @@ const EditUserBody = ({
     const needsProjects =
         user.role.id !== ROLE_IDS.DT && user.role.id !== ROLE_IDS.ADMIN;
 
-    const handleSubmit = async (e: FormEvent) => {
+    const handleSubmit = async (e: SubmitEvent) => {
         e.preventDefault();
 
         const values = {

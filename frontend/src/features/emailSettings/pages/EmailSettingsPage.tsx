@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from 'react';
+import { useEffect, useState, type SubmitEvent } from 'react';
 import { CircleAlert, Settings } from 'lucide-react';
 import { toast } from 'sonner';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -132,7 +132,7 @@ export const EmailSettingsPage = () => {
 
     const activeTemplates = templates.filter((t) => t.active);
 
-    const handleSmtpSubmit = async (e: FormEvent) => {
+    const handleSmtpSubmit = async (e: SubmitEvent) => {
         e.preventDefault();
         setSavingSmtp(true);
 
@@ -150,7 +150,7 @@ export const EmailSettingsPage = () => {
         }
     };
 
-    const handleNoReplySmtpSubmit = async (e: FormEvent) => {
+    const handleNoReplySmtpSubmit = async (e: SubmitEvent) => {
         e.preventDefault();
         setSavingNoReplySmtp(true);
 

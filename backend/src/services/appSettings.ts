@@ -7,6 +7,8 @@ export type UserMenuStyle = 'dropdown' | 'sheet';
 export interface AppSettingsData {
     userMenuStyle: UserMenuStyle;
     maintenanceMode: boolean;
+    projectOpeningSections: string[];
+    projectClosingSections: string[];
 }
 
 export const getAppSettings = async (): Promise<AppSettingsData> => {
@@ -17,6 +19,8 @@ export const getAppSettings = async (): Promise<AppSettingsData> => {
     return {
         userMenuStyle: (settings?.userMenuStyle as UserMenuStyle) ?? 'dropdown',
         maintenanceMode: settings?.maintenanceMode ?? false,
+        projectOpeningSections: settings?.projectOpeningSections ?? [],
+        projectClosingSections: settings?.projectClosingSections ?? [],
     };
 };
 
@@ -42,6 +46,30 @@ export const setMaintenanceMode = async (
     });
 
     return { maintenanceMode: settings.maintenanceMode };
+};
+
+export const setProjectSections = async (
+    projectOpeningSections: string[],
+    projectClosingSections: string[],
+): Promise<{
+    projectOpeningSections: string[];
+    projectClosingSections: string[];
+}> => {
+    const settings = await prisma.appSettings.upsert({
+        where: { id: APP_SETTINGS_ID },
+        create: {
+            id: APP_SETTINGS_ID,
+            projectOpeningSections,
+            projectClosingSections,
+        },
+
+        update: { projectOpeningSections, projectClosingSections },
+    });
+
+    return {
+        projectOpeningSections: settings.projectOpeningSections,
+        projectClosingSections: settings.projectClosingSections,
+    };
 };
 
 // Cache en memoria para no golpear la DB en cada request del middleware global.
