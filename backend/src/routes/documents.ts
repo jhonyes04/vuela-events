@@ -2,9 +2,9 @@ import { Router } from 'express';
 import { z } from 'zod';
 import { requireAuth, requirePermission } from '../middleware/auth.js';
 import {
-    ALLOWED_DOCUMENT_TYPES,
     MAX_DOCUMENT_BYTES,
     matchesDocumentType,
+    documentContentTypeSchema,
 } from '../lib/documentValidation.js';
 import {
     DocumentManageError,
@@ -17,14 +17,10 @@ import {
 
 const idParamsSchema = z.object({ id: z.uuid() });
 
-const contentTypeSchema = z.enum(
-    Object.keys(ALLOWED_DOCUMENT_TYPES) as [string, ...string[]],
-);
-
 const createDocumentSchema = z.strictObject({
     title: z.string().trim().min(2).max(100),
     fileName: z.string().trim().min(1).max(255),
-    contentType: contentTypeSchema,
+    contentType: documentContentTypeSchema,
     dataBase64: z.string().min(1),
 });
 
@@ -32,7 +28,7 @@ const updateDocumentSchema = z.strictObject({
     title: z.string().trim().min(2).max(100),
     active: z.boolean(),
     fileName: z.string().trim().min(1).max(255).optional(),
-    contentType: contentTypeSchema.optional(),
+    contentType: documentContentTypeSchema.optional(),
     dataBase64: z.string().min(1).optional(),
 });
 

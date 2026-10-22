@@ -1,4 +1,4 @@
-import { api } from '@/lib/api';
+import { api, downloadFile } from '@/lib/api';
 
 export interface EventItem {
     id: string;
@@ -28,6 +28,7 @@ export interface EventItem {
         documents: { id: string; title: string }[];
     };
     materials: { id: string; name: string; observations: string | null }[];
+    attachments: { id: string; fileName: string }[];
     _count: { registrations: number };
     registered: boolean;
 }
@@ -88,6 +89,16 @@ export const googleCalendarUrl = (event: EventItem): string => {
 
     return `https://calendar.google.com/calendar/render?${params.toString()}`;
 };
+
+export const downloadEventAttachment = (
+    eventId: string,
+    attachmentId: string,
+    fallbackName: string,
+) =>
+    downloadFile(
+        `/events/${eventId}/attachments/${attachmentId}/download`,
+        fallbackName,
+    );
 
 // 'YYYY-MM-DD' del día de Madrid en que ocurre esa fecha
 export const dayKey = (iso: string): string =>
@@ -296,6 +307,12 @@ export const createRecurringEvents = (
 ): Promise<CreatedSeries> =>
     api.post<CreatedSeries>('/events/recurring', payload);
 
+export interface EventAttachmentInput {
+    fileName: string;
+    contentType: string;
+    dataBase64: string;
+}
+
 export interface EventUpdateInput {
     title: string;
     subtitle?: string | undefined;
@@ -306,6 +323,8 @@ export interface EventUpdateInput {
     materialIds: string[];
     startsAt: string;
     endsAt: string;
+    attachments: EventAttachmentInput[];
+    removedAttachmentIds: string[];
 }
 
 // El servidor no devuelve "registered" (no aplica fuera de la vista del

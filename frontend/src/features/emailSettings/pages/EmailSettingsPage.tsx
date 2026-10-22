@@ -2,11 +2,6 @@ import { useEffect, useState, type SubmitEvent } from 'react';
 import { CircleAlert, Settings } from 'lucide-react';
 import { toast } from 'sonner';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { ComboboxField } from '@/components/ComboboxField';
 import {
     getEmailSettings,
     updateSmtpConfig,
@@ -20,6 +15,10 @@ import {
 import { useEmailTemplatesStore } from '@/features/emailTemplates/store';
 import { ApiError } from '@/lib/api';
 import { PageTitle } from '@/components/PageTitle';
+import { SmtpConfigCard } from '@/features/emailSettings/components/SmtpConfigCard';
+import { NoReplySmtpConfigCard } from '@/features/emailSettings/components/NoReplySmtpConfigCard';
+import { TemplateAssignmentCard } from '@/features/emailSettings/components/TemplateAssignmentCard';
+import type { SmtpSender } from '@/features/emailSettings/components/SenderBadge';
 
 const SLOT_LABELS: Record<SlotId, string> = {
     convocatoria: 'Convocatoria',
@@ -32,8 +31,6 @@ const SLOT_LABELS: Record<SlotId, string> = {
     mantenimiento: 'Aviso de mantenimiento',
 };
 
-type SmtpSender = 'gmail' | 'noreply';
-
 const SLOT_SENDER: Record<SlotId, SmtpSender> = {
     convocatoria: 'gmail',
     parte_firmas: 'gmail',
@@ -44,32 +41,6 @@ const SLOT_SENDER: Record<SlotId, SmtpSender> = {
     evento_cancelado: 'noreply',
     mantenimiento: 'noreply',
 };
-
-const SENDER_BADGE: Record<SmtpSender, string> = {
-    gmail: 'Gmail',
-    noreply: 'noreply',
-};
-
-interface TemplateOption {
-    id: string;
-    name: string;
-}
-
-interface SenderBadgeProps {
-    sender: SmtpSender;
-}
-
-const SenderBadge = ({ sender }: SenderBadgeProps) => (
-    <span
-        className={
-            sender === 'gmail'
-                ? 'rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800 dark:bg-amber-900/30 dark:text-amber-300'
-                : 'rounded-full bg-sky-100 px-2 py-0.5 text-xs font-medium text-sky-800 dark:bg-sky-900/30 dark:text-sky-300'
-        }
-    >
-        {SENDER_BADGE[sender]}
-    </span>
-);
 
 const EMPTY_SMTP: SmtpConfig = { host: '', port: 587, secure: true };
 const EMPTY_NOREPLY_SMTP: NoReplySmtpInput = {
@@ -218,325 +189,49 @@ export const EmailSettingsPage = () => {
             </div>
 
             <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
-                <div className="rounded-xl border bg-card p-4">
-                    <div className="mb-4 flex items-center gap-2">
-                        <h2 className="font-medium">Servidor SMTP</h2>
-                        <SenderBadge sender="gmail" />
-                    </div>
-                    <p className="mb-4 text-sm text-muted-foreground">
-                        Sin usuario ni contraseña: se piden justo antes de
-                        enviar, nunca se guardan.
-                    </p>
+                <SmtpConfigCard
+                    smtp={smtp}
+                    onChange={setSmtp}
+                    onSubmit={(e) => void handleSmtpSubmit(e)}
+                    saving={savingSmtp}
+                />
 
-                    <form
-                        id="smtp-form"
-                        onSubmit={(e) => void handleSmtpSubmit(e)}
-                        className="grid gap-4"
-                    >
-                        <div className="grid gap-1.5">
-                            <Label htmlFor="smtp-host">Servidor *</Label>
-                            <Input
-                                id="smtp-host"
-                                required
-                                maxLength={255}
-                                placeholder="smtp.gmail.com"
-                                value={smtp.host}
-                                onChange={(e) =>
-                                    setSmtp((v) => ({
-                                        ...v,
-                                        host: e.target.value,
-                                    }))
-                                }
-                            />
-                        </div>
+                <TemplateAssignmentCard
+                    title="Asignación de plantillas Gmail"
+                    description="Qué plantilla usa cada botón enviado por el SMTP de Gmail."
+                    sender="gmail"
+                    assignments={assignments.filter(
+                        ({ slot }) => SLOT_SENDER[slot] === 'gmail',
+                    )}
+                    slotLabels={SLOT_LABELS}
+                    activeTemplates={activeTemplates}
+                    savingSlot={savingSlot}
+                    onAssignmentChange={(slot, templateId) =>
+                        void handleAssignmentChange(slot, templateId)
+                    }
+                />
 
-                        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                            <div className="grid gap-1.5">
-                                <Label htmlFor="smtp-port">Puerto *</Label>
-                                <Input
-                                    id="smtp-port"
-                                    type="number"
-                                    required
-                                    min={1}
-                                    max={65535}
-                                    value={smtp.port}
-                                    onChange={(e) =>
-                                        setSmtp((v) => ({
-                                            ...v,
-                                            port: Number(e.target.value),
-                                        }))
-                                    }
-                                />
-                            </div>
+                <NoReplySmtpConfigCard
+                    noReplySmtp={noReplySmtp}
+                    onChange={setNoReplySmtp}
+                    onSubmit={(e) => void handleNoReplySmtpSubmit(e)}
+                    saving={savingNoReplySmtp}
+                />
 
-                            <label className="flex items-end gap-2 pb-2 text-sm">
-                                <Checkbox
-                                    checked={smtp.secure}
-                                    onCheckedChange={(checked) =>
-                                        setSmtp((v) => ({
-                                            ...v,
-                                            secure: checked,
-                                        }))
-                                    }
-                                />
-                                TLS
-                            </label>
-                        </div>
-                    </form>
-
-                    <div className="mt-4 flex justify-end">
-                        <Button
-                            type="submit"
-                            form="smtp-form"
-                            disabled={savingSmtp}
-                        >
-                            {savingSmtp ? 'Guardando…' : 'Guardar'}
-                        </Button>
-                    </div>
-                </div>
-
-                <div className="rounded-xl border bg-card p-4">
-                    <div className="mb-1 flex items-center gap-2">
-                        <h2 className="font-medium">
-                            Asignación de plantillas Gmail
-                        </h2>
-                        <SenderBadge sender="gmail" />
-                    </div>
-                    <p className="mb-4 text-sm text-muted-foreground">
-                        Qué plantilla usa cada botón enviado por el SMTP de
-                        Gmail.
-                    </p>
-
-                    <div className="grid gap-4">
-                        {assignments
-                            .filter(
-                                ({ slot }) => SLOT_SENDER[slot] === 'gmail',
-                            )
-                            .map(({ slot, templateId }) => (
-                                <div key={slot} className="grid gap-1.5">
-                                    <Label htmlFor={`slot-${slot}`}>
-                                        {SLOT_LABELS[slot]}
-                                    </Label>
-                                    <ComboboxField
-                                        id={`slot-${slot}`}
-                                        className="w-full"
-                                        disabled={savingSlot === slot}
-                                        items={
-                                            [
-                                                {
-                                                    id: '',
-                                                    name: 'Sin asignar',
-                                                },
-                                                ...activeTemplates,
-                                            ] satisfies TemplateOption[]
-                                        }
-                                        getValue={(t) => t.id}
-                                        getLabel={(t) => t.name}
-                                        value={templateId ?? ''}
-                                        onValueChange={(v) =>
-                                            void handleAssignmentChange(
-                                                slot,
-                                                v,
-                                            )
-                                        }
-                                        placeholder="Sin asignar"
-                                    />
-                                </div>
-                            ))}
-                    </div>
-                </div>
-
-                <div className="rounded-xl border bg-card p-4">
-                    <div className="mb-4 flex items-center gap-2">
-                        <h2 className="font-medium">
-                            Servidor SMTP (noreply)
-                        </h2>
-                        <SenderBadge sender="noreply" />
-                    </div>
-                    <p className="mb-4 text-sm text-muted-foreground">
-                        Cuenta propia del sistema (noreply@vuelaevents.es),
-                        usada para los avisos automáticos. Usuario y
-                        contraseña se guardan aquí, cifrados.
-                    </p>
-
-                    <form
-                        id="noreply-smtp-form"
-                        onSubmit={(e) => void handleNoReplySmtpSubmit(e)}
-                        className="grid gap-4"
-                    >
-                        <div className="grid gap-1.5">
-                            <Label htmlFor="noreply-host">Servidor *</Label>
-                            <Input
-                                id="noreply-host"
-                                required
-                                maxLength={255}
-                                placeholder="smtp.vuelaevents.es"
-                                value={noReplySmtp.host}
-                                onChange={(e) =>
-                                    setNoReplySmtp((v) => ({
-                                        ...v,
-                                        host: e.target.value,
-                                    }))
-                                }
-                            />
-                        </div>
-
-                        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                            <div className="grid gap-1.5">
-                                <Label htmlFor="noreply-port">
-                                    Puerto *
-                                </Label>
-                                <Input
-                                    id="noreply-port"
-                                    type="number"
-                                    required
-                                    min={1}
-                                    max={65535}
-                                    value={noReplySmtp.port}
-                                    onChange={(e) =>
-                                        setNoReplySmtp((v) => ({
-                                            ...v,
-                                            port: Number(e.target.value),
-                                        }))
-                                    }
-                                />
-                            </div>
-
-                            <label className="flex items-end gap-2 pb-2 text-sm">
-                                <Checkbox
-                                    checked={noReplySmtp.secure}
-                                    onCheckedChange={(checked) =>
-                                        setNoReplySmtp((v) => ({
-                                            ...v,
-                                            secure: checked,
-                                        }))
-                                    }
-                                />
-                                TLS
-                            </label>
-                        </div>
-
-                        <div className="grid gap-1.5">
-                            <Label htmlFor="noreply-user">Usuario *</Label>
-                            <Input
-                                id="noreply-user"
-                                required
-                                maxLength={255}
-                                placeholder="noreply@vuelaevents.es"
-                                value={noReplySmtp.user}
-                                onChange={(e) =>
-                                    setNoReplySmtp((v) => ({
-                                        ...v,
-                                        user: e.target.value,
-                                    }))
-                                }
-                            />
-                        </div>
-
-                        <div className="grid gap-1.5">
-                            <Label htmlFor="noreply-password">
-                                Contraseña
-                            </Label>
-                            <Input
-                                id="noreply-password"
-                                type="password"
-                                autoComplete="new-password"
-                                placeholder={
-                                    noReplySmtp.user
-                                        ? 'Dejar vacío para no cambiarla'
-                                        : undefined
-                                }
-                                value={noReplySmtp.password}
-                                onChange={(e) =>
-                                    setNoReplySmtp((v) => ({
-                                        ...v,
-                                        password: e.target.value,
-                                    }))
-                                }
-                            />
-                        </div>
-
-                        <div className="grid gap-1.5">
-                            <Label htmlFor="noreply-from-name">
-                                Nombre del remitente *
-                            </Label>
-                            <Input
-                                id="noreply-from-name"
-                                required
-                                maxLength={100}
-                                placeholder="Vuela Events"
-                                value={noReplySmtp.fromName}
-                                onChange={(e) =>
-                                    setNoReplySmtp((v) => ({
-                                        ...v,
-                                        fromName: e.target.value,
-                                    }))
-                                }
-                            />
-                        </div>
-                    </form>
-
-                    <div className="mt-4 flex justify-end">
-                        <Button
-                            type="submit"
-                            form="noreply-smtp-form"
-                            disabled={savingNoReplySmtp}
-                        >
-                            {savingNoReplySmtp ? 'Guardando…' : 'Guardar'}
-                        </Button>
-                    </div>
-                </div>
-
-                <div className="rounded-xl border bg-card p-4">
-                    <div className="mb-1 flex items-center gap-2">
-                        <h2 className="font-medium">
-                            Asignación de plantillas noreply
-                        </h2>
-                        <SenderBadge sender="noreply" />
-                    </div>
-                    <p className="mb-4 text-sm text-muted-foreground">
-                        Qué plantilla usa cada botón enviado por el SMTP
-                        noreply.
-                    </p>
-
-                    <div className="grid gap-4">
-                        {assignments
-                            .filter(
-                                ({ slot }) => SLOT_SENDER[slot] === 'noreply',
-                            )
-                            .map(({ slot, templateId }) => (
-                                <div key={slot} className="grid gap-1.5">
-                                    <Label htmlFor={`slot-${slot}`}>
-                                        {SLOT_LABELS[slot]}
-                                    </Label>
-                                    <ComboboxField
-                                        id={`slot-${slot}`}
-                                        className="w-full"
-                                        disabled={savingSlot === slot}
-                                        items={
-                                            [
-                                                {
-                                                    id: '',
-                                                    name: 'Sin asignar',
-                                                },
-                                                ...activeTemplates,
-                                            ] satisfies TemplateOption[]
-                                        }
-                                        getValue={(t) => t.id}
-                                        getLabel={(t) => t.name}
-                                        value={templateId ?? ''}
-                                        onValueChange={(v) =>
-                                            void handleAssignmentChange(
-                                                slot,
-                                                v,
-                                            )
-                                        }
-                                        placeholder="Sin asignar"
-                                    />
-                                </div>
-                            ))}
-                    </div>
-                </div>
+                <TemplateAssignmentCard
+                    title="Asignación de plantillas noreply"
+                    description="Qué plantilla usa cada botón enviado por el SMTP noreply."
+                    sender="noreply"
+                    assignments={assignments.filter(
+                        ({ slot }) => SLOT_SENDER[slot] === 'noreply',
+                    )}
+                    slotLabels={SLOT_LABELS}
+                    activeTemplates={activeTemplates}
+                    savingSlot={savingSlot}
+                    onAssignmentChange={(slot, templateId) =>
+                        void handleAssignmentChange(slot, templateId)
+                    }
+                />
             </div>
         </section>
     );

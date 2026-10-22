@@ -1,31 +1,22 @@
 import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
-import { OverlayScrollbarsComponent } from 'overlayscrollbars-react';
 import { useAuth } from '@/features/auth/hooks/context';
 import { ROLE_IDS } from '@/features/users/lib/roles';
 import { DeleteEventDialog } from '@/features/events/components/DeleteEventDialog';
 import { DeleteEventSeriesDialog } from '@/features/events/components/DeleteEventSeriesDialog';
 import { EventInfoRows } from '@/features/events/components/EventInfoRows';
-import { AttendeeChips } from '@/features/events/components/AttendeeChips';
+import { EventMaterialsSection } from '@/features/events/components/EventMaterialsSection';
+import { EventAttachmentsSection } from '@/features/events/components/EventAttachmentsSection';
+import { EventAttendeesSection } from '@/features/events/components/EventAttendeesSection';
+import { EventDetailFooter } from '@/features/events/components/EventDetailFooter';
 import { AddParticipantsDialog } from '@/features/events/components/AddParticipantsDialog';
 import { ParticipantsCountDialog } from '@/features/events/components/ParticipantsCountDialog';
-import {
-    AlertDialog,
-    AlertDialogCancel,
-    AlertDialogContent,
-    AlertDialogDescription,
-    AlertDialogFooter,
-    AlertDialogHeader,
-    AlertDialogTitle,
-    AlertDialogTrigger,
-} from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
-import { Button, buttonVariants } from '@/components/ui/button';
+import { Button } from '@/components/ui/button';
 import {
     Dialog,
     DialogContent,
     DialogDescription,
-    DialogFooter,
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
@@ -39,11 +30,8 @@ import {
 } from '@/features/projects/lib/colors';
 import { ApiError } from '@/lib/api';
 import { cn } from '@/lib/utils';
-import { scrollbarOptions } from '@/lib/overlayScrollbarsOptions';
 import {
     adminUnregisterAttendee,
-    attendanceLabel,
-    googleCalendarUrl,
     hasEnded,
     isFull,
     registerForEventById,
@@ -56,11 +44,7 @@ import {
     AlertCircle,
     ClipboardList,
     EyeIcon,
-    PackageOpen,
     SquareDashedText,
-    UserPlus,
-    UserRoundGroup,
-    Users,
 } from 'lucide-react';
 
 interface EventDetailBodyProps {
@@ -248,237 +232,75 @@ const EventDetailBody = ({
                         </fieldset>
                     )}
 
-                    <fieldset className="rounded-xl border p-3 text-sm text-muted-foreground">
-                        <legend className="flex items-center gap-1.5 whitespace-nowrap px-1 font-bold">
-                            <SquareDashedText className="size-4 shrink-0 text-brand-green" />
-                            Descripción
-                        </legend>
-                        {event.description && (
+                    {event.description && (
+                        <fieldset className="rounded-xl border p-3 text-sm text-muted-foreground">
+                            <legend className="flex items-center gap-1.5 whitespace-nowrap px-1 font-bold">
+                                <SquareDashedText className="size-4 shrink-0 text-brand-green" />
+                                Descripción
+                            </legend>
+
                             <p className="text-sm whitespace-pre-line">
                                 {event.description}
                             </p>
-                        )}
-                    </fieldset>
-
-                    {event.materials.length > 0 && (
-                        <fieldset className="grid grid-cols-1 items-start gap-x-3 gap-y-2 rounded-xl border p-3 text-sm text-muted-foreground sm:grid-cols-[auto_1fr]">
-                            <legend className="flex items-center gap-1.5 whitespace-nowrap px-1 font-bold">
-                                <PackageOpen className="size-4 shrink-0 text-brand-green" />
-                                Materiales
-                            </legend>
-                            <div className="flex flex-wrap items-center gap-2">
-                                {event.materials.map((material) => {
-                                    const badge = (
-                                        <Badge
-                                            variant="default"
-                                            className="bg-orange-300 text-black cursor-pointer"
-                                        >
-                                            {material.name}
-                                        </Badge>
-                                    );
-
-                                    if (!material.observations) {
-                                        return (
-                                            <IconTooltip
-                                                key={material.id}
-                                                label="Sin observaciones"
-                                            >
-                                                <div>{badge}</div>
-                                            </IconTooltip>
-                                        );
-                                    }
-
-                                    return (
-                                        <AlertDialog key={material.id}>
-                                            <IconTooltip label="Ver observaciones">
-                                                <AlertDialogTrigger
-                                                    render={
-                                                        <button type="button" />
-                                                    }
-                                                >
-                                                    {badge}
-                                                </AlertDialogTrigger>
-                                            </IconTooltip>
-                                            <AlertDialogContent>
-                                                <AlertDialogHeader>
-                                                    <AlertDialogTitle>
-                                                        {material.name}
-                                                    </AlertDialogTitle>
-                                                    <AlertDialogDescription>
-                                                        {material.observations}
-                                                    </AlertDialogDescription>
-                                                </AlertDialogHeader>
-                                                <AlertDialogFooter>
-                                                    <AlertDialogCancel variant="default">
-                                                        Cerrar
-                                                    </AlertDialogCancel>
-                                                </AlertDialogFooter>
-                                            </AlertDialogContent>
-                                        </AlertDialog>
-                                    );
-                                })}
-                            </div>
                         </fieldset>
                     )}
 
-                    <fieldset className="rounded-xl border p-3 text-sm text-muted-foreground">
-                        <legend className="flex items-center gap-1.5 whitespace-nowrap px-1 font-bold">
-                            <Users className="size-4 shrink-0 text-brand-green" />
-                            Inscritos ({event._count.registrations})
-                        </legend>
+                    <EventMaterialsSection materials={event.materials} />
 
-                        {event.capacity !== null && (
-                            <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-2">
-                                    <UserRoundGroup className="size-4 shrink-0 text-brand-green" />
-                                    <p className="text-muted-foreground">
-                                        {attendanceLabel(event)}
-                                    </p>
-                                </div>
-                                {canAddAttendees && (
-                                    <IconTooltip label="Agregar participantes">
-                                        <Button
-                                            variant="secondary"
-                                            size="icon-sm"
-                                            aria-label="Agregar participantes"
-                                            onClick={() => setAddOpen(true)}
-                                        >
-                                            <UserPlus className="size-3.5" />
-                                        </Button>
-                                    </IconTooltip>
-                                )}
-                            </div>
-                        )}
+                    <EventAttachmentsSection
+                        eventId={event.id}
+                        attachments={event.attachments}
+                    />
 
-                        {loading ? (
-                            <p
-                                role="status"
-                                className="text-sm text-muted-foreground"
-                            >
-                                Cargando inscritos…
-                            </p>
-                        ) : failed ? (
-                            <p className="text-sm text-destructive">
-                                No se pudo cargar la lista de inscritos.
-                            </p>
-                        ) : attendees.length === 0 ? (
-                            <p className="text-sm text-muted-foreground">
-                                Todavía no hay inscritos.
-                            </p>
-                        ) : (
-                            <OverlayScrollbarsComponent
-                                className="max-h-48 rounded-lg bg-muted/50"
-                                options={scrollbarOptions}
-                                defer
-                            >
-                                <AttendeeChips
-                                    attendees={attendees}
-                                    onDelete={
-                                        canDeleteAttendees
-                                            ? setDeletingAttendee
-                                            : undefined
-                                    }
-                                />
-                            </OverlayScrollbarsComponent>
-                        )}
-                    </fieldset>
+                    <EventAttendeesSection
+                        event={event}
+                        attendees={attendees}
+                        failed={failed}
+                        loading={loading}
+                        canAddAttendees={canAddAttendees}
+                        canDeleteAttendees={canDeleteAttendees}
+                        onAddClick={() => setAddOpen(true)}
+                        onDeleteAttendee={setDeletingAttendee}
+                    />
                     {ended && (
                         <Alert variant="destructive" className="bg-red-100">
                             <AlertCircle />
                             <AlertTitle>Evento finalizado</AlertTitle>
                         </Alert>
                     )}
-                    <DialogFooter>
-                        <div className="flex gap-2 ms-auto">
-                            {canDelete && (
-                                <Button
-                                    variant="destructive"
-                                    disabled={busy}
-                                    onClick={() => setConfirmOpen(true)}
-                                >
-                                    Eliminar sesión
-                                </Button>
-                            )}
+                    <EventDetailFooter
+                        event={event}
+                        busy={busy}
+                        ended={ended}
+                        isAdmin={isAdmin}
+                        canDelete={canDelete}
+                        blockedByCapacity={blockedByCapacity}
+                        onDeleteClick={() => setConfirmOpen(true)}
+                        onDeleteSeriesClick={() => setSeriesConfirmOpen(true)}
+                        onParticipantsClick={() => setParticipantsOpen(true)}
+                        onRegisterClick={() => {
+                            if (ended) {
+                                toast.error('Este evento ha finalizado.');
+                                return;
+                            }
 
-                            {canDelete && event.seriesId && (
-                                <Button
-                                    variant="destructive"
-                                    disabled={busy}
-                                    onClick={() => setSeriesConfirmOpen(true)}
-                                >
-                                    Eliminar toda la serie
-                                </Button>
-                            )}
-                        </div>
+                            if (blockedByCapacity) {
+                                toast.error('Este evento está completo.');
+                                return;
+                            }
 
-                        {!ended && event.registered && (
-                            <a
-                                href={googleCalendarUrl(event)}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className={buttonVariants({
-                                    variant: 'secondary',
-                                })}
-                            >
-                                Añadir a Google Calendar
-                            </a>
-                        )}
-
-                        {ended && (
-                            <Button
-                                variant="default"
-                                className="bg-green-800"
-                                onClick={() => setParticipantsOpen(true)}
-                            >
-                                Usuarios atendidos
-                            </Button>
-                        )}
-
-                        {isAdmin ? null : event.registered ? (
-                            <Button
-                                variant="default"
-                                disabled={busy}
-                                onClick={() =>
-                                    void run(
-                                        () => unregisterFromEventById(event.id),
-                                        'Has cancelado tu inscripción.',
-                                    )
-                                }
-                            >
-                                Cancelar inscripción
-                            </Button>
-                        ) : (
-                            <Button
-                                disabled={busy}
-                                onClick={() => {
-                                    if (ended) {
-                                        toast.error(
-                                            'Este evento ha finalizado.',
-                                        );
-                                        return;
-                                    }
-
-                                    if (blockedByCapacity) {
-                                        toast.error(
-                                            'Este evento está completo.',
-                                        );
-                                        return;
-                                    }
-
-                                    void run(
-                                        () => registerForEventById(event.id),
-                                        'Te has inscrito correctamente.',
-                                    );
-                                }}
-                            >
-                                {ended
-                                    ? 'Finalizado'
-                                    : blockedByCapacity
-                                      ? 'Completo'
-                                      : 'Inscribirme'}
-                            </Button>
-                        )}
-                    </DialogFooter>
+                            void run(
+                                () => registerForEventById(event.id),
+                                'Te has inscrito correctamente.',
+                            );
+                        }}
+                        onUnregisterClick={() =>
+                            void run(
+                                () => unregisterFromEventById(event.id),
+                                'Has cancelado tu inscripción.',
+                            )
+                        }
+                    />
                 </DialogContent>
             </Dialog>
 

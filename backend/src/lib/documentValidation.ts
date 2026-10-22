@@ -1,3 +1,5 @@
+import { z } from 'zod';
+
 export const ALLOWED_DOCUMENT_TYPES = {
     'application/pdf': 'PDF',
     'application/vnd.openxmlformats-officedocument.wordprocessingml.document':
@@ -12,6 +14,10 @@ export const ALLOWED_DOCUMENT_TYPES = {
 } as const;
 
 export type AllowedDocumentType = keyof typeof ALLOWED_DOCUMENT_TYPES;
+
+export const documentContentTypeSchema = z.enum(
+    Object.keys(ALLOWED_DOCUMENT_TYPES) as [string, ...string[]],
+);
 
 export const MAX_DOCUMENT_BYTES = 10 * 1024 * 1024;
 

@@ -22,6 +22,7 @@ model Event {
     registrations               Registration[]
     sentReports                 SentReport[]
     materials                   EventMaterial[]
+    attachments                 EventAttachment[]
 
     @@index([startsAt])
     @@index([seriesId])

@@ -1,4 +1,5 @@
 import { useEffect, useState, type SubmitEvent } from 'react';
+import { readFileAsBase64 } from '@/features/resources/lib/documents';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -10,25 +11,15 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import {
-    Combobox,
-    ComboboxChip,
-    ComboboxChips,
-    ComboboxChipsInput,
-    ComboboxContent,
-    ComboboxEmpty,
-    ComboboxItem,
-    ComboboxList,
-    ComboboxValue,
-    useComboboxAnchor,
-} from '@/components/ui/combobox';
+import { Input } from '@/components/ui/input';
 import { useAuth } from '@/features/auth/hooks/context';
 import {
     EventBasicFields,
     Field,
 } from '@/features/events/components/EventBasicFields';
+import { EventMaterialsField } from '@/features/events/components/EventMaterialsField';
+import { EventAttachmentsField } from '@/features/events/components/EventAttachmentsField';
 import { RecurringEventFields } from '@/features/events/components/RecurringEventFields';
 import { SingleSessionFields } from '@/features/events/components/SingleSessionFields';
 import { api, ApiError } from '@/lib/api';
@@ -86,11 +77,15 @@ function EventFormBody({
               : EMPTY_FORM_VALUES,
     );
     const [submitting, setSubmitting] = useState(false);
+    const [attachmentFiles, setAttachmentFiles] = useState<File[]>([]);
+    const [keptAttachments, setKeptAttachments] = useState(
+        event?.attachments ?? [],
+    );
+
     const projects = useProjectsStore((s) => s.items);
     const loadProjects = useProjectsStore((s) => s.load);
     const materials = useMaterialsStore((s) => s.items);
     const loadMaterials = useMaterialsStore((s) => s.load);
-    const materialsChipsAnchor = useComboboxAnchor();
 
     // Usa la caché si ya se cargaron; solo pide lo que falta.
     useEffect(() => {
@@ -171,11 +166,25 @@ function EventFormBody({
                     return;
                 }
 
+                const newAttachments = await Promise.all(
+                    attachmentFiles.map(async (file) => {
+                        const { contentType, dataBase64 } =
+                            await readFileAsBase64(file);
+                        return { fileName: file.name, contentType, dataBase64 };
+                    }),
+                );
+                const keptIds = new Set(keptAttachments.map((a) => a.id));
+                const removedAttachmentIds = event.attachments
+                    .filter((a) => !keptIds.has(a.id))
+                    .map((a) => a.id);
+
                 setSubmitting(true);
                 await updateEventById(event.id, {
                     ...common,
                     startsAt,
                     endsAt,
+                    attachments: newAttachments,
+                    removedAttachmentIds,
                 });
 
                 toast.success('Evento actualizado.');
@@ -245,8 +254,21 @@ function EventFormBody({
                 return;
             }
 
+            const attachments = await Promise.all(
+                attachmentFiles.map(async (file) => {
+                    const { contentType, dataBase64 } =
+                        await readFileAsBase64(file);
+                    return { fileName: file.name, contentType, dataBase64 };
+                }),
+            );
+
             setSubmitting(true);
-            await api.post('/events', { ...common, startsAt, endsAt });
+            await api.post('/events', {
+                ...common,
+                startsAt,
+                endsAt,
+                attachments,
+            });
 
             onCreated?.({ startsAt, count: 1 });
             onClose();
@@ -323,64 +345,14 @@ function EventFormBody({
                     />
                 )}
 
-                <Field id={fieldId('materials')} label="Materiales (opcional)">
-                    <Combobox
-                        items={activeMaterials.map((material) => ({
-                            value: material.id,
-                            label: material.name,
-                        }))}
-                        multiple
-                        value={values.materialIds}
-                        onValueChange={(ids) =>
-                            setValues((v) => ({ ...v, materialIds: ids }))
-                        }
-                    >
-                        <ComboboxChips
-                            ref={materialsChipsAnchor}
-                            id={fieldId('materials')}
-                        >
-                            <ComboboxValue>
-                                {(value: string[]) =>
-                                    value.map((id) => (
-                                        <ComboboxChip
-                                            key={id}
-                                            className="bg-orange-300"
-                                            removeClassName="hover:bg-transparent hover:text-black"
-                                        >
-                                            {activeMaterials.find(
-                                                (material) =>
-                                                    material.id === id,
-                                            )?.name ?? id}
-                                        </ComboboxChip>
-                                    ))
-                                }
-                            </ComboboxValue>
-                            <ComboboxChipsInput
-                                placeholder={
-                                    values.materialIds.length === 0
-                                        ? 'Buscar un material…'
-                                        : undefined
-                                }
-                            />
-                        </ComboboxChips>
-                        <ComboboxContent anchor={materialsChipsAnchor}>
-                            <ComboboxEmpty>
-                                No se encontraron materiales
-                            </ComboboxEmpty>
-                            <ComboboxList>
-                                {(item: { value: string; label: string }) => (
-                                    <ComboboxItem
-                                        key={item.value}
-                                        value={item.value}
-                                        className="cursor-pointer text-sm"
-                                    >
-                                        {item.label}
-                                    </ComboboxItem>
-                                )}
-                            </ComboboxList>
-                        </ComboboxContent>
-                    </Combobox>
-                </Field>
+                <EventMaterialsField
+                    fieldId={fieldId}
+                    activeMaterials={activeMaterials}
+                    materialIds={values.materialIds}
+                    onChange={(ids) =>
+                        setValues((v) => ({ ...v, materialIds: ids }))
+                    }
+                />
 
                 <Field
                     id={fieldId('capacity')}
@@ -400,7 +372,10 @@ function EventFormBody({
                         onChange={set('capacity')}
                     />
                 </Field>
-                <Field id={fieldId('description')} label="Descripción">
+                <Field
+                    id={fieldId('description')}
+                    label="Descripción (opcional)"
+                >
                     <Textarea
                         id={fieldId('description')}
                         maxLength={2000}
@@ -408,6 +383,16 @@ function EventFormBody({
                         onChange={set('description')}
                     />
                 </Field>
+
+                {!values.recurring && (
+                    <EventAttachmentsField
+                        fieldId={fieldId}
+                        keptAttachments={keptAttachments}
+                        setKeptAttachments={setKeptAttachments}
+                        attachmentFiles={attachmentFiles}
+                        setAttachmentFiles={setAttachmentFiles}
+                    />
+                )}
             </form>
 
             <DialogFooter>

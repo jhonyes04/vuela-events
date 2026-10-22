@@ -14,9 +14,9 @@ import {
     BookOpen,
     ClipboardCheck,
     ClipboardList,
-    FileText,
     Link2,
     FolderOpen,
+    Download,
 } from 'lucide-react';
 import { OverlayScrollbarsComponent } from 'overlayscrollbars-react';
 import { downloadDocument } from '@/features/resources/lib/documents';
@@ -128,7 +128,7 @@ export const ProjectInfoDialog = ({
                                         );
                                     }}
                                 >
-                                    <FileText className="size-3.5 text-blue-600" />
+                                    <Download className="size-3.5 text-blue-600" />
                                     {document.title}
                                 </Button>
                             ))}

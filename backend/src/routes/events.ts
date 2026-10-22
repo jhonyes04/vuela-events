@@ -33,6 +33,11 @@ import {
 } from '../services/attendanceReport.js';
 import { createReportDraft } from '../services/reportDrafts.js';
 import { recordAudit } from '../services/audit.js';
+import { getEventAttachmentFile } from '../services/eventAttachments.js';
+import {
+    matchesDocumentType,
+    documentContentTypeSchema,
+} from '../lib/documentValidation.js';
 
 // Sin caracteres de control ni < > : evita que title/location (insertados sin
 // escapar en el HTML de los correos vía {{proyecto}}/{{lugar}}) cuelen markup.
@@ -58,6 +63,16 @@ const eventFields = {
     capacity: z.number().int().positive().max(100_000).optional(),
     projectId: z.uuid(),
     materialIds: z.array(z.uuid()).default([]),
+    attachments: z
+        .array(
+            z.strictObject({
+                fileName: z.string().trim().min(1).max(255),
+                contentType: documentContentTypeSchema,
+                dataBase64: z.string().min(1),
+            }),
+        )
+        .max(5)
+        .default([]),
 };
 
 // El proyecto debe existir y estar activo: uno inactivo no admite eventos nuevos.
@@ -80,6 +95,48 @@ const materialsExist = async (materialIds: string[]): Promise<boolean> => {
     return count === materialIds.length;
 };
 
+const MAX_EVENT_ATTACHMENT_BYTES = 1 * 1024 * 1024;
+
+type AttachmentInput = {
+    fileName: string;
+    contentType: string;
+    dataBase64: string;
+};
+
+// Decodifica y valida cada adjunto (tamaño + firma de bytes); null si alguno falla.
+const decodeAttachments = (
+    attachments: AttachmentInput[],
+): { fileName: string; contentType: string; data: Buffer }[] | null => {
+    const decoded: { fileName: string; contentType: string; data: Buffer }[] =
+        [];
+
+    for (const attachment of attachments) {
+        let data: Buffer;
+
+        try {
+            data = Buffer.from(attachment.dataBase64, 'base64');
+        } catch {
+            return null;
+        }
+
+        if (
+            data.length === 0 ||
+            data.length > MAX_EVENT_ATTACHMENT_BYTES ||
+            !matchesDocumentType(data, attachment.contentType)
+        ) {
+            return null;
+        }
+
+        decoded.push({
+            fileName: attachment.fileName,
+            contentType: attachment.contentType,
+            data,
+        });
+    }
+
+    return decoded;
+};
+
 const createEventSchema = z
     .strictObject({
         ...eventFields,
@@ -96,6 +153,8 @@ const updateEventSchema = z
         ...eventFields,
         startsAt: z.iso.datetime(),
         endsAt: z.iso.datetime(),
+        // Adjuntos ya subidos que se quitan en esta edición.
+        removedAttachmentIds: z.array(z.uuid()).default([]),
     })
     .refine((e) => new Date(e.endsAt) > new Date(e.startsAt), {
         path: ['endsAt'],
@@ -183,6 +242,9 @@ const eventSelect = {
                 select: { id: true, name: true, observations: true },
             },
         },
+    },
+    attachments: {
+        select: { id: true, fileName: true },
     },
     _count: {
         select: {
@@ -369,6 +431,7 @@ eventsRouter.post(
             capacity,
             projectId,
             materialIds,
+            attachments,
         } = body.data;
 
         if (
@@ -391,6 +454,15 @@ eventsRouter.post(
             return;
         }
 
+        const decodedAttachments = decodeAttachments(attachments);
+
+        if (decodedAttachments === null) {
+            res.status(400).json({
+                error: 'Algún adjunto no es válido: debe ser PDF, Word, Excel u OpenDocument de menos de 1MB',
+            });
+            return;
+        }
+
         const event = await prisma.event.create({
             data: {
                 title,
@@ -404,6 +476,14 @@ eventsRouter.post(
                 createdById: actor.id,
                 materials: {
                     create: materialIds.map((materialId) => ({ materialId })),
+                },
+                attachments: {
+                    create: decodedAttachments.map((attachment) => ({
+                        fileName: attachment.fileName,
+                        contentType: attachment.contentType,
+                        size: attachment.data.length,
+                        data: new Uint8Array(attachment.data),
+                    })),
                 },
             },
             select: eventSelect,
@@ -459,6 +539,8 @@ eventsRouter.patch(
             capacity,
             projectId,
             materialIds,
+            attachments,
+            removedAttachmentIds,
         } = body.data;
 
         if (!(await isActiveProject(projectId))) {
@@ -473,11 +555,35 @@ eventsRouter.patch(
 
         const exists = await prisma.event.findUnique({
             where: { id: params.data.id },
-            select: { id: true, startsAt: true },
+            select: {
+                id: true,
+                startsAt: true,
+                attachments: { select: { id: true } },
+            },
         });
 
         if (!exists) {
             res.status(404).json({ error: 'Evento no encontrado' });
+            return;
+        }
+
+        const keptAttachmentIds = exists.attachments
+            .map((a) => a.id)
+            .filter((id) => !removedAttachmentIds.includes(id));
+
+        const decodedAttachments = decodeAttachments(attachments);
+
+        if (decodedAttachments === null) {
+            res.status(400).json({
+                error: 'Algún adjunto no es válido: debe ser PDF, Word, Excel u OpenDocument de menos de 1MB',
+            });
+            return;
+        }
+
+        if (keptAttachmentIds.length + decodedAttachments.length > 5) {
+            res.status(400).json({
+                error: 'Un evento no puede tener más de 5 documentos adjuntos',
+            });
             return;
         }
 
@@ -496,7 +602,7 @@ eventsRouter.patch(
             return;
         }
 
-        const [, , event] = await prisma.$transaction([
+        const [, , , , event] = await prisma.$transaction([
             prisma.eventMaterial.deleteMany({
                 where: { eventId: params.data.id },
             }),
@@ -504,6 +610,21 @@ eventsRouter.patch(
                 data: materialIds.map((materialId) => ({
                     eventId: params.data.id,
                     materialId,
+                })),
+            }),
+            prisma.eventAttachment.deleteMany({
+                where: {
+                    eventId: params.data.id,
+                    id: { in: removedAttachmentIds },
+                },
+            }),
+            prisma.eventAttachment.createMany({
+                data: decodedAttachments.map((attachment) => ({
+                    eventId: params.data.id,
+                    fileName: attachment.fileName,
+                    contentType: attachment.contentType,
+                    size: attachment.data.length,
+                    data: new Uint8Array(attachment.data),
                 })),
             }),
             prisma.event.update({
@@ -612,7 +733,16 @@ eventsRouter.post(
             return;
         }
 
-        const { from, to, weekdays, startTime, endTime, ...fields } = body.data;
+        // Los adjuntos solo se admiten al crear un evento suelto, no una serie.
+        const {
+            from,
+            to,
+            weekdays,
+            startTime,
+            endTime,
+            attachments: _attachments,
+            ...fields
+        } = body.data;
 
         if (
             !actor.permissions.includes('events:backdate') &&
@@ -935,6 +1065,43 @@ eventsRouter.delete(
 
             throw e;
         }
+    },
+);
+
+const eventAttachmentParamsSchema = z.object({
+    id: z.uuid(),
+    attachmentId: z.uuid(),
+});
+
+// Descargar un adjunto del evento: cualquier persona autenticada (mismo
+// criterio que el resto de la ficha del evento).
+eventsRouter.get(
+    '/:id/attachments/:attachmentId/download',
+    async (req, res) => {
+        const params = eventAttachmentParamsSchema.safeParse(req.params);
+
+        if (!params.success) {
+            res.status(400).json({ error: 'Solicitud no válida' });
+            return;
+        }
+
+        const attachment = await getEventAttachmentFile(
+            params.data.id,
+            params.data.attachmentId,
+        );
+
+        if (!attachment) {
+            res.status(404).json({ error: 'Adjunto no encontrado' });
+            return;
+        }
+
+        res.setHeader('Content-Type', attachment.contentType);
+        res.setHeader(
+            'Content-Disposition',
+            "attachment; filename*=UTF-8''" +
+                encodeURIComponent(attachment.fileName),
+        );
+        res.send(Buffer.from(attachment.data));
     },
 );
 

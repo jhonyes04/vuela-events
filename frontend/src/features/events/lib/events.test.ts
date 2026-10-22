@@ -37,6 +37,7 @@ const event = (id: string, startsAt: string): EventItem => ({
         documents: [],
     },
     materials: [],
+    attachments: [],
     _count: { registrations: 0 },
     registered: false,
 });

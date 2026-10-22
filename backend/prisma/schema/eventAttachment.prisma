@@ -1,0 +1,14 @@
+model EventAttachment {
+    id              String      @id @default(uuid()) @db.Uuid
+    eventId         String      @db.Uuid
+    fileName        String      @db.VarChar(255)
+    contentType     String      @db.VarChar(100)
+    size            Int
+    data            Bytes
+    createdAt       DateTime    @default(now())
+
+    event           Event       @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+    @@index([eventId])
+    @@map("event_attachments")
+}

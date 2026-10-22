@@ -1,75 +1,32 @@
 import { useEffect, useState } from 'react';
-import {
-    CircleCheck,
-    CircleX,
-    Eye,
-    FileText,
-    FolderOpen,
-    Link2,
-    Pencil,
-    Trash2,
-} from 'lucide-react';
+import { FolderOpen } from 'lucide-react';
 import { useAuth } from '@/features/auth/hooks/context';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
-import { IconTooltip } from '@/components/IconTooltip';
-import { ConfirmDeleteDialog } from '@/components/ConfirmDeleteDialog';
 import { PageTitle } from '@/components/PageTitle';
 import { ListErrors } from '@/features/users/components/ListErrors';
-import { DataTable, type DataTableColumn } from '@/components/DataTable';
+import { DataTable } from '@/components/DataTable';
 import { ComboboxField } from '@/components/ComboboxField';
 import { PaginationControls } from '@/components/PaginationControls';
 import { usePagination } from '@/hooks/usePagination';
 import { useSort } from '@/hooks/useSort';
 import { canManageResource } from '@/lib/ownership';
-import {
-    deleteDocument,
-    downloadDocument,
-    type Document,
-} from '@/features/resources/lib/documents';
-import {
-    deleteResourceLink,
-    type ResourceLink,
-} from '@/features/resources/lib/resourceLinks';
+import { downloadDocument, type Document } from '@/features/resources/lib/documents';
+import type { ResourceLink } from '@/features/resources/lib/resourceLinks';
 import { useDocumentsStore } from '@/features/resources/documentsStore';
 import { useResourceLinksStore } from '@/features/resources/store';
 import { DocumentFormDialog } from '@/features/resources/components/DocumentFormDialog';
 import { ResourceLinkFormDialog } from '@/features/resources/components/ResourceLinkFormDialog';
-
-type ResourceKind = 'document' | 'link';
-
-interface ResourceRow {
-    id: string;
-    kind: ResourceKind;
-    title: string;
-    active: boolean;
-    inUse: boolean;
-    createdById: string | null;
-    detail: string;
-    document?: Document;
-    link?: ResourceLink;
-}
-
-interface Pending {
-    rows: ResourceRow[];
-    label: string;
-}
-
-type SortKey = 'title' | 'kind';
-type KindFilter = '' | ResourceKind;
-
-const KIND_FILTER_LABELS: Record<KindFilter, string> = {
-    '': 'Todos los tipos',
-    document: 'Documentos',
-    link: 'Enlaces',
-};
-
-const formatSize = (bytes: number): string =>
-    bytes < 1024 * 1024
-        ? `${Math.round(bytes / 1024)} KB`
-        : `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+import { ResourceDeleteDialog } from '@/features/resources/components/ResourceDeleteDialog';
+import { buildResourceColumns } from '@/features/resources/components/resourceColumns';
+import {
+    KIND_FILTER_LABELS,
+    formatSize,
+    type KindFilter,
+    type Pending,
+    type ResourceRow,
+    type SortKey,
+} from './resourcesTable.types';
 
 export const ResourcesManagementPage = () => {
     const { user } = useAuth();
@@ -242,154 +199,18 @@ export const ResourcesManagementPage = () => {
         }
     };
 
-    const columns: DataTableColumn<ResourceRow, SortKey>[] = [
-        {
-            key: 'select',
-            header: (
-                <Checkbox
-                    aria-label="Seleccionar todos"
-                    checked={allPagedSelected}
-                    onCheckedChange={toggleAllPaged}
-                />
-            ),
-            headerClassName: 'w-10 font-normal',
-            render: (row) =>
-                canDeleteRow(row) &&
-                !row.inUse && (
-                    <Checkbox
-                        aria-label="Seleccionar"
-                        checked={selected.has(rowKey(row))}
-                        onCheckedChange={() => toggleOne(rowKey(row))}
-                    />
-                ),
-        },
-        {
-            key: 'kind',
-            header: 'Tipo',
-            sortKey: 'kind',
-            cellClassName: 'whitespace-nowrap',
-            render: (row) => (
-                <Badge
-                    variant="outline"
-                    className={`${row.kind === 'document' ? 'bg-blue-300' : 'bg-green-300'} gap-1`}
-                >
-                    {row.kind === 'document' ? (
-                        <FileText className="size-3.5" />
-                    ) : (
-                        <Link2 className="size-3.5" />
-                    )}
-                    {row.kind === 'document' ? 'Documento' : 'Enlace'}
-                </Badge>
-            ),
-        },
-        {
-            key: 'title',
-            header: 'Título',
-            sortKey: 'title',
-            render: (row) => (
-                <div className="min-w-0">
-                    <p className="truncate font-medium">{row.title}</p>
-                    <p className="truncate text-xs text-muted-foreground">
-                        {row.detail}
-                    </p>
-                </div>
-            ),
-        },
-        {
-            key: 'inUse',
-            header: 'En uso',
-            cellClassName: 'flex justify-center',
-            render: (row) =>
-                row.inUse ? (
-                    <IconTooltip label="En uso en algún proyecto">
-                        <CircleCheck className="size-4 text-emerald-600" />
-                    </IconTooltip>
-                ) : (
-                    <IconTooltip label="No usado">
-                        <CircleX className="size-4 text-destructive" />
-                    </IconTooltip>
-                ),
-        },
-        {
-            key: 'status',
-            header: 'Estado',
-            render: (row) =>
-                row.active ? (
-                    <Badge
-                        variant="outline"
-                        className="border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
-                    >
-                        Activo
-                    </Badge>
-                ) : (
-                    <Badge
-                        variant="outline"
-                        className="border-red-500/30 bg-red-500/10 text-red-600 dark:text-red-400"
-                    >
-                        Inactivo
-                    </Badge>
-                ),
-        },
-
-        {
-            key: 'actions',
-            header: <span className="sr-only">Acciones</span>,
-            align: 'right',
-            cellClassName: 'flex justify-end gap-2',
-            render: (row) => {
-                const canEditRow = canManageResource(
-                    user,
-                    row.createdById,
-                    'resources:edit',
-                    'resources:edit:own',
-                );
-                return (
-                    <>
-                        <IconTooltip label="Ver">
-                            <Button
-                                variant="secondary"
-                                size="icon"
-                                aria-label="Ver"
-                                onClick={() => view(row)}
-                            >
-                                <Eye className="size-4" />
-                            </Button>
-                        </IconTooltip>
-                        {canEditRow && (
-                            <IconTooltip label="Editar">
-                                <Button
-                                    variant="secondary"
-                                    size="icon"
-                                    aria-label="Editar"
-                                    onClick={() => openEdit(row)}
-                                >
-                                    <Pencil className="size-4" />
-                                </Button>
-                            </IconTooltip>
-                        )}
-                        {canDeleteRow(row) && (
-                            <IconTooltip label="Eliminar">
-                                <Button
-                                    variant="destructive"
-                                    size="icon"
-                                    aria-label="Eliminar"
-                                    disabled={row.inUse}
-                                    onClick={() =>
-                                        setDeleting({
-                                            rows: [row],
-                                            label: `«${row.title}»`,
-                                        })
-                                    }
-                                >
-                                    <Trash2 className="size-4" />
-                                </Button>
-                            </IconTooltip>
-                        )}
-                    </>
-                );
-            },
-        },
-    ];
+    const columns = buildResourceColumns({
+        user,
+        selected,
+        allPagedSelected,
+        toggleAllPaged,
+        toggleOne,
+        rowKey,
+        canDeleteRow,
+        openEdit,
+        view,
+        setDeleting,
+    });
 
     return (
         <section>
@@ -516,66 +337,27 @@ export const ResourcesManagementPage = () => {
                 onSaved={upsertLink}
             />
 
-            {deleting && (
-                <ConfirmDeleteDialog
-                    open={deleting !== null}
-                    onOpenChange={(open) => !open && setDeleting(null)}
-                    title="Eliminar recursos"
-                    description={`¿Eliminar ${deleting.label}? Esta acción no se puede deshacer.`}
-                    confirmLabel="Eliminar"
-                    deletingLabel="Eliminando…"
-                    errorFallback="No se pudo eliminar el recurso"
-                    successLabel={({ succeeded, failed }) =>
-                        failed === 0
-                            ? succeeded.length === 1
-                                ? 'Recurso eliminado.'
-                                : `${succeeded.length} recursos eliminados.`
-                            : `${succeeded.length} eliminado${succeeded.length === 1 ? '' : 's'}, ${failed} en uso (no se pudo eliminar).`
-                    }
-                    onConfirm={async () => {
-                        const results = await Promise.allSettled(
-                            deleting.rows.map((row) =>
-                                (row.kind === 'document'
-                                    ? deleteDocument(row.id)
-                                    : deleteResourceLink(row.id)
-                                ).then(() => row),
-                            ),
-                        );
-                        const succeeded = results
-                            .filter(
-                                (r): r is PromiseFulfilledResult<ResourceRow> =>
-                                    r.status === 'fulfilled',
-                            )
-                            .map((r) => r.value);
-                        const failed = deleting.rows.length - succeeded.length;
-
-                        if (succeeded.length === 0) {
-                            throw new Error('No se pudo eliminar');
+            <ResourceDeleteDialog
+                pending={deleting}
+                onOpenChange={(open) => !open && setDeleting(null)}
+                onDeleted={({ succeeded }) => {
+                    succeeded.forEach((row) => {
+                        if (row.kind === 'document') {
+                            removeDocument(row.id);
+                        } else {
+                            removeLink(row.id);
                         }
+                    });
+                    setSelected((prev) => {
+                        const next = new Set(prev);
 
-                        return { succeeded, failed };
-                    }}
-                    onDeleted={({ succeeded }) => {
-                        succeeded.forEach((row) => {
-                            if (row.kind === 'document') {
-                                removeDocument(row.id);
-                            } else {
-                                removeLink(row.id);
-                            }
-                        });
-                        setSelected((prev) => {
-                            const next = new Set(prev);
+                        succeeded.forEach((row) => next.delete(rowKey(row)));
 
-                            succeeded.forEach((row) =>
-                                next.delete(rowKey(row)),
-                            );
-
-                            return next;
-                        });
-                        setDeleting(null);
-                    }}
-                />
-            )}
+                        return next;
+                    });
+                    setDeleting(null);
+                }}
+            />
         </section>
     );
 };

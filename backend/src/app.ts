@@ -71,6 +71,8 @@ export function createApp(options: AppOptions = {}) {
     app.use('/api/documents', express.json({ limit: '14mb' }));
     // El PDF de estadísticas con gráficos reales sube varias capturas PNG en base64.
     app.use('/api/stats', express.json({ limit: '30mb' }));
+    // Eventos: hasta 5 adjuntos en base64, 1MB cada uno (antes de inflar a base64).
+    app.use('/api/events', express.json({ limit: '8mb' }));
     app.use(express.json({ limit: '500kb' }));
 
     app.use(sessionMiddleware);
