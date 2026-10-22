@@ -1,0 +1,12 @@
+model EventMaterial {
+    eventId         String          @db.Uuid
+    materialId      String          @db.Uuid
+    createdAt       DateTime        @default(now())
+
+    event           Event           @relation(fields: [eventId], references: [id], onDelete: Cascade)
+    material        Material        @relation(fields: [materialId], references: [id], onDelete: Restrict)
+
+    @@id([eventId, materialId])
+    @@index([materialId])
+    @@map("event_materials")
+}

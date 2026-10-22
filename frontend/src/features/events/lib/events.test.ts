@@ -36,6 +36,7 @@ const event = (id: string, startsAt: string): EventItem => ({
         resourceLinks: [],
         documents: [],
     },
+    materials: [],
     _count: { registrations: 0 },
     registered: false,
 });

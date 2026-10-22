@@ -3,12 +3,14 @@ import { api } from '@/lib/api';
 export interface Material {
     id: string;
     name: string;
+    observations: string | null;
     active: boolean;
     createdById: string | null;
 }
 
 export interface MaterialInput {
     name: string;
+    observations?: string | undefined;
 }
 
 export interface MaterialUpdateInput extends MaterialInput {

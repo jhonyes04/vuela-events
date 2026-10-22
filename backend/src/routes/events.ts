@@ -57,6 +57,7 @@ const eventFields = {
     location: z.string().trim().min(1).max(200).regex(NO_CONTROL_OR_TAGS),
     capacity: z.number().int().positive().max(100_000).optional(),
     projectId: z.uuid(),
+    materialIds: z.array(z.uuid()).default([]),
 };
 
 // El proyecto debe existir y estar activo: uno inactivo no admite eventos nuevos.
@@ -67,6 +68,16 @@ const isActiveProject = async (projectId: string): Promise<boolean> => {
     });
 
     return project?.active === true;
+};
+
+const materialsExist = async (materialIds: string[]): Promise<boolean> => {
+    if (materialIds.length === 0) return true;
+
+    const count = await prisma.material.count({
+        where: { id: { in: materialIds } },
+    });
+
+    return count === materialIds.length;
 };
 
 const createEventSchema = z
@@ -166,6 +177,13 @@ const eventSelect = {
             },
         },
     },
+    materials: {
+        select: {
+            material: {
+                select: { id: true, name: true, observations: true },
+            },
+        },
+    },
     _count: {
         select: {
             registrations: { where: { user: { roleId: { not: 'dt' } } } },
@@ -182,6 +200,13 @@ const flattenEventProject = <
             }[];
             documents: { document: { id: string; title: string } }[];
         };
+        materials: {
+            material: {
+                id: string;
+                name: string;
+                observations: string | null;
+            };
+        }[];
     },
 >(
     event: T,
@@ -195,6 +220,7 @@ const flattenEventProject = <
         ),
         documents: event.project.documents.map((document) => document.document),
     },
+    materials: event.materials.map((material) => material.material),
 });
 
 const eventUserParamsSchema = z.object({ id: z.uuid(), userId: z.uuid() });
@@ -342,6 +368,7 @@ eventsRouter.post(
             endsAt,
             capacity,
             projectId,
+            materialIds,
         } = body.data;
 
         if (
@@ -359,6 +386,11 @@ eventsRouter.post(
             return;
         }
 
+        if (!(await materialsExist(materialIds))) {
+            res.status(400).json({ error: 'Material no válido' });
+            return;
+        }
+
         const event = await prisma.event.create({
             data: {
                 title,
@@ -370,6 +402,9 @@ eventsRouter.post(
                 capacity,
                 projectId,
                 createdById: actor.id,
+                materials: {
+                    create: materialIds.map((materialId) => ({ materialId })),
+                },
             },
             select: eventSelect,
         });
@@ -423,10 +458,16 @@ eventsRouter.patch(
             endsAt,
             capacity,
             projectId,
+            materialIds,
         } = body.data;
 
         if (!(await isActiveProject(projectId))) {
             res.status(400).json({ error: 'Proyecto no válido' });
+            return;
+        }
+
+        if (!(await materialsExist(materialIds))) {
+            res.status(400).json({ error: 'Material no válido' });
             return;
         }
 
@@ -455,20 +496,31 @@ eventsRouter.patch(
             return;
         }
 
-        const event = await prisma.event.update({
-            where: { id: params.data.id },
-            data: {
-                title,
-                subtitle,
-                description,
-                location,
-                startsAt: new Date(startsAt),
-                endsAt: new Date(endsAt),
-                capacity,
-                projectId,
-            },
-            select: eventSelect,
-        });
+        const [, , event] = await prisma.$transaction([
+            prisma.eventMaterial.deleteMany({
+                where: { eventId: params.data.id },
+            }),
+            prisma.eventMaterial.createMany({
+                data: materialIds.map((materialId) => ({
+                    eventId: params.data.id,
+                    materialId,
+                })),
+            }),
+            prisma.event.update({
+                where: { id: params.data.id },
+                data: {
+                    title,
+                    subtitle,
+                    description,
+                    location,
+                    startsAt: new Date(startsAt),
+                    endsAt: new Date(endsAt),
+                    capacity,
+                    projectId,
+                },
+                select: eventSelect,
+            }),
+        ]);
 
         await recordAudit({
             action: 'event_updated',
@@ -574,6 +626,11 @@ eventsRouter.post(
 
         if (!(await isActiveProject(fields.projectId))) {
             res.status(400).json({ error: 'Proyecto no válido' });
+            return;
+        }
+
+        if (!(await materialsExist(fields.materialIds))) {
+            res.status(400).json({ error: 'Material no válido' });
             return;
         }
 

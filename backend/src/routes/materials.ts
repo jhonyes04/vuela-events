@@ -11,12 +11,16 @@ import {
 
 const idParamsSchema = z.object({ id: z.uuid() });
 
+const observationsSchema = z.string().trim().max(300).optional();
+
 const createMaterialSchema = z.strictObject({
     name: z.string().trim().min(2).max(100),
+    observations: observationsSchema,
 });
 
 const updateMaterialSchema = z.strictObject({
     name: z.string().trim().min(2).max(100),
+    observations: observationsSchema,
     active: z.boolean(),
 });
 
@@ -69,7 +73,11 @@ materialRouter.post(
         }
 
         try {
-            const material = await createMaterial(actor.id, body.data.name);
+            const material = await createMaterial(
+                actor.id,
+                body.data.name,
+                body.data.observations ?? null,
+            );
 
             res.status(201).json({ material });
         } catch (e) {
@@ -105,11 +113,10 @@ materialRouter.patch(
         }
 
         try {
-            const material = await updateMaterial(
-                actor,
-                params.data.id,
-                body.data,
-            );
+            const material = await updateMaterial(actor, params.data.id, {
+                ...body.data,
+                observations: body.data.observations ?? null,
+            });
 
             res.json({ material });
         } catch (e) {

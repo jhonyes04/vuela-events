@@ -21,6 +21,7 @@ model Event {
     project                     Project         @relation(fields: [projectId], references: [id], onDelete: Restrict)
     registrations               Registration[]
     sentReports                 SentReport[]
+    materials                   EventMaterial[]
 
     @@index([startsAt])
     @@index([seriesId])

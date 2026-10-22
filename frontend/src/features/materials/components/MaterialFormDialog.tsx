@@ -10,6 +10,7 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { ApiError } from '@/lib/api';
 import {
@@ -30,6 +31,9 @@ const MaterialFormBody = ({
     onClose,
 }: MaterialFormBodyProps) => {
     const [name, setName] = useState(material?.name ?? '');
+    const [observations, setObservations] = useState(
+        material?.observations ?? '',
+    );
     const [active, setActive] = useState(material?.active ?? true);
     const [submitting, setSubmitting] = useState(false);
 
@@ -38,11 +42,17 @@ const MaterialFormBody = ({
         setSubmitting(true);
 
         try {
+            const payload = {
+                name,
+                observations: observations || undefined,
+            };
             const saved = material
-                ? await updateMaterial(material.id, { name, active })
-                : await createMaterial({ name });
+                ? await updateMaterial(material.id, { ...payload, active })
+                : await createMaterial(payload);
 
-            toast.success(material ? 'Material actualizado.' : 'Material creado.');
+            toast.success(
+                material ? 'Material actualizado.' : 'Material creado.',
+            );
             onSaved(saved);
             onClose();
         } catch (error) {
@@ -81,6 +91,16 @@ const MaterialFormBody = ({
                     />
                 </div>
 
+                <div className="grid gap-1.5">
+                    <Label htmlFor="material-observations">Observaciones</Label>
+                    <Textarea
+                        id="material-observations"
+                        maxLength={300}
+                        value={observations}
+                        onChange={(e) => setObservations(e.target.value)}
+                    />
+                </div>
+
                 {material && (
                     <label className="flex items-center gap-2 text-sm">
                         <Checkbox
@@ -102,7 +122,11 @@ const MaterialFormBody = ({
                 >
                     Cancelar
                 </Button>
-                <Button type="submit" form="material-form" disabled={submitting}>
+                <Button
+                    type="submit"
+                    form="material-form"
+                    disabled={submitting}
+                >
                     {submitting ? 'Guardando…' : 'Guardar'}
                 </Button>
             </DialogFooter>

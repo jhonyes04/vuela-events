@@ -7,6 +7,7 @@ export interface FormValues {
     description: string;
     capacity: string;
     projectId: string;
+    materialIds: string[];
     // Evento suelto
     startsAt: string;
     endsAt: string;
@@ -19,7 +20,10 @@ export interface FormValues {
     endTime: string;
 }
 
-export type TextField = Exclude<keyof FormValues, 'recurring' | 'weekdays'>;
+export type TextField = Exclude<
+    keyof FormValues,
+    'recurring' | 'weekdays' | 'materialIds'
+>;
 
 export const EMPTY_FORM_VALUES: FormValues = {
     title: '',
@@ -28,6 +32,7 @@ export const EMPTY_FORM_VALUES: FormValues = {
     description: '',
     capacity: '',
     projectId: '',
+    materialIds: [],
     startsAt: '',
     endsAt: '',
     recurring: false,
@@ -45,6 +50,7 @@ export const valuesFromEvent = (event: EventItem): FormValues => ({
     description: event.description ?? '',
     capacity: event.capacity ? String(event.capacity) : '',
     projectId: event.project.id,
+    materialIds: event.materials.map((material) => material.id),
     startsAt: isoToMadridLocal(event.startsAt),
     endsAt: isoToMadridLocal(event.endsAt),
     recurring: false,

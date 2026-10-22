@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Package, Pencil, Trash2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { IconTooltip } from '@/components/IconTooltip';
 import { ConfirmDeleteDialog } from '@/components/ConfirmDeleteDialog';
@@ -12,12 +13,20 @@ import { usePagination } from '@/hooks/usePagination';
 import { useSort } from '@/hooks/useSort';
 import { ListErrors } from '@/features/users/components/ListErrors';
 import { MaterialFormDialog } from '@/features/materials/components/MaterialFormDialog';
-import { deleteMaterial, type Material } from '@/features/materials/lib/materials';
+import {
+    deleteMaterial,
+    type Material,
+} from '@/features/materials/lib/materials';
 import { useMaterialsStore } from '@/features/materials/store';
 import { useAuth } from '@/features/auth/hooks/context';
 import { canManageResource } from '@/lib/ownership';
 
 type SortKey = 'name' | 'active';
+
+interface Pending {
+    ids: string[];
+    label: string;
+}
 
 export const MaterialsPage = () => {
     const { user } = useAuth();
@@ -31,7 +40,8 @@ export const MaterialsPage = () => {
     const [formOpen, setFormOpen] = useState(false);
     const [formKey, setFormKey] = useState(0);
     const [editing, setEditing] = useState<Material | null>(null);
-    const [deleting, setDeleting] = useState<Material | null>(null);
+    const [deleting, setDeleting] = useState<Pending | null>(null);
+    const [selected, setSelected] = useState<Set<string>>(new Set());
 
     // Al entrar se refresca, pero la lista en caché se ve mientras tanto.
     useEffect(() => {
@@ -67,12 +77,79 @@ export const MaterialsPage = () => {
     const { paged, page, pageCount, pageSize, total, setPage, setPageSize } =
         usePagination(sorted, 10);
 
+    const canDeleteMaterial = (material: Material) =>
+        canManageResource(
+            user,
+            material.createdById,
+            'materials:delete',
+            'materials:delete:own',
+        );
+
+    const deletablePaged = paged.filter(canDeleteMaterial);
+    const allPagedSelected =
+        deletablePaged.length > 0 &&
+        deletablePaged.every((material) => selected.has(material.id));
+
+    const toggleAllPaged = () => {
+        setSelected((prev) => {
+            const next = new Set(prev);
+
+            if (allPagedSelected) {
+                deletablePaged.forEach((material) => next.delete(material.id));
+            } else {
+                deletablePaged.forEach((material) => next.add(material.id));
+            }
+
+            return next;
+        });
+    };
+
+    const toggleOne = (id: string) => {
+        setSelected((prev) => {
+            const next = new Set(prev);
+
+            if (next.has(id)) {
+                next.delete(id);
+            } else {
+                next.add(id);
+            }
+
+            return next;
+        });
+    };
+
     const columns: DataTableColumn<Material, SortKey>[] = [
+        {
+            key: 'select',
+            header: (
+                <Checkbox
+                    aria-label="Seleccionar todos"
+                    checked={allPagedSelected}
+                    onCheckedChange={toggleAllPaged}
+                />
+            ),
+            headerClassName: 'w-10 font-normal',
+            render: (material) =>
+                canDeleteMaterial(material) && (
+                    <Checkbox
+                        aria-label="Seleccionar"
+                        checked={selected.has(material.id)}
+                        onCheckedChange={() => toggleOne(material.id)}
+                    />
+                ),
+        },
         {
             key: 'name',
             header: 'Nombre',
             sortKey: 'name',
             render: (material) => material.name,
+        },
+        {
+            key: 'observations',
+            header: 'Observaciones',
+            headerClassName: 'hidden sm:table-cell',
+            cellClassName: 'hidden sm:table-cell',
+            render: (material) => material.observations ?? '—',
         },
         {
             key: 'active',
@@ -130,7 +207,12 @@ export const MaterialsPage = () => {
                                 variant="destructive"
                                 size="icon"
                                 aria-label="Eliminar"
-                                onClick={() => setDeleting(material)}
+                                onClick={() =>
+                                    setDeleting({
+                                        ids: [material.id],
+                                        label: `«${material.name}»`,
+                                    })
+                                }
                             >
                                 <Trash2 className="size-4" />
                             </Button>
@@ -147,16 +229,36 @@ export const MaterialsPage = () => {
                 <PageTitle icon={Package} className="mb-0">
                     Gestionar Materiales
                 </PageTitle>
-                <Button onClick={openCreate}>Nuevo material</Button>
+                <Button onClick={openCreate} className="ms-auto">
+                    Nuevo material
+                </Button>
             </div>
 
-            <div className="mb-4">
+            <div className="mb-4 flex flex-wrap items-center gap-2">
                 <Input
                     placeholder="Buscar por nombre…"
                     className="w-full sm:w-64 bg-card"
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
                 />
+                {selected.size > 0 && (
+                    <Button
+                        variant="destructive"
+                        size="sm"
+                        className="ms-auto"
+                        onClick={() =>
+                            setDeleting({
+                                ids: [...selected],
+                                label:
+                                    selected.size === 1
+                                        ? 'este material'
+                                        : `estos ${selected.size} materiales`,
+                            })
+                        }
+                    >
+                        Eliminar seleccionados ({selected.size})
+                    </Button>
+                )}
             </div>
 
             <ListErrors
@@ -215,14 +317,29 @@ export const MaterialsPage = () => {
                     open={deleting !== null}
                     onOpenChange={(open) => !open && setDeleting(null)}
                     title="Eliminar material"
-                    description={`¿Eliminar «${deleting.name}»? Esta acción no se puede deshacer.`}
+                    description={`¿Eliminar ${deleting.label}? Esta acción no se puede deshacer.`}
                     confirmLabel="Eliminar"
                     deletingLabel="Eliminando…"
                     errorFallback="No se pudo eliminar el material"
-                    successLabel={`Material «${deleting.name}» eliminado.`}
-                    onConfirm={() => deleteMaterial(deleting.id)}
+                    successLabel={
+                        deleting.ids.length === 1
+                            ? 'Material eliminado.'
+                            : `${deleting.ids.length} materiales eliminados.`
+                    }
+                    onConfirm={() =>
+                        Promise.all(deleting.ids.map(deleteMaterial))
+                    }
                     onDeleted={() => {
-                        remove(deleting.id);
+                        const removed = new Set(deleting.ids);
+
+                        deleting.ids.forEach(remove);
+                        setSelected((prev) => {
+                            const next = new Set(prev);
+
+                            removed.forEach((id) => next.delete(id));
+
+                            return next;
+                        });
                         setDeleting(null);
                     }}
                 />

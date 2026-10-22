@@ -19,6 +19,7 @@ export class MaterialManageError extends Error {
 const materialSelect = {
     id: true,
     name: true,
+    observations: true,
     active: true,
     createdById: true,
 } as const;
@@ -29,7 +30,11 @@ export const listMaterials = () =>
         select: materialSelect,
     });
 
-export const createMaterial = async (actorId: string, name: string) => {
+export const createMaterial = async (
+    actorId: string,
+    name: string,
+    observations: string | null,
+) => {
     const exists = await prisma.material.findUnique({ where: { name } });
 
     if (exists) {
@@ -37,7 +42,7 @@ export const createMaterial = async (actorId: string, name: string) => {
     }
 
     const material = await prisma.material.create({
-        data: { name, createdById: actorId },
+        data: { name, observations, createdById: actorId },
         select: materialSelect,
     });
 
@@ -53,7 +58,11 @@ export const createMaterial = async (actorId: string, name: string) => {
 export const updateMaterial = async (
     actor: Pick<AuthUser, 'id' | 'permissions'>,
     id: string,
-    input: { name: string; active: boolean },
+    input: {
+        name: string;
+        observations: string | null;
+        active: boolean;
+    },
 ) => {
     const material = await prisma.material.findUnique({ where: { id } });
 

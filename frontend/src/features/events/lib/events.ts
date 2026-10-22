@@ -27,6 +27,7 @@ export interface EventItem {
         resourceLinks: { id: string; title: string; url: string }[];
         documents: { id: string; title: string }[];
     };
+    materials: { id: string; name: string; observations: string | null }[];
     _count: { registrations: number };
     registered: boolean;
 }
@@ -276,6 +277,7 @@ export interface RecurringPayload {
     location: string;
     capacity?: number | undefined;
     projectId: string;
+    materialIds: string[];
     from: string;
     to: string;
     weekdays: number[];
@@ -301,6 +303,7 @@ export interface EventUpdateInput {
     location: string;
     capacity?: number | undefined;
     projectId: string;
+    materialIds: string[];
     startsAt: string;
     endsAt: string;
 }

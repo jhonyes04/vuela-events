@@ -10,6 +10,7 @@ export interface SeriesInput {
     location: string;
     capacity?: number | undefined;
     projectId: string;
+    materialIds: string[];
     rule: RecurrenceRule;
 }
 
@@ -37,6 +38,22 @@ export const createEventSeries = async (
                 seriesId,
             })),
         });
+
+        if (input.materialIds.length > 0) {
+            const createdEvents = await tx.event.findMany({
+                where: { seriesId },
+                select: { id: true },
+            });
+
+            await tx.eventMaterial.createMany({
+                data: createdEvents.flatMap((event) =>
+                    input.materialIds.map((materialId) => ({
+                        eventId: event.id,
+                        materialId,
+                    })),
+                ),
+            });
+        }
 
         await tx.auditLog.create({
             data: {

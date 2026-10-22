@@ -12,6 +12,18 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import {
+    Combobox,
+    ComboboxChip,
+    ComboboxChips,
+    ComboboxChipsInput,
+    ComboboxContent,
+    ComboboxEmpty,
+    ComboboxItem,
+    ComboboxList,
+    ComboboxValue,
+    useComboboxAnchor,
+} from '@/components/ui/combobox';
 import { useAuth } from '@/features/auth/hooks/context';
 import {
     EventBasicFields,
@@ -21,6 +33,7 @@ import { RecurringEventFields } from '@/features/events/components/RecurringEven
 import { SingleSessionFields } from '@/features/events/components/SingleSessionFields';
 import { api, ApiError } from '@/lib/api';
 import { useProjectsStore } from '@/features/projects/store';
+import { useMaterialsStore } from '@/features/materials/store';
 import {
     createRecurringEvents,
     dayKey,
@@ -75,11 +88,25 @@ function EventFormBody({
     const [submitting, setSubmitting] = useState(false);
     const projects = useProjectsStore((s) => s.items);
     const loadProjects = useProjectsStore((s) => s.load);
+    const materials = useMaterialsStore((s) => s.items);
+    const loadMaterials = useMaterialsStore((s) => s.load);
+    const materialsChipsAnchor = useComboboxAnchor();
 
     // Usa la caché si ya se cargaron; solo pide lo que falta.
     useEffect(() => {
         void loadProjects();
     }, [loadProjects]);
+
+    useEffect(() => {
+        void loadMaterials();
+    }, [loadMaterials]);
+
+    // Los materiales ya elegidos siguen disponibles aunque se hayan
+    // desactivado después de asignarlos.
+    const activeMaterials = materials.filter(
+        (material) =>
+            material.active || values.materialIds.includes(material.id),
+    );
 
     // El proyecto actual del evento sigue disponible al editar aunque se
     // haya desactivado después de crearlo.
@@ -116,6 +143,7 @@ function EventFormBody({
             description: values.description || undefined,
             capacity: values.capacity ? Number(values.capacity) : undefined,
             projectId: values.projectId,
+            materialIds: values.materialIds,
         };
 
         try {
@@ -294,6 +322,65 @@ function EventFormBody({
                         minDate={minDate}
                     />
                 )}
+
+                <Field id={fieldId('materials')} label="Materiales (opcional)">
+                    <Combobox
+                        items={activeMaterials.map((material) => ({
+                            value: material.id,
+                            label: material.name,
+                        }))}
+                        multiple
+                        value={values.materialIds}
+                        onValueChange={(ids) =>
+                            setValues((v) => ({ ...v, materialIds: ids }))
+                        }
+                    >
+                        <ComboboxChips
+                            ref={materialsChipsAnchor}
+                            id={fieldId('materials')}
+                        >
+                            <ComboboxValue>
+                                {(value: string[]) =>
+                                    value.map((id) => (
+                                        <ComboboxChip
+                                            key={id}
+                                            className="bg-orange-300"
+                                            removeClassName="hover:bg-transparent hover:text-black"
+                                        >
+                                            {activeMaterials.find(
+                                                (material) =>
+                                                    material.id === id,
+                                            )?.name ?? id}
+                                        </ComboboxChip>
+                                    ))
+                                }
+                            </ComboboxValue>
+                            <ComboboxChipsInput
+                                placeholder={
+                                    values.materialIds.length === 0
+                                        ? 'Buscar un material…'
+                                        : undefined
+                                }
+                            />
+                        </ComboboxChips>
+                        <ComboboxContent anchor={materialsChipsAnchor}>
+                            <ComboboxEmpty>
+                                No se encontraron materiales
+                            </ComboboxEmpty>
+                            <ComboboxList>
+                                {(item: { value: string; label: string }) => (
+                                    <ComboboxItem
+                                        key={item.value}
+                                        value={item.value}
+                                        className="cursor-pointer text-sm"
+                                    >
+                                        {item.label}
+                                    </ComboboxItem>
+                                )}
+                            </ComboboxList>
+                        </ComboboxContent>
+                    </Combobox>
+                </Field>
 
                 <Field
                     id={fieldId('capacity')}

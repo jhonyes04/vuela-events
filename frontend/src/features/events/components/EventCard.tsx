@@ -1,3 +1,5 @@
+import { OverlayScrollbarsComponent } from 'overlayscrollbars-react';
+import { ClipboardList, UserRoundGroup, Users } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { AttendeeChips } from '@/features/events/components/AttendeeChips';
@@ -7,7 +9,13 @@ import {
     getProjectColorTint,
 } from '@/features/projects/lib/colors';
 import { cn } from '@/lib/utils';
-import { hasEnded, isFull, type EventItem } from '@/features/events/lib/events';
+import { scrollbarOptions } from '@/lib/overlayScrollbarsOptions';
+import {
+    attendanceLabel,
+    hasEnded,
+    isFull,
+    type EventItem,
+} from '@/features/events/lib/events';
 
 import { useAttendees } from '@/features/events/hooks/useAttendees';
 
@@ -16,40 +24,58 @@ interface AttendeeListProps {
 }
 
 // Va por encima del botón estirado de la tarjeta (z-10) para poder
-// desplazarla y seleccionar el texto.
+// desplazarla y seleccionar el texto. Mismo fieldset que en EventDetailDialog.
 const AttendeeList = ({ event }: AttendeeListProps) => {
     const { attendees, failed, loading } = useAttendees(
         event.id,
         `${event._count.registrations}|${event.registered}`,
     );
-
-    if (loading) {
-        return (
-            <p role="status" className="text-sm text-muted-foreground">
-                Cargando inscritos…
-            </p>
-        );
-    }
-
-    if (failed) {
-        return (
-            <p className="text-sm text-destructive">
-                No se pudo cargar la lista de inscritos.
-            </p>
-        );
-    }
-
-    if (attendees.length === 0) return null;
+    const full = isFull(event);
+    const ended = hasEnded(event);
 
     return (
-        <div className="relative z-10 grid gap-1.5">
-            <p className="text-xs font-bold tracking-wide text-muted-foreground uppercase">
-                Inscritos
-            </p>
-            <div className="max-h-40 overflow-y-auto rounded-lg bg-muted/50">
-                <AttendeeChips attendees={attendees} />
-            </div>
-        </div>
+        <fieldset className="relative z-10 rounded-xl border p-3 text-sm text-muted-foreground">
+            <legend className="flex items-center gap-1.5 whitespace-nowrap px-1 font-bold">
+                <Users className="size-4 shrink-0 text-brand-green" />
+                Inscritos ({event._count.registrations})
+            </legend>
+
+            {event.capacity !== null && (
+                <div className="mb-1.5 flex items-center gap-2">
+                    <UserRoundGroup className="size-4 shrink-0 text-brand-green" />
+                    <p className="text-muted-foreground">
+                        {attendanceLabel(event)}
+                    </p>
+                    {full && !ended && (
+                        <Badge variant="destructive" className="ml-1">
+                            Completo
+                        </Badge>
+                    )}
+                </div>
+            )}
+
+            {loading ? (
+                <p role="status" className="text-sm text-muted-foreground">
+                    Cargando inscritos…
+                </p>
+            ) : failed ? (
+                <p className="text-sm text-destructive">
+                    No se pudo cargar la lista de inscritos.
+                </p>
+            ) : attendees.length === 0 ? (
+                <p className="text-sm text-muted-foreground">
+                    Todavía no hay inscritos.
+                </p>
+            ) : (
+                <OverlayScrollbarsComponent
+                    className="max-h-40 rounded-lg bg-muted/50"
+                    options={scrollbarOptions}
+                    defer
+                >
+                    <AttendeeChips attendees={attendees} />
+                </OverlayScrollbarsComponent>
+            )}
+        </fieldset>
     );
 };
 
@@ -85,10 +111,7 @@ export const EventCard = ({ event, onOpen }: EventCardProps) => {
             style={colorStyle.border.style}
         >
             <CardHeader
-                className={cn(
-                    'gap-1.5 px-4! py-4!',
-                    colorStyle.tint.className,
-                )}
+                className={cn('gap-1.5 px-4! py-4!', colorStyle.tint.className)}
                 style={colorStyle.tint.style}
             >
                 <div className="flex items-start justify-between gap-2">
@@ -119,32 +142,27 @@ export const EventCard = ({ event, onOpen }: EventCardProps) => {
                 )}
             </CardHeader>
             <CardContent className="grid gap-3 px-4! py-4!">
-                <EventInfoRows
-                    event={event}
-                    trailing={
-                        full &&
-                        !ended && (
-                            <Badge variant="destructive" className="ml-1">
-                                Completo
-                            </Badge>
-                        )
-                    }
-                />
-                {ended && (
-                    <p className="text-sm text-muted-foreground">
-                        Usuarios atendidos:{' '}
-                        <strong className="text-foreground">
-                            {event.participantsCount ?? 'sin indicar'}
-                        </strong>
-                        {event.participantsObservations && (
-                            <>
-                                {' — '}
-                                {event.participantsObservations}
-                            </>
-                        )}
-                    </p>
-                )}
+                <EventInfoRows event={event} />
                 <AttendeeList event={event} />
+                {ended && (
+                    <fieldset className="rounded-xl border p-3 text-sm text-muted-foreground">
+                        <legend className="flex items-center gap-1.5 whitespace-nowrap px-1 font-bold">
+                            <ClipboardList className="size-4 shrink-0 text-brand-green" />
+                            Usuarios atendidos
+                        </legend>
+                        <p className="justify-self-end">
+                            <strong className="text-foreground">
+                                {event.participantsCount ?? 'Sin indicar'}
+                            </strong>
+                            {event.participantsObservations && (
+                                <>
+                                    {' — '}
+                                    {event.participantsObservations}
+                                </>
+                            )}
+                        </p>
+                    </fieldset>
+                )}
             </CardContent>
         </Card>
     );

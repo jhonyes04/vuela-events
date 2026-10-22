@@ -9,6 +9,16 @@ import { EventInfoRows } from '@/features/events/components/EventInfoRows';
 import { AttendeeChips } from '@/features/events/components/AttendeeChips';
 import { AddParticipantsDialog } from '@/features/events/components/AddParticipantsDialog';
 import { ParticipantsCountDialog } from '@/features/events/components/ParticipantsCountDialog';
+import {
+    AlertDialog,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button, buttonVariants } from '@/components/ui/button';
 import {
@@ -32,6 +42,7 @@ import { cn } from '@/lib/utils';
 import { scrollbarOptions } from '@/lib/overlayScrollbarsOptions';
 import {
     adminUnregisterAttendee,
+    attendanceLabel,
     googleCalendarUrl,
     hasEnded,
     isFull,
@@ -41,7 +52,16 @@ import {
     type EventItem,
 } from '@/features/events/lib/events';
 import { Alert, AlertTitle } from '@/components/ui/alert';
-import { AlertCircle, EyeIcon, UserPlus } from 'lucide-react';
+import {
+    AlertCircle,
+    ClipboardList,
+    EyeIcon,
+    PackageOpen,
+    SquareDashedText,
+    UserPlus,
+    UserRoundGroup,
+    Users,
+} from 'lucide-react';
 
 interface EventDetailBodyProps {
     event: EventItem;
@@ -154,7 +174,7 @@ const EventDetailBody = ({
             >
                 <DialogContent
                     className={cn(
-                        'border-t-4 sm:max-w-lg',
+                        'border-t-4 sm:max-w-2xl',
                         colorStyle.border.className,
                     )}
                     style={colorStyle.border.style}
@@ -167,22 +187,29 @@ const EventDetailBody = ({
                         style={colorStyle.tint.style}
                     >
                         <DialogTitle>{event.title}</DialogTitle>
-                        <DialogDescription>
+                        <DialogDescription
+                            render={
+                                <div className="flex items-center justify-between" />
+                            }
+                        >
                             {event.subtitle ?? 'Detalle de la sesión'}
+                            <div className="flex flex-wrap gap-1.5">
+                                {event.registered && (
+                                    <Badge className="bg-brand-green text-white">
+                                        Inscrito
+                                    </Badge>
+                                )}
+                                {full && !ended && (
+                                    <Badge variant="destructive">
+                                        Completo
+                                    </Badge>
+                                )}
+                                {ended && (
+                                    <Badge variant="outline">Finalizado</Badge>
+                                )}
+                            </div>
                         </DialogDescription>
                     </DialogHeader>
-
-                    <div className="flex flex-wrap gap-1.5">
-                        {event.registered && (
-                            <Badge className="bg-brand-green text-white">
-                                Inscrito
-                            </Badge>
-                        )}
-                        {full && !ended && (
-                            <Badge variant="destructive">Completo</Badge>
-                        )}
-                        {ended && <Badge variant="outline">Finalizado</Badge>}
-                    </div>
 
                     <EventInfoRows
                         event={event}
@@ -202,50 +229,127 @@ const EventDetailBody = ({
                     />
 
                     {ended && (
-                        <p className="text-sm text-muted-foreground">
-                            Usuarios atendidos:{' '}
-                            <strong className="text-foreground">
-                                {event.participantsCount ?? 'sin indicar'}
-                            </strong>
-                            {event.participantsObservations && (
-                                <>
-                                    {' — '}
-                                    {event.participantsObservations}
-                                </>
-                            )}
-                        </p>
+                        <fieldset className="rounded-xl border p-3 text-sm text-muted-foreground">
+                            <legend className="flex items-center gap-1.5 whitespace-nowrap px-1 font-bold">
+                                <ClipboardList className="size-4 shrink-0 text-brand-green" />
+                                Usuarios atendidos
+                            </legend>
+                            <p>
+                                <strong className="text-foreground">
+                                    {event.participantsCount ?? 'sin indicar'}
+                                </strong>
+                                {event.participantsObservations && (
+                                    <>
+                                        {' — '}
+                                        {event.participantsObservations}
+                                    </>
+                                )}
+                            </p>
+                        </fieldset>
                     )}
 
-                    {event.description && (
-                        <p className="text-sm whitespace-pre-line">
-                            {event.description}
-                        </p>
+                    <fieldset className="rounded-xl border p-3 text-sm text-muted-foreground">
+                        <legend className="flex items-center gap-1.5 whitespace-nowrap px-1 font-bold">
+                            <SquareDashedText className="size-4 shrink-0 text-brand-green" />
+                            Descripción
+                        </legend>
+                        {event.description && (
+                            <p className="text-sm whitespace-pre-line">
+                                {event.description}
+                            </p>
+                        )}
+                    </fieldset>
+
+                    {event.materials.length > 0 && (
+                        <fieldset className="grid grid-cols-1 items-start gap-x-3 gap-y-2 rounded-xl border p-3 text-sm text-muted-foreground sm:grid-cols-[auto_1fr]">
+                            <legend className="flex items-center gap-1.5 whitespace-nowrap px-1 font-bold">
+                                <PackageOpen className="size-4 shrink-0 text-brand-green" />
+                                Materiales
+                            </legend>
+                            <div className="flex flex-wrap items-center gap-2">
+                                {event.materials.map((material) => {
+                                    const badge = (
+                                        <Badge
+                                            variant="default"
+                                            className="bg-orange-300 text-black cursor-pointer"
+                                        >
+                                            {material.name}
+                                        </Badge>
+                                    );
+
+                                    if (!material.observations) {
+                                        return (
+                                            <IconTooltip
+                                                key={material.id}
+                                                label="Sin observaciones"
+                                            >
+                                                <div>{badge}</div>
+                                            </IconTooltip>
+                                        );
+                                    }
+
+                                    return (
+                                        <AlertDialog key={material.id}>
+                                            <IconTooltip label="Ver observaciones">
+                                                <AlertDialogTrigger
+                                                    render={
+                                                        <button type="button" />
+                                                    }
+                                                >
+                                                    {badge}
+                                                </AlertDialogTrigger>
+                                            </IconTooltip>
+                                            <AlertDialogContent>
+                                                <AlertDialogHeader>
+                                                    <AlertDialogTitle>
+                                                        {material.name}
+                                                    </AlertDialogTitle>
+                                                    <AlertDialogDescription>
+                                                        {material.observations}
+                                                    </AlertDialogDescription>
+                                                </AlertDialogHeader>
+                                                <AlertDialogFooter>
+                                                    <AlertDialogCancel variant="default">
+                                                        Cerrar
+                                                    </AlertDialogCancel>
+                                                </AlertDialogFooter>
+                                            </AlertDialogContent>
+                                        </AlertDialog>
+                                    );
+                                })}
+                            </div>
+                        </fieldset>
                     )}
 
-                    <section
-                        aria-labelledby="attendees-title"
-                        className="grid gap-1.5"
-                    >
-                        <div className="flex items-center justify-between gap-2">
-                            <h3
-                                id="attendees-title"
-                                className="text-xs font-bold tracking-wide text-muted-foreground uppercase"
-                            >
-                                Inscritos ({event._count.registrations})
-                            </h3>
-                            {canAddAttendees && (
-                                <IconTooltip label="Agregar participantes">
-                                    <Button
-                                        variant="secondary"
-                                        size="icon-sm"
-                                        aria-label="Agregar participantes"
-                                        onClick={() => setAddOpen(true)}
-                                    >
-                                        <UserPlus className="size-3.5" />
-                                    </Button>
-                                </IconTooltip>
-                            )}
-                        </div>
+                    <fieldset className="rounded-xl border p-3 text-sm text-muted-foreground">
+                        <legend className="flex items-center gap-1.5 whitespace-nowrap px-1 font-bold">
+                            <Users className="size-4 shrink-0 text-brand-green" />
+                            Inscritos ({event._count.registrations})
+                        </legend>
+
+                        {event.capacity !== null && (
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                    <UserRoundGroup className="size-4 shrink-0 text-brand-green" />
+                                    <p className="text-muted-foreground">
+                                        {attendanceLabel(event)}
+                                    </p>
+                                </div>
+                                {canAddAttendees && (
+                                    <IconTooltip label="Agregar participantes">
+                                        <Button
+                                            variant="secondary"
+                                            size="icon-sm"
+                                            aria-label="Agregar participantes"
+                                            onClick={() => setAddOpen(true)}
+                                        >
+                                            <UserPlus className="size-3.5" />
+                                        </Button>
+                                    </IconTooltip>
+                                )}
+                            </div>
+                        )}
+
                         {loading ? (
                             <p
                                 role="status"
@@ -277,7 +381,7 @@ const EventDetailBody = ({
                                 />
                             </OverlayScrollbarsComponent>
                         )}
-                    </section>
+                    </fieldset>
                     {ended && (
                         <Alert variant="destructive" className="bg-red-100">
                             <AlertCircle />
