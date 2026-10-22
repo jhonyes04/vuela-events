@@ -360,6 +360,13 @@ export const unregisterFromEventById = (id: string): Promise<void> =>
 export const hasEnded = (event: EventItem, now: number = Date.now()): boolean =>
     new Date(event.endsAt).getTime() <= now;
 
+// true si el evento ya empezó (en curso o pasado). Eventos pasados o en
+// curso no se pueden eliminar desde la gestión.
+export const hasStarted = (
+    event: EventItem,
+    now: number = Date.now(),
+): boolean => new Date(event.startsAt).getTime() <= now;
+
 export const isFull = (event: EventItem): boolean =>
     event.capacity !== null && event._count.registrations >= event.capacity;
 

@@ -3,7 +3,11 @@ import { recordAudit } from './audit.js';
 import { canManageResource } from '../lib/ownership.js';
 import type { AuthUser } from '../lib/authUser.js';
 
-export type MaterialManageFailure = 'duplicate' | 'not_found' | 'forbidden';
+export type MaterialManageFailure =
+    | 'duplicate'
+    | 'not_found'
+    | 'forbidden'
+    | 'in_use';
 
 export class MaterialManageError extends Error {
     readonly reason: MaterialManageFailure;
@@ -22,13 +26,22 @@ const materialSelect = {
     observations: true,
     active: true,
     createdById: true,
+    _count: { select: { events: true } },
 } as const;
 
-export const listMaterials = () =>
-    prisma.material.findMany({
+const flattenMaterial = <T extends { _count: { events: number } }>({
+    _count,
+    ...rest
+}: T) => ({ ...rest, inUse: _count.events > 0 });
+
+export const listMaterials = async () => {
+    const materials = await prisma.material.findMany({
         orderBy: { name: 'asc' },
         select: materialSelect,
     });
+
+    return materials.map(flattenMaterial);
+};
 
 export const createMaterial = async (
     actorId: string,
@@ -52,7 +65,7 @@ export const createMaterial = async (
         newValue: material.name.slice(0, 100),
     });
 
-    return material;
+    return flattenMaterial(material);
 };
 
 export const updateMaterial = async (
@@ -104,7 +117,7 @@ export const updateMaterial = async (
         newValue: updated.name.slice(0, 100),
     });
 
-    return updated;
+    return flattenMaterial(updated);
 };
 
 export const deleteMaterial = async (
@@ -126,6 +139,14 @@ export const deleteMaterial = async (
         )
     ) {
         throw new MaterialManageError('forbidden');
+    }
+
+    const eventsCount = await prisma.eventMaterial.count({
+        where: { materialId: id },
+    });
+
+    if (eventsCount > 0) {
+        throw new MaterialManageError('in_use');
     }
 
     await prisma.material.delete({ where: { id } });

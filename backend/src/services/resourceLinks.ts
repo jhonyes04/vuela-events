@@ -3,7 +3,11 @@ import { recordAudit } from './audit.js';
 import { canManageResource } from '../lib/ownership.js';
 import type { AuthUser } from '../lib/authUser.js';
 
-export type ResourceLinkManageFailure = 'duplicate' | 'not_found' | 'forbidden';
+export type ResourceLinkManageFailure =
+    | 'duplicate'
+    | 'not_found'
+    | 'forbidden'
+    | 'has_projects';
 
 export class ResourceLinkManageError extends Error {
     readonly reason: ResourceLinkManageFailure;
@@ -22,13 +26,22 @@ const resourceLinkSelect = {
     url: true,
     active: true,
     createdById: true,
+    _count: { select: { projects: true } },
 } as const;
 
-export const listResourceLinks = () =>
-    prisma.resourceLink.findMany({
+const flattenResourceLink = <T extends { _count: { projects: number } }>({
+    _count,
+    ...rest
+}: T) => ({ ...rest, inUse: _count.projects > 0 });
+
+export const listResourceLinks = async () => {
+    const links = prisma.resourceLink.findMany({
         orderBy: { title: 'asc' },
         select: resourceLinkSelect,
     });
+
+    return (await links).map(flattenResourceLink);
+};
 
 export const createResourceLink = async (
     actorId: string,
@@ -52,7 +65,7 @@ export const createResourceLink = async (
         newValue: link.title.slice(0, 100),
     });
 
-    return link;
+    return flattenResourceLink(link);
 };
 
 export const updateResourceLink = async (
@@ -100,7 +113,7 @@ export const updateResourceLink = async (
         newValue: updated.title.slice(0, 100),
     });
 
-    return updated;
+    return flattenResourceLink(updated);
 };
 
 export const deleteResourceLink = async (
@@ -122,6 +135,14 @@ export const deleteResourceLink = async (
         )
     ) {
         throw new ResourceLinkManageError('forbidden');
+    }
+
+    const projectsCount = await prisma.project.count({
+        where: { resourceLinks: { some: { resourceLinkId: id } } },
+    });
+
+    if (projectsCount > 0) {
+        throw new ResourceLinkManageError('has_projects');
     }
 
     await prisma.resourceLink.delete({ where: { id } });

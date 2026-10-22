@@ -36,6 +36,7 @@ const resourceLinkManageErrors = {
     duplicate: [409, 'Ya existe un enlace con ese título'],
     not_found: [404, 'Enlace no encontrado'],
     forbidden: [403, 'No puedes gestionar un enlace que no creaste'],
+    has_projects: [409, 'No se puede eliminar: hay proyectos con este enlace'],
 } as const;
 
 export const resourceLinkRouter = Router();

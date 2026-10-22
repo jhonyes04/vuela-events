@@ -5,6 +5,7 @@ export interface Guide {
     name: string;
     url: string;
     active: boolean;
+    inUse: boolean;
     createdById: string | null;
 }
 

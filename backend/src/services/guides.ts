@@ -26,13 +26,22 @@ const guideSelect = {
     url: true,
     active: true,
     createdById: true,
+    _count: { select: { projects: true } },
 } as const;
 
-export const listGuides = () =>
-    prisma.guide.findMany({
+const flattenGuide = <T extends { _count: { projects: number } }>({
+    _count,
+    ...rest
+}: T) => ({ ...rest, inUse: _count.projects > 0 });
+
+export const listGuides = async () => {
+    const guides = await prisma.guide.findMany({
         orderBy: { name: 'asc' },
         select: guideSelect,
     });
+
+    return guides.map(flattenGuide);
+};
 
 export const createGuide = async (
     actorId: string,
@@ -56,7 +65,7 @@ export const createGuide = async (
         newValue: guide.name.slice(0, 100),
     });
 
-    return guide;
+    return flattenGuide(guide);
 };
 
 export const updateGuide = async (
@@ -104,7 +113,7 @@ export const updateGuide = async (
         newValue: updated.name.slice(0, 100),
     });
 
-    return updated;
+    return flattenGuide(updated);
 };
 
 export const deleteGuide = async (

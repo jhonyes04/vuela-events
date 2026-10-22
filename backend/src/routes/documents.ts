@@ -40,6 +40,10 @@ const documentManageErrors = {
     duplicate: [409, 'Ya existe un documento con ese título'],
     not_found: [404, 'Documento no encontrado'],
     forbidden: [403, 'No puedes gestionar un documento que no creaste'],
+    has_projects: [
+        409,
+        'No se puede eliminar: hay proyectos con este documento',
+    ],
 } as const;
 
 // Decodifica y valida el archivo (tamaño + firma de bytes); null si no venía ninguno.

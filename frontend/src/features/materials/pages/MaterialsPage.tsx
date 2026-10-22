@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Package, Pencil, Trash2 } from 'lucide-react';
+import { CircleCheck, CircleX, Package, Pencil, Trash2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -85,7 +85,9 @@ export const MaterialsPage = () => {
             'materials:delete:own',
         );
 
-    const deletablePaged = paged.filter(canDeleteMaterial);
+    const deletablePaged = paged.filter(
+        (material) => canDeleteMaterial(material) && !material.inUse,
+    );
     const allPagedSelected =
         deletablePaged.length > 0 &&
         deletablePaged.every((material) => selected.has(material.id));
@@ -130,7 +132,8 @@ export const MaterialsPage = () => {
             ),
             headerClassName: 'w-10 font-normal',
             render: (material) =>
-                canDeleteMaterial(material) && (
+                canDeleteMaterial(material) &&
+                !material.inUse && (
                     <Checkbox
                         aria-label="Seleccionar"
                         checked={selected.has(material.id)}
@@ -150,6 +153,21 @@ export const MaterialsPage = () => {
             headerClassName: 'hidden sm:table-cell',
             cellClassName: 'hidden sm:table-cell',
             render: (material) => material.observations ?? '—',
+        },
+        {
+            key: 'inUse',
+            header: 'En uso',
+            cellClassName: 'flex justify-center',
+            render: (material) =>
+                material.inUse ? (
+                    <IconTooltip label="En uso en algún evento">
+                        <CircleCheck className="size-4 text-emerald-600" />
+                    </IconTooltip>
+                ) : (
+                    <IconTooltip label="No usado">
+                        <CircleX className="size-4 text-destructive" />
+                    </IconTooltip>
+                ),
         },
         {
             key: 'active',
@@ -202,11 +220,18 @@ export const MaterialsPage = () => {
                         'materials:delete',
                         'materials:delete:own',
                     ) && (
-                        <IconTooltip label="Eliminar">
+                        <IconTooltip
+                            label={
+                                material.inUse
+                                    ? 'En uso en algún evento'
+                                    : 'Eliminar'
+                            }
+                        >
                             <Button
                                 variant="destructive"
                                 size="icon"
                                 aria-label="Eliminar"
+                                disabled={material.inUse}
                                 onClick={() =>
                                     setDeleting({
                                         ids: [material.id],
@@ -321,22 +346,39 @@ export const MaterialsPage = () => {
                     confirmLabel="Eliminar"
                     deletingLabel="Eliminando…"
                     errorFallback="No se pudo eliminar el material"
-                    successLabel={
-                        deleting.ids.length === 1
-                            ? 'Material eliminado.'
-                            : `${deleting.ids.length} materiales eliminados.`
+                    successLabel={({ succeeded, failed }) =>
+                        failed === 0
+                            ? succeeded.length === 1
+                                ? 'Material eliminado.'
+                                : `${succeeded.length} materiales eliminados.`
+                            : `${succeeded.length} eliminado${succeeded.length === 1 ? '' : 's'}, ${failed} en uso (no se pudo eliminar).`
                     }
-                    onConfirm={() =>
-                        Promise.all(deleting.ids.map(deleteMaterial))
-                    }
-                    onDeleted={() => {
-                        const removed = new Set(deleting.ids);
+                    onConfirm={async () => {
+                        const results = await Promise.allSettled(
+                            deleting.ids.map((id) =>
+                                deleteMaterial(id).then(() => id),
+                            ),
+                        );
+                        const succeeded = results
+                            .filter(
+                                (r): r is PromiseFulfilledResult<string> =>
+                                    r.status === 'fulfilled',
+                            )
+                            .map((r) => r.value);
+                        const failed = deleting.ids.length - succeeded.length;
 
-                        deleting.ids.forEach(remove);
+                        if (succeeded.length === 0) {
+                            throw new Error('No se pudo eliminar');
+                        }
+
+                        return { succeeded, failed };
+                    }}
+                    onDeleted={({ succeeded }) => {
+                        succeeded.forEach(remove);
                         setSelected((prev) => {
                             const next = new Set(prev);
 
-                            removed.forEach((id) => next.delete(id));
+                            succeeded.forEach((id) => next.delete(id));
 
                             return next;
                         });

@@ -5,6 +5,7 @@ export interface ResourceLink {
     title: string;
     url: string;
     active: boolean;
+    inUse: boolean;
     createdById: string | null;
 }
 

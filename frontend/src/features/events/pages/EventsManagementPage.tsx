@@ -17,10 +17,16 @@ import { ApiError } from '@/lib/api';
 import {
     deleteEventById,
     hasEnded,
+    hasStarted,
     listAllEvents,
     type EventItem,
 } from '@/features/events/lib/events';
 import { PageTitle } from '@/components/PageTitle';
+
+interface Pending {
+    ids: string[];
+    label: string;
+}
 
 export const EventsManagementPage = () => {
     const [events, setEvents] = useState<EventItem[]>([]);
@@ -28,7 +34,8 @@ export const EventsManagementPage = () => {
     const [error, setError] = useState<string | null>(null);
     const [editOpen, setEditOpen] = useState(false);
     const [editing, setEditing] = useState<EventItem | null>(null);
-    const [deleting, setDeleting] = useState<EventItem | null>(null);
+    const [deleting, setDeleting] = useState<Pending | null>(null);
+    const [selected, setSelected] = useState<Set<string>>(new Set());
     const [attendeesOpen, setAttendeesOpen] = useState(false);
     const [viewingAttendees, setViewingAttendees] = useState<EventItem | null>(
         null,
@@ -73,9 +80,61 @@ export const EventsManagementPage = () => {
         setParticipantsOpen(true);
     };
 
+    // Un evento pasado o en curso no se puede eliminar.
+    const isSelectable = (event: EventItem) => !hasStarted(event);
+
+    const toggleOne = (id: string) => {
+        setSelected((prev) => {
+            const next = new Set(prev);
+
+            if (next.has(id)) {
+                next.delete(id);
+            } else {
+                next.add(id);
+            }
+
+            return next;
+        });
+    };
+
+    const toggleAll = (ids: string[], allSelected: boolean) => {
+        setSelected((prev) => {
+            const next = new Set(prev);
+
+            if (allSelected) {
+                ids.forEach((id) => next.delete(id));
+            } else {
+                ids.forEach((id) => next.add(id));
+            }
+
+            return next;
+        });
+    };
+
     return (
         <section>
-            <PageTitle icon={CalendarRange}>Gestionar Eventos</PageTitle>
+            <div className="mb-2 flex flex-wrap items-center justify-between gap-3">
+                <PageTitle icon={CalendarRange} className="mb-0">
+                    Gestionar Eventos
+                </PageTitle>
+                {selected.size > 0 && (
+                    <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() =>
+                            setDeleting({
+                                ids: [...selected],
+                                label:
+                                    selected.size === 1
+                                        ? 'este evento'
+                                        : `estos ${selected.size} eventos`,
+                            })
+                        }
+                    >
+                        Eliminar seleccionados ({selected.size})
+                    </Button>
+                )}
+            </div>
 
             <EventsTable
                 events={events}
@@ -90,6 +149,12 @@ export const EventsManagementPage = () => {
                 defaultTimeFilter="future"
                 showCapacity
                 showParticipants
+                selection={{
+                    selected,
+                    isSelectable,
+                    onToggleOne: toggleOne,
+                    onToggleAll: toggleAll,
+                }}
                 renderActions={(event) => (
                     <>
                         <IconTooltip label="Ver participantes">
@@ -130,12 +195,24 @@ export const EventsManagementPage = () => {
                                 <Pencil className="size-4" />
                             </Button>
                         </IconTooltip>
-                        <IconTooltip label="Eliminar">
+                        <IconTooltip
+                            label={
+                                hasStarted(event)
+                                    ? 'No se puede eliminar un evento ya empezado'
+                                    : 'Eliminar'
+                            }
+                        >
                             <Button
                                 variant="destructive"
                                 size="icon"
                                 aria-label="Eliminar"
-                                onClick={() => setDeleting(event)}
+                                disabled={hasStarted(event)}
+                                onClick={() =>
+                                    setDeleting({
+                                        ids: [event.id],
+                                        label: `«${event.title}»`,
+                                    })
+                                }
                             >
                                 <Trash2 className="size-4" />
                             </Button>
@@ -168,20 +245,51 @@ export const EventsManagementPage = () => {
                 <ConfirmDeleteDialog
                     open={deleting !== null}
                     onOpenChange={(open) => !open && setDeleting(null)}
-                    title="Eliminar evento"
-                    description={`¿Eliminar «${deleting.title}»? Esta acción no se puede deshacer.`}
+                    title="Eliminar eventos"
+                    description={`¿Eliminar ${deleting.label}? Esta acción no se puede deshacer.`}
                     confirmLabel="Eliminar"
                     deletingLabel="Eliminando…"
                     errorFallback="No se pudo eliminar el evento"
-                    successLabel={`Evento «${deleting.title}» eliminado.`}
-                    confirmText={
-                        hasEnded(deleting) ? deleting.title : undefined
+                    successLabel={({ succeeded, failed }) =>
+                        failed === 0
+                            ? succeeded.length === 1
+                                ? 'Evento eliminado.'
+                                : `${succeeded.length} eventos eliminados.`
+                            : `${succeeded.length} eliminado${succeeded.length === 1 ? '' : 's'}, ${failed} no se pudo eliminar.`
                     }
-                    onConfirm={() => deleteEventById(deleting.id)}
-                    onDeleted={() => {
-                        setEvents((prev) =>
-                            prev.filter((e) => e.id !== deleting.id),
+                    onConfirm={async () => {
+                        const results = await Promise.allSettled(
+                            deleting.ids.map((id) =>
+                                deleteEventById(id).then(() => id),
+                            ),
                         );
+                        const succeeded = results
+                            .filter(
+                                (r): r is PromiseFulfilledResult<string> =>
+                                    r.status === 'fulfilled',
+                            )
+                            .map((r) => r.value);
+                        const failed = deleting.ids.length - succeeded.length;
+
+                        if (succeeded.length === 0) {
+                            throw new Error('No se pudo eliminar');
+                        }
+
+                        return { succeeded, failed };
+                    }}
+                    onDeleted={({ succeeded }) => {
+                        const removed = new Set(succeeded);
+
+                        setEvents((prev) =>
+                            prev.filter((e) => !removed.has(e.id)),
+                        );
+                        setSelected((prev) => {
+                            const next = new Set(prev);
+
+                            succeeded.forEach((id) => next.delete(id));
+
+                            return next;
+                        });
                         setDeleting(null);
                     }}
                 />

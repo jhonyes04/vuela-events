@@ -3,7 +3,11 @@ import { recordAudit } from './audit.js';
 import { canManageResource } from '../lib/ownership.js';
 import type { AuthUser } from '../lib/authUser.js';
 
-export type DocumentManageFailure = 'duplicate' | 'not_found' | 'forbidden';
+export type DocumentManageFailure =
+    | 'duplicate'
+    | 'not_found'
+    | 'forbidden'
+    | 'has_projects';
 
 export class DocumentManageError extends Error {
     readonly reason: DocumentManageFailure;
@@ -22,13 +26,22 @@ const documentListSelect = {
     size: true,
     active: true,
     createdById: true,
+    _count: { select: { projects: true } },
 } as const;
 
-export const listDocuments = () =>
-    prisma.document.findMany({
+const flattenDocument = <T extends { _count: { projects: number } }>({
+    _count,
+    ...rest
+}: T) => ({ ...rest, inUse: _count.projects > 0 });
+
+export const listDocuments = async () => {
+    const documents = await prisma.document.findMany({
         orderBy: { title: 'asc' },
         select: documentListSelect,
     });
+
+    return documents.map(flattenDocument);
+};
 
 export const createDocument = async (
     actorId: string,
@@ -40,7 +53,7 @@ export const createDocument = async (
     const exists = await prisma.document.findUnique({ where: { title } });
     if (exists) throw new DocumentManageError('duplicate');
 
-    const doc = await prisma.document.create({
+    const documents = await prisma.document.create({
         data: {
             title,
             fileName,
@@ -54,9 +67,9 @@ export const createDocument = async (
     await recordAudit({
         action: 'document_created',
         actorId,
-        newValue: doc.title.slice(0, 100),
+        newValue: documents.title.slice(0, 100),
     });
-    return doc;
+    return flattenDocument(documents);
 };
 
 export const updateDocument = async (
@@ -109,7 +122,7 @@ export const updateDocument = async (
         oldValue: doc.title.slice(0, 100),
         newValue: updated.title.slice(0, 100),
     });
-    return updated;
+    return flattenDocument(updated);
 };
 
 export const deleteDocument = async (
@@ -128,6 +141,14 @@ export const deleteDocument = async (
         )
     ) {
         throw new DocumentManageError('forbidden');
+    }
+
+    const projectsCount = await prisma.project.count({
+        where: { documents: { some: { documentId: id } } },
+    });
+
+    if (projectsCount > 0) {
+        throw new DocumentManageError('has_projects');
     }
 
     await prisma.document.delete({ where: { id } });

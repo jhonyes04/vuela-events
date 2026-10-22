@@ -1,7 +1,15 @@
 import { useEffect, useState } from 'react';
-import { BookOpen, ExternalLink, Pencil, Trash2 } from 'lucide-react';
+import {
+    BookOpen,
+    CircleCheck,
+    CircleX,
+    ExternalLink,
+    Pencil,
+    Trash2,
+} from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { IconTooltip } from '@/components/IconTooltip';
 import { ConfirmDeleteDialog } from '@/components/ConfirmDeleteDialog';
@@ -19,6 +27,11 @@ import { canManageResource } from '@/lib/ownership';
 
 type SortKey = 'name' | 'url' | 'active';
 
+interface Pending {
+    ids: string[];
+    label: string;
+}
+
 export const GuidesPage = () => {
     const { user } = useAuth();
     const guides = useGuidesStore((s) => s.items);
@@ -31,7 +44,8 @@ export const GuidesPage = () => {
     const [formOpen, setFormOpen] = useState(false);
     const [formKey, setFormKey] = useState(0);
     const [editing, setEditing] = useState<Guide | null>(null);
-    const [deleting, setDeleting] = useState<Guide | null>(null);
+    const [deleting, setDeleting] = useState<Pending | null>(null);
+    const [selected, setSelected] = useState<Set<string>>(new Set());
 
     // Al entrar se refresca, pero la lista en caché se ve mientras tanto.
     useEffect(() => {
@@ -72,7 +86,70 @@ export const GuidesPage = () => {
     const { paged, page, pageCount, pageSize, total, setPage, setPageSize } =
         usePagination(sorted, 10);
 
+    const canDeleteGuide = (guide: Guide) =>
+        canManageResource(
+            user,
+            guide.createdById,
+            'guides:delete',
+            'guides:delete:own',
+        );
+
+    const deletablePaged = paged.filter(
+        (guide) => canDeleteGuide(guide) && !guide.inUse,
+    );
+    const allPagedSelected =
+        deletablePaged.length > 0 &&
+        deletablePaged.every((guide) => selected.has(guide.id));
+
+    const toggleAllPaged = () => {
+        setSelected((prev) => {
+            const next = new Set(prev);
+
+            if (allPagedSelected) {
+                deletablePaged.forEach((guide) => next.delete(guide.id));
+            } else {
+                deletablePaged.forEach((guide) => next.add(guide.id));
+            }
+
+            return next;
+        });
+    };
+
+    const toggleOne = (id: string) => {
+        setSelected((prev) => {
+            const next = new Set(prev);
+
+            if (next.has(id)) {
+                next.delete(id);
+            } else {
+                next.add(id);
+            }
+
+            return next;
+        });
+    };
+
     const columns: DataTableColumn<Guide, SortKey>[] = [
+        {
+            key: 'select',
+            header: (
+                <Checkbox
+                    aria-label="Seleccionar todos"
+                    checked={allPagedSelected}
+                    onCheckedChange={toggleAllPaged}
+                />
+            ),
+            headerClassName: 'w-10 font-normal',
+            render: (guide) =>
+                canDeleteGuide(guide) &&
+                !guide.inUse && (
+                    <Checkbox
+                        aria-label="Seleccionar"
+                        checked={selected.has(guide.id)}
+                        onCheckedChange={() => toggleOne(guide.id)}
+                    />
+                ),
+        },
         {
             key: 'name',
             header: 'Nombre',
@@ -96,6 +173,21 @@ export const GuidesPage = () => {
                     <span className="truncate">{guide.url}</span>
                 </a>
             ),
+        },
+        {
+            key: 'inUse',
+            header: 'En uso',
+            cellClassName: 'flex justify-center',
+            render: (guide) =>
+                guide.inUse ? (
+                    <IconTooltip label="En uso en algún proyecto">
+                        <CircleCheck className="size-4 text-emerald-600" />
+                    </IconTooltip>
+                ) : (
+                    <IconTooltip label="No usado">
+                        <CircleX className="size-4 text-destructive" />
+                    </IconTooltip>
+                ),
         },
         {
             key: 'active',
@@ -153,7 +245,13 @@ export const GuidesPage = () => {
                                 variant="destructive"
                                 size="icon"
                                 aria-label="Eliminar"
-                                onClick={() => setDeleting(guide)}
+                                disabled={guide.inUse}
+                                onClick={() =>
+                                    setDeleting({
+                                        ids: [guide.id],
+                                        label: `«${guide.name}»`,
+                                    })
+                                }
                             >
                                 <Trash2 className="size-4" />
                             </Button>
@@ -173,13 +271,31 @@ export const GuidesPage = () => {
                 <Button onClick={openCreate}>Nueva guía</Button>
             </div>
 
-            <div className="mb-4">
+            <div className="mb-4 flex flex-wrap items-center gap-2">
                 <Input
                     placeholder="Buscar por nombre o URL…"
                     className="w-full sm:w-64 bg-card"
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
                 />
+                {selected.size > 0 && (
+                    <Button
+                        variant="destructive"
+                        size="sm"
+                        className="ms-auto"
+                        onClick={() =>
+                            setDeleting({
+                                ids: [...selected],
+                                label:
+                                    selected.size === 1
+                                        ? 'esta guía'
+                                        : `estas ${selected.size} guías`,
+                            })
+                        }
+                    >
+                        Eliminar seleccionadas ({selected.size})
+                    </Button>
+                )}
             </div>
 
             <ListErrors
@@ -238,14 +354,46 @@ export const GuidesPage = () => {
                     open={deleting !== null}
                     onOpenChange={(open) => !open && setDeleting(null)}
                     title="Eliminar guía"
-                    description={`¿Eliminar «${deleting.name}»? Esta acción no se puede deshacer.`}
+                    description={`¿Eliminar ${deleting.label}? Esta acción no se puede deshacer.`}
                     confirmLabel="Eliminar"
                     deletingLabel="Eliminando…"
                     errorFallback="No se pudo eliminar la guía"
-                    successLabel={`Guía «${deleting.name}» eliminada.`}
-                    onConfirm={() => deleteGuide(deleting.id)}
-                    onDeleted={() => {
-                        remove(deleting.id);
+                    successLabel={({ succeeded, failed }) =>
+                        failed === 0
+                            ? succeeded.length === 1
+                                ? 'Guía eliminada.'
+                                : `${succeeded.length} guías eliminadas.`
+                            : `${succeeded.length} eliminada${succeeded.length === 1 ? '' : 's'}, ${failed} en uso (no se pudo eliminar).`
+                    }
+                    onConfirm={async () => {
+                        const results = await Promise.allSettled(
+                            deleting.ids.map((id) =>
+                                deleteGuide(id).then(() => id),
+                            ),
+                        );
+                        const succeeded = results
+                            .filter(
+                                (r): r is PromiseFulfilledResult<string> =>
+                                    r.status === 'fulfilled',
+                            )
+                            .map((r) => r.value);
+                        const failed = deleting.ids.length - succeeded.length;
+
+                        if (succeeded.length === 0) {
+                            throw new Error('No se pudo eliminar');
+                        }
+
+                        return { succeeded, failed };
+                    }}
+                    onDeleted={({ succeeded }) => {
+                        succeeded.forEach(remove);
+                        setSelected((prev) => {
+                            const next = new Set(prev);
+
+                            succeeded.forEach((id) => next.delete(id));
+
+                            return next;
+                        });
                         setDeleting(null);
                     }}
                 />

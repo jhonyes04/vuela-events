@@ -5,6 +5,7 @@ export interface Material {
     name: string;
     observations: string | null;
     active: boolean;
+    inUse: boolean;
     createdById: string | null;
 }
 

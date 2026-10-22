@@ -1,6 +1,7 @@
 import { useState, type ReactNode } from 'react';
 import { OverlayScrollbarsComponent } from 'overlayscrollbars-react';
 import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { ComboboxField } from '@/components/ComboboxField';
 import { DataTable, type DataTableColumn } from '@/components/DataTable';
@@ -54,6 +55,15 @@ interface ProjectFilterOption {
     color: string | null;
 }
 
+// Borrado múltiple: opcional, solo lo usa la gestión de eventos (en "Mis
+// eventos" no se puede eliminar, así que no se pasa).
+interface EventsTableSelection {
+    selected: Set<string>;
+    isSelectable: (event: EventItem) => boolean;
+    onToggleOne: (id: string) => void;
+    onToggleAll: (ids: string[], allSelected: boolean) => void;
+}
+
 interface EventsTableProps {
     events: EventItem[];
     loading: boolean;
@@ -65,6 +75,7 @@ interface EventsTableProps {
     showCapacity?: boolean;
     showParticipants?: boolean;
     renderActions: (event: EventItem) => ReactNode;
+    selection?: EventsTableSelection;
 }
 
 // Tabla de eventos con búsqueda, filtros (categoría/mes/periodo), orden y
@@ -81,6 +92,7 @@ export const EventsTable = ({
     showCapacity = false,
     showParticipants = false,
     renderActions,
+    selection,
 }: EventsTableProps) => {
     const [search, setSearch] = useState('');
     const [projectFilter, setProjectFilter] = useState('');
@@ -137,7 +149,43 @@ export const EventsTable = ({
     const { paged, page, pageCount, pageSize, total, setPage, setPageSize } =
         usePagination(sorted, 10);
 
+    const deletablePaged = selection ? paged.filter(selection.isSelectable) : [];
+    const allPagedSelected =
+        selection !== undefined &&
+        deletablePaged.length > 0 &&
+        deletablePaged.every((event) => selection.selected.has(event.id));
+
     const columns: DataTableColumn<EventItem, SortKey>[] = [
+        ...(selection
+            ? [
+                  {
+                      key: 'select',
+                      header: (
+                          <Checkbox
+                              aria-label="Seleccionar todos"
+                              checked={allPagedSelected}
+                              onCheckedChange={() =>
+                                  selection.onToggleAll(
+                                      deletablePaged.map((event) => event.id),
+                                      allPagedSelected,
+                                  )
+                              }
+                          />
+                      ),
+                      headerClassName: 'w-10 font-normal',
+                      render: (event: EventItem) =>
+                          selection.isSelectable(event) && (
+                              <Checkbox
+                                  aria-label="Seleccionar"
+                                  checked={selection.selected.has(event.id)}
+                                  onCheckedChange={() =>
+                                      selection.onToggleOne(event.id)
+                                  }
+                              />
+                          ),
+                  } satisfies DataTableColumn<EventItem, SortKey>,
+              ]
+            : []),
         {
             key: 'title',
             header: 'Título',

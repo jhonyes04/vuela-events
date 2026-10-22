@@ -28,6 +28,7 @@ const materialManageErrors = {
     duplicate: [409, 'Ya existe un material con ese nombre'],
     not_found: [404, 'Material no encontrado'],
     forbidden: [403, 'No puedes gestionar un material que no creaste'],
+    in_use: [409, 'No se puede eliminar: hay eventos con este material'],
 } as const;
 
 export const materialRouter = Router();

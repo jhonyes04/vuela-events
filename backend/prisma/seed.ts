@@ -11,7 +11,7 @@ const ROLES: { id: string; name: string; protected: boolean }[] = [
 ];
 
 const PERMISSIONS: { id: string; description: string }[] = [
-    { id: 'events:create', description: 'Crear eventos sueltos' },
+    { id: 'events:create', description: 'Crear eventos' },
     { id: 'events:view', description: 'Ver gestión de eventos' },
     { id: 'events:edit', description: 'Editar eventos' },
     { id: 'events:delete', description: 'Eliminar eventos' },

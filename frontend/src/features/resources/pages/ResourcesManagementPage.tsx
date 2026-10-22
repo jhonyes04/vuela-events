@@ -1,8 +1,18 @@
 import { useEffect, useState } from 'react';
-import { Eye, FileText, FolderOpen, Link2, Pencil, Trash2 } from 'lucide-react';
+import {
+    CircleCheck,
+    CircleX,
+    Eye,
+    FileText,
+    FolderOpen,
+    Link2,
+    Pencil,
+    Trash2,
+} from 'lucide-react';
 import { useAuth } from '@/features/auth/hooks/context';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { IconTooltip } from '@/components/IconTooltip';
 import { ConfirmDeleteDialog } from '@/components/ConfirmDeleteDialog';
@@ -35,10 +45,16 @@ interface ResourceRow {
     kind: ResourceKind;
     title: string;
     active: boolean;
+    inUse: boolean;
     createdById: string | null;
     detail: string;
     document?: Document;
     link?: ResourceLink;
+}
+
+interface Pending {
+    rows: ResourceRow[];
+    label: string;
 }
 
 type SortKey = 'title' | 'kind';
@@ -84,7 +100,8 @@ export const ResourcesManagementPage = () => {
     const [linkFormKey, setLinkFormKey] = useState(0);
     const [editingLink, setEditingLink] = useState<ResourceLink | null>(null);
 
-    const [deleting, setDeleting] = useState<ResourceRow | null>(null);
+    const [deleting, setDeleting] = useState<Pending | null>(null);
+    const [selected, setSelected] = useState<Set<string>>(new Set());
     const [search, setSearch] = useState('');
 
     const reload = () => {
@@ -106,6 +123,7 @@ export const ResourcesManagementPage = () => {
             kind: 'document' as const,
             title: doc.title,
             active: doc.active,
+            inUse: doc.inUse,
             createdById: doc.createdById,
             detail: `${doc.fileName} · ${formatSize(doc.size)}`,
             document: doc,
@@ -115,6 +133,7 @@ export const ResourcesManagementPage = () => {
             kind: 'link' as const,
             title: link.title,
             active: link.active,
+            inUse: link.inUse,
             createdById: link.createdById,
             detail: link.url,
             link,
@@ -145,6 +164,51 @@ export const ResourcesManagementPage = () => {
 
     const { paged, page, pageCount, pageSize, total, setPage, setPageSize } =
         usePagination(sorted, 10);
+
+    const rowKey = (row: ResourceRow) => `${row.kind}-${row.id}`;
+
+    const canDeleteRow = (row: ResourceRow) =>
+        canManageResource(
+            user,
+            row.createdById,
+            'resources:delete',
+            'resources:delete:own',
+        );
+
+    const deletablePaged = paged.filter(
+        (row) => canDeleteRow(row) && !row.inUse,
+    );
+    const allPagedSelected =
+        deletablePaged.length > 0 &&
+        deletablePaged.every((row) => selected.has(rowKey(row)));
+
+    const toggleAllPaged = () => {
+        setSelected((prev) => {
+            const next = new Set(prev);
+
+            if (allPagedSelected) {
+                deletablePaged.forEach((row) => next.delete(rowKey(row)));
+            } else {
+                deletablePaged.forEach((row) => next.add(rowKey(row)));
+            }
+
+            return next;
+        });
+    };
+
+    const toggleOne = (key: string) => {
+        setSelected((prev) => {
+            const next = new Set(prev);
+
+            if (next.has(key)) {
+                next.delete(key);
+            } else {
+                next.add(key);
+            }
+
+            return next;
+        });
+    };
 
     const openCreateDocument = () => {
         setEditingDocument(null);
@@ -180,6 +244,26 @@ export const ResourcesManagementPage = () => {
 
     const columns: DataTableColumn<ResourceRow, SortKey>[] = [
         {
+            key: 'select',
+            header: (
+                <Checkbox
+                    aria-label="Seleccionar todos"
+                    checked={allPagedSelected}
+                    onCheckedChange={toggleAllPaged}
+                />
+            ),
+            headerClassName: 'w-10 font-normal',
+            render: (row) =>
+                canDeleteRow(row) &&
+                !row.inUse && (
+                    <Checkbox
+                        aria-label="Seleccionar"
+                        checked={selected.has(rowKey(row))}
+                        onCheckedChange={() => toggleOne(rowKey(row))}
+                    />
+                ),
+        },
+        {
             key: 'kind',
             header: 'Tipo',
             sortKey: 'kind',
@@ -212,6 +296,21 @@ export const ResourcesManagementPage = () => {
             ),
         },
         {
+            key: 'inUse',
+            header: 'En uso',
+            cellClassName: 'flex justify-center',
+            render: (row) =>
+                row.inUse ? (
+                    <IconTooltip label="En uso en algún proyecto">
+                        <CircleCheck className="size-4 text-emerald-600" />
+                    </IconTooltip>
+                ) : (
+                    <IconTooltip label="No usado">
+                        <CircleX className="size-4 text-destructive" />
+                    </IconTooltip>
+                ),
+        },
+        {
             key: 'status',
             header: 'Estado',
             render: (row) =>
@@ -231,6 +330,7 @@ export const ResourcesManagementPage = () => {
                     </Badge>
                 ),
         },
+
         {
             key: 'actions',
             header: <span className="sr-only">Acciones</span>,
@@ -243,13 +343,6 @@ export const ResourcesManagementPage = () => {
                     'resources:edit',
                     'resources:edit:own',
                 );
-                const canDeleteRow = canManageResource(
-                    user,
-                    row.createdById,
-                    'resources:delete',
-                    'resources:delete:own',
-                );
-
                 return (
                     <>
                         <IconTooltip label="Ver">
@@ -274,13 +367,19 @@ export const ResourcesManagementPage = () => {
                                 </Button>
                             </IconTooltip>
                         )}
-                        {canDeleteRow && (
+                        {canDeleteRow(row) && (
                             <IconTooltip label="Eliminar">
                                 <Button
                                     variant="destructive"
                                     size="icon"
                                     aria-label="Eliminar"
-                                    onClick={() => setDeleting(row)}
+                                    disabled={row.inUse}
+                                    onClick={() =>
+                                        setDeleting({
+                                            rows: [row],
+                                            label: `«${row.title}»`,
+                                        })
+                                    }
                                 >
                                     <Trash2 className="size-4" />
                                 </Button>
@@ -336,6 +435,28 @@ export const ResourcesManagementPage = () => {
                     searchable={false}
                     placeholder="Todos los tipos"
                 />
+                {selected.size > 0 && (
+                    <Button
+                        variant="destructive"
+                        size="sm"
+                        className="ms-auto"
+                        onClick={() => {
+                            const selectedRows = rows.filter((row) =>
+                                selected.has(rowKey(row)),
+                            );
+
+                            setDeleting({
+                                rows: selectedRows,
+                                label:
+                                    selectedRows.length === 1
+                                        ? 'este recurso'
+                                        : `estos ${selectedRows.length} recursos`,
+                            });
+                        }}
+                    >
+                        Eliminar seleccionados ({selected.size})
+                    </Button>
+                )}
             </div>
 
             {loading ? (
@@ -347,7 +468,7 @@ export const ResourcesManagementPage = () => {
                     <DataTable
                         columns={columns}
                         rows={paged}
-                        rowKey={(row) => `${row.kind}-${row.id}`}
+                        rowKey={rowKey}
                         sort={sort}
                         onSort={toggleSort}
                     />
@@ -399,27 +520,58 @@ export const ResourcesManagementPage = () => {
                 <ConfirmDeleteDialog
                     open={deleting !== null}
                     onOpenChange={(open) => !open && setDeleting(null)}
-                    title={
-                        deleting.kind === 'document'
-                            ? 'Eliminar documento'
-                            : 'Eliminar enlace'
-                    }
-                    description={`¿Eliminar «${deleting.title}»? Esta acción no se puede deshacer.`}
+                    title="Eliminar recursos"
+                    description={`¿Eliminar ${deleting.label}? Esta acción no se puede deshacer.`}
                     confirmLabel="Eliminar"
                     deletingLabel="Eliminando…"
                     errorFallback="No se pudo eliminar el recurso"
-                    successLabel={`«${deleting.title}» eliminado.`}
-                    onConfirm={() =>
-                        deleting.kind === 'document'
-                            ? deleteDocument(deleting.id)
-                            : deleteResourceLink(deleting.id)
+                    successLabel={({ succeeded, failed }) =>
+                        failed === 0
+                            ? succeeded.length === 1
+                                ? 'Recurso eliminado.'
+                                : `${succeeded.length} recursos eliminados.`
+                            : `${succeeded.length} eliminado${succeeded.length === 1 ? '' : 's'}, ${failed} en uso (no se pudo eliminar).`
                     }
-                    onDeleted={() => {
-                        if (deleting.kind === 'document') {
-                            removeDocument(deleting.id);
-                        } else {
-                            removeLink(deleting.id);
+                    onConfirm={async () => {
+                        const results = await Promise.allSettled(
+                            deleting.rows.map((row) =>
+                                (row.kind === 'document'
+                                    ? deleteDocument(row.id)
+                                    : deleteResourceLink(row.id)
+                                ).then(() => row),
+                            ),
+                        );
+                        const succeeded = results
+                            .filter(
+                                (r): r is PromiseFulfilledResult<ResourceRow> =>
+                                    r.status === 'fulfilled',
+                            )
+                            .map((r) => r.value);
+                        const failed = deleting.rows.length - succeeded.length;
+
+                        if (succeeded.length === 0) {
+                            throw new Error('No se pudo eliminar');
                         }
+
+                        return { succeeded, failed };
+                    }}
+                    onDeleted={({ succeeded }) => {
+                        succeeded.forEach((row) => {
+                            if (row.kind === 'document') {
+                                removeDocument(row.id);
+                            } else {
+                                removeLink(row.id);
+                            }
+                        });
+                        setSelected((prev) => {
+                            const next = new Set(prev);
+
+                            succeeded.forEach((row) =>
+                                next.delete(rowKey(row)),
+                            );
+
+                            return next;
+                        });
                         setDeleting(null);
                     }}
                 />
