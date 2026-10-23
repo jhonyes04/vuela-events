@@ -106,6 +106,7 @@ export const listOnlineUsers = async (): Promise<OnlineUser[]> => {
         FROM session s
         JOIN users u ON u.id = (s.sess ->> 'userId')::uuid
         WHERE s.expire > now() AND s.sess ->> 'userId' IS NOT NULL
+            AND u."roleId" != 'admin'
     `;
 
     return rows;
