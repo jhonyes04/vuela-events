@@ -8,6 +8,7 @@ import { appRoutes, canAccess } from '@/routes/routes';
 import { UserMenuDropdown } from '@/components/UserMenuDropdown';
 import { UserMenuSheet } from '@/components/UserMenuSheet';
 import { useAppSettingsStore } from '@/features/appSettings/store';
+import { OnlineAvatars } from '@/features/onlineUsers/components/OnlineAvatars';
 
 const navClass = ({ isActive }: { isActive: boolean }) =>
     cn(
@@ -71,6 +72,12 @@ export const Header = () => {
                                 );
                             })}
                         </nav>
+                    )}
+
+                    {user && (
+                        <div className="hidden lg:inline-block ms-auto">
+                            <OnlineAvatars />
+                        </div>
                     )}
 
                     {userMenuStyle === 'sheet' ? (

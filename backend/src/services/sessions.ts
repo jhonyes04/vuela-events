@@ -81,3 +81,32 @@ export const revokeSession = async (sid: string): Promise<void> => {
         throw e;
     }
 };
+
+export interface OnlineUser {
+    userId: string;
+    name: string;
+    lastName: string;
+    avatarConfigured: boolean;
+}
+
+export const listOnlineUsers = async (): Promise<OnlineUser[]> => {
+    const rows = await prisma.$queryRaw<
+        {
+            userId: string;
+            name: string;
+            lastName: string;
+            avatarConfigured: boolean;
+        }[]
+    >`
+        SELECT DISTINCT ON (u.id)
+            u.id AS "userId",
+            u.name,
+            u."lastName",
+            (u."avatarImage" IS NOT NULL) AS "avatarConfigured"
+        FROM session s
+        JOIN users u ON u.id = (s.sess ->> 'userId')::uuid
+        WHERE s.expire > now() AND s.sess ->> 'userId' IS NOT NULL
+    `;
+
+    return rows;
+};

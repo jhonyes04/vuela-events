@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { requireAuth, requirePermission } from '../middleware/auth.js';
 import {
     listActiveSessions,
+    listOnlineUsers,
     revokeSession,
     SessionError,
 } from '../services/sessions.js';
@@ -10,6 +11,10 @@ import {
 const sidParamsSchema = z.object({ sid: z.string().min(1).max(255) });
 
 export const sessionsRouter = Router();
+
+sessionsRouter.get('/online', requireAuth, async (_req, res) => {
+    res.json({ users: await listOnlineUsers() });
+});
 
 sessionsRouter.use(requireAuth, requirePermission('sessions:manage'));
 

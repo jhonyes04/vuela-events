@@ -74,6 +74,8 @@ const emailSignatureImageSchema = z.strictObject({
     dataBase64: z.string().min(1),
 });
 
+const avatarQuerySchema = z.object({ u: z.string().uuid().optional() });
+
 const imageParamsSchema = z.object({ id: z.uuid() });
 
 const MAX_EMAIL_SIGNATURE_IMAGE_BYTES = 300 * 1024;
@@ -399,8 +401,11 @@ profileRouter.get('/avatar-image', requireAuth, async (req, res) => {
         return;
     }
 
+    const query = avatarQuerySchema.safeParse(req.query);
+    const targetId = query.success && query.data.u ? query.data.u : actor.id;
+
     const row = await prisma.user.findUnique({
-        where: { id: actor.id },
+        where: { id: targetId },
         select: { avatarImage: true, avatarImageType: true },
     });
 
