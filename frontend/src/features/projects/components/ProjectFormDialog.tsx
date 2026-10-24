@@ -58,7 +58,6 @@ const ProjectFormBody = ({
     const closingSections = useAppSettingsStore(
         (s) => s.projectClosingSections,
     );
-    const loadAppSettings = useAppSettingsStore((s) => s.load);
     const [name, setName] = useState(project?.name ?? '');
     const [openingInstructions, setOpeningInstructions] = useState(
         project?.openingInstructions || buildTemplateHtml(openingSections),
@@ -103,10 +102,6 @@ const ProjectFormBody = ({
     useEffect(() => {
         void loadDocuments();
     }, [loadDocuments]);
-
-    useEffect(() => {
-        void loadAppSettings();
-    }, [loadAppSettings]);
 
     // La guía actual del proyecto sigue disponible aunque se haya
     // desactivado después de asignarla.
@@ -290,15 +285,27 @@ export const ProjectFormDialog = ({
     onOpenChange,
     project,
     onSaved,
-}: ProjectFormDialogProps) => (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-        {open && (
-            <ProjectFormBody
-                key={project?.id ?? 'new'}
-                project={project}
-                onSaved={onSaved}
-                onClose={() => onOpenChange(false)}
-            />
-        )}
-    </Dialog>
-);
+}: ProjectFormDialogProps) => {
+    const appSettingsLoaded = useAppSettingsStore((s) => s.loaded);
+    const loadAppSettings = useAppSettingsStore((s) => s.load);
+
+    useEffect(() => {
+        if (open) void loadAppSettings();
+    }, [open, loadAppSettings]);
+
+    return (
+        <Dialog open={open} onOpenChange={onOpenChange}>
+            {open && !appSettingsLoaded && (
+                <FullScreenSpinner label="Cargando…" />
+            )}
+            {open && appSettingsLoaded && (
+                <ProjectFormBody
+                    key={project?.id ?? 'new'}
+                    project={project}
+                    onSaved={onSaved}
+                    onClose={() => onOpenChange(false)}
+                />
+            )}
+        </Dialog>
+    );
+};
