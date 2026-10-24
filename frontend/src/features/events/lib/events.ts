@@ -386,6 +386,16 @@ export const hasStarted = (
     now: number = Date.now(),
 ): boolean => new Date(event.startsAt).getTime() <= now;
 
+// Evento ya finalizado, sin inscritos y sin atendidos: se puede eliminar
+// sin pedir motivo ni avisar a nadie (no hay a quién avisar).
+export const isEventFinishedUnattended = (
+    event: EventItem,
+    now: number = Date.now(),
+): boolean =>
+    hasEnded(event, now) &&
+    event._count.registrations === 0 &&
+    !event.participantsCount;
+
 export const isFull = (event: EventItem): boolean =>
     event.capacity !== null && event._count.registrations >= event.capacity;
 

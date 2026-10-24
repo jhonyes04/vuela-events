@@ -20,6 +20,7 @@ import {
     deleteEventById,
     hasEnded,
     hasStarted,
+    isEventFinishedUnattended,
     listAllEvents,
     type EventItem,
 } from '@/features/events/lib/events';
@@ -107,9 +108,13 @@ export const EventsManagementPage = () => {
         ? events
         : events.filter((event) => event.createdBy.id === user?.id);
 
-    // Un evento pasado o en curso no se puede eliminar.
+    // Un evento en curso no se puede eliminar. Uno ya pasado sí, pero solo
+    // si no tiene inscritos ni atendidos (nadie a quien avisar).
+    const isDeletableNow = (event: EventItem) =>
+        !hasStarted(event) || isEventFinishedUnattended(event);
+
     const isSelectable = (event: EventItem) =>
-        !hasStarted(event) && canDeleteEvent(event);
+        isDeletableNow(event) && canDeleteEvent(event);
 
     const toggleOne = (id: string) => {
         setSelected((prev) => {
@@ -230,16 +235,16 @@ export const EventsManagementPage = () => {
                         {canDeleteEvent(event) && (
                             <IconTooltip
                                 label={
-                                    hasStarted(event)
-                                        ? 'No se puede eliminar un evento ya empezado'
-                                        : 'Eliminar'
+                                    isDeletableNow(event)
+                                        ? 'Eliminar'
+                                        : 'No se puede eliminar un evento en curso'
                                 }
                             >
                                 <Button
                                     variant="destructive"
                                     size="icon"
                                     aria-label="Eliminar"
-                                    disabled={hasStarted(event)}
+                                    disabled={!isDeletableNow(event)}
                                     onClick={() =>
                                         setDeleting({
                                             ids: [event.id],
@@ -266,6 +271,7 @@ export const EventsManagementPage = () => {
                 open={attendeesOpen}
                 onOpenChange={setAttendeesOpen}
                 event={viewingAttendees}
+                onChanged={() => void load()}
             />
 
             <ParticipantsCountDialog

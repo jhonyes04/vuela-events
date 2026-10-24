@@ -5,6 +5,7 @@ import {
     deleteEventById,
     formatDayLabel,
     formatTime,
+    isEventFinishedUnattended,
     type EventItem,
 } from '@/features/events/lib/events';
 
@@ -23,6 +24,7 @@ export const DeleteEventDialog = ({
 }: DeleteEventDialogProps) => {
     const registrations = event._count.registrations;
     const [motivo, setMotivo] = useState<string>('');
+    const nothingToNotify = isEventFinishedUnattended(event);
 
     return (
         <ConfirmDeleteDialog
@@ -48,12 +50,16 @@ export const DeleteEventDialog = ({
             deletingLabel="Eliminando…"
             errorFallback="No se pudo eliminar la sesión"
             successLabel={`Sesión «${event.title}» eliminada.`}
-            textField={{
-                label: 'Motivo (opcional, se incluye en el aviso a los inscritos)',
-                value: motivo,
-                onChange: setMotivo,
-                placeholder: 'Por qué se cancela...',
-            }}
+            textField={
+                nothingToNotify
+                    ? undefined
+                    : {
+                          label: 'Motivo (opcional, se incluye en el aviso a los inscritos)',
+                          value: motivo,
+                          onChange: setMotivo,
+                          placeholder: 'Por qué se cancela...',
+                      }
+            }
             onConfirm={() => deleteEventById(event.id, motivo || undefined)}
             onDeleted={onDeleted}
         />

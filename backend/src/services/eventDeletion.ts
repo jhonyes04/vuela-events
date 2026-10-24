@@ -31,7 +31,9 @@ export const deleteEvent = async (
                 startsAt: true,
                 endsAt: true,
                 createdById: true,
+                participantsCount: true,
                 project: { select: { name: true } },
+                _count: { select: { registrations: true } },
                 // Solo las inscripciones visibles: los DT nunca cuentan, ni
                 // para el recuento de auditoría ni para el aviso de cancelación.
                 registrations: {
@@ -78,19 +80,30 @@ export const deleteEvent = async (
         return event;
     });
 
-    void notifyEventCancelled({
-        title: event.title,
-        location: event.location,
-        projectName: event.project.name,
-        reason,
-        sessions: [
-            {
-                startsAt: event.startsAt,
-                endsAt: event.endsAt,
-                registrantEmails: event.registrations.map((r) => r.user.email),
-            },
-        ],
-    });
+    // Evento ya finalizado, sin inscritos y sin atendidos: no hay a quién
+    // avisar ni sentido en cancelar algo que ya pasó sin nadie.
+    const nothingToNotify =
+        event.endsAt.getTime() <= Date.now() &&
+        !event.participantsCount &&
+        event._count.registrations === 0;
+
+    if (!nothingToNotify) {
+        void notifyEventCancelled({
+            title: event.title,
+            location: event.location,
+            projectName: event.project.name,
+            reason,
+            sessions: [
+                {
+                    startsAt: event.startsAt,
+                    endsAt: event.endsAt,
+                    registrantEmails: event.registrations.map(
+                        (r) => r.user.email,
+                    ),
+                },
+            ],
+        });
+    }
 };
 
 // Elimina las sesiones FUTURAS de una serie (las pasadas se quedan como

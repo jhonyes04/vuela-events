@@ -31,9 +31,10 @@ import type { SlotId } from '@/features/appSettings/lib/emailSettings';
 interface AttendeesBodyProps {
     event: EventItem;
     onCloseAll: () => void;
+    onChanged: () => void;
 }
 
-const AttendeesBody = ({ event, onCloseAll }: AttendeesBodyProps) => {
+const AttendeesBody = ({ event, onCloseAll, onChanged }: AttendeesBodyProps) => {
     const { user } = useAuth();
     const ended = hasEnded(event);
     // "Agregar" exige poder ver candidatos y poder inscribirlos (la misma
@@ -246,6 +247,7 @@ const AttendeesBody = ({ event, onCloseAll }: AttendeesBodyProps) => {
                     onAdded={(addedIds) => {
                         setRefreshNonce((n) => n + 1);
                         invalidateReport();
+                        onChanged();
 
                         if (selected.size > 0) {
                             setSelected(
@@ -272,6 +274,7 @@ const AttendeesBody = ({ event, onCloseAll }: AttendeesBodyProps) => {
                     onDeleted={() => {
                         setRefreshNonce((n) => n + 1);
                         invalidateReport();
+                        onChanged();
                         setSelected((prev) => {
                             const next = new Set(prev);
 
@@ -292,12 +295,14 @@ interface AttendeesDialogProps {
     onOpenChange: (open: boolean) => void;
     // null = nada que mostrar (el diálogo no se muestra).
     event: EventItem | null;
+    onChanged: () => void;
 }
 
 export const AttendeesDialog = ({
     open,
     onOpenChange,
     event,
+    onChanged,
 }: AttendeesDialogProps) => {
     if (!event) return null;
 
@@ -307,6 +312,7 @@ export const AttendeesDialog = ({
                 key={event.id}
                 event={event}
                 onCloseAll={() => onOpenChange(false)}
+                onChanged={onChanged}
             />
         </Dialog>
     );
