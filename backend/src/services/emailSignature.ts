@@ -30,6 +30,7 @@ const sanitizeOptions: sanitizeHtml.IOptions = {
     allowedAttributes: {
         a: ['href'],
         img: ['src', 'alt', 'width', 'height'],
+        p: ['data-locked-heading'],
         '*': ['style'],
     },
     allowedStyles: {
