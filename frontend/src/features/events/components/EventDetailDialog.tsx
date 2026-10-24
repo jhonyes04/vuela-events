@@ -357,7 +357,7 @@ const EventDetailBody = ({
                     open={deletingAttendee !== null}
                     onOpenChange={(open) => !open && setDeletingAttendee(null)}
                     title="Quitar del evento"
-                    description={`¿Quitar a «${deletingAttendee.puntoVuela} (${deletingAttendee.name})» de este evento? Esta acción no se puede deshacer.`}
+                    description={`¿Quitar a «${deletingAttendee.puntoVuela} (${deletingAttendee.name})» de este evento?`}
                     confirmLabel="Quitar"
                     deletingLabel="Quitando…"
                     errorFallback="No se pudo quitar al participante"

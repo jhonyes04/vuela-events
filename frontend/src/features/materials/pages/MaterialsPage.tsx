@@ -342,7 +342,7 @@ export const MaterialsPage = () => {
                     open={deleting !== null}
                     onOpenChange={(open) => !open && setDeleting(null)}
                     title="Eliminar material"
-                    description={`¿Eliminar ${deleting.label}? Esta acción no se puede deshacer.`}
+                    description={`¿Eliminar ${deleting.label}?`}
                     confirmLabel="Eliminar"
                     deletingLabel="Eliminando…"
                     errorFallback="No se pudo eliminar el material"

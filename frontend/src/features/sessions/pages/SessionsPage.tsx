@@ -183,7 +183,7 @@ export const SessionsPage = () => {
                     open={revoking !== null}
                     onOpenChange={(open) => !open && setRevoking(null)}
                     title="Cerrar sesión"
-                    description={`¿Cerrar la sesión de «${revoking.userName} (${revoking.userEmail})»? Tendrá que volver a iniciar sesión.`}
+                    description={`¿Cerrar la sesión de «${revoking.puntoVuela} (${revoking.userName})»? Tendrá que volver a iniciar sesión.`}
                     confirmLabel="Cerrar sesión"
                     deletingLabel="Cerrando…"
                     errorFallback="No se pudo cerrar la sesión"

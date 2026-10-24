@@ -40,9 +40,8 @@ export const DeleteEventDialog = ({
                             : `Se perderán ${registrations} inscripciones. `
                         : ''}
                     {event.seriesId
-                        ? 'Solo se elimina esta fecha; las demás no cambian. '
+                        ? 'Solo se elimina esta fecha; las demás no cambian.'
                         : ''}
-                    Esta acción no se puede deshacer.
                 </>
             }
             confirmLabel="Eliminar"

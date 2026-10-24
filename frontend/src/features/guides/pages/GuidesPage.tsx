@@ -354,7 +354,7 @@ export const GuidesPage = () => {
                     open={deleting !== null}
                     onOpenChange={(open) => !open && setDeleting(null)}
                     title="Eliminar guía"
-                    description={`¿Eliminar ${deleting.label}? Esta acción no se puede deshacer.`}
+                    description={`¿Eliminar ${deleting.label}?`}
                     confirmLabel="Eliminar"
                     deletingLabel="Eliminando…"
                     errorFallback="No se pudo eliminar la guía"

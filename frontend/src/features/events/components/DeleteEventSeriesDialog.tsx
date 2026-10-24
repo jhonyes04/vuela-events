@@ -28,8 +28,7 @@ export const DeleteEventSeriesDialog = ({
             description={
                 <>
                     Se eliminarán todas las sesiones futuras de «{event.title}»
-                    (las que ya han pasado no se tocan). Esta acción no se puede
-                    deshacer.
+                    (las que ya han pasado no se tocan).
                 </>
             }
             confirmLabel="Eliminar serie"

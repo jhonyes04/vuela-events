@@ -36,7 +36,8 @@ export const DocumentsTab = ({ search }: DocumentsTabProps) => {
                 'resources:delete',
                 'resources:delete:own',
             ].includes(p),
-        ) ?? false);
+        ) ??
+            false);
     const documents = useDocumentsStore((s) => s.items);
     const loading = useDocumentsStore((s) => s.loading);
     const error = useDocumentsStore((s) => s.error);
@@ -101,52 +102,52 @@ export const DocumentsTab = ({ search }: DocumentsTabProps) => {
                 </p>
             ) : (
                 <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                    {visibleDocuments.map((doc) => {
+                    {visibleDocuments.map((document) => {
                         const canEditDoc = canManageResource(
                             user,
-                            doc.createdById,
+                            document.createdById,
                             'resources:edit',
                             'resources:edit:own',
                         );
                         const canDeleteDoc = canManageResource(
                             user,
-                            doc.createdById,
+                            document.createdById,
                             'resources:delete',
                             'resources:delete:own',
                         );
 
                         return (
                             <li
-                                key={doc.id}
+                                key={document.id}
                                 className="flex flex-col gap-3 rounded-xl border bg-card p-4 sm:flex-row sm:items-center"
                             >
                                 <div className="flex min-w-0 flex-1 items-start gap-3">
                                     <FileText className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
                                     <div className="min-w-0 flex-1">
                                         <p className="truncate font-medium">
-                                            {doc.title}
+                                            {document.title}
                                         </p>
                                         <p className="truncate text-sm text-muted-foreground">
-                                            {doc.fileName} ·{' '}
-                                            {formatSize(doc.size)}
+                                            {document.fileName} ·{' '}
+                                            {formatSize(document.size)}
                                         </p>
                                     </div>
                                 </div>
                                 <div className="flex flex-wrap items-center gap-2 sm:shrink-0">
-                                    {!doc.active && (
+                                    {!document.active && (
                                         <Badge variant="secondary">
                                             Inactivo
                                         </Badge>
                                     )}
                                     <IconTooltip label="Descargar">
                                         <Button
-                                            variant="secondary"
+                                            variant="default"
                                             size="icon"
                                             aria-label="Descargar"
                                             onClick={() =>
                                                 void downloadDocument(
-                                                    doc.id,
-                                                    doc.fileName,
+                                                    document.id,
+                                                    document.fileName,
                                                 )
                                             }
                                         >
@@ -159,7 +160,9 @@ export const DocumentsTab = ({ search }: DocumentsTabProps) => {
                                                 variant="secondary"
                                                 size="icon"
                                                 aria-label="Editar"
-                                                onClick={() => openEdit(doc)}
+                                                onClick={() =>
+                                                    openEdit(document)
+                                                }
                                             >
                                                 <Pencil className="size-4" />
                                             </Button>
@@ -170,9 +173,10 @@ export const DocumentsTab = ({ search }: DocumentsTabProps) => {
                                             <Button
                                                 variant="destructive"
                                                 size="icon"
+                                                disabled={document.inUse}
                                                 aria-label="Eliminar"
                                                 onClick={() =>
-                                                    setDeleting(doc)
+                                                    setDeleting(document)
                                                 }
                                             >
                                                 <Trash2 className="size-4" />
@@ -201,7 +205,7 @@ export const DocumentsTab = ({ search }: DocumentsTabProps) => {
                     open={deleting !== null}
                     onOpenChange={(open) => !open && setDeleting(null)}
                     title="Eliminar documento"
-                    description={`¿Eliminar «${deleting.title}»? Esta acción no se puede deshacer.`}
+                    description={`¿Eliminar «${deleting.title}»?`}
                     confirmLabel="Eliminar"
                     deletingLabel="Eliminando…"
                     errorFallback="No se pudo eliminar el documento"

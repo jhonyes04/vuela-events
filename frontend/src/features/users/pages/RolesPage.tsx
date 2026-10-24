@@ -166,7 +166,7 @@ export const RolesPage = () => {
                     open={deleting !== null}
                     onOpenChange={(open) => !open && setDeleting(null)}
                     title="Eliminar rol"
-                    description={`¿Eliminar «${deleting.name}»? Esta acción no se puede deshacer.`}
+                    description={`¿Eliminar «${deleting.name}»?`}
                     confirmLabel="Eliminar"
                     deletingLabel="Eliminando…"
                     errorFallback="No se pudo eliminar el rol"

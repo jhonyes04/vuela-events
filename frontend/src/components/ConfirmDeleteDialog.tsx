@@ -83,7 +83,11 @@ export function ConfirmDeleteDialog<T>({
                         <CircleXIcon className="size-6 text-destructive" />
                         <DialogTitle>{title}</DialogTitle>
                     </div>
-                    <DialogDescription>{description}</DialogDescription>
+                    <DialogDescription>
+                        {description}
+                        <br />
+                        Esta acción no se puede deshacer.
+                    </DialogDescription>
                 </DialogHeader>
 
                 {textField && (

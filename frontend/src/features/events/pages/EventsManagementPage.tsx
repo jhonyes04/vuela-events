@@ -280,7 +280,7 @@ export const EventsManagementPage = () => {
                     open={deleting !== null}
                     onOpenChange={(open) => !open && setDeleting(null)}
                     title="Eliminar eventos"
-                    description={`¿Eliminar ${deleting.label}? Esta acción no se puede deshacer.`}
+                    description={`¿Eliminar ${deleting.label}?`}
                     confirmLabel="Eliminar"
                     deletingLabel="Eliminando…"
                     errorFallback="No se pudo eliminar el evento"

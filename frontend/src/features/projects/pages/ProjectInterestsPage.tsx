@@ -243,8 +243,8 @@ export const ProjectInterestsPage = () => {
                     title="Quitar del proyecto"
                     description={
                         deleting.userIds.length === 1
-                            ? `¿Quitar a este usuario de «${deleting.projectName}»? Esta acción no se puede deshacer.`
-                            : `¿Quitar a ${deleting.userIds.length} usuarios de «${deleting.projectName}»? Esta acción no se puede deshacer.`
+                            ? `¿Quitar a este usuario de «${deleting.projectName}»?`
+                            : `¿Quitar a ${deleting.userIds.length} usuarios de «${deleting.projectName}»?`
                     }
                     confirmLabel="Quitar"
                     deletingLabel="Quitando…"

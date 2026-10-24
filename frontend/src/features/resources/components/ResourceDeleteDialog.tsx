@@ -21,7 +21,7 @@ export const ResourceDeleteDialog = ({
             open={pending !== null}
             onOpenChange={onOpenChange}
             title="Eliminar recursos"
-            description={`¿Eliminar ${pending.label}? Esta acción no se puede deshacer.`}
+            description={`¿Eliminar ${pending.label}?`}
             confirmLabel="Eliminar"
             deletingLabel="Eliminando…"
             errorFallback="No se pudo eliminar el recurso"

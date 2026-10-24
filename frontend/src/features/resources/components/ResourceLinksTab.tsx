@@ -30,7 +30,8 @@ export const ResourceLinksTab = ({ search }: ResourceLinksTabProps) => {
                 'resources:delete',
                 'resources:delete:own',
             ].includes(p),
-        ) ?? false);
+        ) ??
+            false);
     const links = useResourceLinksStore((s) => s.items);
     const loading = useResourceLinksStore((s) => s.loading);
     const error = useResourceLinksStore((s) => s.error);
@@ -67,8 +68,7 @@ export const ResourceLinksTab = ({ search }: ResourceLinksTabProps) => {
         const q = search.trim().toLowerCase();
 
         return (
-            l.title.toLowerCase().includes(q) ||
-            l.url.toLowerCase().includes(q)
+            l.title.toLowerCase().includes(q) || l.url.toLowerCase().includes(q)
         );
     });
 
@@ -91,9 +91,7 @@ export const ResourceLinksTab = ({ search }: ResourceLinksTabProps) => {
                     Cargando recursos…
                 </p>
             ) : visibleLinks.length === 0 ? (
-                <p className="text-muted-foreground">
-                    Todavía no hay enlaces.
-                </p>
+                <p className="text-muted-foreground">Todavía no hay enlaces.</p>
             ) : (
                 <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                     {visibleLinks.map((link) => {
@@ -143,9 +141,7 @@ export const ResourceLinksTab = ({ search }: ResourceLinksTabProps) => {
                                                 variant="secondary"
                                                 size="icon"
                                                 aria-label="Editar"
-                                                onClick={() =>
-                                                    openEdit(link)
-                                                }
+                                                onClick={() => openEdit(link)}
                                             >
                                                 <Pencil className="size-4" />
                                             </Button>
@@ -156,6 +152,7 @@ export const ResourceLinksTab = ({ search }: ResourceLinksTabProps) => {
                                             <Button
                                                 variant="destructive"
                                                 size="icon"
+                                                disabled={link.inUse}
                                                 aria-label="Eliminar"
                                                 onClick={() =>
                                                     setDeleting(link)
@@ -187,7 +184,7 @@ export const ResourceLinksTab = ({ search }: ResourceLinksTabProps) => {
                     open={deleting !== null}
                     onOpenChange={(open) => !open && setDeleting(null)}
                     title="Eliminar enlace"
-                    description={`¿Eliminar «${deleting.title}»? Esta acción no se puede deshacer.`}
+                    description={`¿Eliminar «${deleting.title}»?`}
                     confirmLabel="Eliminar"
                     deletingLabel="Eliminando…"
                     errorFallback="No se pudo eliminar el enlace"
