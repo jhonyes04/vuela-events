@@ -13,6 +13,7 @@ import {
     Users,
     type LucideIcon,
     PackageOpen,
+    Gauge,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -40,6 +41,7 @@ const CATEGORY_STYLES: Record<string, CategoryStyle> = {
     events: { label: 'Eventos', icon: CalendarDays },
     guides: { label: 'Guías', icon: BookOpen },
     materials: { label: 'Materiales', icon: PackageOpen },
+    metrics: { label: 'Métricas', icon: Gauge },
     projects: { label: 'Proyectos', icon: FolderKanban },
     resources: { label: 'Recursos', icon: FolderOpen },
     roles: { label: 'Roles', icon: ShieldCheck },

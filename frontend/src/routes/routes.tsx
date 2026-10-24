@@ -16,6 +16,7 @@ import { ResourcesManagementPage } from '@/features/resources/pages/ResourcesMan
 import { MaterialsPage } from '@/features/materials/pages/MaterialsPage';
 import { AppSettingsPage } from '@/features/appSettings/pages/AppSettingsPage';
 import { SessionsPage } from '@/features/sessions/pages/SessionsPage';
+import { MetricsPage } from '@/features/metrics/pages/MetricsPage';
 
 export interface AppRoute {
     path: string;
@@ -169,6 +170,13 @@ export const appRoutes: AppRoute[] = [
         label: 'Sesiones activas',
         element: <SessionsPage />,
         permissions: ['sessions:manage'],
+        group: 'admin',
+    },
+    {
+        path: '/admin/metricas',
+        label: 'Métricas',
+        element: <MetricsPage />,
+        permissions: ['metrics:view'],
         group: 'admin',
     },
 ];

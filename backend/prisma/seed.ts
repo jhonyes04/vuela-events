@@ -60,6 +60,7 @@ const PERMISSIONS: { id: string; description: string }[] = [
     { id: 'roles:manage', description: 'Gestionar roles y permisos' },
     { id: 'audit:manage', description: 'Gestionar auditoría' },
     { id: 'stats:view', description: 'Ver estadísticas' },
+    { id: 'metrics:view', description: 'Ver panel de métricas'},
     { id: 'settings:manage', description: 'Gestionar ajustes globales de la app' },
     { id: 'sessions:manage', description: 'Gestionar sesiones'},
 ];
@@ -104,6 +105,7 @@ const ROLE_PERMISSIONS: Record<string, string[]> = {
         'roles:manage',
         'audit:manage',
         'stats:view',
+        'metrics:view',
         'settings:manage',
         'sessions:manage',
     ],

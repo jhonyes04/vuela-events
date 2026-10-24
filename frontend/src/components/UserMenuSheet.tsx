@@ -18,6 +18,7 @@ import {
     Users,
     XIcon,
     type LucideIcon,
+    Gauge,
 } from 'lucide-react';
 import { NavLink } from 'react-router';
 import { OverlayScrollbarsComponent } from 'overlayscrollbars-react';
@@ -51,6 +52,7 @@ const ROUTE_ICONS: Record<string, LucideIcon> = {
     '/admin/auditoria': History,
     '/admin/ajustes': SlidersHorizontal,
     '/admin/sesiones': Monitor,
+    '/admin/metricas': Gauge,
 };
 
 const navClass = ({ isActive }: { isActive: boolean }) =>
