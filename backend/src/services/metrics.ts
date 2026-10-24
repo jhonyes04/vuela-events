@@ -65,7 +65,7 @@ export const getMetrics = async (now: Date = new Date(), days = 30) => {
             "roleId",
             count(*)::int AS count
         FROM users
-        WHERE "createdAt" >= ${windowStart}
+        WHERE active = true AND "createdAt" >= ${windowStart}
         GROUP BY 1, 2
         ORDER BY 1, 2
     `;
@@ -198,12 +198,14 @@ export const getMetrics = async (now: Date = new Date(), days = 30) => {
             p.id,
             p.name,
             p.color,
-            count(DISTINCT upp."userId")::int AS interested,
-            count(DISTINCT r."userId")::int AS registered
+            count(DISTINCT ui.id)::int AS interested,
+            count(DISTINCT ur.id)::int AS registered
         FROM projects p
         LEFT JOIN user_project_preferences upp ON upp."projectId" = p.id
+        LEFT JOIN users ui ON ui.id = upp."userId" AND ui.active = true
         LEFT JOIN events e ON e."projectId" = p.id AND e."createdAt" >= ${windowStart}
         LEFT JOIN registrations r ON r."eventId" = e.id
+        LEFT JOIN users ur ON ur.id = r."userId" AND ur.active = true
         WHERE p.active = true
         GROUP BY p.id, p.name, p.color
         ORDER BY interested DESC
@@ -217,7 +219,7 @@ export const getMetrics = async (now: Date = new Date(), days = 30) => {
             SELECT r."userId", count(*)::int AS cnt
             FROM registrations r
             JOIN users u ON u.id = r."userId"
-            WHERE u."roleId" = 'ail'
+            WHERE u."roleId" = 'ail' AND u.active = true
             GROUP BY r."userId"
         )
         SELECT

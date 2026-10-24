@@ -1,4 +1,11 @@
-import { Bar, BarChart, CartesianGrid, LabelList, XAxis, YAxis } from 'recharts';
+import {
+    Bar,
+    BarChart,
+    CartesianGrid,
+    LabelList,
+    XAxis,
+    YAxis,
+} from 'recharts';
 import {
     ChartContainer,
     ChartLegend,
@@ -11,15 +18,14 @@ import { ChartCard } from '@/features/stats/components/ChartCard';
 import { monthLabel } from '@/features/stats/lib/stats';
 import type { MetricsSummary } from '@/features/metrics/lib/metrics';
 
-// Hay como mucho 5 tonos de gráfica definidos; con más roles que colores, se
-// repiten en ciclo en vez de romper.
-const CHART_COLORS = [
-    'var(--chart-1)',
-    'var(--chart-2)',
-    'var(--chart-3)',
-    'var(--chart-4)',
-    'var(--chart-5)',
-];
+// Colores fijos por rol protegido; cualquier rol creado a mano (ej.
+// "Coordinador") cae en el color char-3.
+const ROLE_COLORS: Record<string, string> = {
+    ail: 'var(--brand-yellow)',
+    dt: 'var(--brand-green)',
+    admin: 'var(--brand-ink)',
+};
+const OTHER_ROLE_COLOR = 'var(--chart-3)';
 
 export const SignupsByRoleCard = ({ metrics }: { metrics: MetricsSummary }) => {
     const months = [
@@ -27,9 +33,12 @@ export const SignupsByRoleCard = ({ metrics }: { metrics: MetricsSummary }) => {
     ].sort();
 
     const roleConfig = Object.fromEntries(
-        metrics.roles.map((role, i) => [
+        metrics.roles.map((role) => [
             role.id,
-            { label: role.name, color: CHART_COLORS[i % CHART_COLORS.length] },
+            {
+                label: role.name,
+                color: ROLE_COLORS[role.id] ?? OTHER_ROLE_COLOR,
+            },
         ]),
     ) satisfies ChartConfig;
 
@@ -53,7 +62,10 @@ export const SignupsByRoleCard = ({ metrics }: { metrics: MetricsSummary }) => {
             empty={signupsData.length === 0}
         >
             <ChartContainer config={roleConfig} className="h-72 w-full">
-                <BarChart data={signupsData} margin={{ top: 16, left: 0, right: 8 }}>
+                <BarChart
+                    data={signupsData}
+                    margin={{ top: 16, left: 0, right: 8 }}
+                >
                     <CartesianGrid vertical={false} strokeDasharray="3 3" />
                     <XAxis
                         dataKey="label"
