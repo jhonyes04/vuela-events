@@ -117,13 +117,15 @@ const EventDetailBody = ({
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
+    const hasAttendedParticipants = ended && !!event.participantsCount;
     // Solo oculta el botón: el servidor comprueba de nuevo quién puede eliminar.
-    const canDelete = canManageResource(
-        user,
-        event.createdBy.id,
-        'events:delete',
-        'events:delete:own',
-    );
+    const canDelete =
+        canManageResource(
+            user,
+            event.createdBy.id,
+            'events:delete',
+            'events:delete:own',
+        ) && !hasAttendedParticipants;
 
     // "Agregar" exige poder ver candidatos y poder inscribirlos (la misma
     // llamada que carga el diálogo requiere attendees:view).
@@ -216,26 +218,6 @@ const EventDetailBody = ({
                         }
                     />
 
-                    {ended && (
-                        <fieldset className="rounded-xl border p-3 text-sm text-muted-foreground">
-                            <legend className="flex items-center gap-1.5 whitespace-nowrap px-1 font-bold">
-                                <ClipboardList className="size-4 shrink-0 text-brand-green" />
-                                Usuarios atendidos
-                            </legend>
-                            <p>
-                                <strong className="text-foreground">
-                                    {event.participantsCount ?? 'sin indicar'}
-                                </strong>
-                                {event.participantsObservations && (
-                                    <>
-                                        {' — '}
-                                        {event.participantsObservations}
-                                    </>
-                                )}
-                            </p>
-                        </fieldset>
-                    )}
-
                     {event.description && (
                         <fieldset className="rounded-xl border p-3 text-sm text-muted-foreground">
                             <legend className="flex items-center gap-1.5 whitespace-nowrap px-1 font-bold">
@@ -266,6 +248,26 @@ const EventDetailBody = ({
                         onAddClick={() => setAddOpen(true)}
                         onDeleteAttendee={setDeletingAttendee}
                     />
+
+                    {ended && (
+                        <fieldset className="rounded-xl border p-3 text-sm text-muted-foreground">
+                            <legend className="flex items-center gap-1.5 whitespace-nowrap px-1 font-bold">
+                                <ClipboardList className="size-4 shrink-0 text-brand-green" />
+                                Usuarios atendidos
+                            </legend>
+                            <p className="justify-self-end">
+                                <strong className="text-foreground">
+                                    {event.participantsCount ?? 'sin indicar'}
+                                </strong>
+                                {event.participantsObservations && (
+                                    <>
+                                        {' — '}
+                                        {event.participantsObservations}
+                                    </>
+                                )}
+                            </p>
+                        </fieldset>
+                    )}
                     {ended && (
                         <Alert variant="destructive" className="bg-red-100">
                             <AlertCircle />

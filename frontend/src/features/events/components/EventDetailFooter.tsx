@@ -1,6 +1,9 @@
 import { Button, buttonVariants } from '@/components/ui/button';
 import { DialogFooter } from '@/components/ui/dialog';
-import { googleCalendarUrl, type EventItem } from '@/features/events/lib/events';
+import {
+    googleCalendarUrl,
+    type EventItem,
+} from '@/features/events/lib/events';
 
 interface EventDetailFooterProps {
     event: EventItem;
@@ -73,7 +76,7 @@ export const EventDetailFooter = ({
             </Button>
         )}
 
-        {isAdmin ? null : event.registered ? (
+        {isAdmin || ended ? null : event.registered ? (
             <Button
                 variant="default"
                 disabled={busy}
@@ -83,11 +86,7 @@ export const EventDetailFooter = ({
             </Button>
         ) : (
             <Button disabled={busy} onClick={onRegisterClick}>
-                {ended
-                    ? 'Finalizado'
-                    : blockedByCapacity
-                      ? 'Completo'
-                      : 'Inscribirme'}
+                {blockedByCapacity ? 'Completo' : 'Inscribirme'}
             </Button>
         )}
     </DialogFooter>
