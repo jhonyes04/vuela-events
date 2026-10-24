@@ -86,7 +86,7 @@ projectsRouter.get(
 
 projectsRouter.get(
     '/interested-users',
-    requirePermission('projects:view'),
+    requirePermission('attendees:interests:view'),
     async (_req, res) => {
         res.json({ projects: await listProjectInterestedUsers() });
     },

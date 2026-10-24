@@ -1,5 +1,5 @@
 import { api } from '@/lib/api';
-import type { SlotId } from '@/features/emailSettings/lib/emailSettings';
+import type { SlotId } from '@/features/appSettings/lib/emailSettings';
 
 export interface StartSendInput {
     slot: SlotId;

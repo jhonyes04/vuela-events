@@ -3,7 +3,7 @@ import { Label } from '@/components/ui/label';
 import type {
     SlotId,
     TemplateAssignment,
-} from '@/features/emailSettings/lib/emailSettings';
+} from '@/features/appSettings/lib/emailSettings';
 import { SenderBadge, type SmtpSender } from './SenderBadge';
 
 interface TemplateOption {

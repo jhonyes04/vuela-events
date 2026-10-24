@@ -5,6 +5,7 @@ import {
     Wrench,
     LayoutPanelLeft,
     ClipboardList,
+    Mail,
 } from 'lucide-react';
 import { PageTitle } from '@/components/PageTitle';
 import {
@@ -27,11 +28,12 @@ import { MaintenanceModeCard } from '@/features/appSettings/components/Maintenan
 import { MaintenanceNoticeCard } from '@/features/appSettings/components/MaintenanceNoticeCard';
 import { ProjectSectionsCard } from '@/features/appSettings/components/ProjectSectionsCard';
 import { UserMenuStyleCard } from '@/features/appSettings/components/UserMenuStyleCard';
+import { EmailSettingsCard } from '@/features/appSettings/components/EmailSettingsCard';
 import { useAppSettingsStore } from '@/features/appSettings/store';
 import { useAuth } from '@/features/auth/hooks/context';
 import { Button } from '@/components/ui/button';
 
-type SettingsSectionId = 'maintenance' | 'projects' | 'interface';
+type SettingsSectionId = 'maintenance' | 'projects' | 'email' | 'interface';
 
 interface SettingsSectionDef {
     id: SettingsSectionId;
@@ -59,6 +61,7 @@ export const AppSettingsPage = () => {
             icon: ClipboardList,
             title: 'Campos de Proyectos',
         },
+        { id: 'email' as const, icon: Mail, title: 'Correo' },
         { id: 'interface' as const, icon: LayoutPanelLeft, title: 'Interfaz' },
     ];
     const [activeSection, setActiveSection] = useState<SettingsSectionId>(
@@ -143,6 +146,7 @@ export const AppSettingsPage = () => {
                         </>
                     )}
                     {activeSection === 'projects' && <ProjectSectionsCard />}
+                    {activeSection === 'email' && <EmailSettingsCard />}
                     {activeSection === 'interface' && (
                         <UserMenuStyleCard loading={loading} />
                     )}

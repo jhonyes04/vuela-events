@@ -18,6 +18,7 @@ const startSendSchema = z.strictObject({
 const jobIdParamsSchema = z.object({ jobId: z.uuid() });
 
 const startSendErrors = {
+    forbidden: [403, 'No tienes permiso para enviar este tipo de correo'],
     smtp_not_configured: [409, 'No hay un servidor SMTP configurado'],
     template_not_assigned: [
         409,
@@ -70,6 +71,7 @@ emailSendsRouter.post('/', async (req, res) => {
         const { jobId } = await startBulkSend({
             actorId: actor.id,
             actorEmail: actor.email,
+            actorPermissions: actor.permissions,
             slot: body.data.slot,
             eventId: body.data.eventId,
             recipientRegistrationIds: body.data.recipientRegistrationIds,

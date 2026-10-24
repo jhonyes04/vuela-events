@@ -15,7 +15,7 @@ import { ConfirmDeleteDialog } from '@/components/ConfirmDeleteDialog';
 import { IconTooltip } from '@/components/IconTooltip';
 import { AttendeeChips } from '@/features/events/components/AttendeeChips';
 import { AddParticipantsDialog } from '@/features/events/components/AddParticipantsDialog';
-import { SendEmailDialog } from '@/features/emailSettings/components/SendEmailDialog';
+import { SendEmailDialog } from '@/features/events/components/SendEmailDialog';
 import { ReportPreviewDialog } from '@/features/reports/components/ReportPreviewDialog';
 import { useAttendees } from '@/features/events/hooks/useAttendees';
 import { useReportDraft } from '@/features/events/hooks/useReportDraft';
@@ -26,7 +26,7 @@ import {
     type Attendee,
     type EventItem,
 } from '@/features/events/lib/events';
-import type { SlotId } from '@/features/emailSettings/lib/emailSettings';
+import type { SlotId } from '@/features/appSettings/lib/emailSettings';
 
 interface AttendeesBodyProps {
     event: EventItem;
@@ -50,6 +50,12 @@ const AttendeesBody = ({ event, onCloseAll }: AttendeesBodyProps) => {
     const canDeleteAttendees =
         (user?.permissions.includes('attendees:delete') ?? false) &&
         (!ended || fullAttendeeAccess);
+    const canSendConvocatoria =
+        (user?.permissions.includes('email:send') ?? false) &&
+        (user?.permissions.includes('events:send:convocatoria') ?? false);
+    const canSendParteFirmas =
+        (user?.permissions.includes('email:send') ?? false) &&
+        (user?.permissions.includes('events:send:parte_firmas') ?? false);
     const [refreshNonce, setRefreshNonce] = useState(0);
     const { attendees, failed, loading } = useAttendees(
         event.id,
@@ -146,47 +152,56 @@ const AttendeesBody = ({ event, onCloseAll }: AttendeesBodyProps) => {
                 </OverlayScrollbarsComponent>
             )}
 
-            <DialogFooter>
-                <div className="grid w-full gap-2">
-                    <div className="flex flex-1 flex-wrap justify-end gap-2">
-                        <Button
-                            variant="default"
-                            disabled={selected.size === 0}
-                            onClick={() => setSendSlot('convocatoria')}
-                        >
-                            Enviar convocatoria
-                        </Button>
-                        {draft && (
-                            <Button
-                                variant="default"
-                                onClick={() => setPreviewOpen(true)}
-                            >
-                                Ver parte
-                            </Button>
-                        )}
-                        <Button
-                            variant="default"
-                            disabled={
-                                selected.size === 0 || generating || !ended
-                            }
-                            onClick={() => void handleReportClick()}
-                        >
-                            {generating
-                                ? 'Generando…'
-                                : draft
-                                  ? 'Enviar parte de firmas'
-                                  : 'Generar parte de firmas'}
-                        </Button>
-                    </div>
+            {canSendConvocatoria && canSendParteFirmas && (
+                <DialogFooter>
+                    <div className="grid w-full gap-2">
+                        <div className="flex flex-1 flex-wrap justify-end gap-2">
+                            {canSendConvocatoria && (
+                                <Button
+                                    variant="default"
+                                    disabled={selected.size === 0}
+                                    onClick={() => setSendSlot('convocatoria')}
+                                >
+                                    Enviar convocatoria
+                                </Button>
+                            )}
+                            {draft && (
+                                <Button
+                                    variant="default"
+                                    onClick={() => setPreviewOpen(true)}
+                                >
+                                    Ver parte
+                                </Button>
+                            )}
 
-                    {!ended && (
-                        <p className="text-xs text-destructive sm:text-right">
-                            El parte de firmas solo se puede generar una vez
-                            finalizado el evento.
-                        </p>
-                    )}
-                </div>
-            </DialogFooter>
+                            {canSendParteFirmas && (
+                                <Button
+                                    variant="default"
+                                    disabled={
+                                        selected.size === 0 ||
+                                        generating ||
+                                        !ended
+                                    }
+                                    onClick={() => void handleReportClick()}
+                                >
+                                    {generating
+                                        ? 'Generando…'
+                                        : draft
+                                          ? 'Enviar parte de firmas'
+                                          : 'Generar parte de firmas'}
+                                </Button>
+                            )}
+                        </div>
+
+                        {!ended && (
+                            <p className="text-xs text-destructive sm:text-right">
+                                El parte de firmas solo se puede generar una vez
+                                finalizado el evento.
+                            </p>
+                        )}
+                    </div>
+                </DialogFooter>
+            )}
 
             {draft && (
                 <ReportPreviewDialog

@@ -9,7 +9,6 @@ import { ProjectsPage } from '@/features/projects/pages/ProjectsPage';
 import { ProjectInterestsPage } from '@/features/projects/pages/ProjectInterestsPage';
 import { GuidesPage } from '@/features/guides/pages/GuidesPage';
 import { EmailTemplatesPage } from '@/features/emailTemplates/pages/EmailTemplatesPage';
-import { EmailSettingsPage } from '@/features/emailSettings/pages/EmailSettingsPage';
 import { AuditPage } from '@/features/audit/pages/AuditPage';
 import { StatsPage } from '@/features/stats/pages/StatsPage';
 import { ResourcesPage } from '@/features/resources/pages/ResourcesPage';
@@ -49,7 +48,9 @@ export const appRoutes: AppRoute[] = [
             'events:view',
             'events:create',
             'events:edit',
+            'events:edit:own',
             'events:delete',
+            'events:delete:own',
         ],
         group: 'gestion',
     },
@@ -113,7 +114,7 @@ export const appRoutes: AppRoute[] = [
         path: '/gestion/intereses',
         label: 'Usuarios por proyecto',
         element: <ProjectInterestsPage />,
-        permissions: ['projects:view'],
+        permissions: ['attendees:interests:view'],
         group: 'gestion',
     },
     {
@@ -147,13 +148,6 @@ export const appRoutes: AppRoute[] = [
         label: 'Roles',
         element: <RolesPage />,
         permissions: ['roles:manage'],
-        group: 'admin',
-    },
-    {
-        path: '/admin/correo',
-        label: 'Configuración correo',
-        element: <EmailSettingsPage />,
-        permissions: ['settings:manage'],
         group: 'admin',
     },
     {

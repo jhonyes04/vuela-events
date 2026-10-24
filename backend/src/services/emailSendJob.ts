@@ -19,7 +19,13 @@ const MAX_RECIPIENTS = 500;
 // Los jobs terminados se olvidan pasado este tiempo (evita crecer sin límite).
 const JOB_TTL_MS = 10 * 60 * 1000;
 
+const SLOT_PERMISSIONS: Partial<Record<SlotId, string>> = {
+    convocatoria: 'events:send:convocatoria',
+    parte_firmas: 'events:send:parte_firmas',
+};
+
 export type StartSendFailure =
+    | 'forbidden'
     | 'smtp_not_configured'
     | 'template_not_assigned'
     | 'event_not_found'
@@ -81,6 +87,7 @@ export const getSendJob = (
 interface StartSendInput {
     actorId: string;
     actorEmail: string;
+    actorPermissions: string[];
     slot: SlotId;
     eventId: string;
     recipientRegistrationIds: string[];
@@ -91,6 +98,15 @@ interface StartSendInput {
 export const startBulkSend = async (
     input: StartSendInput,
 ): Promise<{ jobId: string }> => {
+    const requiredSlotPermission = SLOT_PERMISSIONS[input.slot];
+
+    if (
+        requiredSlotPermission &&
+        !input.actorPermissions.includes(requiredSlotPermission)
+    ) {
+        throw new StartSendError('forbidden');
+    }
+
     if (input.recipientRegistrationIds.length === 0) {
         throw new StartSendError('no_recipients');
     }

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { useAuth } from '@/features/auth/hooks/context';
+import { canManageResource } from '@/lib/ownership';
 import { ROLE_IDS } from '@/features/users/lib/roles';
 import { DeleteEventDialog } from '@/features/events/components/DeleteEventDialog';
 import { DeleteEventSeriesDialog } from '@/features/events/components/DeleteEventSeriesDialog';
@@ -117,9 +118,12 @@ const EventDetailBody = ({
     }, []);
 
     // Solo oculta el botón: el servidor comprueba de nuevo quién puede eliminar.
-    const canDelete =
-        (user?.permissions.includes('events:delete') ?? false) &&
-        (user?.roleId === ROLE_IDS.ADMIN || event.createdBy.id === user?.id);
+    const canDelete = canManageResource(
+        user,
+        event.createdBy.id,
+        'events:delete',
+        'events:delete:own',
+    );
 
     // "Agregar" exige poder ver candidatos y poder inscribirlos (la misma
     // llamada que carga el diálogo requiere attendees:view).

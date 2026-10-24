@@ -5,12 +5,15 @@ import { prisma } from '../lib/prisma.js';
 import {
     api,
     closeDb,
+    createCustomRole,
     createProject,
     createUser,
     resetDb,
     sessionCookieFor,
     startServer,
 } from './helpers.js';
+
+const ROLE_OWN_ONLY = 'test-events-own';
 
 const validSeries = {
     title: 'Taller semanal',
@@ -34,6 +37,10 @@ describe('series recurrentes y eliminación de sesiones', () => {
 
     before(async () => {
         server = await startServer();
+        await createCustomRole(ROLE_OWN_ONLY, [
+            'events:view',
+            'events:delete:own',
+        ]);
     });
 
     beforeEach(async () => {
@@ -299,15 +306,36 @@ describe('series recurrentes y eliminación de sesiones', () => {
             assert.equal(await prisma.event.count(), 0);
         });
 
-        it('otro dt NO puede eliminar la sesión de un compañero: 403 y sigue existiendo', async () => {
+        it('otro dt (permiso de todos) SÍ puede eliminar la sesión de un compañero', async () => {
             const owner = await createUser('dt');
             const other = await createUser('dt');
             const event = await makeEvent(owner.id);
 
             const res = await remove(other.id, event.id);
 
+            assert.equal(res.status, 204);
+            assert.equal(await prisma.event.count(), 0);
+        });
+
+        it('con solo events:delete:own, NO puede eliminar la sesión de un compañero: 403', async () => {
+            const owner = await createUser('dt');
+            const other = await createUser(ROLE_OWN_ONLY);
+            const event = await makeEvent(owner.id);
+
+            const res = await remove(other.id, event.id);
+
             assert.equal(res.status, 403);
             assert.equal(await prisma.event.count(), 1);
+        });
+
+        it('con solo events:delete:own, el creador SÍ puede eliminar su propia sesión', async () => {
+            const owner = await createUser(ROLE_OWN_ONLY);
+            const event = await makeEvent(owner.id);
+
+            const res = await remove(owner.id, event.id);
+
+            assert.equal(res.status, 204);
+            assert.equal(await prisma.event.count(), 0);
         });
 
         it('ail NO puede eliminar: 403 y sigue existiendo', async () => {
@@ -478,9 +506,27 @@ describe('series recurrentes y eliminación de sesiones', () => {
             assert.equal(res.body.deletedCount, 1);
         });
 
-        it('otro dt NO puede eliminar la serie de un compañero: 403 y sigue existiendo', async () => {
+        it('otro dt (permiso de todos) SÍ puede eliminar la serie de un compañero', async () => {
             const owner = await createUser('dt');
             const other = await createUser('dt');
+            const seriesId = randomUUID();
+
+            await makeSeries(owner.id, seriesId, [
+                {
+                    starts: '2030-01-01T10:00:00Z',
+                    ends: '2030-01-01T12:00:00Z',
+                },
+            ]);
+
+            const res = await removeSeries(other.id, seriesId);
+
+            assert.equal(res.status, 200);
+            assert.equal(await prisma.event.count({ where: { seriesId } }), 0);
+        });
+
+        it('con solo events:delete:own, NO puede eliminar la serie de un compañero: 403', async () => {
+            const owner = await createUser('dt');
+            const other = await createUser(ROLE_OWN_ONLY);
             const seriesId = randomUUID();
 
             await makeSeries(owner.id, seriesId, [

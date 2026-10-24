@@ -1,5 +1,6 @@
 import { prisma } from '../lib/prisma.js';
 import { notifyEventCancelled } from './eventNotify.js';
+import { canManageResource } from '../lib/ownership.js';
 
 export type EventDeleteFailure = 'not_found' | 'forbidden';
 
@@ -17,7 +18,7 @@ export class EventDeleteError extends Error {
 // Elimina UNA sesión. Solo un admin o quien creó el evento. Las inscripciones
 // se borran en cascada; la auditoría conserva qué se eliminó y cuántas había.
 export const deleteEvent = async (
-    actor: { id: string; roleId: string },
+    actor: { id: string; permissions: string[] },
     eventId: string,
     reason?: string,
 ): Promise<void> => {
@@ -44,7 +45,14 @@ export const deleteEvent = async (
             throw new EventDeleteError('not_found');
         }
 
-        if (actor.roleId !== 'admin' && event.createdById !== actor.id) {
+        if (
+            !canManageResource(
+                actor,
+                event.createdById,
+                'events:delete',
+                'events:delete:own',
+            )
+        ) {
             throw new EventDeleteError('forbidden');
         }
 
@@ -88,7 +96,7 @@ export const deleteEvent = async (
 // Elimina las sesiones FUTURAS de una serie (las pasadas se quedan como
 // historial). Solo un admin o quien creó la serie.
 export const deleteEventSeries = async (
-    actor: { id: string; roleId: string },
+    actor: { id: string; permissions: string[] },
     seriesId: string,
     reason?: string,
 ): Promise<{ deletedCount: number }> => {
@@ -115,7 +123,14 @@ export const deleteEventSeries = async (
 
         const creatorId = events[0]!.createdById;
 
-        if (actor.roleId !== 'admin' && creatorId !== actor.id) {
+        if (
+            !canManageResource(
+                actor,
+                creatorId,
+                'events:delete',
+                'events:delete:own',
+            )
+        ) {
             throw new EventDeleteError('forbidden');
         }
 

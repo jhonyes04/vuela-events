@@ -55,7 +55,14 @@ export const ProjectsPage = () => {
         setFormOpen(true);
     };
 
-    const filtered = projects.filter((p) => {
+    const hasFullProjectsAccess =
+        (user?.permissions.includes('projects:edit') ?? false) ||
+        (user?.permissions.includes('projects:delete') ?? false);
+    const visibleProjects = hasFullProjectsAccess
+        ? projects
+        : projects.filter((project) => project.createdById === user?.id);
+
+    const filtered = visibleProjects.filter((p) => {
         if (!search) return true;
 
         const q = search.trim().toLowerCase();

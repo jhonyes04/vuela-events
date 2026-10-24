@@ -1,5 +1,5 @@
 import { useEffect, useState, type SubmitEvent } from 'react';
-import { CircleAlert, Settings } from 'lucide-react';
+import { CircleAlert } from 'lucide-react';
 import { toast } from 'sonner';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import {
@@ -11,14 +11,13 @@ import {
     type SmtpConfig,
     type NoReplySmtpInput,
     type TemplateAssignment,
-} from '@/features/emailSettings/lib/emailSettings';
+} from '@/features/appSettings/lib/emailSettings';
 import { useEmailTemplatesStore } from '@/features/emailTemplates/store';
 import { ApiError } from '@/lib/api';
-import { PageTitle } from '@/components/PageTitle';
-import { SmtpConfigCard } from '@/features/emailSettings/components/SmtpConfigCard';
-import { NoReplySmtpConfigCard } from '@/features/emailSettings/components/NoReplySmtpConfigCard';
-import { TemplateAssignmentCard } from '@/features/emailSettings/components/TemplateAssignmentCard';
-import type { SmtpSender } from '@/features/emailSettings/components/SenderBadge';
+import { SmtpConfigCard } from '@/features/appSettings/components/SmtpConfigCard';
+import { NoReplySmtpConfigCard } from '@/features/appSettings/components/NoReplySmtpConfigCard';
+import { TemplateAssignmentCard } from '@/features/appSettings/components/TemplateAssignmentCard';
+import type { SmtpSender } from '@/features/appSettings/components/SenderBadge';
 
 const SLOT_LABELS: Record<SlotId, string> = {
     convocatoria: 'Convocatoria',
@@ -52,7 +51,7 @@ const EMPTY_NOREPLY_SMTP: NoReplySmtpInput = {
     password: '',
 };
 
-export const EmailSettingsPage = () => {
+export const EmailSettingsCard = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [smtp, setSmtp] = useState<SmtpConfig>(EMPTY_SMTP);
@@ -175,20 +174,16 @@ export const EmailSettingsPage = () => {
     }
 
     return (
-        <section className="mx-auto grid max-w-5xl gap-8">
-            <div>
-                <PageTitle icon={Settings}>Configuración de Correo</PageTitle>
+        <div className="grid gap-4">
+            {error && (
+                <Alert variant="destructive">
+                    <CircleAlert />
+                    <AlertTitle>No se pudo cargar</AlertTitle>
+                    <AlertDescription>{error}</AlertDescription>
+                </Alert>
+            )}
 
-                {error && (
-                    <Alert variant="destructive" className="mb-4">
-                        <CircleAlert />
-                        <AlertTitle>No se pudo cargar</AlertTitle>
-                        <AlertDescription>{error}</AlertDescription>
-                    </Alert>
-                )}
-            </div>
-
-            <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
+            <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
                 <SmtpConfigCard
                     smtp={smtp}
                     onChange={setSmtp}
@@ -233,6 +228,6 @@ export const EmailSettingsPage = () => {
                     }
                 />
             </div>
-        </section>
+        </div>
     );
 };

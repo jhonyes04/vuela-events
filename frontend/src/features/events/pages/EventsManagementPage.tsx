@@ -14,6 +14,8 @@ import { EventsTable } from '@/features/events/components/EventsTable';
 import { ParticipantsCountDialog } from '@/features/events/components/ParticipantsCountDialog';
 import { ConfirmDeleteDialog } from '@/components/ConfirmDeleteDialog';
 import { ApiError } from '@/lib/api';
+import { useAuth } from '@/features/auth/hooks/context';
+import { canManageResource } from '@/lib/ownership';
 import {
     deleteEventById,
     hasEnded,
@@ -29,6 +31,7 @@ interface Pending {
 }
 
 export const EventsManagementPage = () => {
+    const { user } = useAuth();
     const [events, setEvents] = useState<EventItem[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -80,8 +83,33 @@ export const EventsManagementPage = () => {
         setParticipantsOpen(true);
     };
 
+    const canEditEvent = (event: EventItem) =>
+        canManageResource(
+            user,
+            event.createdBy.id,
+            'events:edit',
+            'events:edit:own',
+        );
+
+    const canDeleteEvent = (event: EventItem) =>
+        canManageResource(
+            user,
+            event.createdBy.id,
+            'events:delete',
+            'events:delete:own',
+        );
+
+    const hasFullEventAccess =
+        (user?.permissions.includes('events:edit') ?? false) ||
+        (user?.permissions.includes('events:delete') ?? false);
+
+    const visibleEvents = hasFullEventAccess
+        ? events
+        : events.filter((event) => event.createdBy.id === user?.id);
+
     // Un evento pasado o en curso no se puede eliminar.
-    const isSelectable = (event: EventItem) => !hasStarted(event);
+    const isSelectable = (event: EventItem) =>
+        !hasStarted(event) && canDeleteEvent(event);
 
     const toggleOne = (id: string) => {
         setSelected((prev) => {
@@ -137,7 +165,7 @@ export const EventsManagementPage = () => {
             </div>
 
             <EventsTable
-                events={events}
+                events={visibleEvents}
                 loading={loading}
                 error={error}
                 onRetry={() => void load()}
@@ -185,38 +213,44 @@ export const EventsManagementPage = () => {
                                 <ClipboardList className="size-4" />
                             </Button>
                         </IconTooltip>
-                        <IconTooltip label="Editar">
-                            <Button
-                                variant="secondary"
-                                size="icon"
-                                aria-label="Editar"
-                                onClick={() => openEdit(event)}
-                            >
-                                <Pencil className="size-4" />
-                            </Button>
-                        </IconTooltip>
-                        <IconTooltip
-                            label={
-                                hasStarted(event)
-                                    ? 'No se puede eliminar un evento ya empezado'
-                                    : 'Eliminar'
-                            }
-                        >
-                            <Button
-                                variant="destructive"
-                                size="icon"
-                                aria-label="Eliminar"
-                                disabled={hasStarted(event)}
-                                onClick={() =>
-                                    setDeleting({
-                                        ids: [event.id],
-                                        label: `«${event.title}»`,
-                                    })
+
+                        {canEditEvent(event) && (
+                            <IconTooltip label="Editar">
+                                <Button
+                                    variant="secondary"
+                                    size="icon"
+                                    aria-label="Editar"
+                                    onClick={() => openEdit(event)}
+                                >
+                                    <Pencil className="size-4" />
+                                </Button>
+                            </IconTooltip>
+                        )}
+
+                        {canDeleteEvent(event) && (
+                            <IconTooltip
+                                label={
+                                    hasStarted(event)
+                                        ? 'No se puede eliminar un evento ya empezado'
+                                        : 'Eliminar'
                                 }
                             >
-                                <Trash2 className="size-4" />
-                            </Button>
-                        </IconTooltip>
+                                <Button
+                                    variant="destructive"
+                                    size="icon"
+                                    aria-label="Eliminar"
+                                    disabled={hasStarted(event)}
+                                    onClick={() =>
+                                        setDeleting({
+                                            ids: [event.id],
+                                            label: `«${event.title}»`,
+                                        })
+                                    }
+                                >
+                                    <Trash2 className="size-4" />
+                                </Button>
+                            </IconTooltip>
+                        )}
                     </>
                 )}
             />

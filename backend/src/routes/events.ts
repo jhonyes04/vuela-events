@@ -38,6 +38,7 @@ import {
     matchesDocumentType,
     documentContentTypeSchema,
 } from '../lib/documentValidation.js';
+import { canManageResource } from '../lib/ownership.js';
 
 // Sin caracteres de control ni < > : evita que title/location (insertados sin
 // escapar en el HTML de los correos vía {{proyecto}}/{{lugar}}) cuelen markup.
@@ -512,7 +513,7 @@ eventsRouter.post(
 // Editar un evento suelto: solo quien tiene permiso de gestión.
 eventsRouter.patch(
     '/:id',
-    requirePermission('events:edit'),
+    requirePermission('events:edit', 'events:edit:own'),
     async (req, res) => {
         const actor = req.user;
 
@@ -558,12 +559,27 @@ eventsRouter.patch(
             select: {
                 id: true,
                 startsAt: true,
+                createdById: true,
                 attachments: { select: { id: true } },
             },
         });
 
         if (!exists) {
             res.status(404).json({ error: 'Evento no encontrado' });
+            return;
+        }
+
+        if (
+            !canManageResource(
+                actor,
+                exists.createdById,
+                'events:edit',
+                'events:edit:own',
+            )
+        ) {
+            res.status(403).json({
+                error: 'No tienes permiso para editar este evento',
+            });
             return;
         }
 
@@ -785,7 +801,7 @@ eventsRouter.post(
 // Eliminar UNA sesión: admin o quien la creó.
 eventsRouter.delete(
     '/:id',
-    requirePermission('events:delete'),
+    requirePermission('events:delete', 'events:delete:own'),
     async (req, res) => {
         const actor = req.user;
         const params = idParamsSchema.safeParse(req.params);
@@ -824,7 +840,7 @@ eventsRouter.delete(
 // Eliminar las sesiones FUTURAS de una serie: admin o quien la creó.
 eventsRouter.delete(
     '/series/:seriesId',
-    requirePermission('events:delete'),
+    requirePermission('events:delete', 'events:delete:own'),
     async (req, res) => {
         const actor = req.user;
         const params = seriesParamsSchema.safeParse(req.params);
@@ -1109,6 +1125,8 @@ eventsRouter.get(
 eventsRouter.post(
     '/:id/attendance-report',
     requirePermission('email:send'),
+    requirePermission('events:send:parte_firmas'),
+
     async (req, res) => {
         const actor = req.user;
         const params = idParamsSchema.safeParse(req.params);

@@ -19,8 +19,8 @@ import {
     isStaleDraftMessage,
     startBulkSend,
     type SendJobStatus,
-} from '@/features/emailSettings/lib/emailSends';
-import type { SlotId } from '@/features/emailSettings/lib/emailSettings';
+} from '@/features/events/lib/emailSends';
+import type { SlotId } from '@/features/appSettings/lib/emailSettings';
 import { personLabel, type Attendee } from '@/features/events/lib/events';
 
 const POLL_MS = 2000;
