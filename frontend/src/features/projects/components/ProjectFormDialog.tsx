@@ -61,12 +61,10 @@ const ProjectFormBody = ({
     const loadAppSettings = useAppSettingsStore((s) => s.load);
     const [name, setName] = useState(project?.name ?? '');
     const [openingInstructions, setOpeningInstructions] = useState(
-        project?.openingInstructions ??
-            (project ? EMPTY_EDITOR_HTML : buildTemplateHtml(openingSections)),
+        project?.openingInstructions || buildTemplateHtml(openingSections),
     );
     const [closingInstructions, setClosingInstructions] = useState(
-        project?.closingInstructions ??
-            (project ? EMPTY_EDITOR_HTML : buildTemplateHtml(closingSections)),
+        project?.closingInstructions || buildTemplateHtml(closingSections),
     );
     const [color, setColor] = useState<string>(
         project?.color ?? PROJECT_COLORS[0],
