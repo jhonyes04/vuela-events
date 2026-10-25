@@ -108,6 +108,7 @@ export const EventCard = ({ event, onOpen }: EventCardProps) => {
                 'group relative cursor-pointer gap-0 overflow-hidden border-t-4 py-0 transition-all hover:-translate-y-0.5 hover:shadow-lg',
                 colorStyle.border.className,
             )}
+            onClick={() => onOpen(event)}
             style={colorStyle.border.style}
         >
             <CardHeader
@@ -116,13 +117,7 @@ export const EventCard = ({ event, onOpen }: EventCardProps) => {
             >
                 <div className="flex items-start justify-between gap-2">
                     <h3 className="font-heading text-base leading-snug font-semibold">
-                        <button
-                            type="button"
-                            onClick={() => onOpen(event)}
-                            className="cursor-pointer text-left outline-none after:absolute after:inset-0 focus-visible:after:ring-3 focus-visible:after:ring-ring/50"
-                        >
-                            {event.title}
-                        </button>
+                        {event.title}
                     </h3>
                     {ended && (
                         <Badge className="shrink-0 bg-gray-400 text-white">
@@ -142,7 +137,7 @@ export const EventCard = ({ event, onOpen }: EventCardProps) => {
                 )}
             </CardHeader>
             <CardContent className="grid gap-3 px-4! py-4!">
-                <EventInfoRows event={event} />
+                <EventInfoRows event={event} showProject={false} />
                 <AttendeeList event={event} />
                 {ended && (
                     <fieldset className="rounded-xl border p-3 text-sm text-muted-foreground">

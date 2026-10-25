@@ -23,29 +23,33 @@ interface EventInfoRowsProps {
     showOrganizer?: boolean;
     // La ficha de detalle agrega el botón de ver descripción del proyecto.
     projectTrailing?: ReactNode;
+    showProject?: boolean;
 }
 
 export const EventInfoRows = ({
     event,
     showOrganizer = false,
     projectTrailing,
+    showProject = true,
 }: EventInfoRowsProps) => {
     const chip = getProjectColorChip(event.project.color);
 
     return (
         <section className="grid gap-4">
-            <fieldset className="rounded-xl border p-3 text-sm text-muted-foreground">
-                <legend className="flex items-center gap-1.5 whitespace-nowrap px-1 font-bold">
-                    <FolderKanban className="size-4 shrink-0 text-brand-green" />
-                    Proyecto
-                </legend>
-                <p className="flex flex-wrap items-center gap-2">
-                    <Badge className={chip.className} style={chip.style}>
-                        {event.project.name}
-                    </Badge>
-                    {projectTrailing}
-                </p>
-            </fieldset>
+            {showProject && (
+                <fieldset className="rounded-xl border p-3 text-sm text-muted-foreground">
+                    <legend className="flex items-center gap-1.5 whitespace-nowrap px-1 font-bold">
+                        <FolderKanban className="size-4 shrink-0 text-brand-green" />
+                        Proyecto
+                    </legend>
+                    <p className="flex flex-wrap items-center gap-2">
+                        <Badge className={chip.className} style={chip.style}>
+                            {event.project.name}
+                        </Badge>
+                        {projectTrailing}
+                    </p>
+                </fieldset>
+            )}
             <fieldset className="rounded-xl border p-3 text-sm text-muted-foreground">
                 <legend className="flex items-center gap-1.5 whitespace-nowrap px-1 font-bold">
                     <CalendarClock className="size-4 shrink-0 text-brand-green" />
