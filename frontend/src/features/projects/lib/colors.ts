@@ -39,42 +39,42 @@ export const PROJECT_COLOR_STYLES: Record<ProjectColor, ProjectColorStyle> =
     {
         yellow: {
             label: 'Amarillo',
-            chip: 'bg-brand-yellow text-brand-ink',
+            chip: 'bg-brand-yellow',
             swatch: 'bg-brand-yellow',
             border: 'border-t-brand-yellow',
             tint: 'bg-brand-yellow/15',
         },
         amber: {
             label: 'Ámbar',
-            chip: 'bg-amber-500 text-white',
+            chip: 'bg-amber-500',
             swatch: 'bg-amber-500',
             border: 'border-t-amber-500',
             tint: 'bg-amber-500/10',
         },
         emerald: {
             label: 'Esmeralda',
-            chip: 'bg-emerald-500 text-white',
+            chip: 'bg-emerald-500',
             swatch: 'bg-emerald-500',
             border: 'border-t-emerald-500',
             tint: 'bg-emerald-500/10',
         },
         sky: {
             label: 'Cielo',
-            chip: 'bg-sky-500 text-white',
+            chip: 'bg-sky-500',
             swatch: 'bg-sky-500',
             border: 'border-t-sky-500',
             tint: 'bg-sky-500/10',
         },
         rose: {
             label: 'Rosa',
-            chip: 'bg-rose-500 text-white',
+            chip: 'bg-rose-500',
             swatch: 'bg-rose-500',
             border: 'border-t-rose-500',
             tint: 'bg-rose-500/10',
         },
         violet: {
             label: 'Violeta',
-            chip: 'bg-violet-500 text-white',
+            chip: 'bg-violet-500',
             swatch: 'bg-violet-500',
             border: 'border-t-violet-500',
             tint: 'bg-violet-500/10',
@@ -88,14 +88,14 @@ export const PROJECT_COLOR_STYLES: Record<ProjectColor, ProjectColorStyle> =
         // },
         orange: {
             label: 'Naranja',
-            chip: 'bg-orange-500 text-white',
+            chip: 'bg-orange-500',
             swatch: 'bg-orange-500',
             border: 'border-t-orange-500',
             tint: 'bg-orange-500/10',
         },
         pink: {
             label: 'Rosa fuerte',
-            chip: 'bg-pink-500 text-white',
+            chip: 'bg-pink-500',
             swatch: 'bg-pink-500',
             border: 'border-t-pink-500',
             tint: 'bg-pink-500/10',
@@ -130,7 +130,7 @@ export const PROJECT_COLOR_STYLES: Record<ProjectColor, ProjectColorStyle> =
         // },
         lime: {
             label: 'Lima',
-            chip: 'bg-lime-500 text-white',
+            chip: 'bg-lime-500',
             swatch: 'bg-lime-500',
             border: 'border-t-lime-500',
             tint: 'bg-lime-500/10',
@@ -179,7 +179,7 @@ export const PROJECT_COLOR_STYLES: Record<ProjectColor, ProjectColorStyle> =
         // },
         fuchsia: {
             label: 'Fucsia',
-            chip: 'bg-fuchsia-500 text-white',
+            chip: 'bg-fuchsia-500',
             swatch: 'bg-fuchsia-500',
             border: 'border-t-fuchsia-500',
             tint: 'bg-fuchsia-500/10',
@@ -259,8 +259,16 @@ const projectColorVisual = (
         ? { className: PROJECT_COLOR_STYLES[color as ProjectColor][variant] }
         : customProjectColorVisual(color, variant);
 
-export const getProjectColorChip = (color: string): ProjectColorVisual =>
-    projectColorVisual(color, 'chip');
+export const getProjectColorChip = (color: string): ProjectColorVisual => {
+    const visual = projectColorVisual(color, 'chip');
+    const hex =
+        color in PROJECT_HEX ? PROJECT_HEX[color as ProjectColor] : color;
+
+    return {
+        ...visual,
+        style: { ...visual.style, color: contrastTextColor(hex) },
+    };
+};
 
 export const getProjectColorSwatch = (color: string): ProjectColorVisual =>
     projectColorVisual(color, 'swatch');
