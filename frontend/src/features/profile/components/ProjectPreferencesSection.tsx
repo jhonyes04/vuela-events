@@ -126,18 +126,18 @@ export const ProjectPreferencesSection = ({
                                 disabled={savingId === option.id}
                                 onClick={() => void toggle(option.id)}
                                 className={cn(
-                                    'cursor-pointer rounded-lg px-3 py-2 text-left text-xs font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-60',
+                                    'cursor-pointer rounded-lg px-3 py-2 text-left text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-60',
                                     isChecked
                                         ? chip.className
                                         : 'border text-muted-foreground hover:bg-muted',
                                 )}
                                 style={isChecked ? chip.style : undefined}
                             >
-                                <span className="block text-sm underline">
+                                <span className="block underline">
                                     {option.name}:
                                 </span>
                                 {description && (
-                                    <span className="mt-0.5 block text-sm font-normal">
+                                    <span className="mt-0.5 block font-normal">
                                         {description}
                                     </span>
                                 )}
