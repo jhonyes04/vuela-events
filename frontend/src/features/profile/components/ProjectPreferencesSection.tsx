@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { ApiError } from '@/lib/api';
+import { extractLockedSection } from '@/lib/html';
 import {
     getProjectPreferences,
     listProjectOptions,
@@ -106,10 +107,16 @@ export const ProjectPreferencesSection = ({
                     Todavía no hay proyectos de eventos.
                 </p>
             ) : (
-                <div className="flex flex-wrap gap-2">
+                <div className="grid gap-2">
                     {options.map((option) => {
                         const isChecked = selected.has(option.id);
                         const chip = getProjectColorChip(option.color);
+                        const description = option.openingInstructions
+                            ? extractLockedSection(
+                                  option.openingInstructions,
+                                  'Observaciones:',
+                              )
+                            : null;
 
                         return (
                             <button
@@ -119,14 +126,19 @@ export const ProjectPreferencesSection = ({
                                 disabled={savingId === option.id}
                                 onClick={() => void toggle(option.id)}
                                 className={cn(
-                                    'cursor-pointer rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-60',
+                                    'cursor-pointer rounded-lg px-3 py-2 text-left text-xs font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-60',
                                     isChecked
                                         ? chip.className
                                         : 'border text-muted-foreground hover:bg-muted',
                                 )}
                                 style={isChecked ? chip.style : undefined}
                             >
-                                {option.name}
+                                <span className="block">{option.name}</span>
+                                {description && (
+                                    <span className="mt-0.5 block text-[11px] font-normal opacity-80">
+                                        {description}
+                                    </span>
+                                )}
                             </button>
                         );
                     })}

@@ -28,10 +28,11 @@ export const puntoVueloHints = (roleId: string): PuntoVueloHints =>
 
 export type DinamizadorTitle = 'dinamizador' | 'dinamizadora';
 
-export const DINAMIZADOR_OPTIONS: { value: DinamizadorTitle; label: string }[] = [
-    { value: 'dinamizador', label: 'Dinamizador' },
-    { value: 'dinamizadora', label: 'Dinamizadora' },
-];
+export const DINAMIZADOR_OPTIONS: { value: DinamizadorTitle; label: string }[] =
+    [
+        { value: 'dinamizador', label: 'Dinamizador' },
+        { value: 'dinamizadora', label: 'Dinamizadora' },
+    ];
 
 export interface ProfileValues {
     name: string;
@@ -48,6 +49,7 @@ export interface ProjectOption {
     id: string;
     name: string;
     color: string;
+    openingInstructions: string | null;
 }
 
 export const listProjectOptions = async (): Promise<ProjectOption[]> => {

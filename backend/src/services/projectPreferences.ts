@@ -16,12 +16,18 @@ export interface ProjectOption {
     id: string;
     name: string;
     color: string;
+    openingInstructions: string | null;
 }
 
 export const listProjectOptions = (): Promise<ProjectOption[]> =>
     prisma.project.findMany({
         where: { active: true },
-        select: { id: true, name: true, color: true },
+        select: {
+            id: true,
+            name: true,
+            color: true,
+            openingInstructions: true,
+        },
         orderBy: { name: 'asc' },
     });
 
@@ -30,11 +36,20 @@ export const getProjectPreferences = async (
 ): Promise<ProjectOption[]> => {
     const rows = await prisma.userProjectPreference.findMany({
         where: { userId },
-        select: { project: { select: { id: true, name: true, color: true } } },
+        select: {
+            project: {
+                select: {
+                    id: true,
+                    name: true,
+                    color: true,
+                    openingInstructions: true,
+                },
+            },
+        },
         orderBy: { project: { name: 'asc' } },
     });
 
-    return rows.map((r) => r.project);
+    return rows.map((row) => row.project);
 };
 
 export const setProjectPreferences = async (
