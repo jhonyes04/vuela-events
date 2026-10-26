@@ -11,6 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
+import { OwnerFilterField } from '@/components/OwnerFilterField';
 import { IconTooltip } from '@/components/IconTooltip';
 import { ConfirmDeleteDialog } from '@/components/ConfirmDeleteDialog';
 import { PageTitle } from '@/components/PageTitle';
@@ -18,9 +19,14 @@ import { DataTable, type DataTableColumn } from '@/components/DataTable';
 import { PaginationControls } from '@/components/PaginationControls';
 import { usePagination } from '@/hooks/usePagination';
 import { useSort } from '@/hooks/useSort';
+import { useOwnerFilter } from '@/hooks/useOwnerFilter';
 import { ListErrors } from '@/features/users/components/ListErrors';
 import { GuideFormDialog } from '@/features/guides/components/GuideFormDialog';
-import { deleteGuide, type Guide } from '@/features/guides/lib/guides';
+import { OwnerCell } from '@/components/OwnerCell';
+import {
+    deleteGuide,
+    type Guide,
+} from '@/features/guides/lib/guides';
 import { useGuidesStore } from '@/features/guides/store';
 import { useAuth } from '@/features/auth/hooks/context';
 import { canManageResource } from '@/lib/ownership';
@@ -64,14 +70,21 @@ export const GuidesPage = () => {
         setFormOpen(true);
     };
 
+    const { ownerFilter, setOwnerFilter, ownerOptions, matchesOwner } =
+        useOwnerFilter(guides);
+
     const query = search.trim().toLowerCase();
-    const filtered = query
-        ? guides.filter(
-              (g) =>
-                  g.name.toLowerCase().includes(query) ||
-                  g.url.toLowerCase().includes(query),
-          )
-        : guides;
+    const filtered = guides.filter((guide) => {
+        if (
+            query &&
+            !guide.name.toLowerCase().includes(query) &&
+            !guide.url.toLowerCase().includes(query)
+        ) {
+            return false;
+        }
+
+        return matchesOwner(guide);
+    });
 
     const { sorted, sort, toggleSort } = useSort<Guide, SortKey>(
         filtered,
@@ -129,6 +142,8 @@ export const GuidesPage = () => {
         });
     };
 
+    const canSeeOwner = user?.roleId === 'admin' || user?.roleId === 'dt';
+
     const columns: DataTableColumn<Guide, SortKey>[] = [
         {
             key: 'select',
@@ -174,18 +189,30 @@ export const GuidesPage = () => {
                 </a>
             ),
         },
+        ...(canSeeOwner
+            ? [
+                  {
+                      key: 'owner',
+                      header: 'Propietario',
+                      render: (guide) => (
+                          <OwnerCell owner={guide.createdBy} />
+                      ),
+                  } satisfies DataTableColumn<Guide, SortKey>,
+              ]
+            : []),
         {
             key: 'inUse',
             header: 'En uso',
-            cellClassName: 'flex justify-center',
+            headerClassName: 'text-center',
+            cellClassName: 'text-center',
             render: (guide) =>
                 guide.inUse ? (
                     <IconTooltip label="En uso en algún proyecto">
-                        <CircleCheck className="size-4 text-emerald-600" />
+                        <CircleCheck className="size-4 mx-auto text-emerald-600" />
                     </IconTooltip>
                 ) : (
                     <IconTooltip label="No usado">
-                        <CircleX className="size-4 text-destructive" />
+                        <CircleX className="size-4 mx-auto text-destructive" />
                     </IconTooltip>
                 ),
         },
@@ -278,6 +305,13 @@ export const GuidesPage = () => {
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
                 />
+                {canSeeOwner && (
+                    <OwnerFilterField
+                        options={ownerOptions}
+                        value={ownerFilter}
+                        onValueChange={setOwnerFilter}
+                    />
+                )}
                 {selected.size > 0 && (
                     <Button
                         variant="destructive"
@@ -322,7 +356,7 @@ export const GuidesPage = () => {
 
             {!loading && paged.length === 0 && (
                 <p className="mt-4 text-muted-foreground">
-                    {query
+                    {query || ownerFilter
                         ? 'No hay guías que coincidan con la búsqueda.'
                         : 'Todavía no hay guías.'}
                 </p>

@@ -12,16 +12,22 @@ import {
 const idParamsSchema = z.object({ id: z.uuid() });
 
 const observationsSchema = z.string().trim().max(300).optional();
+// Solo lo usa un admin para fijar al creador real cuando da de alta el
+// material en nombre de otro. Si lo manda cualquier otro rol, se ignora
+// (ver resolveCreatedById en el servicio).
+const ownerIdSchema = z.uuid().optional();
 
 const createMaterialSchema = z.strictObject({
     name: z.string().trim().min(2).max(100),
     observations: observationsSchema,
+    ownerId: ownerIdSchema,
 });
 
 const updateMaterialSchema = z.strictObject({
     name: z.string().trim().min(2).max(100),
     observations: observationsSchema,
     active: z.boolean(),
+    ownerId: ownerIdSchema,
 });
 
 const materialManageErrors = {
@@ -29,6 +35,7 @@ const materialManageErrors = {
     not_found: [404, 'Material no encontrado'],
     forbidden: [403, 'No puedes gestionar un material que no creaste'],
     in_use: [409, 'No se puede eliminar: hay eventos con este material'],
+    owner_not_found: [400, 'Propietario no válido'],
 } as const;
 
 export const materialRouter = Router();
@@ -75,9 +82,10 @@ materialRouter.post(
 
         try {
             const material = await createMaterial(
-                actor.id,
+                actor,
                 body.data.name,
                 body.data.observations ?? null,
+                body.data.ownerId ?? null,
             );
 
             res.status(201).json({ material });

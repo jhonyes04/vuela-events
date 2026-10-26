@@ -15,9 +15,9 @@ import { Input } from '@/components/ui/input';
 import {
     adminRegisterUser,
     listRegistrationCandidates,
-    personLabel,
     type RegistrationCandidate,
 } from '@/features/events/lib/events';
+import { personLabel } from '@/lib/personLabel';
 
 interface AddParticipantsBodyProps {
     eventId: string;

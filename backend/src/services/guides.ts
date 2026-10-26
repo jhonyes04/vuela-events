@@ -1,13 +1,15 @@
 import { prisma } from '../lib/prisma.js';
 import { recordAudit } from './audit.js';
 import { canManageResource } from '../lib/ownership.js';
+import { isAdminUser, ownerCandidateIsValid } from './ownerCandidates.js';
 import type { AuthUser } from '../lib/authUser.js';
 
 export type GuideManageFealure =
     | 'duplicate'
     | 'not_found'
     | 'has_projects'
-    | 'forbidden';
+    | 'forbidden'
+    | 'owner_not_found';
 
 export class GuideManageError extends Error {
     readonly reason: GuideManageFealure;
@@ -26,6 +28,9 @@ const guideSelect = {
     url: true,
     active: true,
     createdById: true,
+    createdBy: {
+        select: { id: true, name: true, puntoVuela: true },
+    },
     _count: { select: { projects: true } },
 } as const;
 
@@ -43,10 +48,39 @@ export const listGuides = async () => {
     return guides.map(flattenGuide);
 };
 
+// Quien crea puede fijarse a sí mismo como propietario, o, si es admin, a
+// otro usuario (dt o ail) en cuyo nombre está dando de alta la guía.
+const resolveCreatedById = async (
+    actor: Pick<AuthUser, 'id' | 'roleId' | 'permissions'>,
+    currentOwnerId: string | null,
+    ownerId: string | null | undefined,
+): Promise<string> => {
+    if (!actor.permissions.includes('ownership:manage') || !ownerId) {
+        return actor.id;
+    }
+
+    // Si ya es de un admin, quien no es admin no puede reasignarlo, ni
+    // siquiera a sí mismo.
+    if (
+        actor.roleId !== 'admin' &&
+        currentOwnerId &&
+        (await isAdminUser(currentOwnerId))
+    ) {
+        throw new GuideManageError('owner_not_found');
+    }
+
+    if (!(await ownerCandidateIsValid(ownerId, actor.roleId))) {
+        throw new GuideManageError('owner_not_found');
+    }
+
+    return ownerId;
+};
+
 export const createGuide = async (
-    actorId: string,
+    actor: Pick<AuthUser, 'id' | 'roleId' | 'permissions'>,
     name: string,
     url: string,
+    ownerId: string | null,
 ) => {
     const exists = await prisma.guide.findUnique({ where: { name } });
 
@@ -54,14 +88,16 @@ export const createGuide = async (
         throw new GuideManageError('duplicate');
     }
 
+    const createdById = await resolveCreatedById(actor, null, ownerId);
+
     const guide = await prisma.guide.create({
-        data: { name, url, createdById: actorId },
+        data: { name, url, createdById },
         select: guideSelect,
     });
 
     await recordAudit({
         action: 'guide_created',
-        actorId,
+        actorId: actor.id,
         newValue: guide.name.slice(0, 100),
     });
 
@@ -69,9 +105,14 @@ export const createGuide = async (
 };
 
 export const updateGuide = async (
-    actor: Pick<AuthUser, 'id' | 'permissions'>,
+    actor: Pick<AuthUser, 'id' | 'roleId' | 'permissions'>,
     id: string,
-    input: { name: string; url: string; active: boolean },
+    input: {
+        name: string;
+        url: string;
+        active: boolean;
+        ownerId?: string | null;
+    },
 ) => {
     const guide = await prisma.guide.findUnique({ where: { id } });
 
@@ -100,9 +141,19 @@ export const updateGuide = async (
         }
     }
 
+    const createdById =
+        input.ownerId !== undefined
+            ? await resolveCreatedById(actor, guide.createdById, input.ownerId)
+            : undefined;
+
     const updated = await prisma.guide.update({
         where: { id },
-        data: input,
+        data: {
+            name: input.name,
+            url: input.url,
+            active: input.active,
+            ...(createdById && { createdById }),
+        },
         select: guideSelect,
     });
 

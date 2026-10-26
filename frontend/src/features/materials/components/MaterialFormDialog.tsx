@@ -12,6 +12,8 @@ import {
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import { OwnerField } from '@/components/OwnerField';
+import { useAuth } from '@/features/auth/hooks/context';
 import { ApiError } from '@/lib/api';
 import {
     createMaterial,
@@ -30,11 +32,16 @@ const MaterialFormBody = ({
     onSaved,
     onClose,
 }: MaterialFormBodyProps) => {
+    const { user } = useAuth();
+    const canManageOwner = user?.permissions.includes('ownership:manage') ?? false;
     const [name, setName] = useState(material?.name ?? '');
     const [observations, setObservations] = useState(
         material?.observations ?? '',
     );
     const [active, setActive] = useState(material?.active ?? true);
+    const [ownerId, setOwnerId] = useState(
+        material?.createdById ?? user?.id ?? '',
+    );
     const [submitting, setSubmitting] = useState(false);
 
     const handleSubmit = async (e: SubmitEvent) => {
@@ -45,6 +52,7 @@ const MaterialFormBody = ({
             const payload = {
                 name,
                 observations: observations || undefined,
+                ...(canManageOwner && { ownerId: ownerId || undefined }),
             };
             const saved = material
                 ? await updateMaterial(material.id, { ...payload, active })
@@ -100,6 +108,15 @@ const MaterialFormBody = ({
                         onChange={(e) => setObservations(e.target.value)}
                     />
                 </div>
+
+                {canManageOwner && (
+                    <OwnerField
+                        value={ownerId}
+                        onValueChange={setOwnerId}
+                        disabled={submitting}
+                        currentOwner={material?.createdBy ?? null}
+                    />
+                )}
 
                 {material && (
                     <label className="flex items-center gap-2 text-sm">

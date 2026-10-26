@@ -29,6 +29,11 @@ const hexColorSchema = z
     .regex(/^#[0-9a-f]{6}$/i, 'Color hex inválido');
 const projectColorSchema = z.union([z.enum(PROJECT_COLORS), hexColorSchema]);
 
+// Solo lo usa un admin para fijar al creador real cuando da de alta el
+// proyecto en nombre de otro. Si lo manda cualquier otro rol, se ignora
+// (ver resolveCreatedById en el servicio).
+const ownerIdSchema = z.uuid().optional();
+
 const createProjectSchema = z.strictObject({
     name: z.string().trim().min(2).max(80),
     openingInstructions: z.string().max(20000).nullable().optional(),
@@ -37,6 +42,7 @@ const createProjectSchema = z.strictObject({
     guideIds: z.array(z.uuid()).min(1),
     resourceLinkIds: z.array(z.uuid()).default([]),
     documentIds: z.array(z.uuid()).default([]),
+    ownerId: ownerIdSchema,
 });
 
 const updateProjectSchema = z.strictObject({
@@ -48,6 +54,7 @@ const updateProjectSchema = z.strictObject({
     resourceLinkIds: z.array(z.uuid()).default([]),
     documentIds: z.array(z.uuid()).default([]),
     active: z.boolean(),
+    ownerId: ownerIdSchema,
 });
 
 const projectManageErrors = {
@@ -58,6 +65,7 @@ const projectManageErrors = {
     resource_link_not_found: [400, 'Recurso no válido'],
     document_not_found: [400, 'Documento no válido'],
     forbidden: [403, 'No puedes gestionar un proyecto que no creaste'],
+    owner_not_found: [400, 'Propietario no válido'],
 } as const;
 
 export const projectsRouter = Router();
@@ -164,7 +172,7 @@ projectsRouter.post(
 
         try {
             const project = await createProject(
-                actor.id,
+                actor,
                 body.data.name,
                 body.data.openingInstructions ?? null,
                 body.data.closingInstructions ?? null,
@@ -172,6 +180,7 @@ projectsRouter.post(
                 body.data.guideIds,
                 body.data.resourceLinkIds,
                 body.data.documentIds,
+                body.data.ownerId ?? null,
             );
 
             res.status(201).json({ project });

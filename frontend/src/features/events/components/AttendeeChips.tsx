@@ -2,7 +2,8 @@ import { Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { IconTooltip } from '@/components/IconTooltip';
-import { personLabel, type Attendee } from '@/features/events/lib/events';
+import { type Attendee } from '@/features/events/lib/events';
+import { personLabel } from '@/lib/personLabel';
 
 interface AttendeeChipsProps {
     attendees: Attendee[];

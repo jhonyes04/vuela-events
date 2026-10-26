@@ -149,4 +149,54 @@ describe('guías: permisos propios y de todos', () => {
 
         assert.equal(res.status, 200);
     });
+
+    describe('propietario', () => {
+        const postGuide = async (userId: string, body: unknown) =>
+            api(server.baseUrl, 'POST', '/api/guides', {
+                cookie: await sessionCookieFor(userId),
+                body,
+            });
+
+        it('dt crea una guía y puede fijar el propietario a un ail', async () => {
+            const dt = await createUser('dt');
+            const ail = await createUser('ail');
+
+            const res = await postGuide(dt.id, {
+                name: `Guía ${Date.now()}`,
+                url: 'https://example.com/guia',
+                ownerId: ail.id,
+            });
+
+            assert.equal(res.status, 201);
+            assert.equal(res.body.guide.createdById, ail.id);
+        });
+
+        it('dt NO puede fijar el propietario a un admin: 400', async () => {
+            const dt = await createUser('dt');
+            const admin = await createUser('admin');
+
+            const res = await postGuide(dt.id, {
+                name: `Guía ${Date.now()}`,
+                url: 'https://example.com/guia',
+                ownerId: admin.id,
+            });
+
+            assert.equal(res.status, 400);
+            assert.equal(res.body.error, 'Propietario no válido');
+        });
+
+        it('si el propietario actual es admin, dt no puede reasignarlo ni a sí mismo: 400', async () => {
+            const dt = await createUser('dt');
+            const admin = await createUser('admin');
+            const guide = await createGuide({ createdById: admin.id });
+
+            const res = await patchGuide(dt.id, guide.id, {
+                ...validPayload(),
+                ownerId: dt.id,
+            });
+
+            assert.equal(res.status, 400);
+            assert.equal(res.body.error, 'Propietario no válido');
+        });
+    });
 });

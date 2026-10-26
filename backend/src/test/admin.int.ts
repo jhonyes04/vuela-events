@@ -353,4 +353,49 @@ describe('administración de usuarios', () => {
             assert.ok(!(r1.status === 200 && r2.status === 200));
         });
     });
+
+    describe('candidatos a propietario', () => {
+        const getCandidates = async (userId: string) =>
+            api(server.baseUrl, 'GET', '/api/users/owner-candidates', {
+                cookie: await sessionCookieFor(userId),
+            });
+
+        it('admin ve a todos los activos, admin incluido', async () => {
+            const admin = await createUser('admin');
+            const otherAdmin = await createUser('admin');
+            const dt = await createUser('dt');
+            const ail = await createUser('ail');
+
+            const res = await getCandidates(admin.id);
+
+            assert.equal(res.status, 200);
+            const ids = res.body.users.map((u: { id: string }) => u.id);
+            assert.ok(ids.includes(otherAdmin.id));
+            assert.ok(ids.includes(dt.id));
+            assert.ok(ids.includes(ail.id));
+        });
+
+        it('dt ve a todos menos admin', async () => {
+            const dt = await createUser('dt');
+            const otherDt = await createUser('dt');
+            const ail = await createUser('ail');
+            const admin = await createUser('admin');
+
+            const res = await getCandidates(dt.id);
+
+            assert.equal(res.status, 200);
+            const ids = res.body.users.map((u: { id: string }) => u.id);
+            assert.ok(ids.includes(otherDt.id));
+            assert.ok(ids.includes(ail.id));
+            assert.ok(!ids.includes(admin.id));
+        });
+
+        it('sin el permiso ownership:manage: 403', async () => {
+            const ail = await createUser('ail');
+
+            const res = await getCandidates(ail.id);
+
+            assert.equal(res.status, 403);
+        });
+    });
 });

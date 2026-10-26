@@ -1,5 +1,6 @@
 import { prisma } from '../lib/prisma.js';
 import { recordAudit } from './audit.js';
+import { isAdminUser, ownerCandidateIsValid } from './ownerCandidates.js';
 import { sanitizeEmailHtml } from './emailSignature.js';
 import { canManageResource } from '../lib/ownership.js';
 import { logger } from '../lib/logger.js';
@@ -41,7 +42,8 @@ export type ProjectManageFailure =
     | 'guide_not_found'
     | 'resource_link_not_found'
     | 'document_not_found'
-    | 'forbidden';
+    | 'forbidden'
+    | 'owner_not_found';
 
 export class ProjectManageError extends Error {
     readonly reason: ProjectManageFailure;
@@ -62,6 +64,9 @@ const projectSelect = {
     color: true,
     active: true,
     createdById: true,
+    createdBy: {
+        select: { id: true, name: true, puntoVuela: true },
+    },
     guides: {
         select: { guide: { select: { id: true, name: true, url: true } } },
     },
@@ -124,6 +129,33 @@ const documentsExist = async (documentIds: string[]): Promise<boolean> => {
     return count === documentIds.length;
 };
 
+// Quien crea puede fijarse a sí mismo como propietario, o, si es admin, a
+// otro usuario (dt o ail) en cuyo nombre está dando de alta el proyecto.
+const resolveCreatedById = async (
+    actor: Pick<AuthUser, 'id' | 'roleId' | 'permissions'>,
+    currentOwnerId: string | null,
+    ownerId: string | null | undefined,
+): Promise<string> => {
+    if (!actor.permissions.includes('ownership:manage') || !ownerId)
+        return actor.id;
+
+    // Si ya es de un admin, quien no es admin no puede reasignarlo, ni
+    // siquiera a sí mismo.
+    if (
+        actor.roleId !== 'admin' &&
+        currentOwnerId &&
+        (await isAdminUser(currentOwnerId))
+    ) {
+        throw new ProjectManageError('owner_not_found');
+    }
+
+    if (!(await ownerCandidateIsValid(ownerId, actor.roleId))) {
+        throw new ProjectManageError('owner_not_found');
+    }
+
+    return ownerId;
+};
+
 export const listProjects = async () => {
     const projects = await prisma.project.findMany({
         orderBy: { name: 'asc' },
@@ -177,7 +209,7 @@ const notifyProjectCreated = async (
 };
 
 export const createProject = async (
-    actorId: string,
+    actor: Pick<AuthUser, 'id' | 'roleId' | 'permissions'>,
     name: string,
     openingInstructions: string | null,
     closingInstructions: string | null,
@@ -185,6 +217,7 @@ export const createProject = async (
     guideIds: string[],
     resourceLinkIds: string[],
     documentIds: string[],
+    ownerId: string | null,
 ) => {
     const exists = await prisma.project.findUnique({ where: { name } });
 
@@ -204,6 +237,8 @@ export const createProject = async (
         throw new ProjectManageError('document_not_found');
     }
 
+    const createdById = await resolveCreatedById(actor, null, ownerId);
+
     const project = await prisma.project.create({
         data: {
             name,
@@ -214,7 +249,7 @@ export const createProject = async (
                 ? sanitizeEmailHtml(closingInstructions) || null
                 : null,
             color,
-            createdById: actorId,
+            createdById,
             guides: { create: guideIds.map((guideId) => ({ guideId })) },
             resourceLinks: {
                 create: resourceLinkIds.map((resourceLinkId) => ({
@@ -230,17 +265,17 @@ export const createProject = async (
 
     await recordAudit({
         action: 'project_created',
-        actorId,
+        actorId: actor.id,
         newValue: project.name.slice(0, 100),
     });
 
-    void notifyProjectCreated(project, actorId);
+    void notifyProjectCreated(project, actor.id);
 
     return flattenProject(project);
 };
 
 export const updateProject = async (
-    actor: Pick<AuthUser, 'id' | 'permissions'>,
+    actor: Pick<AuthUser, 'id' | 'roleId' | 'permissions'>,
     id: string,
     input: {
         name: string;
@@ -251,6 +286,7 @@ export const updateProject = async (
         resourceLinkIds: string[];
         documentIds: string[];
         active: boolean;
+        ownerId?: string | null;
     },
 ) => {
     const project = await prisma.project.findUnique({ where: { id } });
@@ -292,6 +328,15 @@ export const updateProject = async (
         throw new ProjectManageError('document_not_found');
     }
 
+    const createdById =
+        input.ownerId !== undefined
+            ? await resolveCreatedById(
+                  actor,
+                  project.createdById,
+                  input.ownerId,
+              )
+            : undefined;
+
     const [, , , , , , updated] = await prisma.$transaction([
         prisma.projectGuide.deleteMany({ where: { projectId: id } }),
         prisma.projectGuide.createMany({
@@ -326,6 +371,7 @@ export const updateProject = async (
                     : null,
                 color: input.color,
                 active: input.active,
+                ...(createdById && { createdById }),
             },
             select: projectSelect,
         }),

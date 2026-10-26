@@ -17,6 +17,12 @@ export interface ProjectDocument {
     title: string;
 }
 
+export interface ProjectOwner {
+    id: string;
+    name: string;
+    puntoVuela: string | null;
+}
+
 export interface Project {
     id: string;
     name: string;
@@ -25,6 +31,7 @@ export interface Project {
     color: string;
     active: boolean;
     createdById: string | null;
+    createdBy: ProjectOwner | null;
     guides: ProjectGuide[];
     resourceLinks: ProjectResourceLink[];
     documents: ProjectDocument[];
@@ -38,6 +45,7 @@ export interface ProjectInput {
     guideIds: string[];
     resourceLinkIds: string[];
     documentIds: string[];
+    ownerId?: string | undefined;
 }
 
 export interface ProjectUpdateInput extends ProjectInput {

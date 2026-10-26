@@ -13,6 +13,8 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { OwnerField } from '@/components/OwnerField';
+import { useAuth } from '@/features/auth/hooks/context';
 import { ApiError } from '@/lib/api';
 import {
     createProject,
@@ -52,6 +54,8 @@ const ProjectFormBody = ({
     onSaved,
     onClose,
 }: ProjectFormBodyProps) => {
+    const { user } = useAuth();
+    const canManageOwner = user?.permissions.includes('ownership:manage') ?? false;
     const openingSections = useAppSettingsStore(
         (s) => s.projectOpeningSections,
     );
@@ -82,6 +86,9 @@ const ProjectFormBody = ({
         ]),
     );
     const [active, setActive] = useState(project?.active ?? true);
+    const [ownerId, setOwnerId] = useState(
+        project?.createdById ?? user?.id ?? '',
+    );
     const [submitting, setSubmitting] = useState(false);
 
     const guides = useGuidesStore((s) => s.items);
@@ -164,6 +171,7 @@ const ProjectFormBody = ({
                 guideIds: [...guideIds],
                 resourceLinkIds,
                 documentIds,
+                ...(canManageOwner && { ownerId: ownerId || undefined }),
             };
 
             const saved = project
@@ -235,6 +243,15 @@ const ProjectFormBody = ({
                         closingInstructions={closingInstructions}
                         onClosingChange={setClosingInstructions}
                     />
+
+                    {canManageOwner && (
+                        <OwnerField
+                            value={ownerId}
+                            onValueChange={setOwnerId}
+                            disabled={submitting}
+                            currentOwner={project?.createdBy ?? null}
+                        />
+                    )}
 
                     {project && (
                         <label className="flex items-center gap-2 text-sm">

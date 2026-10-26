@@ -1,5 +1,11 @@
 import { api } from '@/lib/api';
 
+export interface MaterialOwner {
+    id: string;
+    name: string;
+    puntoVuela: string | null;
+}
+
 export interface Material {
     id: string;
     name: string;
@@ -7,11 +13,13 @@ export interface Material {
     active: boolean;
     inUse: boolean;
     createdById: string | null;
+    createdBy: MaterialOwner | null;
 }
 
 export interface MaterialInput {
     name: string;
     observations?: string | undefined;
+    ownerId?: string | undefined;
 }
 
 export interface MaterialUpdateInput extends MaterialInput {

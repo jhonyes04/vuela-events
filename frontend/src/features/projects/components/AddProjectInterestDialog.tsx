@@ -18,7 +18,7 @@ import {
     type EligibleUserOption,
     type ProjectInterests,
 } from '@/features/projects/lib/projects';
-import { personLabel } from '@/features/events/lib/events';
+import { personLabel } from '@/lib/personLabel';
 
 interface AddProjectInterestBodyProps {
     projectId: string;

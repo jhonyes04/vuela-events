@@ -1,5 +1,11 @@
 import { api } from '@/lib/api';
 
+export interface GuideOwner {
+    id: string;
+    name: string;
+    puntoVuela: string | null;
+}
+
 export interface Guide {
     id: string;
     name: string;
@@ -7,11 +13,13 @@ export interface Guide {
     active: boolean;
     inUse: boolean;
     createdById: string | null;
+    createdBy: GuideOwner | null;
 }
 
 export interface GuideInput {
     name: string;
     url: string;
+    ownerId?: string | undefined;
 }
 
 export interface GuideUpdateInput extends GuideInput {

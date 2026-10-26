@@ -24,7 +24,7 @@ import {
     getProjectColorTint,
 } from '@/features/projects/lib/colors';
 import { AddProjectInterestDialog } from '@/features/projects/components/AddProjectInterestDialog';
-import { personLabel } from '@/features/events/lib/events';
+import { personLabel } from '@/lib/personLabel';
 import { cn } from '@/lib/utils';
 import { ApiError } from '@/lib/api';
 

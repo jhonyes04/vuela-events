@@ -13,9 +13,9 @@ import {
     dayKey,
     formatDayLabel,
     formatTime,
-    personLabel,
     type EventItem,
 } from '@/features/events/lib/events';
+import { personLabel } from '@/lib/personLabel';
 
 interface EventInfoRowsProps {
     event: EventItem;

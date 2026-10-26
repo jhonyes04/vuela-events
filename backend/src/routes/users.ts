@@ -15,6 +15,7 @@ import {
     getProjectPreferences,
     setProjectPreferences,
 } from '../services/projectPreferences.js';
+import { listOwnerCandidates } from '../services/ownerCandidates.js';
 import { projectPreferencesSchema, profileSchema } from './profile.js';
 
 const paramsSchema = z.object({ id: z.uuid() });
@@ -66,7 +67,25 @@ const handleAdminError = (e: unknown, res: Response) => {
 
 export const usersRouter = Router();
 
-// Todo lo que cuelga de este router exige el permiso de gestionar usuarios.
+// Antes del gate genérico: lo usa cualquiera con permiso para asignar
+// propietario (admin o dt), no solo quien gestiona usuarios.
+usersRouter.get(
+    '/owner-candidates',
+    requireAuth,
+    requirePermission('ownership:manage'),
+    async (req, res) => {
+        const actor = req.user;
+
+        if (!actor) {
+            res.status(401).json({ error: 'Autenticación requerida' });
+            return;
+        }
+
+        res.json({ users: await listOwnerCandidates(actor.roleId) });
+    },
+);
+
+// Todo lo demás cuelga de este router y exige el permiso de gestionar usuarios.
 usersRouter.use(requireAuth, requirePermission('users:manage'));
 
 usersRouter.get('/', async (_req, res) => {

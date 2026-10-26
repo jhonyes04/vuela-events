@@ -1,4 +1,12 @@
-import { CircleCheck, CircleX, Eye, FileText, Link2, Pencil, Trash2 } from 'lucide-react';
+import {
+    CircleCheck,
+    CircleX,
+    Eye,
+    FileText,
+    Link2,
+    Pencil,
+    Trash2,
+} from 'lucide-react';
 import type { User } from '@/lib/api';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -6,7 +14,11 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { IconTooltip } from '@/components/IconTooltip';
 import { type DataTableColumn } from '@/components/DataTable';
 import { canManageResource } from '@/lib/ownership';
-import type { Pending, ResourceRow, SortKey } from '@/features/resources/pages/resourcesTable.types';
+import type {
+    Pending,
+    ResourceRow,
+    SortKey,
+} from '@/features/resources/pages/resourcesTable.types';
 
 interface BuildResourceColumnsParams {
     user: Pick<User, 'id' | 'permissions'> | null;
@@ -88,15 +100,16 @@ export const buildResourceColumns = ({
     {
         key: 'inUse',
         header: 'En uso',
-        cellClassName: 'flex justify-center',
+        headerClassName: 'text-center',
+        cellClassName: 'text-center',
         render: (row) =>
             row.inUse ? (
                 <IconTooltip label="En uso en algún proyecto">
-                    <CircleCheck className="size-4 text-emerald-600" />
+                    <CircleCheck className="size-4 mx-auto text-emerald-600" />
                 </IconTooltip>
             ) : (
                 <IconTooltip label="No usado">
-                    <CircleX className="size-4 text-destructive" />
+                    <CircleX className="size-4 mx-auto text-destructive" />
                 </IconTooltip>
             ),
     },
@@ -136,7 +149,7 @@ export const buildResourceColumns = ({
                 <>
                     <IconTooltip label="Ver">
                         <Button
-                            variant="secondary"
+                            variant="default"
                             size="icon"
                             aria-label="Ver"
                             onClick={() => view(row)}

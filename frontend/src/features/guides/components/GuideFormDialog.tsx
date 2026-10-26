@@ -12,6 +12,8 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { OwnerField } from '@/components/OwnerField';
+import { useAuth } from '@/features/auth/hooks/context';
 import { ApiError } from '@/lib/api';
 import {
     createGuide,
@@ -26,9 +28,14 @@ interface GuideFormBodyProps {
 }
 
 const GuideFormBody = ({ guide, onSaved, onClose }: GuideFormBodyProps) => {
+    const { user } = useAuth();
+    const canManageOwner = user?.permissions.includes('ownership:manage') ?? false;
     const [name, setName] = useState(guide?.name ?? '');
     const [url, setUrl] = useState(guide?.url ?? '');
     const [active, setActive] = useState(guide?.active ?? true);
+    const [ownerId, setOwnerId] = useState(
+        guide?.createdById ?? user?.id ?? '',
+    );
     const [submitting, setSubmitting] = useState(false);
 
     const handleSubmit = async (e: SubmitEvent) => {
@@ -36,9 +43,14 @@ const GuideFormBody = ({ guide, onSaved, onClose }: GuideFormBodyProps) => {
         setSubmitting(true);
 
         try {
+            const payload = {
+                name,
+                url,
+                ...(canManageOwner && { ownerId: ownerId || undefined }),
+            };
             const saved = guide
-                ? await updateGuide(guide.id, { name, url, active })
-                : await createGuide({ name, url });
+                ? await updateGuide(guide.id, { ...payload, active })
+                : await createGuide(payload);
 
             toast.success(guide ? 'Guía actualizada.' : 'Guía creada.');
             onSaved(saved);
@@ -94,6 +106,15 @@ const GuideFormBody = ({ guide, onSaved, onClose }: GuideFormBodyProps) => {
                         onChange={(e) => setUrl(e.target.value)}
                     />
                 </div>
+
+                {canManageOwner && (
+                    <OwnerField
+                        value={ownerId}
+                        onValueChange={setOwnerId}
+                        disabled={submitting}
+                        currentOwner={guide?.createdBy ?? null}
+                    />
+                )}
 
                 {guide && (
                     <label className="flex items-center gap-2 text-sm">

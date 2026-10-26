@@ -4,6 +4,7 @@ import { OverlayScrollbarsComponent } from 'overlayscrollbars-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { OwnerFilterField } from '@/components/OwnerFilterField';
 import { ConfirmDeleteDialog } from '@/components/ConfirmDeleteDialog';
 import { DataTable, type DataTableColumn } from '@/components/DataTable';
 import { IconTooltip } from '@/components/IconTooltip';
@@ -11,7 +12,11 @@ import { PageTitle } from '@/components/PageTitle';
 import { PaginationControls } from '@/components/PaginationControls';
 import { ListErrors } from '@/features/users/components/ListErrors';
 import { ProjectFormDialog } from '@/features/projects/components/ProjectFormDialog';
-import { deleteProject, type Project } from '@/features/projects/lib/projects';
+import { OwnerCell } from '@/components/OwnerCell';
+import {
+    deleteProject,
+    type Project,
+} from '@/features/projects/lib/projects';
 import { getProjectColorSwatch } from '@/features/projects/lib/colors';
 import { cn } from '@/lib/utils';
 import { useProjectsStore } from '@/features/projects/store';
@@ -21,6 +26,7 @@ import { stripHtml } from '@/lib/html';
 import { scrollbarOptions } from '@/lib/overlayScrollbarsOptions';
 import { usePagination } from '@/hooks/usePagination';
 import { useSort } from '@/hooks/useSort';
+import { useOwnerFilter } from '@/hooks/useOwnerFilter';
 
 const CHARACTERS_LENGTH = 130;
 
@@ -62,15 +68,21 @@ export const ProjectsPage = () => {
         ? projects
         : projects.filter((project) => project.createdById === user?.id);
 
-    const filtered = visibleProjects.filter((p) => {
-        if (!search) return true;
+    const { ownerFilter, setOwnerFilter, ownerOptions, matchesOwner } =
+        useOwnerFilter(visibleProjects);
 
+    const filtered = visibleProjects.filter((p) => {
         const q = search.trim().toLowerCase();
 
-        return (
-            p.name.toLowerCase().includes(q) ||
-            p.guides.some((g) => g.name.toLowerCase().includes(q))
-        );
+        if (
+            q &&
+            !p.name.toLowerCase().includes(q) &&
+            !p.guides.some((g) => g.name.toLowerCase().includes(q))
+        ) {
+            return false;
+        }
+
+        return matchesOwner(p);
     });
 
     const { sorted, sort, toggleSort } = useSort<Project, 'name' | 'active'>(
@@ -85,13 +97,15 @@ export const ProjectsPage = () => {
     const { paged, page, pageCount, pageSize, total, setPage, setPageSize } =
         usePagination(sorted, 10);
 
+    const canSeeOwner = user?.roleId === 'admin' || user?.roleId === 'dt';
+
     const columns: DataTableColumn<Project, 'name' | 'active'>[] = [
         {
             key: 'name',
             header: 'Nombre',
             sortKey: 'name',
-            render: (p) => {
-                const swatch = getProjectColorSwatch(p.color);
+            render: (project) => {
+                const swatch = getProjectColorSwatch(project.color);
 
                 return (
                     <div className="flex min-w-0 items-center gap-2">
@@ -102,7 +116,9 @@ export const ProjectsPage = () => {
                             )}
                             style={swatch.style}
                         />
-                        <span className="truncate font-medium">{p.name}</span>
+                        <span className="truncate font-medium">
+                            {project.name}
+                        </span>
                     </div>
                 );
             },
@@ -112,9 +128,9 @@ export const ProjectsPage = () => {
             header: 'Guías',
             headerClassName: 'hidden sm:table-cell',
             cellClassName: 'hidden sm:table-cell max-w-xs truncate',
-            render: (p) => {
+            render: (project) => {
                 const text =
-                    p.guides.map((guide) => guide.name).join(', ') || '-';
+                    project.guides.map((guide) => guide.name).join(', ') || '-';
 
                 return (
                     text.slice(0, CHARACTERS_LENGTH) +
@@ -127,10 +143,10 @@ export const ProjectsPage = () => {
             header: 'Observaciones',
             headerClassName: 'hidden sm:table-cell',
             cellClassName: 'hidden sm:table-cell max-w-xs truncate',
-            render: (p) => {
-                if (!p.openingInstructions) return '—';
+            render: (project) => {
+                if (!project.openingInstructions) return '—';
 
-                const text = stripHtml(p.openingInstructions);
+                const text = stripHtml(project.openingInstructions);
                 const match = text.match(/observaciones\s*:?/i);
                 const relevant = match
                     ? text.slice(match.index! + match[0].length).trim()
@@ -142,12 +158,23 @@ export const ProjectsPage = () => {
                     : '—';
             },
         },
+        ...(canSeeOwner
+            ? [
+                  {
+                      key: 'owner',
+                      header: 'Propietario',
+                      render: (project) => (
+                          <OwnerCell owner={project.createdBy} />
+                      ),
+                  } satisfies DataTableColumn<Project, 'name' | 'active'>,
+              ]
+            : []),
         {
             key: 'active',
             header: 'Estado',
             sortKey: 'active',
-            render: (p) =>
-                p.active ? (
+            render: (project) =>
+                project.active ? (
                     <Badge
                         variant="default"
                         className="border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
@@ -168,11 +195,11 @@ export const ProjectsPage = () => {
             header: <span className="sr-only">Acciones</span>,
             align: 'right',
             cellClassName: 'flex justify-end gap-2',
-            render: (p) => (
+            render: (project) => (
                 <>
                     {canManageResource(
                         user,
-                        p.createdById,
+                        project.createdById,
                         'projects:edit',
                         'projects:edit:own',
                     ) && (
@@ -181,7 +208,7 @@ export const ProjectsPage = () => {
                                 variant="secondary"
                                 size="icon"
                                 aria-label="Editar"
-                                onClick={() => openEdit(p)}
+                                onClick={() => openEdit(project)}
                             >
                                 <Pencil className="size-4" />
                             </Button>
@@ -189,7 +216,7 @@ export const ProjectsPage = () => {
                     )}
                     {canManageResource(
                         user,
-                        p.createdById,
+                        project.createdById,
                         'projects:delete',
                         'projects:delete:own',
                     ) && (
@@ -198,7 +225,7 @@ export const ProjectsPage = () => {
                                 variant="destructive"
                                 size="icon"
                                 aria-label="Eliminar"
-                                onClick={() => setDeleting(p)}
+                                onClick={() => setDeleting(project)}
                             >
                                 <Trash2 className="size-4" />
                             </Button>
@@ -224,13 +251,20 @@ export const ProjectsPage = () => {
                 onRetry={() => void load(true)}
             />
 
-            <div className="mb-4">
+            <div className="mb-4 flex flex-wrap items-center gap-2">
                 <Input
                     placeholder="Buscar por nombre o guía…"
                     className="bg-card w-full sm:w-56"
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
                 />
+                {canSeeOwner && (
+                    <OwnerFilterField
+                        options={ownerOptions}
+                        value={ownerFilter}
+                        onValueChange={setOwnerFilter}
+                    />
+                )}
             </div>
 
             {loading ? (

@@ -1,13 +1,15 @@
 import { prisma } from '../lib/prisma.js';
 import { recordAudit } from './audit.js';
 import { canManageResource } from '../lib/ownership.js';
+import { isAdminUser, ownerCandidateIsValid } from './ownerCandidates.js';
 import type { AuthUser } from '../lib/authUser.js';
 
 export type MaterialManageFailure =
     | 'duplicate'
     | 'not_found'
     | 'forbidden'
-    | 'in_use';
+    | 'in_use'
+    | 'owner_not_found';
 
 export class MaterialManageError extends Error {
     readonly reason: MaterialManageFailure;
@@ -26,6 +28,9 @@ const materialSelect = {
     observations: true,
     active: true,
     createdById: true,
+    createdBy: {
+        select: { id: true, name: true, puntoVuela: true },
+    },
     _count: { select: { events: true } },
 } as const;
 
@@ -43,10 +48,39 @@ export const listMaterials = async () => {
     return materials.map(flattenMaterial);
 };
 
+// Quien crea puede fijarse a sí mismo como propietario, o, si es admin, a
+// otro usuario (dt o ail) en cuyo nombre está dando de alta el material.
+const resolveCreatedById = async (
+    actor: Pick<AuthUser, 'id' | 'roleId' | 'permissions'>,
+    currentOwnerId: string | null,
+    ownerId: string | null | undefined,
+): Promise<string> => {
+    if (!actor.permissions.includes('ownership:manage') || !ownerId) {
+        return actor.id;
+    }
+
+    // Si ya es de un admin, quien no es admin no puede reasignarlo, ni
+    // siquiera a sí mismo.
+    if (
+        actor.roleId !== 'admin' &&
+        currentOwnerId &&
+        (await isAdminUser(currentOwnerId))
+    ) {
+        throw new MaterialManageError('owner_not_found');
+    }
+
+    if (!(await ownerCandidateIsValid(ownerId, actor.roleId))) {
+        throw new MaterialManageError('owner_not_found');
+    }
+
+    return ownerId;
+};
+
 export const createMaterial = async (
-    actorId: string,
+    actor: Pick<AuthUser, 'id' | 'roleId' | 'permissions'>,
     name: string,
     observations: string | null,
+    ownerId: string | null,
 ) => {
     const exists = await prisma.material.findUnique({ where: { name } });
 
@@ -54,14 +88,16 @@ export const createMaterial = async (
         throw new MaterialManageError('duplicate');
     }
 
+    const createdById = await resolveCreatedById(actor, null, ownerId);
+
     const material = await prisma.material.create({
-        data: { name, observations, createdById: actorId },
+        data: { name, observations, createdById },
         select: materialSelect,
     });
 
     await recordAudit({
         action: 'material_created',
-        actorId,
+        actorId: actor.id,
         newValue: material.name.slice(0, 100),
     });
 
@@ -69,12 +105,13 @@ export const createMaterial = async (
 };
 
 export const updateMaterial = async (
-    actor: Pick<AuthUser, 'id' | 'permissions'>,
+    actor: Pick<AuthUser, 'id' | 'roleId' | 'permissions'>,
     id: string,
     input: {
         name: string;
         observations: string | null;
         active: boolean;
+        ownerId?: string | null;
     },
 ) => {
     const material = await prisma.material.findUnique({ where: { id } });
@@ -104,9 +141,23 @@ export const updateMaterial = async (
         }
     }
 
+    const createdById =
+        input.ownerId !== undefined
+            ? await resolveCreatedById(
+                  actor,
+                  material.createdById,
+                  input.ownerId,
+              )
+            : undefined;
+
     const updated = await prisma.material.update({
         where: { id },
-        data: input,
+        data: {
+            name: input.name,
+            observations: input.observations,
+            active: input.active,
+            ...(createdById && { createdById }),
+        },
         select: materialSelect,
     });
 

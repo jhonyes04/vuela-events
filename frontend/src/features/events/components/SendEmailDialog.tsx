@@ -21,7 +21,8 @@ import {
     type SendJobStatus,
 } from '@/features/events/lib/emailSends';
 import type { SlotId } from '@/features/appSettings/lib/emailSettings';
-import { personLabel, type Attendee } from '@/features/events/lib/events';
+import { type Attendee } from '@/features/events/lib/events';
+import { personLabel } from '@/lib/personLabel';
 
 const POLL_MS = 2000;
 // A partir de este número de destinatarios, la lista deja de crecer y pasa

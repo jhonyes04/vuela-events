@@ -22,15 +22,19 @@ const urlSchema = z
         'La URL debe empezar por http:// o https://',
     );
 
+const ownerIdSchema = z.uuid().optional();
+
 const createGuideSchema = z.strictObject({
     name: z.string().trim().min(2).max(100),
     url: urlSchema,
+    ownerId: ownerIdSchema,
 });
 
 const updateGuideSchema = z.strictObject({
     name: z.string().trim().min(2).max(100),
     url: urlSchema,
     active: z.boolean(),
+    ownerId: ownerIdSchema,
 });
 
 const guideManageErrors = {
@@ -38,6 +42,7 @@ const guideManageErrors = {
     not_found: [404, 'Guía no encontrada'],
     has_projects: [409, 'No se puede eliminar: hay proyectos con esta guía'],
     forbidden: [403, 'No puedes gestionar una guía que no creaste'],
+    owner_not_found: [400, 'Propietario no válido'],
 } as const;
 
 export const guidesRouter = Router();
@@ -81,9 +86,10 @@ guidesRouter.post('/', requirePermission('guides:create'), async (req, res) => {
 
     try {
         const guide = await createGuide(
-            actor.id,
+            actor,
             body.data.name,
             body.data.url,
+            body.data.ownerId ?? null,
         );
 
         res.status(201).json({ guide });

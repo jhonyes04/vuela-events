@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
+import { OwnerFilterField } from '@/components/OwnerFilterField';
 import { IconTooltip } from '@/components/IconTooltip';
 import { ConfirmDeleteDialog } from '@/components/ConfirmDeleteDialog';
 import { PageTitle } from '@/components/PageTitle';
@@ -11,8 +12,10 @@ import { DataTable, type DataTableColumn } from '@/components/DataTable';
 import { PaginationControls } from '@/components/PaginationControls';
 import { usePagination } from '@/hooks/usePagination';
 import { useSort } from '@/hooks/useSort';
+import { useOwnerFilter } from '@/hooks/useOwnerFilter';
 import { ListErrors } from '@/features/users/components/ListErrors';
 import { MaterialFormDialog } from '@/features/materials/components/MaterialFormDialog';
+import { OwnerCell } from '@/components/OwnerCell';
 import {
     deleteMaterial,
     type Material,
@@ -42,6 +45,7 @@ export const MaterialsPage = () => {
     const [editing, setEditing] = useState<Material | null>(null);
     const [deleting, setDeleting] = useState<Pending | null>(null);
     const [selected, setSelected] = useState<Set<string>>(new Set());
+    const canSeeOwner = user?.roleId === 'admin' || user?.roleId === 'dt';
 
     // Al entrar se refresca, pero la lista en caché se ve mientras tanto.
     useEffect(() => {
@@ -60,10 +64,15 @@ export const MaterialsPage = () => {
         setFormOpen(true);
     };
 
+    const { ownerFilter, setOwnerFilter, ownerOptions, matchesOwner } =
+        useOwnerFilter(materials);
+
     const query = search.trim().toLowerCase();
-    const filtered = query
-        ? materials.filter((m) => m.name.toLowerCase().includes(query))
-        : materials;
+    const filtered = materials.filter((material) => {
+        if (query && !material.name.toLowerCase().includes(query)) return false;
+
+        return matchesOwner(material);
+    });
 
     const { sorted, sort, toggleSort } = useSort<Material, SortKey>(
         filtered,
@@ -154,18 +163,30 @@ export const MaterialsPage = () => {
             cellClassName: 'hidden sm:table-cell',
             render: (material) => material.observations ?? '—',
         },
+        ...(canSeeOwner
+            ? [
+                  {
+                      key: 'owner',
+                      header: 'Propietario',
+                      render: (material) => (
+                          <OwnerCell owner={material.createdBy} />
+                      ),
+                  } satisfies DataTableColumn<Material, SortKey>,
+              ]
+            : []),
         {
             key: 'inUse',
             header: 'En uso',
-            cellClassName: 'flex justify-center',
+            headerClassName: 'text-center',
+            cellClassName: 'text-center',
             render: (material) =>
                 material.inUse ? (
                     <IconTooltip label="En uso en algún evento">
-                        <CircleCheck className="size-4 text-emerald-600" />
+                        <CircleCheck className="size-4 mx-auto text-emerald-600" />
                     </IconTooltip>
                 ) : (
                     <IconTooltip label="No usado">
-                        <CircleX className="size-4 text-destructive" />
+                        <CircleX className="size-4 mx-auto text-destructive" />
                     </IconTooltip>
                 ),
         },
@@ -266,6 +287,13 @@ export const MaterialsPage = () => {
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
                 />
+                {canSeeOwner && (
+                    <OwnerFilterField
+                        options={ownerOptions}
+                        value={ownerFilter}
+                        onValueChange={setOwnerFilter}
+                    />
+                )}
                 {selected.size > 0 && (
                     <Button
                         variant="destructive"
@@ -310,7 +338,7 @@ export const MaterialsPage = () => {
 
             {!loading && paged.length === 0 && (
                 <p className="mt-4 text-muted-foreground">
-                    {query
+                    {query || ownerFilter
                         ? 'No hay materiales que coincidan con la búsqueda.'
                         : 'Todavía no hay materiales.'}
                 </p>

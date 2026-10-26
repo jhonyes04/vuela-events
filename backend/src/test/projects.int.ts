@@ -183,4 +183,53 @@ describe('proyectos: permisos propios y de todos.', () => {
         assert.ok(!ids.includes(dt.id));
         assert.ok(!ids.includes(admin.id));
     });
+
+    describe('propietario', () => {
+        const postProject = async (userId: string, body: unknown) =>
+            api(server.baseUrl, 'POST', '/api/projects', {
+                cookie: await sessionCookieFor(userId),
+                body,
+            });
+
+        it('dt crea un proyecto y puede fijar el propietario a un ail', async () => {
+            const dt = await createUser('dt');
+            const ail = await createUser('ail');
+
+            const res = await postProject(dt.id, {
+                ...(await validPayload()),
+                ownerId: ail.id,
+            });
+
+            assert.equal(res.status, 201);
+            assert.equal(res.body.project.createdById, ail.id);
+        });
+
+        it('dt NO puede fijar el propietario a un admin: 400', async () => {
+            const dt = await createUser('dt');
+            const admin = await createUser('admin');
+
+            const res = await postProject(dt.id, {
+                ...(await validPayload()),
+                ownerId: admin.id,
+            });
+
+            assert.equal(res.status, 400);
+            assert.equal(res.body.error, 'Propietario no válido');
+        });
+
+        it('si el propietario actual es admin, dt no puede reasignarlo ni a sí mismo: 400', async () => {
+            const dt = await createUser('dt');
+            const admin = await createUser('admin');
+            const project = await createProject({ createdById: admin.id });
+
+            const res = await patchProject(dt.id, project.id, {
+                ...(await validPayload()),
+                active: true,
+                ownerId: dt.id,
+            });
+
+            assert.equal(res.status, 400);
+            assert.equal(res.body.error, 'Propietario no válido');
+        });
+    });
 });

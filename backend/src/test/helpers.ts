@@ -16,7 +16,7 @@ if (
 }
 
 export const resetDb = async (): Promise<void> => {
-    await prisma.$executeRaw`TRUNCATE TABLE "audit_logs", "registrations", "events", "projects", "guides", "users", "session" RESTART IDENTITY CASCADE`;
+    await prisma.$executeRaw`TRUNCATE TABLE "audit_logs", "registrations", "events", "projects", "guides", "materials", "users", "session" RESTART IDENTITY CASCADE`;
 };
 
 export const closeDb = async (): Promise<void> => {
@@ -63,6 +63,27 @@ export const createGuide = (
         data: {
             name: opts.name ?? `Guía ${n}`,
             url: opts.url ?? `https://example.com/guia-${n}`,
+            active: opts.active ?? true,
+            createdById: opts.createdById ?? null,
+        },
+    });
+};
+
+// Material de prueba: por defecto activo.
+export const createMaterial = (
+    opts: {
+        name?: string;
+        observations?: string | null;
+        active?: boolean;
+        createdById?: string;
+    } = {},
+) => {
+    const n = randomBytes(4).toString('hex');
+
+    return prisma.material.create({
+        data: {
+            name: opts.name ?? `Material ${n}`,
+            observations: opts.observations ?? null,
             active: opts.active ?? true,
             createdById: opts.createdById ?? null,
         },
