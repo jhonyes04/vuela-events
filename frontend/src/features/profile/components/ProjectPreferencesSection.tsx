@@ -133,7 +133,7 @@ export const ProjectPreferencesSection = ({
                                 )}
                                 style={isChecked ? chip.style : undefined}
                             >
-                                <span className="block text-sm">
+                                <span className="block text-sm underline">
                                     {option.name}:
                                 </span>
                                 {description && (
