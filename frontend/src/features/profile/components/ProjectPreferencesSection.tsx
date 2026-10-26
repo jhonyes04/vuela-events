@@ -133,9 +133,11 @@ export const ProjectPreferencesSection = ({
                                 )}
                                 style={isChecked ? chip.style : undefined}
                             >
-                                <span className="block">{option.name}</span>
+                                <span className="block text-sm">
+                                    {option.name}:
+                                </span>
                                 {description && (
-                                    <span className="mt-0.5 block text-[11px] font-normal opacity-80">
+                                    <span className="mt-0.5 block text-sm font-normal">
                                         {description}
                                     </span>
                                 )}
