@@ -29,6 +29,7 @@ import {
     Sheet,
     SheetClose,
     SheetContent,
+    SheetFooter,
     SheetTrigger,
 } from '@/components/ui/sheet';
 import { UserAvatar } from '@/components/UserAvatar';
@@ -228,16 +229,17 @@ export const UserMenuSheet = () => {
                                 routes={adminRoutes}
                             />
                         </nav>
-
-                        <Button
-                            className="mt-2 justify-start gap-2 rounded-xl bg-red-400 text-black hover:bg-red-700 hover:text-white"
-                            onClick={() => void logout()}
-                        >
-                            <LogOut className="size-4" />
-                            Cerrar sesión
-                        </Button>
                     </div>
                 </OverlayScrollbarsComponent>
+                <SheetFooter className="p-4 pt-0">
+                    <Button
+                        className="justify-start gap-2 rounded-xl bg-red-400 text-black hover:bg-red-700 hover:text-white"
+                        onClick={() => void logout()}
+                    >
+                        <LogOut className="size-4" />
+                        Cerrar sesión
+                    </Button>
+                </SheetFooter>
             </SheetContent>
         </Sheet>
     );
