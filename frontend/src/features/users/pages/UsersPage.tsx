@@ -310,6 +310,7 @@ export const UsersPage = () => {
                     onOpenChange={(open) => !open && setDeleting(null)}
                     title="Eliminar usuario"
                     description={`¿Eliminar a «${deleting.puntoVuela} (${deleting.name})»?`}
+                    confirmText={deleting.puntoVuela ?? undefined}
                     confirmLabel="Eliminar"
                     deletingLabel="Eliminando…"
                     errorFallback="No se pudo eliminar el usuario"

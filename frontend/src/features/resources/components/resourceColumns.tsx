@@ -180,6 +180,7 @@ export const buildResourceColumns = ({
                                     setDeleting({
                                         rows: [row],
                                         label: `«${row.title}»`,
+                                        confirmText: row.title,
                                     })
                                 }
                             >

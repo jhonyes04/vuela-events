@@ -11,7 +11,10 @@ import { PaginationControls } from '@/components/PaginationControls';
 import { usePagination } from '@/hooks/usePagination';
 import { useSort } from '@/hooks/useSort';
 import { canManageResource } from '@/lib/ownership';
-import { downloadDocument, type Document } from '@/features/resources/lib/documents';
+import {
+    downloadDocument,
+    type Document,
+} from '@/features/resources/lib/documents';
 import type { ResourceLink } from '@/features/resources/lib/resourceLinks';
 import { useDocumentsStore } from '@/features/resources/documentsStore';
 import { useResourceLinksStore } from '@/features/resources/store';
@@ -272,6 +275,7 @@ export const ResourcesManagementPage = () => {
                                     selectedRows.length === 1
                                         ? 'este recurso'
                                         : `estos ${selectedRows.length} recursos`,
+                                confirmText: 'Eliminar recursos seleccionados',
                             });
                         }}
                     >

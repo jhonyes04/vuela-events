@@ -23,10 +23,7 @@ import { useOwnerFilter } from '@/hooks/useOwnerFilter';
 import { ListErrors } from '@/features/users/components/ListErrors';
 import { GuideFormDialog } from '@/features/guides/components/GuideFormDialog';
 import { OwnerCell } from '@/components/OwnerCell';
-import {
-    deleteGuide,
-    type Guide,
-} from '@/features/guides/lib/guides';
+import { deleteGuide, type Guide } from '@/features/guides/lib/guides';
 import { useGuidesStore } from '@/features/guides/store';
 import { useAuth } from '@/features/auth/hooks/context';
 import { canManageResource } from '@/lib/ownership';
@@ -36,6 +33,7 @@ type SortKey = 'name' | 'url' | 'active';
 interface Pending {
     ids: string[];
     label: string;
+    confirmText?: string;
 }
 
 export const GuidesPage = () => {
@@ -194,9 +192,7 @@ export const GuidesPage = () => {
                   {
                       key: 'owner',
                       header: 'Propietario',
-                      render: (guide) => (
-                          <OwnerCell owner={guide.createdBy} />
-                      ),
+                      render: (guide) => <OwnerCell owner={guide.createdBy} />,
                   } satisfies DataTableColumn<Guide, SortKey>,
               ]
             : []),
@@ -277,6 +273,7 @@ export const GuidesPage = () => {
                                     setDeleting({
                                         ids: [guide.id],
                                         label: `«${guide.name}»`,
+                                        confirmText: guide.name,
                                     })
                                 }
                             >
@@ -324,6 +321,7 @@ export const GuidesPage = () => {
                                     selected.size === 1
                                         ? 'esta guía'
                                         : `estas ${selected.size} guías`,
+                                confirmText: 'Eliminar guías seleccionadas',
                             })
                         }
                     >
@@ -388,7 +386,8 @@ export const GuidesPage = () => {
                     open={deleting !== null}
                     onOpenChange={(open) => !open && setDeleting(null)}
                     title="Eliminar guía"
-                    description={`¿Eliminar ${deleting.label}?`}
+                    description={`¿Eliminar  ${deleting.label}?`}
+                    confirmText={deleting.confirmText}
                     confirmLabel="Eliminar"
                     deletingLabel="Eliminando…"
                     errorFallback="No se pudo eliminar la guía"

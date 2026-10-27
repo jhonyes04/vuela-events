@@ -43,6 +43,7 @@ export const DeleteEventSeriesDialog = ({
                 onChange: setMotivo,
                 placeholder: 'Por qué se cancela...',
             }}
+            confirmText={event.title}
             onConfirm={async () => {
                 const { deletedCount } = await deleteEventSeriesById(
                     event.seriesId!,

@@ -60,6 +60,7 @@ export const DeleteEventDialog = ({
                           placeholder: 'Por qué se cancela...',
                       }
             }
+            confirmText={event.title}
             onConfirm={() => deleteEventById(event.id, motivo || undefined)}
             onDeleted={onDeleted}
         />

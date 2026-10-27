@@ -248,6 +248,7 @@ export const EmailTemplatesPage = () => {
                     onOpenChange={(open) => !open && setDeleting(null)}
                     title="Eliminar plantilla"
                     description={`¿Eliminar «${deleting.name}»?`}
+                    confirmText={deleting.name}
                     confirmLabel="Eliminar"
                     deletingLabel="Eliminando…"
                     errorFallback="No se pudo eliminar la plantilla"

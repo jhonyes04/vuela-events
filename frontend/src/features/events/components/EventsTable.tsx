@@ -76,6 +76,7 @@ interface EventsTableProps {
     showParticipants?: boolean;
     renderActions: (event: EventItem) => ReactNode;
     selection?: EventsTableSelection;
+    filtersTrailing?: ReactNode;
 }
 
 // Tabla de eventos con búsqueda, filtros (categoría/mes/periodo), orden y
@@ -93,6 +94,7 @@ export const EventsTable = ({
     showParticipants = false,
     renderActions,
     selection,
+    filtersTrailing,
 }: EventsTableProps) => {
     const [search, setSearch] = useState('');
     const [projectFilter, setProjectFilter] = useState('');
@@ -149,7 +151,9 @@ export const EventsTable = ({
     const { paged, page, pageCount, pageSize, total, setPage, setPageSize } =
         usePagination(sorted, 10);
 
-    const deletablePaged = selection ? paged.filter(selection.isSelectable) : [];
+    const deletablePaged = selection
+        ? paged.filter(selection.isSelectable)
+        : [];
     const allPagedSelected =
         selection !== undefined &&
         deletablePaged.length > 0 &&
@@ -312,6 +316,7 @@ export const EventsTable = ({
                     onValueChange={(v) => setTimeFilter(v as TimeFilter)}
                     searchable={false}
                 />
+                {filtersTrailing}
             </div>
 
             {loading ? (

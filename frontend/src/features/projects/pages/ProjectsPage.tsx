@@ -13,10 +13,7 @@ import { PaginationControls } from '@/components/PaginationControls';
 import { ListErrors } from '@/features/users/components/ListErrors';
 import { ProjectFormDialog } from '@/features/projects/components/ProjectFormDialog';
 import { OwnerCell } from '@/components/OwnerCell';
-import {
-    deleteProject,
-    type Project,
-} from '@/features/projects/lib/projects';
+import { deleteProject, type Project } from '@/features/projects/lib/projects';
 import { getProjectColorSwatch } from '@/features/projects/lib/colors';
 import { cn } from '@/lib/utils';
 import { useProjectsStore } from '@/features/projects/store';
@@ -320,6 +317,7 @@ export const ProjectsPage = () => {
                     onOpenChange={(open) => !open && setDeleting(null)}
                     title="Eliminar proyecto"
                     description={`¿Eliminar «${deleting.name}»?`}
+                    confirmText={deleting.name}
                     confirmLabel="Eliminar"
                     deletingLabel="Eliminando…"
                     errorFallback="No se pudo eliminar el proyecto"

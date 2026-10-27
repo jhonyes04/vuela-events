@@ -18,6 +18,7 @@ export interface ResourceRow {
 export interface Pending {
     rows: ResourceRow[];
     label: string;
+    confirmText?: string;
 }
 
 export type SortKey = 'title' | 'kind';

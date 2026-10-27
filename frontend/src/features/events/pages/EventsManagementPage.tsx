@@ -33,6 +33,7 @@ import { PageTitle } from '@/components/PageTitle';
 interface Pending {
     ids: string[];
     label: string;
+    confirmText?: string;
 }
 
 export const EventsManagementPage = () => {
@@ -166,24 +167,6 @@ export const EventsManagementPage = () => {
                             void load();
                         }}
                     />
-
-                    {selected.size > 0 && (
-                        <Button
-                            variant="destructive"
-                            size="sm"
-                            onClick={() =>
-                                setDeleting({
-                                    ids: [...selected],
-                                    label:
-                                        selected.size === 1
-                                            ? 'este evento'
-                                            : `estos ${selected.size} eventos`,
-                                })
-                            }
-                        >
-                            Eliminar seleccionados ({selected.size})
-                        </Button>
-                    )}
                 </div>
             </div>
 
@@ -206,6 +189,28 @@ export const EventsManagementPage = () => {
                     onToggleOne: toggleOne,
                     onToggleAll: toggleAll,
                 }}
+                filtersTrailing={
+                    selected.size > 0 && (
+                        <Button
+                            variant="destructive"
+                            size="sm"
+                            className="ms-auto"
+                            onClick={() =>
+                                setDeleting({
+                                    ids: [...selected],
+                                    label:
+                                        selected.size === 1
+                                            ? 'este evento'
+                                            : `estos ${selected.size} eventos`,
+                                    confirmText:
+                                        'Eliminar eventos seleccionados',
+                                })
+                            }
+                        >
+                            Eliminar seleccionados ({selected.size})
+                        </Button>
+                    )
+                }
                 renderActions={(event) => (
                     <>
                         <IconTooltip label="Ver participantes">
@@ -267,6 +272,7 @@ export const EventsManagementPage = () => {
                                         setDeleting({
                                             ids: [event.id],
                                             label: `«${event.title}»`,
+                                            confirmText: event.title,
                                         })
                                     }
                                 >
@@ -305,6 +311,7 @@ export const EventsManagementPage = () => {
                     onOpenChange={(open) => !open && setDeleting(null)}
                     title="Eliminar eventos"
                     description={`¿Eliminar ${deleting.label}?`}
+                    confirmText={deleting.confirmText}
                     confirmLabel="Eliminar"
                     deletingLabel="Eliminando…"
                     errorFallback="No se pudo eliminar el evento"

@@ -26,6 +26,7 @@ import {
 interface Pending {
     ids: string[];
     label: string;
+    confirmText?: string;
 }
 
 const selectClass =
@@ -204,8 +205,7 @@ export const AuditPage = () => {
             key: 'target',
             header: 'Sobre quién',
             sortKey: 'target',
-            render: (log) =>
-                log.target ? auditPersonLabel(log.target) : '—',
+            render: (log) => (log.target ? auditPersonLabel(log.target) : '—'),
         },
         {
             key: 'detail',
@@ -227,7 +227,11 @@ export const AuditPage = () => {
                         size="icon"
                         aria-label="Eliminar"
                         onClick={() =>
-                            setDeleting({ ids: [log.id], label: 'este registro' })
+                            setDeleting({
+                                ids: [log.id],
+                                label: 'este registro',
+                                confirmText: 'Eliminar registro de auditoría',
+                            })
                         }
                     >
                         <Trash2 className="size-4" />
@@ -285,10 +289,29 @@ export const AuditPage = () => {
                                     selected.size === 1
                                         ? 'este registro'
                                         : `estos ${selected.size} registros`,
+                                confirmText: 'Eliminar registros de auditoría',
                             })
                         }
                     >
                         Eliminar seleccionados ({selected.size})
+                    </Button>
+                )}
+
+                {logs.length > 0 && (
+                    <Button
+                        variant="destructive"
+                        size="sm"
+                        className="ms-auto"
+                        onClick={() =>
+                            setDeleting({
+                                ids: logs.map((log) => log.id),
+                                label: 'todos los registros',
+                                confirmText:
+                                    'Eliminar todos los registros de auditoría',
+                            })
+                        }
+                    >
+                        Eliminar todos
                     </Button>
                 )}
             </div>
@@ -338,6 +361,7 @@ export const AuditPage = () => {
                     onOpenChange={(open) => !open && setDeleting(null)}
                     title="Eliminar auditoría"
                     description={`¿Eliminar ${deleting.label}?`}
+                    confirmText={deleting.confirmText}
                     confirmLabel="Eliminar"
                     deletingLabel="Eliminando…"
                     errorFallback="No se pudo eliminar"

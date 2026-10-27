@@ -1,7 +1,10 @@
 import { ConfirmDeleteDialog } from '@/components/ConfirmDeleteDialog';
 import { deleteDocument } from '@/features/resources/lib/documents';
 import { deleteResourceLink } from '@/features/resources/lib/resourceLinks';
-import type { Pending, ResourceRow } from '@/features/resources/pages/resourcesTable.types';
+import type {
+    Pending,
+    ResourceRow,
+} from '@/features/resources/pages/resourcesTable.types';
 
 interface ResourceDeleteDialogProps {
     pending: Pending | null;
@@ -22,6 +25,7 @@ export const ResourceDeleteDialog = ({
             onOpenChange={onOpenChange}
             title="Eliminar recursos"
             description={`¿Eliminar ${pending.label}?`}
+            confirmText={pending.confirmText}
             confirmLabel="Eliminar"
             deletingLabel="Eliminando…"
             errorFallback="No se pudo eliminar el recurso"

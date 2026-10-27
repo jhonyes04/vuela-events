@@ -29,6 +29,7 @@ type SortKey = 'name' | 'active';
 interface Pending {
     ids: string[];
     label: string;
+    confirmText?: string;
 }
 
 export const MaterialsPage = () => {
@@ -257,6 +258,7 @@ export const MaterialsPage = () => {
                                     setDeleting({
                                         ids: [material.id],
                                         label: `«${material.name}»`,
+                                        confirmText: material.name,
                                     })
                                 }
                             >
@@ -306,6 +308,8 @@ export const MaterialsPage = () => {
                                     selected.size === 1
                                         ? 'este material'
                                         : `estos ${selected.size} materiales`,
+                                confirmText:
+                                    'Eliminar materiales seleccionados',
                             })
                         }
                     >
@@ -371,6 +375,7 @@ export const MaterialsPage = () => {
                     onOpenChange={(open) => !open && setDeleting(null)}
                     title="Eliminar material"
                     description={`¿Eliminar ${deleting.label}?`}
+                    confirmText={deleting.confirmText}
                     confirmLabel="Eliminar"
                     deletingLabel="Eliminando…"
                     errorFallback="No se pudo eliminar el material"
