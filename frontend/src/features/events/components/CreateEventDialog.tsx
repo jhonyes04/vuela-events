@@ -103,10 +103,15 @@ function EventFormBody({
             material.active || values.materialIds.includes(material.id),
     );
 
+    const hasFullEventsAccess =
+        (user?.permissions.includes('events:edit') ?? false) ||
+        (user?.permissions.includes('events:delete') ?? false);
     // El proyecto actual del evento sigue disponible al editar aunque se
     // haya desactivado después de crearlo.
     const activeProjects = projects.filter(
-        (c) => c.active || c.id === event?.project.id,
+        (c) =>
+            (c.active || c.id === event?.project.id) &&
+            (hasFullEventsAccess || c.createdById === user?.id),
     );
 
     const set = (name: TextField) => (e: { target: { value: string } }) =>
