@@ -1,68 +1,23 @@
-import { useEffect, useState } from 'react';
-import { ExternalLink, Pencil, Trash2 } from 'lucide-react';
-import { useAuth } from '@/features/auth/hooks/context';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { IconTooltip } from '@/components/IconTooltip';
-import { ConfirmDeleteDialog } from '@/components/ConfirmDeleteDialog';
+import { useEffect } from 'react';
+import { ExternalLink } from 'lucide-react';
 import { ListErrors } from '@/features/users/components/ListErrors';
-import { ResourceLinkFormDialog } from '@/features/resources/components/ResourceLinkFormDialog';
-import {
-    deleteResourceLink,
-    type ResourceLink,
-} from '@/features/resources/lib/resourceLinks';
 import { useResourceLinksStore } from '@/features/resources/store';
-import { canManageResource } from '@/lib/ownership';
 
 interface ResourceLinksTabProps {
     search: string;
 }
 
 export const ResourceLinksTab = ({ search }: ResourceLinksTabProps) => {
-    const { user } = useAuth();
-    const canCreate = user?.permissions.includes('resources:create') ?? false;
-    const canManageAny =
-        canCreate ||
-        (user?.permissions.some((p) =>
-            [
-                'resources:edit',
-                'resources:edit:own',
-                'resources:delete',
-                'resources:delete:own',
-            ].includes(p),
-        ) ??
-            false);
     const links = useResourceLinksStore((s) => s.items);
     const loading = useResourceLinksStore((s) => s.loading);
     const error = useResourceLinksStore((s) => s.error);
     const load = useResourceLinksStore((s) => s.load);
-    const upsert = useResourceLinksStore((s) => s.upsert);
-    const remove = useResourceLinksStore((s) => s.remove);
-    const [formOpen, setFormOpen] = useState(false);
-    const [formKey, setFormKey] = useState(0);
-    const [editing, setEditing] = useState<ResourceLink | null>(null);
-    const [deleting, setDeleting] = useState<ResourceLink | null>(null);
 
     useEffect(() => {
         void load(true);
     }, [load]);
 
-    const openCreate = () => {
-        setEditing(null);
-        setFormKey((k) => k + 1);
-        setFormOpen(true);
-    };
-
-    const openEdit = (link: ResourceLink) => {
-        setEditing(link);
-        setFormKey((k) => k + 1);
-        setFormOpen(true);
-    };
-
-    // Quien no gestiona recursos no ve ni los inactivos ni los botones.
-    const visibleLinks = (
-        canManageAny ? links : links.filter((l) => l.active)
-    ).filter((l) => {
+    const visibleLinks = links.filter((l) => l.active).filter((l) => {
         if (!search) return true;
 
         const q = search.trim().toLowerCase();
@@ -74,12 +29,6 @@ export const ResourceLinksTab = ({ search }: ResourceLinksTabProps) => {
 
     return (
         <div>
-            <div className="mb-4 flex flex-wrap items-center justify-end gap-3">
-                {canCreate && (
-                    <Button onClick={openCreate}>Nuevo enlace</Button>
-                )}
-            </div>
-
             <ListErrors
                 error={error}
                 actionError={null}
@@ -95,19 +44,6 @@ export const ResourceLinksTab = ({ search }: ResourceLinksTabProps) => {
             ) : (
                 <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                     {visibleLinks.map((link) => {
-                        const canEditLink = canManageResource(
-                            user,
-                            link.createdById,
-                            'resources:edit',
-                            'resources:edit:own',
-                        );
-                        const canDeleteLink = canManageResource(
-                            user,
-                            link.createdById,
-                            'resources:delete',
-                            'resources:delete:own',
-                        );
-
                         return (
                             <li
                                 key={link.id}
@@ -129,72 +65,10 @@ export const ResourceLinksTab = ({ search }: ResourceLinksTabProps) => {
                                         </span>
                                     </a>
                                 </div>
-                                <div className="flex flex-wrap items-center gap-2 sm:shrink-0">
-                                    {!link.active && (
-                                        <Badge variant="secondary">
-                                            Inactivo
-                                        </Badge>
-                                    )}
-                                    {canEditLink && (
-                                        <IconTooltip label="Editar">
-                                            <Button
-                                                variant="secondary"
-                                                size="icon"
-                                                aria-label="Editar"
-                                                onClick={() => openEdit(link)}
-                                            >
-                                                <Pencil className="size-4" />
-                                            </Button>
-                                        </IconTooltip>
-                                    )}
-                                    {canDeleteLink && (
-                                        <IconTooltip label="Eliminar">
-                                            <Button
-                                                variant="destructive"
-                                                size="icon"
-                                                disabled={link.inUse}
-                                                aria-label="Eliminar"
-                                                onClick={() =>
-                                                    setDeleting(link)
-                                                }
-                                            >
-                                                <Trash2 className="size-4" />
-                                            </Button>
-                                        </IconTooltip>
-                                    )}
-                                </div>
                             </li>
                         );
                     })}
                 </ul>
-            )}
-
-            {canManageAny && (
-                <ResourceLinkFormDialog
-                    key={formKey}
-                    open={formOpen}
-                    onOpenChange={setFormOpen}
-                    link={editing}
-                    onSaved={upsert}
-                />
-            )}
-
-            {deleting && (
-                <ConfirmDeleteDialog
-                    open={deleting !== null}
-                    onOpenChange={(open) => !open && setDeleting(null)}
-                    title="Eliminar enlace"
-                    description={`¿Eliminar «${deleting.title}»?`}
-                    confirmLabel="Eliminar"
-                    deletingLabel="Eliminando…"
-                    errorFallback="No se pudo eliminar el enlace"
-                    successLabel={`Enlace «${deleting.title}» eliminado.`}
-                    onConfirm={() => deleteResourceLink(deleting.id)}
-                    onDeleted={() => {
-                        remove(deleting.id);
-                        setDeleting(null);
-                    }}
-                />
             )}
         </div>
     );

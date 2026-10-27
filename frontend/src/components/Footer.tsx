@@ -112,10 +112,10 @@ export const Footer = ({ onAdminStarClick }: FooterProps = {}) => (
                 ))}
             </div> */}
             <div className="flex items-center gap-1.5">
-                <div className="flex flex-col items-end gap-0.5 text-white/40">
-                    <span className="flex items-center gap-1.5">Juanma</span>
-                    <span>Punto Vuela Almáchar</span>
-                </div>
+                {/* <div className="flex flex-col items-end gap-0.5 text-white/40"> */}
+                {/* <span className="flex items-center gap-1.5">Juanma</span> */}
+                <span className="text-white/40">Punto Vuela Almáchar</span>
+                {/* </div> */}
                 {onAdminStarClick ? (
                     <button
                         type="button"

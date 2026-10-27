@@ -1,19 +1,10 @@
-import { useEffect, useState } from 'react';
-import { Download, FileText, Pencil, Trash2 } from 'lucide-react';
-import { useAuth } from '@/features/auth/hooks/context';
-import { Badge } from '@/components/ui/badge';
+import { useEffect } from 'react';
+import { Download, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { IconTooltip } from '@/components/IconTooltip';
-import { ConfirmDeleteDialog } from '@/components/ConfirmDeleteDialog';
 import { ListErrors } from '@/features/users/components/ListErrors';
-import { DocumentFormDialog } from '@/features/resources/components/DocumentFormDialog';
-import {
-    deleteDocument,
-    downloadDocument,
-    type Document,
-} from '@/features/resources/lib/documents';
+import { downloadDocument } from '@/features/resources/lib/documents';
 import { useDocumentsStore } from '@/features/resources/documentsStore';
-import { canManageResource } from '@/lib/ownership';
 
 const formatSize = (bytes: number): string =>
     bytes < 1024 * 1024
@@ -25,49 +16,16 @@ interface DocumentsTabProps {
 }
 
 export const DocumentsTab = ({ search }: DocumentsTabProps) => {
-    const { user } = useAuth();
-    const canCreate = user?.permissions.includes('resources:create') ?? false;
-    const canManageAny =
-        canCreate ||
-        (user?.permissions.some((p) =>
-            [
-                'resources:edit',
-                'resources:edit:own',
-                'resources:delete',
-                'resources:delete:own',
-            ].includes(p),
-        ) ??
-            false);
     const documents = useDocumentsStore((s) => s.items);
     const loading = useDocumentsStore((s) => s.loading);
     const error = useDocumentsStore((s) => s.error);
     const load = useDocumentsStore((s) => s.load);
-    const upsert = useDocumentsStore((s) => s.upsert);
-    const remove = useDocumentsStore((s) => s.remove);
-    const [formOpen, setFormOpen] = useState(false);
-    const [formKey, setFormKey] = useState(0);
-    const [editing, setEditing] = useState<Document | null>(null);
-    const [deleting, setDeleting] = useState<Document | null>(null);
 
     useEffect(() => {
         void load(true);
     }, [load]);
 
-    const openCreate = () => {
-        setEditing(null);
-        setFormKey((k) => k + 1);
-        setFormOpen(true);
-    };
-
-    const openEdit = (doc: Document) => {
-        setEditing(doc);
-        setFormKey((k) => k + 1);
-        setFormOpen(true);
-    };
-
-    const visibleDocuments = (
-        canManageAny ? documents : documents.filter((d) => d.active)
-    ).filter((d) => {
+    const visibleDocuments = documents.filter((d) => d.active).filter((d) => {
         if (!search) return true;
 
         const q = search.trim().toLowerCase();
@@ -80,12 +38,6 @@ export const DocumentsTab = ({ search }: DocumentsTabProps) => {
 
     return (
         <div>
-            <div className="mb-4 flex flex-wrap items-center justify-end gap-3">
-                {canCreate && (
-                    <Button onClick={openCreate}>Nuevo documento</Button>
-                )}
-            </div>
-
             <ListErrors
                 error={error}
                 actionError={null}
@@ -103,19 +55,6 @@ export const DocumentsTab = ({ search }: DocumentsTabProps) => {
             ) : (
                 <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                     {visibleDocuments.map((document) => {
-                        const canEditDoc = canManageResource(
-                            user,
-                            document.createdById,
-                            'resources:edit',
-                            'resources:edit:own',
-                        );
-                        const canDeleteDoc = canManageResource(
-                            user,
-                            document.createdById,
-                            'resources:delete',
-                            'resources:delete:own',
-                        );
-
                         return (
                             <li
                                 key={document.id}
@@ -134,11 +73,6 @@ export const DocumentsTab = ({ search }: DocumentsTabProps) => {
                                     </div>
                                 </div>
                                 <div className="flex flex-wrap items-center gap-2 sm:shrink-0">
-                                    {!document.active && (
-                                        <Badge variant="secondary">
-                                            Inactivo
-                                        </Badge>
-                                    )}
                                     <IconTooltip label="Descargar">
                                         <Button
                                             variant="default"
@@ -154,68 +88,11 @@ export const DocumentsTab = ({ search }: DocumentsTabProps) => {
                                             <Download className="size-4" />
                                         </Button>
                                     </IconTooltip>
-                                    {canEditDoc && (
-                                        <IconTooltip label="Editar">
-                                            <Button
-                                                variant="secondary"
-                                                size="icon"
-                                                aria-label="Editar"
-                                                onClick={() =>
-                                                    openEdit(document)
-                                                }
-                                            >
-                                                <Pencil className="size-4" />
-                                            </Button>
-                                        </IconTooltip>
-                                    )}
-                                    {canDeleteDoc && (
-                                        <IconTooltip label="Eliminar">
-                                            <Button
-                                                variant="destructive"
-                                                size="icon"
-                                                disabled={document.inUse}
-                                                aria-label="Eliminar"
-                                                onClick={() =>
-                                                    setDeleting(document)
-                                                }
-                                            >
-                                                <Trash2 className="size-4" />
-                                            </Button>
-                                        </IconTooltip>
-                                    )}
                                 </div>
                             </li>
                         );
                     })}
                 </ul>
-            )}
-
-            {canManageAny && (
-                <DocumentFormDialog
-                    key={formKey}
-                    open={formOpen}
-                    onOpenChange={setFormOpen}
-                    document={editing}
-                    onSaved={upsert}
-                />
-            )}
-
-            {deleting && (
-                <ConfirmDeleteDialog
-                    open={deleting !== null}
-                    onOpenChange={(open) => !open && setDeleting(null)}
-                    title="Eliminar documento"
-                    description={`¿Eliminar «${deleting.title}»?`}
-                    confirmLabel="Eliminar"
-                    deletingLabel="Eliminando…"
-                    errorFallback="No se pudo eliminar el documento"
-                    successLabel={`Documento «${deleting.title}» eliminado.`}
-                    onConfirm={() => deleteDocument(deleting.id)}
-                    onDeleted={() => {
-                        remove(deleting.id);
-                        setDeleting(null);
-                    }}
-                />
             )}
         </div>
     );
