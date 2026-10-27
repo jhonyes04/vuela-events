@@ -47,6 +47,10 @@ export function EventBasicFields({
         (project) => project.id === values.projectId,
     );
     const guides = selectedProject?.guides ?? [];
+    // Si solo hay una, se preselecciona aunque el evento no tuviera guía
+    // guardada todavía (eventos creados antes de esta función).
+    const guideValue =
+        values.guideId || (guides.length === 1 ? guides[0]!.id : '');
 
     return (
         <>
@@ -102,21 +106,19 @@ export function EventBasicFields({
                     emptyMessage="No hay proyectos"
                 />
             </Field>
-            {guides.length > 1 && (
-                <Field id={fieldId('guide')} label="Guía *">
-                    <ComboboxField
-                        id={fieldId('guide')}
-                        className="w-full"
-                        items={guides}
-                        getValue={(guide) => guide.id}
-                        getLabel={(guide) => guide.name}
-                        value={values.guideId}
-                        onValueChange={onGuideChange}
-                        placeholder="Selecciona una guía"
-                        emptyMessage="No hay guías"
-                    />
-                </Field>
-            )}
+            <Field id={fieldId('guide')} label="Guía *">
+                <ComboboxField
+                    id={fieldId('guide')}
+                    className="w-full"
+                    items={guides}
+                    getValue={(guide) => guide.id}
+                    getLabel={(guide) => guide.name}
+                    value={guideValue}
+                    onValueChange={onGuideChange}
+                    placeholder="Selecciona una guía"
+                    emptyMessage="No hay guías"
+                />
+            </Field>
         </>
     );
 }
