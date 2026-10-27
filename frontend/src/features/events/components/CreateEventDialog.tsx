@@ -130,6 +130,18 @@ function EventFormBody({
             return;
         }
 
+        const selectedProject = activeProjects.find(
+            (project) => project.id === values.projectId,
+        );
+        const projectGuides = selectedProject?.guides ?? [];
+        const guideId =
+            projectGuides.length === 1 ? projectGuides[0]!.id : values.guideId;
+
+        if (projectGuides.length > 1 && !guideId) {
+            toast.error('Selecciona una guía');
+            return;
+        }
+
         const common = {
             title: values.title,
             // Los opcionales vacíos no se envían.
@@ -138,6 +150,7 @@ function EventFormBody({
             description: values.description || undefined,
             capacity: values.capacity ? Number(values.capacity) : undefined,
             projectId: values.projectId,
+            guideId,
             materialIds: values.materialIds,
         };
 
@@ -305,8 +318,20 @@ function EventFormBody({
                     fieldId={fieldId}
                     values={values}
                     onChange={set}
-                    onProjectChange={(projectId) =>
-                        setValues((v) => ({ ...v, projectId }))
+                    onProjectChange={(projectId) => {
+                        const project = activeProjects.find(
+                            (p) => p.id === projectId,
+                        );
+                        const guides = project?.guides ?? [];
+
+                        setValues((value) => ({
+                            ...value,
+                            projectId,
+                            guideId: guides.length === 1 ? guides[0]!.id : '',
+                        }));
+                    }}
+                    onGuideChange={(guideId) =>
+                        setValues((value) => ({ ...value, guideId }))
                     }
                     activeProjects={activeProjects}
                 />

@@ -63,6 +63,7 @@ const eventFields = {
     location: z.string().trim().min(1).max(200).regex(NO_CONTROL_OR_TAGS),
     capacity: z.number().int().positive().max(100_000).optional(),
     projectId: z.uuid(),
+    guideId: z.uuid(),
     materialIds: z.array(z.uuid()).default([]),
     attachments: z
         .array(
@@ -94,6 +95,30 @@ const materialsExist = async (materialIds: string[]): Promise<boolean> => {
     });
 
     return count === materialIds.length;
+};
+
+type GuideResolution = { ok: true; guideId: string } | { ok: false };
+
+// El proyecto siempre tiene 1+ guías. Con 1 sola se fuerza esa (venga o no
+// en el body); con varias, la del body debe estar entre las del proyecto.
+const resolveGuideId = async (
+    projectId: string,
+    guideId: string,
+): Promise<GuideResolution> => {
+    const projectGuides = await prisma.projectGuide.findMany({
+        where: { projectId },
+        select: { guideId: true },
+    });
+
+    if (projectGuides.length === 1) {
+        return { ok: true, guideId: projectGuides[0]!.guideId };
+    }
+
+    if (!projectGuides.some((pg) => pg.guideId === guideId)) {
+        return { ok: false };
+    }
+
+    return { ok: true, guideId };
 };
 
 const MAX_EVENT_ATTACHMENT_BYTES = 1 * 1024 * 1024;
@@ -211,6 +236,7 @@ const eventSelect = {
     seriesId: true,
     createdAt: true,
     createdBy: { select: { id: true, name: true, puntoVuela: true } },
+    guide: { select: { id: true, name: true, url: true } },
     project: {
         select: {
             id: true,
@@ -431,6 +457,7 @@ eventsRouter.post(
             endsAt,
             capacity,
             projectId,
+            guideId,
             materialIds,
             attachments,
         } = body.data;
@@ -447,6 +474,15 @@ eventsRouter.post(
 
         if (!(await isActiveProject(projectId))) {
             res.status(400).json({ error: 'Proyecto no válido' });
+            return;
+        }
+
+        const guideResolution = await resolveGuideId(projectId, guideId);
+
+        if (!guideResolution.ok) {
+            res.status(400).json({
+                error: 'Guía no válida para este proyecto',
+            });
             return;
         }
 
@@ -474,6 +510,7 @@ eventsRouter.post(
                 endsAt: new Date(endsAt),
                 capacity,
                 projectId,
+                guideId: guideResolution.guideId,
                 createdById: actor.id,
                 materials: {
                     create: materialIds.map((materialId) => ({ materialId })),
@@ -539,6 +576,7 @@ eventsRouter.patch(
             endsAt,
             capacity,
             projectId,
+            guideId,
             materialIds,
             attachments,
             removedAttachmentIds,
@@ -546,6 +584,15 @@ eventsRouter.patch(
 
         if (!(await isActiveProject(projectId))) {
             res.status(400).json({ error: 'Proyecto no válido' });
+            return;
+        }
+
+        const guideResolution = await resolveGuideId(projectId, guideId);
+
+        if (!guideResolution.ok) {
+            res.status(400).json({
+                error: 'Guía no válida para este proyecto',
+            });
             return;
         }
 
@@ -654,6 +701,7 @@ eventsRouter.patch(
                     endsAt: new Date(endsAt),
                     capacity,
                     projectId,
+                    guideId: guideResolution.guideId,
                 },
                 select: eventSelect,
             }),
@@ -775,6 +823,18 @@ eventsRouter.post(
             return;
         }
 
+        const guideResolution = await resolveGuideId(
+            fields.projectId,
+            fields.guideId,
+        );
+
+        if (!guideResolution.ok) {
+            res.status(400).json({
+                error: 'Guía no válida para este proyecto',
+            });
+            return;
+        }
+
         if (!(await materialsExist(fields.materialIds))) {
             res.status(400).json({ error: 'Material no válido' });
             return;
@@ -783,6 +843,7 @@ eventsRouter.post(
         try {
             const series = await createEventSeries(actor.id, {
                 ...fields,
+                guideId: guideResolution.guideId,
                 rule: { from, to, weekdays, startTime, endTime },
             });
 

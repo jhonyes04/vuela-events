@@ -30,6 +30,7 @@ const makeEvent = async (
             capacity: opts.capacity,
             createdById,
             projectId: project.id,
+            guideId: project.guideId,
         },
     });
 };

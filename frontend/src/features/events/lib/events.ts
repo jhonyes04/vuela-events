@@ -27,6 +27,7 @@ export interface EventItem {
         resourceLinks: { id: string; title: string; url: string }[];
         documents: { id: string; title: string }[];
     };
+    guide: { id: string; name: string; url: string } | null;
     materials: { id: string; name: string; observations: string | null }[];
     attachments: { id: string; fileName: string }[];
     _count: { registrations: number };
@@ -288,6 +289,7 @@ export interface RecurringPayload {
     location: string;
     capacity?: number | undefined;
     projectId: string;
+    guideId: string;
     materialIds: string[];
     from: string;
     to: string;
@@ -320,6 +322,7 @@ export interface EventUpdateInput {
     location: string;
     capacity?: number | undefined;
     projectId: string;
+    guideId: string;
     materialIds: string[];
     startsAt: string;
     endsAt: string;

@@ -29,6 +29,7 @@ interface EventBasicFieldsProps {
     values: FormValues;
     onChange: (name: TextField) => (e: { target: { value: string } }) => void;
     onProjectChange: (id: string) => void;
+    onGuideChange: (id: string) => void;
     activeProjects: Project[];
 }
 
@@ -39,8 +40,14 @@ export function EventBasicFields({
     values,
     onChange,
     onProjectChange,
+    onGuideChange,
     activeProjects,
 }: EventBasicFieldsProps) {
+    const selectedProject = activeProjects.find(
+        (project) => project.id === values.projectId,
+    );
+    const guides = selectedProject?.guides ?? [];
+
     return (
         <>
             <Field id={fieldId('title')} label="Título *">
@@ -95,6 +102,21 @@ export function EventBasicFields({
                     emptyMessage="No hay proyectos"
                 />
             </Field>
+            {guides.length > 1 && (
+                <Field id={fieldId('guide')} label="Guía *">
+                    <ComboboxField
+                        id={fieldId('guide')}
+                        className="w-full"
+                        items={guides}
+                        getValue={(guide) => guide.id}
+                        getLabel={(guide) => guide.name}
+                        value={values.guideId}
+                        onValueChange={onGuideChange}
+                        placeholder="Selecciona una guía"
+                        emptyMessage="No hay guías"
+                    />
+                </Field>
+            )}
         </>
     );
 }

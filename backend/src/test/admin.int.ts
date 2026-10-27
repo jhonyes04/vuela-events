@@ -14,6 +14,7 @@ import {
 describe('administración de usuarios', () => {
     let server: Awaited<ReturnType<typeof startServer>>;
     let projectId: string;
+    let guideId: string;
 
     before(async () => {
         server = await startServer();
@@ -21,16 +22,19 @@ describe('administración de usuarios', () => {
 
     beforeEach(async () => {
         await resetDb();
-        projectId = (await createProject()).id;
+        const project = await createProject();
+        projectId = project.id;
+        guideId = project.guideId;
     });
 
-    // projectId cambia cada test (resetDb borra los proyectos).
+    // projectId/guideId cambian cada test (resetDb borra los proyectos).
     const newEvent = () => ({
         title: 'Evento',
         location: 'Sala de pruebas',
         startsAt: '2030-01-10T10:00:00.000Z',
         endsAt: '2030-01-10T12:00:00.000Z',
         projectId,
+        guideId,
     });
 
     after(async () => {

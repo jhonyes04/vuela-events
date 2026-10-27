@@ -1,3 +1,4 @@
+import { cn } from '@/lib/utils';
 import { type ReactNode } from 'react';
 import {
     Clock,
@@ -6,8 +7,10 @@ import {
     User,
     CalendarClock,
     Calendar1,
+    BookOpen,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { buttonVariants } from '@/components/ui/button';
 import { getProjectColorChip } from '@/features/projects/lib/colors';
 import {
     dayKey,
@@ -36,20 +39,53 @@ export const EventInfoRows = ({
 
     return (
         <section className="grid gap-4">
-            {showProject && (
-                <fieldset className="rounded-xl border p-3 text-sm text-muted-foreground">
-                    <legend className="flex items-center gap-1.5 whitespace-nowrap px-1 font-bold">
-                        <FolderKanban className="size-4 shrink-0 text-brand-green" />
-                        Proyecto
-                    </legend>
-                    <p className="flex flex-wrap items-center gap-2">
-                        <Badge className={chip.className} style={chip.style}>
-                            {event.project.name}
-                        </Badge>
-                        {projectTrailing}
-                    </p>
-                </fieldset>
-            )}
+            <div className="grid grid-cols-1 sm:grid-cols-12 items-center gap-2">
+                {showProject && (
+                    <>
+                        <fieldset className="rounded-xl border p-3 text-sm text-muted-foreground sm:col-span-4">
+                            <legend className="flex items-center gap-1.5 whitespace-nowrap px-1 font-bold">
+                                <FolderKanban className="size-4 shrink-0 text-brand-green" />
+                                Proyecto
+                            </legend>
+                            <p className="flex flex-wrap items-center justify-between gap-2">
+                                <Badge
+                                    className={chip.className}
+                                    style={chip.style}
+                                >
+                                    {event.project.name}
+                                </Badge>
+                                {projectTrailing}
+                            </p>
+                        </fieldset>
+                        {event.guide && (
+                            <fieldset className="rounded-xl border p-3 text-sm text-muted-foreground sm:col-span-8">
+                                <legend className="flex items-center gap-1.5 whitespace-nowrap px-1 font-bold">
+                                    <BookOpen className="size-4 shrink-0 text-brand-green" />
+                                    Guía
+                                </legend>
+                                <p className="flex items-center gap-2">
+                                    <a
+                                        href={event.guide.url}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className={cn(
+                                            buttonVariants({
+                                                variant: 'default',
+                                                size: 'xs',
+                                                className:
+                                                    'bg-amber-200 text-black hover:bg-amber-300',
+                                            }),
+                                        )}
+                                    >
+                                        {event.guide.name}
+                                    </a>
+                                </p>
+                            </fieldset>
+                        )}
+                    </>
+                )}
+            </div>
+
             <fieldset className="rounded-xl border p-3 text-sm text-muted-foreground">
                 <legend className="flex items-center gap-1.5 whitespace-nowrap px-1 font-bold">
                     <CalendarClock className="size-4 shrink-0 text-brand-green" />

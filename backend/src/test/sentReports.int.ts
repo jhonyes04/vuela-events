@@ -31,6 +31,7 @@ describe('partes de firmas guardados: listado y descarga', () => {
         recipient = await createUser('ail');
         stranger = await createUser('ail');
 
+        const project = await createProject();
         const event = await prisma.event.create({
             data: {
                 title: 'Taller de robótica',
@@ -38,7 +39,8 @@ describe('partes de firmas guardados: listado y descarga', () => {
                 startsAt: new Date('2030-01-10T10:00:00.000Z'),
                 endsAt: new Date('2030-01-10T12:00:00.000Z'),
                 createdById: sender.id,
-                projectId: (await createProject()).id,
+                projectId: project.id,
+                guideId: project.guideId,
             },
         });
 

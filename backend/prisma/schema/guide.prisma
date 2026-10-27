@@ -10,6 +10,7 @@ model Guide {
     createdBy       User?           @relation(fields: [createdById], references: [id], onDelete: SetNull)
     
     projects        ProjectGuide[]
+    events          Event[]
 
     @@map("guides")
 }

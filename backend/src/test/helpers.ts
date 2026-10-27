@@ -91,7 +91,8 @@ export const createMaterial = (
 };
 
 // Proyecto de prueba: por defecto activo, para poder usarlo al crear eventos.
-// Si no se pasan guideIds, crea una guía de prueba propia.
+// Si no se pasan guideIds, crea una guía de prueba propia. Devuelve además
+// guideId (la primera, útil para crear eventos cuando solo hay una).
 export const createProject = async (
     opts: {
         name?: string;
@@ -104,7 +105,7 @@ export const createProject = async (
     const n = randomBytes(4).toString('hex');
     const guideIds = opts.guideIds ?? [(await createGuide()).id];
 
-    return prisma.project.create({
+    const project = await prisma.project.create({
         data: {
             name: opts.name ?? `Proyecto ${n}`,
             color: opts.color ?? 'amber',
@@ -113,6 +114,8 @@ export const createProject = async (
             createdById: opts.createdById ?? null,
         },
     });
+
+    return { ...project, guideId: guideIds[0]! };
 };
 
 // Documento de prueba (fixture, no pasa por el endpoint real).

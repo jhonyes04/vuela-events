@@ -21,6 +21,7 @@ const validProfile = {
 describe('perfil: primer acceso y edición', () => {
     let server: Awaited<ReturnType<typeof startServer>>;
     let projectId: string;
+    let guideId: string;
 
     before(async () => {
         server = await startServer();
@@ -28,7 +29,9 @@ describe('perfil: primer acceso y edición', () => {
 
     beforeEach(async () => {
         await resetDb();
-        projectId = (await createProject()).id;
+        const project = await createProject();
+        projectId = project.id;
+        guideId = project.guideId;
     });
 
     after(async () => {
@@ -56,6 +59,7 @@ describe('perfil: primer acceso y edición', () => {
         startsAt: '2030-01-10T10:00:00.000Z',
         endsAt: '2030-01-10T12:00:00.000Z',
         projectId,
+        guideId,
     });
 
     describe('primer acceso', () => {
@@ -114,6 +118,7 @@ describe('perfil: primer acceso y edición', () => {
                     endsAt: new Date(Date.now() + 90_000_000),
                     createdById: owner.id,
                     projectId,
+                    guideId,
                 },
             });
 
@@ -164,6 +169,7 @@ describe('perfil: primer acceso y edición', () => {
                     endsAt: new Date(Date.now() + 90_000_000),
                     createdById: owner.id,
                     projectId,
+                    guideId,
                 },
             });
 

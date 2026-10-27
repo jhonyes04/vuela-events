@@ -22,6 +22,7 @@ const validEvent = {
 describe('eventos: permisos y validación', () => {
     let server: Awaited<ReturnType<typeof startServer>>;
     let projectId: string;
+    let projectGuideId: string;
     let guideId: string;
 
     before(async () => {
@@ -30,7 +31,9 @@ describe('eventos: permisos y validación', () => {
 
     beforeEach(async () => {
         await resetDb();
-        projectId = (await createProject()).id;
+        const project = await createProject();
+        projectId = project.id;
+        projectGuideId = project.guideId;
         guideId = (await createGuide()).id;
     });
 
@@ -45,7 +48,7 @@ describe('eventos: permisos y validación', () => {
             cookie: await sessionCookieFor(userId),
             body:
                 typeof body === 'object' && body !== null
-                    ? { projectId, ...body }
+                    ? { projectId, guideId: projectGuideId, ...body }
                     : body,
         });
 
@@ -154,6 +157,7 @@ describe('eventos: permisos y validación', () => {
                 endsAt: new Date('2030-02-01T11:00:00Z'),
                 createdById: admin.id,
                 projectId,
+                guideId: projectGuideId,
             },
         });
 
@@ -256,6 +260,7 @@ describe('eventos: permisos y validación', () => {
             endsAt: new Date(validEvent.endsAt),
             createdById: dt.id,
             projectId,
+            guideId: projectGuideId,
         };
         const mine = await prisma.event.create({ data: base });
 

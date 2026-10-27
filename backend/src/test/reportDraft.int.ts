@@ -29,6 +29,7 @@ describe('parte de firmas: generar, revisar y enviar', () => {
         dt = await createUser('admin');
         otherDt = await createUser('admin');
 
+        const project = await createProject();
         const event = await prisma.event.create({
             data: {
                 title: 'Taller de robótica',
@@ -37,7 +38,8 @@ describe('parte de firmas: generar, revisar y enviar', () => {
                 startsAt: new Date('2020-01-10T10:00:00.000Z'),
                 endsAt: new Date('2020-01-10T12:00:00.000Z'),
                 createdById: dt.id,
-                projectId: (await createProject()).id,
+                projectId: project.id,
+                guideId: project.guideId,
             },
         });
 
