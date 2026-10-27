@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { toast } from 'sonner';
 import {
     CalendarRange,
     ClipboardList,
@@ -9,7 +10,10 @@ import {
 import { Button } from '@/components/ui/button';
 import { IconTooltip } from '@/components/IconTooltip';
 import { AttendeesDialog } from '@/features/events/components/AttendeesDialog';
-import { EventEditDialog } from '@/features/events/components/CreateEventDialog';
+import {
+    CreateEventDialog,
+    EventEditDialog,
+} from '@/features/events/components/CreateEventDialog';
 import { EventsTable } from '@/features/events/components/EventsTable';
 import { ParticipantsCountDialog } from '@/features/events/components/ParticipantsCountDialog';
 import { ConfirmDeleteDialog } from '@/components/ConfirmDeleteDialog';
@@ -150,23 +154,37 @@ export const EventsManagementPage = () => {
                 <PageTitle icon={CalendarRange} className="mb-0">
                     Gestionar Eventos
                 </PageTitle>
-                {selected.size > 0 && (
-                    <Button
-                        variant="destructive"
-                        size="sm"
-                        onClick={() =>
-                            setDeleting({
-                                ids: [...selected],
-                                label:
-                                    selected.size === 1
-                                        ? 'este evento'
-                                        : `estos ${selected.size} eventos`,
-                            })
-                        }
-                    >
-                        Eliminar seleccionados ({selected.size})
-                    </Button>
-                )}
+                <div className="flex items-center gap-2 ms-auto">
+                    <CreateEventDialog
+                        onCreated={({ count }) => {
+                            toast.success(
+                                count === 1
+                                    ? 'Evento creado'
+                                    : `Se han creado ${count} sesiones`,
+                            );
+
+                            void load();
+                        }}
+                    />
+
+                    {selected.size > 0 && (
+                        <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={() =>
+                                setDeleting({
+                                    ids: [...selected],
+                                    label:
+                                        selected.size === 1
+                                            ? 'este evento'
+                                            : `estos ${selected.size} eventos`,
+                                })
+                            }
+                        >
+                            Eliminar seleccionados ({selected.size})
+                        </Button>
+                    )}
+                </div>
             </div>
 
             <EventsTable
