@@ -12,7 +12,7 @@ export const CalendarLegend = ({ events }: CalendarLegendProps) => {
     const projects = useMemo(() => {
         const byId = new Map(
             events
-                .filter((event) => !hasEnded(event))
+                .filter((event) => !hasEnded(event) && !isFull(event))
                 .map((event) => [event.project.id, event.project]),
         );
 
