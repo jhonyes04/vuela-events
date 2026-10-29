@@ -19,7 +19,7 @@ import { cn } from '@/lib/utils';
 import { useProjectsStore } from '@/features/projects/store';
 import { useAuth } from '@/features/auth/hooks/context';
 import { canManageResource } from '@/lib/ownership';
-import { stripHtml } from '@/lib/html';
+import { extractLockedSection } from '@/lib/html';
 import { scrollbarOptions } from '@/lib/overlayScrollbarsOptions';
 import { usePagination } from '@/hooks/usePagination';
 import { useSort } from '@/hooks/useSort';
@@ -141,17 +141,16 @@ export const ProjectsPage = () => {
             headerClassName: 'hidden sm:table-cell',
             cellClassName: 'hidden sm:table-cell max-w-xs truncate',
             render: (project) => {
-                if (!project.openingInstructions) return '—';
+                const text = project.openingInstructions
+                    ? extractLockedSection(
+                          project.openingInstructions,
+                          'Observaciones:',
+                      )
+                    : null;
 
-                const text = stripHtml(project.openingInstructions);
-                const match = text.match(/observaciones\s*:?/i);
-                const relevant = match
-                    ? text.slice(match.index! + match[0].length).trim()
-                    : text;
-
-                return relevant
-                    ? relevant.slice(0, CHARACTERS_LENGTH) +
-                          (relevant.length > CHARACTERS_LENGTH ? '…' : '')
+                return text
+                    ? text.slice(0, CHARACTERS_LENGTH) +
+                          (text.length > CHARACTERS_LENGTH ? '…' : '')
                     : '—';
             },
         },
