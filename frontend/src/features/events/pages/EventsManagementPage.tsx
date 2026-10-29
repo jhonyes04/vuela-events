@@ -44,6 +44,7 @@ export const EventsManagementPage = () => {
     const [editOpen, setEditOpen] = useState(false);
     const [editing, setEditing] = useState<EventItem | null>(null);
     const [deleting, setDeleting] = useState<Pending | null>(null);
+    const [motivo, setMotivo] = useState('');
     const [selected, setSelected] = useState<Set<string>>(new Set());
     const [attendeesOpen, setAttendeesOpen] = useState(false);
     const [viewingAttendees, setViewingAttendees] = useState<EventItem | null>(
@@ -195,7 +196,8 @@ export const EventsManagementPage = () => {
                             variant="destructive"
                             size="sm"
                             className="ms-auto"
-                            onClick={() =>
+                            onClick={() => {
+                                setMotivo('');
                                 setDeleting({
                                     ids: [...selected],
                                     label:
@@ -204,8 +206,8 @@ export const EventsManagementPage = () => {
                                             : `estos ${selected.size} eventos`,
                                     confirmText:
                                         'Eliminar eventos seleccionados',
-                                })
-                            }
+                                });
+                            }}
                         >
                             Eliminar seleccionados ({selected.size})
                         </Button>
@@ -268,13 +270,14 @@ export const EventsManagementPage = () => {
                                     size="icon"
                                     aria-label="Eliminar"
                                     disabled={!isDeletableNow(event)}
-                                    onClick={() =>
+                                    onClick={() => {
+                                        setMotivo('');
                                         setDeleting({
                                             ids: [event.id],
                                             label: `«${event.title}»`,
                                             confirmText: event.title,
-                                        })
-                                    }
+                                        });
+                                    }}
                                 >
                                     <Trash2 className="size-4" />
                                 </Button>
@@ -315,6 +318,13 @@ export const EventsManagementPage = () => {
                     confirmLabel="Eliminar"
                     deletingLabel="Eliminando…"
                     errorFallback="No se pudo eliminar el evento"
+                    textField={{
+                        label:
+                            'Motivo (opcional, se incluye en el aviso a los inscritos)',
+                        value: motivo,
+                        onChange: setMotivo,
+                        placeholder: 'Por qué se cancela...',
+                    }}
                     successLabel={({ succeeded, failed }) =>
                         failed === 0
                             ? succeeded.length === 1
@@ -325,7 +335,9 @@ export const EventsManagementPage = () => {
                     onConfirm={async () => {
                         const results = await Promise.allSettled(
                             deleting.ids.map((id) =>
-                                deleteEventById(id).then(() => id),
+                                deleteEventById(id, motivo || undefined).then(
+                                    () => id,
+                                ),
                             ),
                         );
                         const succeeded = results
