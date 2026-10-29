@@ -4,6 +4,7 @@ export interface FormValues {
     title: string;
     subtitle: string;
     location: string;
+    modality: string;
     description: string;
     capacity: string;
     projectId: string;
@@ -30,6 +31,7 @@ export const EMPTY_FORM_VALUES: FormValues = {
     title: '',
     subtitle: '',
     location: '',
+    modality: 'presencial',
     description: '',
     capacity: '',
     projectId: '',
@@ -49,6 +51,7 @@ export const valuesFromEvent = (event: EventItem): FormValues => ({
     title: event.title,
     subtitle: event.subtitle ?? '',
     location: event.location ?? '',
+    modality: event.modality,
     description: event.description ?? '',
     capacity: event.capacity ? String(event.capacity) : '',
     projectId: event.project.id,

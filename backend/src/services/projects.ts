@@ -63,6 +63,7 @@ const projectSelect = {
     closingInstructions: true,
     color: true,
     active: true,
+    isMeeting: true,
     createdById: true,
     createdBy: {
         select: { id: true, name: true, puntoVuela: true },
@@ -218,6 +219,7 @@ export const createProject = async (
     resourceLinkIds: string[],
     documentIds: string[],
     ownerId: string | null,
+    isMeeting: boolean | undefined,
 ) => {
     const exists = await prisma.project.findUnique({ where: { name } });
 
@@ -250,6 +252,8 @@ export const createProject = async (
                 : null,
             color,
             createdById,
+            ...(actor.roleId === 'admin' &&
+                isMeeting !== undefined && { isMeeting }),
             guides: { create: guideIds.map((guideId) => ({ guideId })) },
             resourceLinks: {
                 create: resourceLinkIds.map((resourceLinkId) => ({
@@ -287,6 +291,7 @@ export const updateProject = async (
         documentIds: string[];
         active: boolean;
         ownerId?: string | null;
+        isMeeting?: boolean;
     },
 ) => {
     const project = await prisma.project.findUnique({ where: { id } });
@@ -372,6 +377,10 @@ export const updateProject = async (
                 color: input.color,
                 active: input.active,
                 ...(createdById && { createdById }),
+                ...(actor.roleId === 'admin' &&
+                    input.isMeeting !== undefined && {
+                        isMeeting: input.isMeeting,
+                    }),
             },
             select: projectSelect,
         }),

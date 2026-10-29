@@ -21,6 +21,7 @@ import type { SmtpSender } from '@/features/appSettings/components/SenderBadge';
 
 const SLOT_LABELS: Record<SlotId, string> = {
     convocatoria: 'Convocatoria',
+    convocatoria_reunion: 'Convocatoria de Reunión Comarcal',
     parte_firmas: 'Parte de firmas',
     inscripcion: 'Inscripción a evento',
     cancelacion_inscripcion: 'Cancelación de inscripción',
@@ -32,6 +33,7 @@ const SLOT_LABELS: Record<SlotId, string> = {
 
 const SLOT_SENDER: Record<SlotId, SmtpSender> = {
     convocatoria: 'gmail',
+    convocatoria_reunion: 'gmail',
     parte_firmas: 'gmail',
     inscripcion: 'noreply',
     cancelacion_inscripcion: 'noreply',

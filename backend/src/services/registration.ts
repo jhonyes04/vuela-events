@@ -70,6 +70,7 @@ export const registerForEvent = async (
                     startsAt: true,
                     title: true,
                     location: true,
+                    modality: true,
                     projectId: true,
                     project: { select: { name: true } },
                 },
@@ -177,6 +178,7 @@ export const unregisterFromEvent = async (
         select: {
             title: true,
             location: true,
+            modality: true,
             startsAt: true,
             endsAt: true,
             project: { select: { name: true } },
@@ -235,6 +237,7 @@ export const unregisterRegistration = async (
                     endsAt: true,
                     title: true,
                     location: true,
+                    modality: true,
                     startsAt: true,
                     project: { select: { name: true } },
                 },

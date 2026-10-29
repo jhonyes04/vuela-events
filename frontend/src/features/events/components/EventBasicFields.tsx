@@ -24,6 +24,11 @@ export function Field({
     );
 }
 
+const MODALITY_OPTIONS = [
+    { id: 'presencial', label: 'Presencial' },
+    { id: 'online', label: 'Online' },
+] as const;
+
 interface EventBasicFieldsProps {
     fieldId: (name: string) => string;
     values: FormValues;
@@ -78,6 +83,20 @@ export function EventBasicFields({
                     maxLength={200}
                     value={values.location}
                     onChange={onChange('location')}
+                />
+            </Field>
+            <Field id={fieldId('modality')} label="Modalidad *">
+                <ComboboxField
+                    id={fieldId('modality')}
+                    className="w-full"
+                    items={MODALITY_OPTIONS}
+                    getValue={(m) => m.id}
+                    getLabel={(m) => m.label}
+                    value={values.modality}
+                    onValueChange={(v) =>
+                        onChange('modality')({ target: { value: v } })
+                    }
+                    placeholder="Selecciona la modalidad"
                 />
             </Field>
             <Field id={fieldId('category')} label="Proyecto *">

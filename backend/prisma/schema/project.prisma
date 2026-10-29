@@ -5,6 +5,7 @@ model Project {
     closingInstructions     String?     @db.Text
     color                   String      @db.VarChar(20)
     active                  Boolean     @default(true)
+    isMeeting               Boolean     @default(false)
     createdById             String?     @db.Uuid
     createdAt               DateTime    @default(now())
     updatedAt               DateTime    @updatedAt

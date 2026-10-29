@@ -7,6 +7,8 @@ export interface StartSendInput {
     recipientRegistrationIds: string[];
     // Acta generada y revisada antes del envío (obligatoria en 'parte_firmas').
     reportDraftId?: string;
+    // Detalle suelto para la convocatoria de reunión comarcal; no se guarda.
+    motivo?: string;
 }
 
 // El servidor lo dice así cuando el acta caducó o los destinatarios cambiaron.

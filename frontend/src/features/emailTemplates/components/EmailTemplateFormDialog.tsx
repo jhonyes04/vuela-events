@@ -32,6 +32,7 @@ const EVENT_PLACEHOLDERS: EditorPlaceholder[] = [
     { token: '{{horaInicio}}', label: 'Hora inicio' },
     { token: '{{horaFin}}', label: 'Hora fin' },
     { token: '{{lugar}}', label: 'Lugar' },
+    { token: '{{modalidad}}', label: 'Modalidad' },
     { token: '{{proyecto}}', label: 'Proyecto' },
     { token: '{{evento}}', label: 'Evento' },
     { token: '{{fechas}}', label: 'Fecha(s)' },

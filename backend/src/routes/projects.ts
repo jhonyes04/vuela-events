@@ -43,6 +43,7 @@ const createProjectSchema = z.strictObject({
     resourceLinkIds: z.array(z.uuid()).default([]),
     documentIds: z.array(z.uuid()).default([]),
     ownerId: ownerIdSchema,
+    isMeeting: z.boolean().optional(),
 });
 
 const updateProjectSchema = z.strictObject({
@@ -55,6 +56,7 @@ const updateProjectSchema = z.strictObject({
     documentIds: z.array(z.uuid()).default([]),
     active: z.boolean(),
     ownerId: ownerIdSchema,
+    isMeeting: z.boolean().optional(),
 });
 
 const projectManageErrors = {
@@ -181,6 +183,7 @@ projectsRouter.post(
                 body.data.resourceLinkIds,
                 body.data.documentIds,
                 body.data.ownerId ?? null,
+                body.data.isMeeting,
             );
 
             res.status(201).json({ project });

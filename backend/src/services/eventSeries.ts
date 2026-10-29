@@ -8,6 +8,7 @@ export interface SeriesInput {
     subtitle?: string | undefined;
     description?: string | undefined;
     location: string;
+    modality: string;
     capacity?: number | undefined;
     projectId: string;
     guideId: string;
@@ -31,6 +32,7 @@ export const createEventSeries = async (
                 subtitle: input.subtitle,
                 description: input.description,
                 location: input.location,
+                modality: input.modality,
                 capacity: input.capacity,
                 projectId: input.projectId,
                 guideId: input.guideId,

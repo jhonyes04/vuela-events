@@ -2,6 +2,7 @@ import { api } from '@/lib/api';
 
 export type SlotId =
     | 'convocatoria'
+    | 'convocatoria_reunion'
     | 'parte_firmas'
     | 'inscripcion'
     | 'cancelacion_inscripcion'

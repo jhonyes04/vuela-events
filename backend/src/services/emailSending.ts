@@ -7,6 +7,7 @@ const SMTP_CONFIG_ID = 'default';
 // escritos a mano); la plantilla asignada a cada uno sí es dato, no código.
 export const SLOT_IDS = [
     'convocatoria',
+    'convocatoria_reunion',
     'parte_firmas',
     'inscripcion',
     'cancelacion_inscripcion',

@@ -13,6 +13,7 @@ const startSendSchema = z.strictObject({
     eventId: z.uuid(),
     recipientRegistrationIds: z.array(z.uuid()).min(1),
     reportDraftId: z.uuid().optional(),
+    motivo: z.string().trim().max(5000).optional(),
 });
 
 const jobIdParamsSchema = z.object({ jobId: z.uuid() });
@@ -76,6 +77,7 @@ emailSendsRouter.post('/', async (req, res) => {
             eventId: body.data.eventId,
             recipientRegistrationIds: body.data.recipientRegistrationIds,
             reportDraftId: body.data.reportDraftId,
+            motivo: body.data.motivo,
         });
 
         res.status(202).json({ jobId });

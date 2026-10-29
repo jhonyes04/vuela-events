@@ -29,6 +29,10 @@ const hourInMadrid = (date: Date): number =>
 export interface RenderableEvent {
     title: string;
     location: string | null;
+    modality: string;
+    // Solo lo rellena la convocatoria de reunión comarcal; el resto de
+    // envíos (inscripción, cancelación...) no tienen motivo.
+    motivo?: string;
     startsAt: Date;
     endsAt: Date;
     projectName: string;
@@ -70,8 +74,11 @@ const buildPlaceholders = (
     fecha: (event) => dateFormat.format(event.startsAt),
     horaInicio: (event) => timeFormat.format(event.startsAt),
     horaFin: (event) => timeFormat.format(event.endsAt),
+    modalidad: (event) => event.modality,
     lugar: (event) =>
         escape ? escapeHtml(event.location ?? '') : (event.location ?? ''),
+    // Ya es HTML saneado (sanitizeEmailHtml), no texto plano: no se escapa.
+    motivo: (event) => event.motivo ?? '',
     // proyecto = nombre real del proyecto; evento = título de la sesión
     // concreta (pueden no coincidir: un proyecto tiene varias sesiones).
     proyecto: (event) =>
@@ -103,15 +110,53 @@ const applyPlaceholders = (
         return resolve ? resolve(event) : match;
     });
 
+// Si el DT no escribe motivo, se quita el párrafo entero que lo contiene
+// (no solo el texto) para no dejar un hueco en blanco en el correo.
+const stripEmptyMotivoParagraph = (html: string): string =>
+    html.replace(/<p[^>]*>([\s\S]*?)<\/p>/gi, (match, inner: string) =>
+        inner.replace(/<[^>]+>/g, '').trim() === '{{motivo}}' ? '' : match,
+    );
+
+// Con RichTextEditor, "no escribió nada" es HTML vacío (ej. '<p></p>'), no
+// la cadena vacía literal.
+const isMotivoEmpty = (motivo: string | undefined): boolean =>
+    (motivo ?? '').replace(/<[^>]+>/g, '').trim() === '';
+
+// Bloques condicionales por modalidad: {{#presencial}}...{{/presencial}} y
+// {{#online}}...{{/online}} se quitan enteros (marcas incluidas) si la
+// modalidad del evento no coincide.
+const applyModalityConditionals = (html: string, modality: string): string =>
+    html
+        .replace(
+            /\{\{#presencial\}\}([\s\S]*?)\{\{\/presencial\}\}/g,
+            (_match, inner: string) =>
+                modality === 'presencial' ? inner : '',
+        )
+        .replace(
+            /\{\{#online\}\}([\s\S]*?)\{\{\/online\}\}/g,
+            (_match, inner: string) => (modality === 'online' ? inner : ''),
+        );
+
 // Sustituye {{saludo}}, {{fecha}}, {{horaInicio}}, {{horaFin}}, {{lugar}} y
 // {{proyecto}} tanto en el asunto como en el cuerpo de la plantilla.
 export const renderEmail = (
     template: { subject: string; body: string },
     event: RenderableEvent,
-): { subject: string; body: string } => ({
-    subject: applyPlaceholders(template.subject, event, SUBJECT_PLACEHOLDERS),
-    body: applyPlaceholders(template.body, event, BODY_PLACEHOLDERS),
-});
+): { subject: string; body: string } => {
+    const bodyWithMotivo = isMotivoEmpty(event.motivo)
+        ? stripEmptyMotivoParagraph(template.body)
+        : template.body;
+    const body = applyModalityConditionals(bodyWithMotivo, event.modality);
+    const subject = applyModalityConditionals(
+        template.subject,
+        event.modality,
+    );
+
+    return {
+        subject: applyPlaceholders(subject, event, SUBJECT_PLACEHOLDERS),
+        body: applyPlaceholders(body, event, BODY_PLACEHOLDERS),
+    };
+};
 
 // Para plantillas no atadas a un evento (inscripción, proyecto nuevo,
 // mantenimiento): placeholders libres, {{clave}} -> valor ya formateado por
@@ -129,9 +174,7 @@ export const renderNotificationEmail = (
 
             if (value === undefined) return match;
 
-            return escape && !rawKeys.includes(key)
-                ? escapeHtml(value)
-                : value;
+            return escape && !rawKeys.includes(key) ? escapeHtml(value) : value;
         });
 
     return {

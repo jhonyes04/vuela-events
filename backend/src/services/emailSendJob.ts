@@ -9,6 +9,7 @@ import { saveSentReport } from './sentReports.js';
 import { type SlotId } from './emailSending.js';
 import {
     getEmailSignatureForSend,
+    sanitizeEmailHtml,
     type SignatureInlineImage,
 } from './emailSignature.js';
 
@@ -21,6 +22,7 @@ const JOB_TTL_MS = 10 * 60 * 1000;
 
 const SLOT_PERMISSIONS: Partial<Record<SlotId, string>> = {
     convocatoria: 'events:send:convocatoria',
+    convocatoria_reunion: 'events:send:convocatoria',
     parte_firmas: 'events:send:parte_firmas',
 };
 
@@ -93,6 +95,9 @@ interface StartSendInput {
     recipientRegistrationIds: string[];
     // Acta generada y revisada antes del envío (obligatoria en 'parte_firmas').
     reportDraftId?: string;
+    // Detalle suelto para la convocatoria de una reunión comarcal; no se
+    // guarda, solo vive para este envío.
+    motivo?: string;
 }
 
 export const startBulkSend = async (
@@ -162,23 +167,15 @@ export const startBulkSend = async (
         throw new StartSendError('app_password_not_configured');
     }
 
-    const assignment = await prisma.emailTemplateAssignment.findUnique({
-        where: { slot: input.slot },
-        select: { template: true },
-    });
-
-    if (!assignment?.template) {
-        throw new StartSendError('template_not_assigned');
-    }
-
     const event = await prisma.event.findUnique({
         where: { id: input.eventId },
         select: {
             title: true,
             location: true,
+            modality: true,
             startsAt: true,
             endsAt: true,
-            project: { select: { name: true } },
+            project: { select: { name: true, isMeeting: true } },
         },
     });
 
@@ -186,7 +183,35 @@ export const startBulkSend = async (
         throw new StartSendError('event_not_found');
     }
 
-    const renderableEvent = { ...event, projectName: event.project.name };
+    // Convocatoria de un proyecto de reuniones comarcales usa su propia
+    // plantilla (slot distinto); el frontend sigue pidiendo 'convocatoria',
+    // aquí se redirige según el proyecto del evento.
+    const effectiveSlot: SlotId =
+        input.slot === 'convocatoria' && event.project.isMeeting
+            ? 'convocatoria_reunion'
+            : input.slot;
+
+    const assignment = await prisma.emailTemplateAssignment.findUnique({
+        where: { slot: effectiveSlot },
+        select: { template: true },
+    });
+
+    if (!assignment?.template) {
+        throw new StartSendError('template_not_assigned');
+    }
+
+    // Solo se usa en la convocatoria de reunión comarcal; en cualquier otro
+    // slot se ignora aunque venga en la petición.
+    const motivo =
+        effectiveSlot === 'convocatoria_reunion'
+            ? sanitizeEmailHtml(input.motivo ?? '')
+            : '';
+
+    const renderableEvent = {
+        ...event,
+        projectName: event.project.name,
+        motivo,
+    };
 
     // Resuelto por inscripción, acotado a este evento: así nadie puede
     // colar el id de inscripción de otro evento para enviarse algo ajeno.

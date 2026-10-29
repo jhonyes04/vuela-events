@@ -55,7 +55,9 @@ const ProjectFormBody = ({
     onClose,
 }: ProjectFormBodyProps) => {
     const { user } = useAuth();
-    const canManageOwner = user?.permissions.includes('ownership:manage') ?? false;
+    const canManageOwner =
+        user?.permissions.includes('ownership:manage') ?? false;
+    const isAdmin = user?.roleId === 'admin';
     const openingSections = useAppSettingsStore(
         (s) => s.projectOpeningSections,
     );
@@ -86,6 +88,7 @@ const ProjectFormBody = ({
         ]),
     );
     const [active, setActive] = useState(project?.active ?? true);
+    const [isMeeting, setIsMeeting] = useState(project?.isMeeting ?? false);
     const [ownerId, setOwnerId] = useState(
         project?.createdById ?? user?.id ?? '',
     );
@@ -172,6 +175,7 @@ const ProjectFormBody = ({
                 resourceLinkIds,
                 documentIds,
                 ...(canManageOwner && { ownerId: ownerId || undefined }),
+                ...(isAdmin && { isMeeting }),
             };
 
             const saved = project
@@ -251,6 +255,20 @@ const ProjectFormBody = ({
                             disabled={submitting}
                             currentOwner={project?.createdBy ?? null}
                         />
+                    )}
+
+                    {isAdmin && (
+                        <div className="flex items-center gap-2">
+                            <Checkbox
+                                id="project-is-meeting"
+                                checked={isMeeting}
+                                disabled={submitting}
+                                onCheckedChange={setIsMeeting}
+                            />
+                            <Label htmlFor="project-is-meeting">
+                                Reunión Comarcal
+                            </Label>
+                        </div>
                     )}
 
                     {project && (

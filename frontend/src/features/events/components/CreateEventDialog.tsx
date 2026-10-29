@@ -152,6 +152,7 @@ function EventFormBody({
             // Los opcionales vacíos no se envían.
             subtitle: values.subtitle || undefined,
             location: values.location,
+            modality: values.modality,
             description: values.description || undefined,
             capacity: values.capacity ? Number(values.capacity) : undefined,
             projectId: values.projectId,

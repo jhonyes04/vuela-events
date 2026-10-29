@@ -30,6 +30,7 @@ export interface Project {
     closingInstructions: string | null;
     color: string;
     active: boolean;
+    isMeeting: boolean;
     createdById: string | null;
     createdBy: ProjectOwner | null;
     guides: ProjectGuide[];
@@ -46,6 +47,7 @@ export interface ProjectInput {
     resourceLinkIds: string[];
     documentIds: string[];
     ownerId?: string | undefined;
+    isMeeting?: boolean;
 }
 
 export interface ProjectUpdateInput extends ProjectInput {

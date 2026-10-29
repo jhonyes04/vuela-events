@@ -4,6 +4,7 @@ model Event {
     subtitle                    String?         @db.VarChar(200)
     description                 String?         @db.VarChar(2000)
     location                    String?         @db.VarChar(200)
+    modality                    String          @db.VarChar(20) @default("presencial")
     startsAt                    DateTime        
     endsAt                      DateTime        
     capacity                    Int?

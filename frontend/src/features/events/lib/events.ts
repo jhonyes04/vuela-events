@@ -6,6 +6,7 @@ export interface EventItem {
     subtitle: string | null;
     description: string | null;
     location: string | null;
+    modality: string;
     startsAt: string;
     endsAt: string;
     capacity: number | null;
@@ -23,6 +24,7 @@ export interface EventItem {
         openingInstructions: string | null;
         closingInstructions: string | null;
         color: string;
+        isMeeting: boolean;
         guides: { id: string; name: string; url: string }[];
         resourceLinks: { id: string; title: string; url: string }[];
         documents: { id: string; title: string }[];
@@ -287,6 +289,7 @@ export interface RecurringPayload {
     subtitle?: string | undefined;
     description?: string | undefined;
     location: string;
+    modality: string;
     capacity?: number | undefined;
     projectId: string;
     guideId: string;
@@ -320,6 +323,7 @@ export interface EventUpdateInput {
     subtitle?: string | undefined;
     description?: string | undefined;
     location: string;
+    modality: string;
     capacity?: number | undefined;
     projectId: string;
     guideId: string;

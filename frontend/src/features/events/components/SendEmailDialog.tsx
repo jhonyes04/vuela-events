@@ -35,6 +35,7 @@ interface SendEmailBodyProps {
     eventId: string;
     recipients: Attendee[];
     reportDraftId?: string;
+    motivo?: string;
     onDraftRejected?: () => void;
     status: SendJobStatus | null;
     setStatus: (status: SendJobStatus | null) => void;
@@ -51,6 +52,7 @@ const SendEmailBody = ({
     eventId,
     recipients,
     reportDraftId,
+    motivo,
     onDraftRejected,
     status,
     setStatus,
@@ -82,6 +84,7 @@ const SendEmailBody = ({
                 eventId,
                 recipientRegistrationIds,
                 reportDraftId,
+                motivo,
             });
 
             poll(jobId);
@@ -300,6 +303,7 @@ interface SendEmailDialogProps {
     recipients: Attendee[];
     // Acta generada y revisada (solo para el parte de firmas).
     reportDraftId?: string;
+    motivo?: string;
     onDraftRejected?: () => void;
 }
 
@@ -312,6 +316,7 @@ export const SendEmailDialog = ({
     eventId,
     recipients,
     reportDraftId,
+    motivo,
     onDraftRejected,
 }: SendEmailDialogProps) => {
     const [status, setStatus] = useState<SendJobStatus | null>(null);
@@ -334,6 +339,7 @@ export const SendEmailDialog = ({
             eventId={eventId}
             recipients={recipients}
             reportDraftId={reportDraftId}
+            motivo={motivo}
             onDraftRejected={onDraftRejected}
             status={status}
             setStatus={setStatus}

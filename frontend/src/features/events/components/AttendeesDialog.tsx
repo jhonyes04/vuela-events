@@ -15,6 +15,7 @@ import { ConfirmDeleteDialog } from '@/components/ConfirmDeleteDialog';
 import { IconTooltip } from '@/components/IconTooltip';
 import { AttendeeChips } from '@/features/events/components/AttendeeChips';
 import { AddParticipantsDialog } from '@/features/events/components/AddParticipantsDialog';
+import { MeetingMotivoDialog } from '@/features/events/components/MeetingMotivoDialog';
 import { SendEmailDialog } from '@/features/events/components/SendEmailDialog';
 import { ReportPreviewDialog } from '@/features/reports/components/ReportPreviewDialog';
 import { useAttendees } from '@/features/events/hooks/useAttendees';
@@ -34,7 +35,11 @@ interface AttendeesBodyProps {
     onChanged: () => void;
 }
 
-const AttendeesBody = ({ event, onCloseAll, onChanged }: AttendeesBodyProps) => {
+const AttendeesBody = ({
+    event,
+    onCloseAll,
+    onChanged,
+}: AttendeesBodyProps) => {
     const { user } = useAuth();
     const ended = hasEnded(event);
     // "Agregar" exige poder ver candidatos y poder inscribirlos (la misma
@@ -65,6 +70,8 @@ const AttendeesBody = ({ event, onCloseAll, onChanged }: AttendeesBodyProps) => 
 
     const [selected, setSelected] = useState<Set<string>>(new Set());
     const [sendSlot, setSendSlot] = useState<SlotId | null>(null);
+    const [motivoPromptOpen, setMotivoPromptOpen] = useState(false);
+    const [motivo, setMotivo] = useState('');
     const [previewOpen, setPreviewOpen] = useState(false);
     const [addOpen, setAddOpen] = useState(false);
     const [deletingAttendee, setDeletingAttendee] = useState<Attendee | null>(
@@ -161,7 +168,14 @@ const AttendeesBody = ({ event, onCloseAll, onChanged }: AttendeesBodyProps) => 
                                 <Button
                                     variant="default"
                                     disabled={selected.size === 0}
-                                    onClick={() => setSendSlot('convocatoria')}
+                                    onClick={() => {
+                                        if (event.project.isMeeting) {
+                                            setMotivo('');
+                                            setMotivoPromptOpen(true);
+                                        } else {
+                                            setSendSlot('convocatoria');
+                                        }
+                                    }}
                                 >
                                     Enviar convocatoria
                                 </Button>
@@ -235,9 +249,21 @@ const AttendeesBody = ({ event, onCloseAll, onChanged }: AttendeesBodyProps) => 
                     reportDraftId={
                         sendSlot === 'parte_firmas' ? draft?.id : undefined
                     }
+                    motivo={event.project.isMeeting ? motivo : undefined}
                     onDraftRejected={clear}
                 />
             )}
+
+            <MeetingMotivoDialog
+                open={motivoPromptOpen}
+                onOpenChange={setMotivoPromptOpen}
+                motivo={motivo}
+                onMotivoChange={setMotivo}
+                onContinue={() => {
+                    setMotivoPromptOpen(false);
+                    setSendSlot('convocatoria');
+                }}
+            />
 
             {canAddAttendees && (
                 <AddParticipantsDialog

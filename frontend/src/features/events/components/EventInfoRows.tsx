@@ -3,6 +3,7 @@ import { type ReactNode } from 'react';
 import {
     Clock,
     MapPin,
+    Video,
     FolderKanban,
     User,
     CalendarClock,
@@ -102,12 +103,21 @@ export const EventInfoRows = ({
                         {formatTime(event.endsAt)}
                     </p>
 
-                    {event.location && (
+                    {event.location && event.modality === 'presencial' && (
                         <p className="flex items-center gap-2">
                             <MapPin className="size-4 shrink-0 text-brand-green" />
                             {event.location}
                         </p>
                     )}
+
+                    <p className="flex items-center gap-2">
+                        {event.modality === 'online' ? (
+                            <Video className="size-4 shrink-0 text-brand-green" />
+                        ) : (
+                            <MapPin className="size-4 shrink-0 text-brand-green" />
+                        )}
+                        {event.modality === 'online' ? 'Online' : 'Presencial'}
+                    </p>
 
                     {showOrganizer && (
                         <p className="flex items-center gap-2">
