@@ -15,12 +15,13 @@ import { ConfirmDeleteDialog } from '@/components/ConfirmDeleteDialog';
 import { IconTooltip } from '@/components/IconTooltip';
 import { AttendeeChips } from '@/features/events/components/AttendeeChips';
 import { AddParticipantsDialog } from '@/features/events/components/AddParticipantsDialog';
-import { MeetingMotivoDialog } from '@/features/events/components/MeetingMotivoDialog';
+import { MeetingTextDialog } from '@/features/events/components/MeetingTextDialog';
 import { SendEmailDialog } from '@/features/events/components/SendEmailDialog';
 import { ReportPreviewDialog } from '@/features/reports/components/ReportPreviewDialog';
 import { useAttendees } from '@/features/events/hooks/useAttendees';
 import { useReportDraft } from '@/features/events/hooks/useReportDraft';
 import { scrollbarOptions } from '@/lib/overlayScrollbarsOptions';
+import { textToHtml } from '@/lib/html';
 import {
     adminUnregisterAttendee,
     hasEnded,
@@ -72,6 +73,8 @@ const AttendeesBody = ({
     const [sendSlot, setSendSlot] = useState<SlotId | null>(null);
     const [motivoPromptOpen, setMotivoPromptOpen] = useState(false);
     const [motivo, setMotivo] = useState('');
+    const [contentPromptOpen, setContentPromptOpen] = useState(false);
+    const [contenido, setContenido] = useState('');
     const [previewOpen, setPreviewOpen] = useState(false);
     const [addOpen, setAddOpen] = useState(false);
     const [deletingAttendee, setDeletingAttendee] = useState<Attendee | null>(
@@ -102,7 +105,21 @@ const AttendeesBody = ({
             return;
         }
 
+        if (event.project.isMeeting) {
+            setContenido(
+                event.description ? textToHtml(event.description) : '',
+            );
+            setContentPromptOpen(true);
+            return;
+        }
+
         if (await generate([...selected])) setPreviewOpen(true);
+    };
+
+    const handleGenerateReport = async () => {
+        setContentPromptOpen(false);
+
+        if (await generate([...selected], contenido)) setPreviewOpen(true);
     };
 
     return (
@@ -170,7 +187,13 @@ const AttendeesBody = ({
                                     disabled={selected.size === 0}
                                     onClick={() => {
                                         if (event.project.isMeeting) {
-                                            setMotivo('');
+                                            setMotivo(
+                                                event.description
+                                                    ? textToHtml(
+                                                          event.description,
+                                                      )
+                                                    : '',
+                                            );
                                             setMotivoPromptOpen(true);
                                         } else {
                                             setSendSlot('convocatoria');
@@ -254,15 +277,27 @@ const AttendeesBody = ({
                 />
             )}
 
-            <MeetingMotivoDialog
+            <MeetingTextDialog
                 open={motivoPromptOpen}
                 onOpenChange={setMotivoPromptOpen}
-                motivo={motivo}
-                onMotivoChange={setMotivo}
+                title="Detalles de la reunión"
+                description="Opcional: añade algo más para esta convocatoria. Solo se usa para este envío, no se guarda."
+                value={motivo}
+                onValueChange={setMotivo}
                 onContinue={() => {
                     setMotivoPromptOpen(false);
                     setSendSlot('convocatoria');
                 }}
+            />
+
+            <MeetingTextDialog
+                open={contentPromptOpen}
+                onOpenChange={setContentPromptOpen}
+                title="Contenido de la reunión"
+                description="Qué se ha impartido, un punto por línea. Aparece en el parte de asistencia, no se guarda."
+                value={contenido}
+                onValueChange={setContenido}
+                onContinue={() => void handleGenerateReport()}
             />
 
             {canAddAttendees && (

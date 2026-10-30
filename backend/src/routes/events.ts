@@ -358,6 +358,7 @@ const attendanceReportErrors = {
 
 const attendanceReportSchema = z.strictObject({
     recipientRegistrationIds: z.array(z.uuid()).min(1),
+    contenido: z.string().trim().max(2000).optional(),
 });
 
 export const eventsRouter = Router();
@@ -1221,6 +1222,7 @@ eventsRouter.post(
                 eventId: params.data.id,
                 recipientRegistrationIds: body.data.recipientRegistrationIds,
                 signerUserId: actor.id,
+                contenido: body.data.contenido,
             });
 
             // Se guarda como borrador: el envío adjuntará exactamente este PDF.

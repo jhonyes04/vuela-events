@@ -4,6 +4,21 @@ export const stripHtml = (html: string): string =>
         .parseFromString(html, 'text/html')
         .body.textContent?.trim() ?? '';
 
+// Texto plano con '\n' (ej. un Textarea) -> un <p> por línea, para
+// precargarlo en un RichTextEditor sin que el HTML colapse los saltos.
+export const textToHtml = (text: string): string => {
+    const span = document.createElement('span');
+
+    return text
+        .split('\n')
+        .map((line) => {
+            span.textContent = line;
+
+            return `<p>${span.innerHTML}</p>`;
+        })
+        .join('');
+};
+
 export const extractLockedSection = (
     html: string,
     heading: string,

@@ -62,12 +62,26 @@ interface GenerateInput {
     eventId: string;
     recipientRegistrationIds: string[];
     signerUserId: string;
+    // Reunión comarcal: lo que se ha impartido, un punto por línea. No se guarda.
+    contenido?: string;
 }
 
 export interface AttendanceReportFile {
     pdf: Buffer;
     filename: string;
 }
+
+// 'contenido' llega como HTML del RichTextEditor (un párrafo o <li> por
+// línea): pdfkit no interpreta HTML, así que se convierte a texto plano,
+// una línea por bloque.
+const htmlToLines = (html: string): string[] =>
+    html
+        .replace(/<\/(p|li|h[1-6])>/gi, '\n')
+        .replace(/<br\s*\/?>/gi, '\n')
+        .replace(/<[^>]+>/g, '')
+        .split('\n')
+        .map((line) => line.trim())
+        .filter(Boolean);
 
 export const generateAttendanceReport = async (
     input: GenerateInput,
@@ -143,6 +157,7 @@ export const generateAttendanceReport = async (
         signerName: `${signer.name} ${signer.lastName}`.trim(),
         convocanteLabel,
         signatureImage,
+        contenido: input.contenido,
     });
 
     return {
@@ -163,6 +178,7 @@ interface RenderInput {
     signerName: string;
     convocanteLabel: string;
     signatureImage: Buffer | null;
+    contenido?: string;
 }
 
 const renderPdf = ({
@@ -171,6 +187,7 @@ const renderPdf = ({
     signerName,
     convocanteLabel,
     signatureImage,
+    contenido,
 }: RenderInput): Promise<Buffer> => {
     return new Promise((resolve, reject) => {
         const doc = new PDFDocument({ size: 'A4', margin: 50 });
@@ -209,6 +226,21 @@ const renderPdf = ({
                 `${timeFormat.format(event.startsAt)} a ${timeFormat.format(event.endsAt)} horas.`,
             );
         doc.moveDown();
+
+        if (contenido) {
+            const lines = htmlToLines(contenido);
+
+            if (lines.length > 0) {
+                doc.font('Helvetica-Bold').text('Contenido:');
+                doc.font('Helvetica');
+
+                for (const line of lines) {
+                    doc.text(`•  ${line}`);
+                }
+
+                doc.moveDown();
+            }
+        }
 
         if (event.subtitle) {
             doc.font('Helvetica').text(`•  ${event.subtitle}`);

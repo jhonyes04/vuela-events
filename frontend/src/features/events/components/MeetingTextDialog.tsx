@@ -9,39 +9,41 @@ import {
 } from '@/components/ui/dialog';
 import { RichTextEditor } from '@/components/RichTextEditor';
 
-interface MeetingMotivoDialogProps {
+interface MeetingTextDialogProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
-    motivo: string;
-    onMotivoChange: (value: string) => void;
+    title: string;
+    description: string;
+    value: string;
+    onValueChange: (value: string) => void;
     onContinue: () => void;
 }
 
-// Solo para la convocatoria de un proyecto de reuniones comarcales: detalle
-// suelto para ese envío concreto, no se guarda en ningún lado.
-export const MeetingMotivoDialog = ({
+// Genérico, para los pasos opcionales de un proyecto de reuniones comarcales
+// (motivo de la convocatoria, contenido del parte de asistencia...): el
+// texto solo se usa en ese paso concreto, no se guarda en ningún lado.
+export const MeetingTextDialog = ({
     open,
     onOpenChange,
-    motivo,
-    onMotivoChange,
+    title,
+    description,
+    value,
+    onValueChange,
     onContinue,
-}: MeetingMotivoDialogProps) => {
+}: MeetingTextDialogProps) => {
     if (!open) return null;
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="sm:max-w-2xl">
                 <DialogHeader>
-                    <DialogTitle>Detalles de la reunión</DialogTitle>
-                    <DialogDescription>
-                        Opcional: añade algo más para esta convocatoria. Solo se
-                        usa para este envío, no se guarda.
-                    </DialogDescription>
+                    <DialogTitle>{title}</DialogTitle>
+                    <DialogDescription>{description}</DialogDescription>
                 </DialogHeader>
 
                 <RichTextEditor
-                    value={motivo}
-                    onChange={onMotivoChange}
+                    value={value}
+                    onChange={onValueChange}
                     contentClassName="min-h-50"
                 />
 

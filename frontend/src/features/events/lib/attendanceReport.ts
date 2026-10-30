@@ -11,12 +11,13 @@ export interface GeneratedReport {
 export const generateAttendanceReport = async (
     eventId: string,
     registrationIds: string[],
+    contenido?: string,
 ): Promise<GeneratedReport> => {
     const { blob, filename, headers } = await requestFile(
         'POST',
         `/events/${eventId}/attendance-report`,
         'acta-asistencia.pdf',
-        { recipientRegistrationIds: registrationIds },
+        { recipientRegistrationIds: registrationIds, contenido },
     );
 
     const draftId = headers.get('X-Report-Draft-Id');

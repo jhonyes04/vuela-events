@@ -30,13 +30,17 @@ export const useReportDraft = (eventId: string) => {
         setDraft(null);
     }, []);
 
-    const generate = async (registrationIds: string[]): Promise<boolean> => {
+    const generate = async (
+        registrationIds: string[],
+        contenido?: string,
+    ): Promise<boolean> => {
         setGenerating(true);
 
         try {
             const report = await generateAttendanceReport(
                 eventId,
                 registrationIds,
+                contenido,
             );
 
             revoke();
