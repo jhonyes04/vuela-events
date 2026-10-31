@@ -16,6 +16,7 @@ import { scrollbarOptions } from '@/lib/overlayScrollbarsOptions';
 import { ApiError } from '@/lib/api';
 import {
     getSendJobStatus,
+    isMissingDraftMessage,
     isStaleDraftMessage,
     startBulkSend,
     type SendJobStatus,
@@ -89,9 +90,18 @@ const SendEmailBody = ({
 
             poll(jobId);
         } catch (err) {
-            // El acta caducó o cambiaron los destinatarios: hay que generarla de nuevo.
-            if (err instanceof ApiError && isStaleDraftMessage(err.message)) {
+            // El acta caducó, cambiaron los destinatarios, o ya no hay
+            // borrador (p. ej. tras invalidar uno anterior): reintentar sin
+            // generarla de nuevo repetiría siempre el mismo error, así que
+            // se cierra el diálogo en vez de ofrecer "Reintentar".
+            if (
+                err instanceof ApiError &&
+                (isStaleDraftMessage(err.message) ||
+                    isMissingDraftMessage(err.message))
+            ) {
                 onDraftRejected?.();
+                onClose();
+                return;
             }
 
             setError(

@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { OverlayScrollbarsComponent } from 'overlayscrollbars-react';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -133,7 +133,7 @@ export const EventsTable = ({
         return true;
     });
 
-    const { sorted, sort, toggleSort } = useSort<EventItem, SortKey>(
+    const { sorted, sort, setSort, toggleSort } = useSort<EventItem, SortKey>(
         filtered,
         {
             title: (a, b) => a.title.localeCompare(b.title),
@@ -145,8 +145,17 @@ export const EventsTable = ({
             participants: (a, b) =>
                 (a.participantsCount ?? -1) - (b.participantsCount ?? -1),
         },
-        { key: 'startsAt', dir: 'asc' },
+        { key: 'startsAt', dir: defaultTimeFilter === 'past' ? 'desc' : 'asc' },
     );
+
+    // En "Pasados" interesa ver primero lo que terminó más reciente.
+    useEffect(() => {
+        setSort({
+            key: 'startsAt',
+            dir: timeFilter === 'past' ? 'desc' : 'asc',
+        });
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [timeFilter]);
 
     const { paged, page, pageCount, pageSize, total, setPage, setPageSize } =
         usePagination(sorted, 10);

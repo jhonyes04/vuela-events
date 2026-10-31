@@ -199,10 +199,32 @@ const renderPdf = ({
 
         const logoWidth = 130;
         const logoHeight = logoWidth * PUNTOS_VUELA_LOGO_RATIO;
+        const bottomLogoWidth = doc.page.width - 2 * 20;
+        const bottomLogoHeight = bottomLogoWidth * DIPUTACIONES_LOGO_RATIO;
+
+        // Siempre al pie de página, independientemente de cuánto ocupe el
+        // contenido. Más ancho que el margen del contenido, casi al borde.
+        const drawBottomLogo = () => {
+            doc.image(
+                DIPUTACIONES_LOGO,
+                (doc.page.width - bottomLogoWidth) / 2,
+                doc.page.height - doc.page.margins.bottom - bottomLogoHeight,
+                { width: bottomLogoWidth },
+            );
+        };
+
+        // Los logos de cabecera y pie se repiten en cada página que se añada.
+        doc.on('pageAdded', () => {
+            doc.image(PUNTOS_VUELA_LOGO, 30, doc.page.margins.top, {
+                width: logoWidth,
+            });
+            drawBottomLogo();
+        });
 
         doc.image(PUNTOS_VUELA_LOGO, 30, doc.y, {
             width: logoWidth,
         });
+        drawBottomLogo();
         doc.y += logoHeight + 15;
 
         doc.font('Helvetica-Bold')
@@ -253,8 +275,10 @@ const renderPdf = ({
         const col2 = left + tableWidth * 0.3;
         const col3 = left + tableWidth * 0.75;
         const rowHeight = 24;
-
-        let y = doc.y;
+        // El logo de Diputaciones ahora va en todas las páginas: hay que
+        // dejarle hueco también en las páginas que solo tienen tabla.
+        const bottomLimit =
+            doc.page.height - doc.page.margins.bottom - bottomLogoHeight - 10;
 
         // Líneas verticales entre columnas, además del borde de cada fila.
         const drawColumnLines = (rowY: number) => {
@@ -266,24 +290,37 @@ const renderPdf = ({
                 .stroke();
         };
 
-        doc.rect(col1, y, tableWidth, rowHeight).fillAndStroke(
-            '#f5c518',
-            'black',
-        );
-        drawColumnLines(y);
-        doc.fillColor('black').font('Helvetica-Bold').fontSize(10);
-        doc.text('PUNTO VUELA', col1 + 5, y + 7, { width: col2 - col1 - 10 });
-        doc.text('NOMBRE Y APELLIDOS', col2 + 5, y + 7, {
-            width: col3 - col2 - 10,
-        });
-        doc.text('ASISTE', col3 + 5, y + 7, {
-            width: col1 + tableWidth - col3 - 10,
-        });
+        const drawHeaderRow = (rowY: number) => {
+            doc.rect(col1, rowY, tableWidth, rowHeight).fillAndStroke(
+                '#f5c518',
+                'black',
+            );
+            drawColumnLines(rowY);
+            doc.fillColor('black').font('Helvetica-Bold').fontSize(10);
+            doc.text('PUNTO VUELA', col1 + 5, rowY + 7, {
+                width: col2 - col1 - 10,
+            });
+            doc.text('NOMBRE Y APELLIDOS', col2 + 5, rowY + 7, {
+                width: col3 - col2 - 10,
+            });
+            doc.text('ASISTE', col3 + 5, rowY + 7, {
+                width: col1 + tableWidth - col3 - 10,
+            });
+        };
+
+        let y = doc.y;
+        drawHeaderRow(y);
         y += rowHeight;
 
         doc.font('Helvetica').fontSize(10);
 
         for (const attendee of attendees) {
+            // Fila no entra en lo que queda de página: nueva página, cabecera solo en la primera.
+            if (y + rowHeight > bottomLimit) {
+                doc.addPage();
+                y = doc.page.margins.top + logoHeight + 15;
+            }
+
             doc.rect(col1, y, tableWidth, rowHeight).stroke();
             drawColumnLines(y);
             doc.text(attendee.puntoVuela ?? '', col1 + 5, y + 7, {
@@ -301,6 +338,15 @@ const renderPdf = ({
             y += rowHeight;
         }
 
+        // Firma no entra en lo que queda de página: nueva página. El hueco
+        // del logo de Diputaciones ya está descontado en bottomLimit.
+        const footerHeight = 40 + 14 + (signatureImage ? 75 : 14 * 3) + 14;
+
+        if (y + footerHeight > bottomLimit) {
+            doc.addPage();
+            y = doc.page.margins.top + logoHeight + 15;
+        }
+
         // Las líneas de columna (moveTo/lineTo) dejan el cursor de texto
         // desplazado a la derecha: hay que devolverlo al margen izquierdo.
         doc.x = left;
@@ -316,18 +362,6 @@ const renderPdf = ({
         }
 
         doc.text(`Fdo.: ${signerName}`);
-
-        // Siempre al pie de página, independientemente de cuánto ocupe lo
-        // anterior. Más ancho que el margen del contenido, casi al borde.
-        const bottomLogoWidth = doc.page.width - 2 * 20;
-        const bottomLogoHeight = bottomLogoWidth * DIPUTACIONES_LOGO_RATIO;
-
-        doc.image(
-            DIPUTACIONES_LOGO,
-            (doc.page.width - bottomLogoWidth) / 2,
-            doc.page.height - doc.page.margins.bottom - bottomLogoHeight,
-            { width: bottomLogoWidth },
-        );
 
         doc.end();
     });

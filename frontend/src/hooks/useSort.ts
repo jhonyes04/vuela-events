@@ -28,5 +28,5 @@ export function useSort<T, K extends string>(
         (a, b) => comparators[sort.key](a, b) * dir,
     );
 
-    return { sorted, sort, toggleSort };
+    return { sorted, sort, setSort, toggleSort };
 }

@@ -306,6 +306,7 @@ const EventDetailBody = ({
                                 'Has cancelado tu inscripción.',
                             )
                         }
+                        onCloseClick={onClose}
                     />
                 </DialogContent>
             </Dialog>

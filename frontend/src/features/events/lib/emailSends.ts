@@ -15,6 +15,12 @@ export interface StartSendInput {
 export const isStaleDraftMessage = (message: string): boolean =>
     message.includes('genéralo de nuevo');
 
+// El servidor lo dice así cuando el envío no llevaba borrador (p. ej. tras
+// invalidarse uno caducado: reintentar sin generar de nuevo repetiría esto
+// para siempre).
+export const isMissingDraftMessage = (message: string): boolean =>
+    message.includes('Genera y revisa');
+
 export const startBulkSend = async (input: StartSendInput): Promise<string> => {
     const { jobId } = await api.post<{ jobId: string }>('/email-sends', input);
 

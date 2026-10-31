@@ -17,6 +17,7 @@ interface EventDetailFooterProps {
     onParticipantsClick: () => void;
     onRegisterClick: () => void;
     onUnregisterClick: () => void;
+    onCloseClick: () => void;
 }
 
 export const EventDetailFooter = ({
@@ -31,6 +32,7 @@ export const EventDetailFooter = ({
     onParticipantsClick,
     onRegisterClick,
     onUnregisterClick,
+    onCloseClick,
 }: EventDetailFooterProps) => (
     <DialogFooter>
         <div className="flex gap-2 ms-auto">
@@ -79,15 +81,29 @@ export const EventDetailFooter = ({
         {isAdmin || ended ? null : event.registered ? (
             <Button
                 variant="default"
+                className="bg-green-800 hover:bg-green-900"
                 disabled={busy}
                 onClick={onUnregisterClick}
             >
                 Cancelar inscripción
             </Button>
         ) : (
-            <Button disabled={busy} onClick={onRegisterClick}>
+            <Button
+                variant="default"
+                className="bg-green-800 hover:bg-green-900"
+                disabled={busy}
+                onClick={onRegisterClick}
+            >
                 {blockedByCapacity ? 'Completo' : 'Inscribirme'}
             </Button>
         )}
+
+        <Button
+            variant="default"
+            className="order-first sm:order-last"
+            onClick={onCloseClick}
+        >
+            Cerrar
+        </Button>
     </DialogFooter>
 );

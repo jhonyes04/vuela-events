@@ -3,6 +3,7 @@ import { UserPlus } from 'lucide-react';
 import { OverlayScrollbarsComponent } from 'overlayscrollbars-react';
 import { useAuth } from '@/features/auth/hooks/context';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
     Dialog,
     DialogContent,
@@ -98,6 +99,17 @@ const AttendeesBody = ({
         });
     };
 
+    const allSelected =
+        attendees.length > 0 &&
+        attendees.every((a) => selected.has(a.id));
+
+    const toggleAll = () => {
+        invalidateReport();
+        setSelected(
+            allSelected ? new Set() : new Set(attendees.map((a) => a.id)),
+        );
+    };
+
     // Primero se genera y se visualiza; con el parte generado, el mismo botón envía.
     const handleReportClick = async () => {
         if (draft) {
@@ -133,18 +145,32 @@ const AttendeesBody = ({
                         : 'inscritos'}
                 </DialogDescription>
             </DialogHeader>
-            {canAddAttendees && (
-                <div className="ms-auto">
-                    <IconTooltip label="Agregar participantes">
-                        <Button
-                            variant="secondary"
-                            size="icon"
-                            aria-label="Agregar participantes"
-                            onClick={() => setAddOpen(true)}
-                        >
-                            <UserPlus className="size-4" />
-                        </Button>
-                    </IconTooltip>
+            {(attendees.length > 0 || canAddAttendees) && (
+                <div className="flex items-center justify-between gap-2">
+                    {attendees.length > 0 ? (
+                        <label className="flex items-center gap-2 text-sm text-muted-foreground">
+                            <Checkbox
+                                checked={allSelected}
+                                onCheckedChange={toggleAll}
+                                aria-label="Seleccionar todos"
+                            />
+                            Seleccionar todos
+                        </label>
+                    ) : (
+                        <span />
+                    )}
+                    {canAddAttendees && (
+                        <IconTooltip label="Agregar participantes">
+                            <Button
+                                variant="secondary"
+                                size="icon"
+                                aria-label="Agregar participantes"
+                                onClick={() => setAddOpen(true)}
+                            >
+                                <UserPlus className="size-4" />
+                            </Button>
+                        </IconTooltip>
+                    )}
                 </div>
             )}
 
