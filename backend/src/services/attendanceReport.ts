@@ -190,7 +190,10 @@ const renderPdf = ({
     contenido,
 }: RenderInput): Promise<Buffer> => {
     return new Promise((resolve, reject) => {
-        const doc = new PDFDocument({ size: 'A4', margin: 50 });
+        const doc = new PDFDocument({
+            size: 'A4',
+            margins: { top: 20, bottom: 20, left: 50, right: 50 },
+        });
         const chunks: Buffer[] = [];
 
         doc.on('data', (chunk: Buffer) => chunks.push(chunk));
