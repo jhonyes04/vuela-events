@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import {
     CalendarRange,
@@ -29,6 +29,7 @@ import {
     type EventItem,
 } from '@/features/events/lib/events';
 import { PageTitle } from '@/components/PageTitle';
+import { useCalendarStream } from '@/features/events/hooks/useCalendarStream';
 
 interface Pending {
     ids: string[];
@@ -54,12 +55,15 @@ export const EventsManagementPage = () => {
     const [editingParticipants, setEditingParticipants] =
         useState<EventItem | null>(null);
 
-    const load = async () => {
-        setLoading(true);
+    const hasLoadedRef = useRef(false);
+
+    const load = useCallback(async () => {
+        if (!hasLoadedRef.current) setLoading(true);
         setError(null);
 
         try {
             setEvents(await listAllEvents());
+            hasLoadedRef.current = true;
         } catch (e) {
             setError(
                 e instanceof ApiError
@@ -69,11 +73,13 @@ export const EventsManagementPage = () => {
         } finally {
             setLoading(false);
         }
-    };
+    }, []);
 
     useEffect(() => {
         void Promise.resolve().then(load);
-    }, []);
+    }, [load]);
+
+    useCalendarStream(load);
 
     const openEdit = (event: EventItem) => {
         setEditing(event);

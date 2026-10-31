@@ -21,12 +21,14 @@ import { personLabel } from '@/lib/personLabel';
 
 interface AddParticipantsBodyProps {
     eventId: string;
+    refreshToken: number;
     onClose: () => void;
     onAdded: (addedIds: string[]) => void;
 }
 
 const AddParticipantsBody = ({
     eventId,
+    refreshToken,
     onClose,
     onAdded,
 }: AddParticipantsBodyProps) => {
@@ -42,7 +44,7 @@ const AddParticipantsBody = ({
             .then((list) => setCandidates(list.filter((c) => !c.registered)))
             .catch(() => setFailed(true))
             .finally(() => setLoading(false));
-    }, [eventId]);
+    }, [eventId, refreshToken]);
 
     const filtered = useMemo(() => {
         const q = query.trim().toLowerCase();
@@ -181,6 +183,7 @@ interface AddParticipantsDialogProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
     eventId: string;
+    refreshToken: number;
     onAdded: (addedIds: string[]) => void;
 }
 
@@ -188,6 +191,7 @@ export const AddParticipantsDialog = ({
     open,
     onOpenChange,
     eventId,
+    refreshToken,
     onAdded,
 }: AddParticipantsDialogProps) => (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -195,6 +199,7 @@ export const AddParticipantsDialog = ({
             <AddParticipantsBody
                 key={eventId}
                 eventId={eventId}
+                refreshToken={refreshToken}
                 onClose={() => onOpenChange(false)}
                 onAdded={onAdded}
             />

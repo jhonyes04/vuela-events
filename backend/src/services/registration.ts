@@ -2,6 +2,7 @@ import { prisma } from '../lib/prisma.js';
 import { Prisma } from '../generated/prisma/client.js';
 import { recordAudit } from './audit.js';
 import { logger } from '../lib/logger.js';
+import { emitRegistrationChanged } from '../lib/eventBus.js';
 import {
     renderEmail,
     type RenderableEvent,
@@ -156,6 +157,7 @@ export const registerForEvent = async (
             );
         }
 
+        emitRegistrationChanged(eventId);
         return result.registration;
     } catch (e) {
         if (
@@ -219,6 +221,8 @@ export const unregisterFromEvent = async (
             user.email,
         );
     }
+
+    emitRegistrationChanged(eventId);
 };
 
 export const unregisterRegistration = async (
@@ -270,6 +274,8 @@ export const unregisterRegistration = async (
         },
         registration.user.email,
     );
+
+    emitRegistrationChanged(eventId);
 };
 
 export interface Attendee {

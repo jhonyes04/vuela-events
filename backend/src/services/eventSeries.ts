@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { prisma } from '../lib/prisma.js';
 import { expandRecurrence, type RecurrenceRule } from '../lib/recurrence.js';
 import { notifyEventCreated } from './eventNotify.js';
+import { emitCalendarChanged } from '../lib/eventBus.js';
 
 export interface SeriesInput {
     title: string;
@@ -67,6 +68,8 @@ export const createEventSeries = async (
             },
         });
     });
+
+    emitCalendarChanged();
 
     void notifyEventCreated(
         {

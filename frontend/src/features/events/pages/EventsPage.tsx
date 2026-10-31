@@ -25,6 +25,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { PageTitle } from '@/components/PageTitle';
 import { useRangeEvents } from '@/features/events/hooks/useRangeEvents';
+import { useCalendarStream } from '@/features/events/hooks/useCalendarStream';
 import { today, useEventsStore } from '@/features/events/store';
 import { buildMonthGrid } from '@/features/events/lib/calendar';
 import {
@@ -50,6 +51,8 @@ export function EventsPage() {
         `month:${monthKey(year, monthIndex)}`,
         () => listMonthEvents(year, monthIndex),
     );
+
+    useCalendarStream(reload);
 
     // Se guarda el id y una copia: al recargar, la ficha se refresca con el dato nuevo, pero no se cierra mientras llega.
     const [selectedId, setSelectedId] = useState<string | null>(null);

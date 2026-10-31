@@ -1,6 +1,7 @@
 import { prisma } from '../lib/prisma.js';
 import { notifyEventCancelled } from './eventNotify.js';
 import { canManageResource } from '../lib/ownership.js';
+import { emitCalendarChanged } from '../lib/eventBus.js';
 
 export type EventDeleteFailure = 'not_found' | 'forbidden';
 
@@ -79,6 +80,8 @@ export const deleteEvent = async (
 
         return event;
     });
+
+    emitCalendarChanged();
 
     // Evento ya finalizado, sin inscritos y sin atendidos: no hay a quién
     // avisar ni sentido en cancelar algo que ya pasó sin nadie.
@@ -174,6 +177,8 @@ export const deleteEventSeries = async (
 
         return events;
     });
+
+    emitCalendarChanged();
 
     const first = events[0]!;
 

@@ -190,8 +190,8 @@ export const UsersPage = () => {
         },
     ];
 
-    const load = async () => {
-        setLoading(true);
+    const load = async (silent = false) => {
+        if (!silent) setLoading(true);
         setError(null);
 
         try {
@@ -208,12 +208,12 @@ export const UsersPage = () => {
                     : 'No se pudo cargar la lista',
             );
         } finally {
-            setLoading(false);
+            if (!silent) setLoading(false);
         }
     };
 
     useEffect(() => {
-        void Promise.resolve().then(load);
+        void Promise.resolve().then(() => load());
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
@@ -222,7 +222,7 @@ export const UsersPage = () => {
 
         try {
             await api.patch(`/users/${userId}/role`, { roleId });
-            await load();
+            await load(true);
             toast.success('Rol actualizado.');
         } catch (e) {
             toast.error(
@@ -238,7 +238,7 @@ export const UsersPage = () => {
 
         try {
             await api.patch(`/users/${userId}/active`, { active });
-            await load();
+            await load(true);
             toast.success(
                 active ? 'Usuario activado.' : 'Usuario desactivado.',
             );

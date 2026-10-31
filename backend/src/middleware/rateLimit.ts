@@ -14,4 +14,5 @@ export const apiLimiter = rateLimit({
     standardHeaders: 'draft-7',
     legacyHeaders: false,
     message: { error: 'Demasiadas solicitudes. Inténtalo de nuevo más tarde.' },
+    skip: (req) => req.path.endsWith('/stream'),
 });

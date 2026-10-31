@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { useAuth } from '@/features/auth/hooks/context';
 import { canManageResource } from '@/lib/ownership';
@@ -24,6 +24,7 @@ import {
 import { ConfirmDeleteDialog } from '@/components/ConfirmDeleteDialog';
 import { IconTooltip } from '@/components/IconTooltip';
 import { useAttendees } from '@/features/events/hooks/useAttendees';
+import { useRegistrationStream } from '@/features/events/hooks/useRegistrationsStream';
 import { ProjectInfoDialog } from '@/features/projects/components/ProjectInfoDialog';
 import {
     getProjectColorBorder,
@@ -79,6 +80,13 @@ const EventDetailBody = ({
         event.id,
         `${event._count.registrations}|${event.registered}|${refreshNonce}`,
     );
+
+    const handleRegistrationChange = useCallback(() => {
+        setRefreshNonce((n) => n + 1);
+        onChanged();
+    }, [onChanged]);
+
+    useRegistrationStream(event.id, handleRegistrationChange);
 
     const ended = hasEnded(event);
     const full = isFull(event);
@@ -346,6 +354,7 @@ const EventDetailBody = ({
                     open={addOpen}
                     onOpenChange={setAddOpen}
                     eventId={event.id}
+                    refreshToken={refreshNonce}
                     onAdded={() => {
                         setRefreshNonce((n) => n + 1);
                         onChanged();

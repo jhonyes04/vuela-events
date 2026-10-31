@@ -331,6 +331,7 @@ const AttendeesBody = ({
                     open={addOpen}
                     onOpenChange={setAddOpen}
                     eventId={event.id}
+                    refreshToken={refreshNonce}
                     onAdded={(addedIds) => {
                         setRefreshNonce((n) => n + 1);
                         invalidateReport();

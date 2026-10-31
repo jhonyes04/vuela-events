@@ -39,6 +39,7 @@ import {
     documentContentTypeSchema,
 } from '../lib/documentValidation.js';
 import { canManageResource } from '../lib/ownership.js';
+import { registrationBus, emitCalendarChanged } from '../lib/eventBus.js';
 
 // Sin caracteres de control ni < > : evita que title/location (insertados sin
 // escapar en el HTML de los correos vía {{proyecto}}/{{lugar}}) cuelen markup.
@@ -549,6 +550,7 @@ eventsRouter.post(
             actor.id,
         );
 
+        emitCalendarChanged();
         res.status(201).json({ event: flattenEventProject(event) });
     },
 );
@@ -721,6 +723,7 @@ eventsRouter.patch(
             newValue: event.title.slice(0, 100),
         });
 
+        emitCalendarChanged();
         res.json({ event: flattenEventProject(event) });
     },
 );
@@ -970,6 +973,49 @@ eventsRouter.get('/:id/registrations', async (req, res) => {
 
         throw e;
     }
+});
+
+// Avisa en tiempo real de cambios de inscritos (alta/baja) de un evento,
+// mientras alguien tiene su ficha abierta.
+eventsRouter.get('/:id/stream', (req, res) => {
+    const params = idParamsSchema.safeParse(req.params);
+
+    if (!params.success) {
+        res.status(400).json({ error: 'Id no válido' });
+        return;
+    }
+
+    res.set({
+        'Content-Type': 'text/event-stream',
+        Connection: 'keep-alive',
+    });
+    res.flushHeaders();
+
+    const onChange = () => res.write('data: changed\n\n');
+    registrationBus.on(params.data.id, onChange);
+
+    // Keepalive: evita que un proxy intermedio corte la conexión por inactividad.
+    const ping = setInterval(() => res.write(': ping\n\n'), 25000);
+
+    req.on('close', () => {
+        clearInterval(ping);
+        registrationBus.off(params.data.id, onChange);
+    });
+});
+
+eventsRouter.get('/stream', (req, res) => {
+    res.set({ 'Content-Type': 'text/event-stream', Connection: 'keep-alive' });
+    res.flushHeaders();
+
+    const onChange = () => res.write('data: changed\n\n');
+    registrationBus.on('calendar', onChange);
+
+    const ping = setInterval(() => res.write(': ping\n\n'), 25000);
+
+    req.on('close', () => {
+        clearInterval(ping);
+        registrationBus.off('calendar', onChange);
+    });
 });
 
 // Inscribirse: cualquier usuario autenticado, una vez por evento.
