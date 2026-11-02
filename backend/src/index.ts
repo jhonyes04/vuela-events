@@ -5,6 +5,7 @@ import { createApp } from './app.js';
 import { logger } from './lib/logger.js';
 import { pruneOldAuditLogs } from './services/audit.js';
 import { pruneOldEmailLogs } from './services/emailLog.js';
+import { sendDueEventReminders } from './services/eventReminder.js';
 
 const app = createApp();
 
@@ -45,6 +46,29 @@ const runEmailLogRetention = () => {
 
 runEmailLogRetention();
 setInterval(runEmailLogRetention, DAY_MS).unref();
+
+const FIVE_MIN_MS = 5 * 60 * 1000;
+
+const runEventReminders = () => {
+    void sendDueEventReminders()
+        .then((count) => {
+            if (count > 0) {
+                logger.info(
+                    { count },
+                    `Recordatorios: ${count} aviso${count === 1 ? '' : 's'} enviado${count === 1 ? '' : 's'}`,
+                );
+            }
+        })
+        .catch((e) =>
+            logger.error(
+                { err: e },
+                'No se pudo enviar recordatorios de evento',
+            ),
+        );
+};
+
+runEventReminders();
+setInterval(runEventReminders, FIVE_MIN_MS).unref();
 
 const server = app.listen(env.PORT, env.HOST, () => {
     logger.info(`API escuchando en http://${env.HOST}:${env.PORT}`);

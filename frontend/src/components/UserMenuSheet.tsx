@@ -1,5 +1,6 @@
 import {
     BarChart3,
+    Bell,
     BookOpen,
     Calendar,
     CalendarCheck,
@@ -33,6 +34,8 @@ import {
     SheetTrigger,
 } from '@/components/ui/sheet';
 import { UserAvatar } from '@/components/UserAvatar';
+import { Badge } from '@/components/ui/badge';
+import { useUnreadNotificationCount } from '@/features/notifications/hooks/useUnreadNotificationCount';
 import { cn } from '@/lib/utils';
 import { scrollbarOptions } from '@/lib/overlayScrollbarsOptions';
 import { appRoutes, canAccess, type AppRoute } from '@/routes/routes';
@@ -101,6 +104,7 @@ const RouteGroup = ({ label, routes }: RouteGroupProps) => {
 // UserMenuDropdown (el mismo menú como popover): Header monta uno de los dos.
 export const UserMenuSheet = () => {
     const { user, logout } = useAuth();
+    const unreadCount = useUnreadNotificationCount(!!user);
 
     if (!user) return null;
 
@@ -191,6 +195,28 @@ export const UserMenuSheet = () => {
                                             }
                                         />
                                     )}
+                                <SheetClose
+                                    nativeButton={false}
+                                    render={
+                                        <NavLink
+                                            to="/notificaciones"
+                                            className={navClass}
+                                        >
+                                            <Bell className="size-4" />
+                                            Notificaciones
+                                            {unreadCount > 0 && (
+                                                <Badge
+                                                    variant="default"
+                                                    className="bg-red-600 ml-auto"
+                                                >
+                                                    {unreadCount > 9
+                                                        ? '9+'
+                                                        : unreadCount}
+                                                </Badge>
+                                            )}
+                                        </NavLink>
+                                    }
+                                />
                             </div>
 
                             <RouteGroup

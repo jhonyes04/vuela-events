@@ -19,6 +19,8 @@ import {
 } from '../services/eventDeletion.js';
 import { createEventSeries } from '../services/eventSeries.js';
 import { notifyEventCreated } from '../services/eventNotify.js';
+import { notifyUsers } from '../services/notification.js';
+import { formatSessionDateTime } from '../lib/emailTemplateRender.js';
 import {
     listAttendees,
     listRegistrationCandidates,
@@ -542,6 +544,7 @@ eventsRouter.post(
 
         void notifyEventCreated(
             {
+                id: event.id,
                 title: event.title,
                 location: event.location,
                 projectId: event.project.id,
@@ -724,6 +727,27 @@ eventsRouter.patch(
         });
 
         emitCalendarChanged();
+
+        const registrants = await prisma.registration.findMany({
+            where: {
+                eventId: params.data.id,
+                user: { roleId: { not: 'dt' } },
+            },
+            select: { userId: true },
+        });
+
+        void notifyUsers(
+            registrants
+                .map((registrant) => registrant.userId)
+                .filter((id) => id !== actor.id),
+            {
+                type: 'event_updated',
+                title: 'Evento actualizado',
+                body: `${event.title} · ${formatSessionDateTime(event.startsAt, event.endsAt)} · ${event.location ?? 'Sin lugar'}`,
+                eventId: event.id,
+            },
+        );
+
         res.json({ event: flattenEventProject(event) });
     },
 );

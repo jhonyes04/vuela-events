@@ -39,6 +39,7 @@ model Registration {
     eventId                     String          @db.Uuid
     userId                      String          @db.Uuid
     createdAt                   DateTime        @default(now())
+    reminderSentAt              DateTime?
 
     event                       Event           @relation(fields: [eventId], references: [id], onDelete: Cascade)
     user                        User            @relation(fields: [userId], references: [id], onDelete: Cascade)

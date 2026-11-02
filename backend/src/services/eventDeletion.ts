@@ -1,5 +1,7 @@
 import { prisma } from '../lib/prisma.js';
 import { notifyEventCancelled } from './eventNotify.js';
+import { notifyUsers } from './notification.js';
+import { formatSessionDateTime } from '../lib/emailTemplateRender.js';
 import { canManageResource } from '../lib/ownership.js';
 import { emitCalendarChanged } from '../lib/eventBus.js';
 
@@ -39,7 +41,7 @@ export const deleteEvent = async (
                 // para el recuento de auditoría ni para el aviso de cancelación.
                 registrations: {
                     where: { user: { roleId: { not: 'dt' } } },
-                    select: { user: { select: { email: true } } },
+                    select: { userId: true, user: { select: { email: true } } },
                 },
             },
         });
@@ -106,6 +108,17 @@ export const deleteEvent = async (
                 },
             ],
         });
+
+        void notifyUsers(
+            event.registrations
+                .map((registrantion) => registrantion.userId)
+                .filter((id) => id !== actor.id),
+            {
+                type: 'event_cancelled',
+                title: 'Evento cancelado',
+                body: `${event.title} · ${formatSessionDateTime(event.startsAt, event.endsAt)} · ${event.location ?? 'Sin lugar'}`,
+            },
+        );
     }
 };
 
@@ -128,7 +141,7 @@ export const deleteEventSeries = async (
                 project: { select: { name: true } },
                 registrations: {
                     where: { user: { roleId: { not: 'dt' } } },
-                    select: { user: { select: { email: true } } },
+                    select: { userId: true, user: { select: { email: true } } },
                 },
             },
         });
@@ -193,6 +206,31 @@ export const deleteEventSeries = async (
             registrantEmails: event.registrations.map((r) => r.user.email),
         })),
     });
+
+    // Cada destinatario ve solo SUS fechas canceladas (en una serie puede
+    // estar inscrito solo en algunas sesiones, no en todas), igual que el email.
+    const sessionsByUserId = new Map<string, { startsAt: Date; endsAt: Date }[]>();
+
+    for (const event of events) {
+        for (const registration of event.registrations) {
+            if (registration.userId === actor.id) continue;
+
+            const list = sessionsByUserId.get(registration.userId) ?? [];
+
+            list.push({ startsAt: event.startsAt, endsAt: event.endsAt });
+            sessionsByUserId.set(registration.userId, list);
+        }
+    }
+
+    for (const [userId, sessions] of sessionsByUserId) {
+        void notifyUsers([userId], {
+            type: 'event_cancelled',
+            title: 'Evento cancelado',
+            body: `${first.title} · ${sessions
+                .map((s) => formatSessionDateTime(s.startsAt, s.endsAt))
+                .join('; ')} · ${first.location ?? 'Sin lugar'}`,
+        });
+    }
 
     return { deletedCount: events.length };
 };

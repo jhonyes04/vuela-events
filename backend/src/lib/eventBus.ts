@@ -17,3 +17,8 @@ export const emitRegistrationChanged = (eventId: string): void => {
     registrationBus.emit(eventId);
     emitCalendarChanged();
 };
+
+// Avisa en tiempo real a un usuario de que tiene notificaciones nuevas
+// (canal = userId).
+export const notificationBus = new EventEmitter();
+notificationBus.setMaxListeners(0);

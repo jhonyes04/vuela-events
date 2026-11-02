@@ -3,6 +3,8 @@ import { ChevronDown } from 'lucide-react';
 import { NavLink } from 'react-router';
 import { useAuth } from '@/features/auth/hooks/context';
 import { ROLE_IDS } from '@/features/users/lib/roles';
+import { Badge } from '@/components/ui/badge';
+import { useUnreadNotificationCount } from '@/features/notifications/hooks/useUnreadNotificationCount';
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -24,6 +26,7 @@ import {
 // como offcanvas): Header monta uno de los dos.
 export const UserMenuDropdown = () => {
     const { user, logout } = useAuth();
+    const unreadCount = useUnreadNotificationCount(!!user);
 
     if (!user) return null;
 
@@ -70,9 +73,27 @@ export const UserMenuDropdown = () => {
                 {user.roleId === ROLE_IDS.AIL && (
                     <DropdownMenuItem
                         className="cursor-pointer"
-                        render={<NavLink to="/mis-eventos">Mis eventos</NavLink>}
+                        render={
+                            <NavLink to="/mis-eventos">Mis eventos</NavLink>
+                        }
                     />
                 )}
+                <DropdownMenuItem
+                    className="cursor-pointer"
+                    render={
+                        <NavLink to="/notificaciones">
+                            Notificaciones
+                            {unreadCount > 0 && (
+                                <Badge
+                                    variant="default"
+                                    className="bg-red-600 ml-auto"
+                                >
+                                    {unreadCount > 9 ? '9+' : unreadCount}
+                                </Badge>
+                            )}
+                        </NavLink>
+                    }
+                />
                 {(gestionRoutes.length > 0 ||
                     adminRoutes.length > 0 ||
                     user.roleId === ROLE_IDS.AIL) && <DropdownMenuSeparator />}
@@ -117,9 +138,9 @@ export const UserMenuDropdown = () => {
                         <DropdownMenuSubContent>
                             {adminRoutes.map((route) => (
                                 <Fragment key={route.path}>
-                                    {ADMIN_SEPARATOR_BEFORE.has(
-                                        route.path,
-                                    ) && <DropdownMenuSeparator />}
+                                    {ADMIN_SEPARATOR_BEFORE.has(route.path) && (
+                                        <DropdownMenuSeparator />
+                                    )}
                                     <DropdownMenuItem
                                         className="cursor-pointer"
                                         render={

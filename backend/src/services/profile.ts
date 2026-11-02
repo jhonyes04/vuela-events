@@ -6,6 +6,7 @@ import {
     type AuthUser,
     type DinamizadorTitle,
 } from '../lib/authUser.js';
+import { getActiveUserIds, notifyUsers } from './notification.js';
 
 export interface ProfileInput {
     name: string;
@@ -14,6 +15,23 @@ export interface ProfileInput {
     dinamizadorTitle: DinamizadorTitle | null;
 }
 
+// Aviso best-effort al admin cuando alguien completa su perfil por primera
+// vez (ahí es cuando se sabe su puntoVuela, no al crear la cuenta).
+const notifyNewUserRegistered = async (user: AuthUser): Promise<void> => {
+    const adminIds = await getActiveUserIds({
+        roles: ['admin'],
+        excludeUserId: user.id,
+    });
+
+    await notifyUsers(adminIds, {
+        type: 'new_user_registered',
+        title: 'Nuevo usuario registrado',
+        body: user.puntoVuela
+            ? `${user.puntoVuela} (${user.name})`
+            : user.name,
+    });
+};
+
 // Actualiza el perfil de la propia persona. El id sale siempre de la sesión.
 // La primera vez fija profileCompletedAt; la auditoría guarda los NOMBRES de los
 // campos cambiados, no sus valores (para no duplicar datos personales).
@@ -21,7 +39,7 @@ export const updateProfile = async (
     userId: string,
     input: ProfileInput,
 ): Promise<AuthUser> => {
-    return prisma.$transaction(async (tx) => {
+    const { user, firstTime } = await prisma.$transaction(async (tx) => {
         const current = await tx.user.findUniqueOrThrow({
             where: { id: userId },
             select: {
@@ -67,8 +85,14 @@ export const updateProfile = async (
             });
         }
 
-        return toAuthUser(updated);
+        return { user: toAuthUser(updated), firstTime };
     });
+
+    if (firstTime) {
+        void notifyNewUserRegistered(user);
+    }
+
+    return user;
 };
 
 export const setAppPassword = async (

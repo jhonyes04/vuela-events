@@ -9,6 +9,7 @@ import { UserMenuDropdown } from '@/components/UserMenuDropdown';
 import { UserMenuSheet } from '@/components/UserMenuSheet';
 import { useAppSettingsStore } from '@/features/appSettings/store';
 import { OnlineAvatars } from '@/features/onlineUsers/components/OnlineAvatars';
+import { NotificationBell } from '@/features/notifications/components/NotificationBell';
 
 const navClass = ({ isActive }: { isActive: boolean }) =>
     cn(
@@ -38,6 +39,7 @@ export const Header = () => {
             !route.group &&
             route.path !== '/perfil' &&
             route.path !== '/mis-eventos' &&
+            route.path !== '/notificaciones' &&
             user &&
             canAccess(route, user.permissions),
     );
@@ -85,6 +87,8 @@ export const Header = () => {
                     ) : (
                         <UserMenuDropdown />
                     )}
+
+                    {user && <NotificationBell />}
                 </div>
 
                 {user && showNav && mainRoutes.length > 0 && (

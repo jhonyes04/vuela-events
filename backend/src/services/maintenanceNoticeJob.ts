@@ -4,6 +4,7 @@ import { logger } from '../lib/logger.js';
 import { renderNotificationEmail } from '../lib/emailTemplateRender.js';
 import { sanitizeEmailHtml } from './emailSignature.js';
 import { sendNoReplyEmail, type NoReplySendResult } from './noReplyEmail.js';
+import { notifyUsers } from './notification.js';
 
 // Los jobs terminados se olvidan pasado este tiempo (evita crecer sin límite).
 const JOB_TTL_MS = 10 * 60 * 1000;
@@ -99,7 +100,7 @@ export const startMaintenanceNotice = async (
             roleId: { not: 'admin' },
             email: { not: { startsWith: 'demo-' } },
         },
-        select: { email: true, name: true, puntoVuela: true },
+        select: { id: true, email: true, name: true, puntoVuela: true },
         orderBy: { puntoVuela: 'asc' },
     });
 
@@ -138,6 +139,17 @@ export const startMaintenanceNotice = async (
     };
 
     jobs.set(jobId, job);
+
+    void notifyUsers(
+        users.map((user) => user.id),
+        {
+            type: 'maintenance_notice',
+            title: 'Mantenimiento programado',
+            body: `${maintenanceDateTimeFormat.format(from)} – ${maintenanceDateTimeFormat.format(to)}${
+                reason ? ` · ${reason}` : ''
+            }`,
+        },
+    );
 
     void runMaintenanceNoticeJob(job, {
         to: users.map((user) => user.email),

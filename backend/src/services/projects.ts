@@ -1,3 +1,4 @@
+import { env } from '../config/env.js';
 import { prisma } from '../lib/prisma.js';
 import { recordAudit } from './audit.js';
 import { isAdminUser, ownerCandidateIsValid } from './ownerCandidates.js';
@@ -5,9 +6,9 @@ import { sanitizeEmailHtml } from './emailSignature.js';
 import { canManageResource } from '../lib/ownership.js';
 import { logger } from '../lib/logger.js';
 import { renderNotificationEmail } from '../lib/emailTemplateRender.js';
-import { sendNoReplyEmail } from './noReplyEmail.js';
-import { env } from '../config/env.js';
 import type { AuthUser } from '../lib/authUser.js';
+import { sendNoReplyEmail } from './noReplyEmail.js';
+import { notifyUsers } from './notification.js';
 
 export const PROJECT_COLORS = [
     'yellow',
@@ -173,23 +174,33 @@ const notifyProjectCreated = async (
     excludeUserId: string,
 ) => {
     try {
-        const assignment = await prisma.emailTemplateAssignment.findUnique({
-            where: { slot: 'proyecto_nuevo' },
-            select: { template: true },
-        });
-
-        if (!assignment?.template) return;
-
-        const users = await prisma.user.findMany({
-            where: {
-                active: true,
-                id: { not: excludeUserId },
-                email: { not: { startsWith: 'demo-' } },
-            },
-            select: { email: true },
-        });
+        const [assignment, users] = await Promise.all([
+            prisma.emailTemplateAssignment.findUnique({
+                where: { slot: 'proyecto_nuevo' },
+                select: { template: true },
+            }),
+            prisma.user.findMany({
+                where: {
+                    active: true,
+                    id: { not: excludeUserId },
+                    email: { not: { startsWith: 'demo-' } },
+                },
+                select: { id: true, email: true },
+            }),
+        ]);
 
         if (users.length === 0) return;
+
+        void notifyUsers(
+            users.map((user) => user.id),
+            {
+                type: 'new_project',
+                title: 'Nuevo proyecto',
+                body: `${project.name} · Si te interesa, agrégalo a tus preferencias en tu perfil`,
+            },
+        );
+
+        if (!assignment?.template) return;
 
         const { subject, body } = renderNotificationEmail(assignment.template, {
             proyecto: project.name,

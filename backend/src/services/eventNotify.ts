@@ -6,6 +6,7 @@ import {
 } from '../lib/emailTemplateRender.js';
 import { sendNoReplyEmail } from './noReplyEmail.js';
 import { env } from '../config/env.js';
+import { notifyUsers } from './notification.js';
 
 interface EventSession {
     startsAt: Date;
@@ -25,6 +26,7 @@ const buildFechasBlock = (sessions: EventSession[]): string =>
               .join('')}</ul>`;
 
 interface NewEventNotifyInput {
+    id?: string;
     title: string;
     location: string | null;
     projectId: string;
@@ -51,7 +53,7 @@ export const notifyEventCreated = async (
             }),
         ]);
 
-        if (!assignment?.template || !project) return;
+        if (!project) return;
 
         const users = await prisma.user.findMany({
             where: {
@@ -61,10 +63,24 @@ export const notifyEventCreated = async (
                 roleId: { notIn: ['admin', 'dt'] },
                 projectPreferences: { some: { projectId: event.projectId } },
             },
-            select: { email: true },
+            select: { id: true, email: true },
         });
 
         if (users.length === 0) return;
+
+        void notifyUsers(
+            users.map((user) => user.id),
+            {
+                type: 'new_event_in_project',
+                title: 'Nuevo evento',
+                body: `${event.title} · ${event.sessions
+                    .map((s) => formatSessionDateTime(s.startsAt, s.endsAt))
+                    .join('; ')} · ${event.location ?? 'Sin lugar'}`,
+                eventId: event.id,
+            },
+        );
+
+        if (!assignment?.template) return;
 
         const { subject, body } = renderNotificationEmail(
             assignment.template,

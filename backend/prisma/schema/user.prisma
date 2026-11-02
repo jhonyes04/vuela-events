@@ -17,15 +17,16 @@ model User {
     signatureImage          Bytes?
     createdAt               DateTime        @default(now())
     updatedAt               DateTime        @updatedAt
-
+    
     role                    Role            @relation(fields: [roleId], references: [id], onDelete: Restrict)
     createdEvents           Event[]         @relation("EventCreator")
-    registrations           Registration[]
     sentReports             SentReport[]    @relation("ReportSender")
     auditAsActor            AuditLog[]      @relation("AuditActor")
     auditAsTarget           AuditLog[]      @relation("AuditTarget")
     emailLogsSent           EmailLog[]      @relation("EmailLogSender")
 
+    registrations           Registration[]
+    notifications           Notification[]
     emailSignatureImages    EmailSignatureImage[]
     projectPreferences      UserProjectPreference[]
     createdProjects         Project[]

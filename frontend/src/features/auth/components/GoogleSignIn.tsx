@@ -37,6 +37,9 @@ export function GoogleSignIn({ otherAccount }: { otherAccount: boolean }) {
 
                 setError(null);
                 setUser(user);
+                // Consumido una vez por LoginNotificationsDialog: distingue un
+                // login real de abrir la app con una sesión ya existente.
+                sessionStorage.setItem('justLoggedIn', 'true');
                 navigate('/');
             } catch (e) {
                 setError(

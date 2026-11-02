@@ -3,6 +3,7 @@ import { OverlayScrollbarsComponent } from 'overlayscrollbars-react';
 import { useAuth } from '@/features/auth/hooks/context';
 import { useAuthBootstrap } from '@/features/auth/hooks/useAuthBootstrap';
 import { Header } from '@/components/Header';
+import { LoginNotificationsDialog } from '@/features/notifications/components/LoginNotificationsDialog';
 import { Footer } from '@/components/Footer';
 import { LoginPage } from '@/features/auth/pages/LoginPage';
 import { OnboardingPage } from '@/features/profile/pages/OnboardingPage';
@@ -16,9 +17,7 @@ export default function App() {
 
     const { user, loading } = useAuth();
     const [maintenanceMode, setMaintenanceMode] = useState(false);
-    const [maintenanceFrom, setMaintenanceFrom] = useState<string | null>(
-        null,
-    );
+    const [maintenanceFrom, setMaintenanceFrom] = useState<string | null>(null);
     const [maintenanceTo, setMaintenanceTo] = useState<string | null>(null);
     const [checkingMaintenance, setCheckingMaintenance] = useState(true);
     const [superadminLoginOpen, setSuperadminLoginOpen] = useState(false);
@@ -45,6 +44,7 @@ export default function App() {
         >
             <div className="flex min-h-full flex-col">
                 <Header />
+                <LoginNotificationsDialog />
                 <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-6 sm:py-10">
                     {loading || checkingMaintenance ? (
                         <p role="status" className="text-muted-foreground">

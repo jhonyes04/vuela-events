@@ -1,6 +1,7 @@
 import { prisma } from '../lib/prisma.js';
 import { Prisma } from '../generated/prisma/client.js';
 import type { DinamizadorTitle } from '../lib/authUser.js';
+import { notifyUsers } from './notification.js';
 
 const MANAGE_USERS = 'users:manage';
 const MANAGE_ROLES = 'roles:manage';
@@ -107,7 +108,7 @@ export const changeUserRole = async (
         throw new RoleChangeError('self_change');
     }
 
-    return prisma.$transaction(
+    const { user, changed, oldRoleName, roleName } = await prisma.$transaction(
         async (tx) => {
             await assertCanManageUsers(tx, actorId);
 
@@ -126,8 +127,18 @@ export const changeUserRole = async (
                 throw new RoleChangeError('not_found');
             }
 
+            const previousRole = await tx.role.findUnique({
+                where: { id: target.roleId },
+                select: { name: true },
+            });
+
             if (target.roleId === newRoleId) {
-                return target;
+                return {
+                    user: target,
+                    changed: false,
+                    oldRoleName: previousRole?.name ?? target.roleId,
+                    roleName: role.name,
+                };
             }
 
             if (
@@ -160,10 +171,25 @@ export const changeUserRole = async (
                 },
             });
 
-            return updated;
+            return {
+                user: updated,
+                changed: true,
+                oldRoleName: previousRole?.name ?? target.roleId,
+                roleName: role.name,
+            };
         },
         { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
     );
+
+    if (changed) {
+        void notifyUsers([targetId], {
+            type: 'role_changed',
+            title: 'Tu rol ha cambiado',
+            body: `${oldRoleName} → ${roleName}`,
+        });
+    }
+
+    return user;
 };
 
 export const setUserActive = async (

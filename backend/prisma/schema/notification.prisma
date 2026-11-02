@@ -1,0 +1,16 @@
+model Notification {
+    id          String      @id @default(uuid()) @db.Uuid
+    userId      String      @db.Uuid
+    type        String      @db.VarChar(40)
+    title       String      @db.VarChar(200)
+    body        String?     @db.VarChar(500)
+    eventId     String?     @db.Uuid
+    readAt      DateTime?
+    createdAt   DateTime    @default(now())
+
+    user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+    @@index([userId, createdAt])
+    @@index([userId, readAt])
+    @@map("notifications")
+}

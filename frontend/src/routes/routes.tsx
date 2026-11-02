@@ -3,6 +3,7 @@ import { EventsPage } from '@/features/events/pages/EventsPage';
 import { EventsManagementPage } from '@/features/events/pages/EventsManagementPage';
 import { ProfilePage } from '@/features/profile/pages/ProfilePage';
 import { MyEventsPage } from '@/features/profile/pages/MyEventsPage';
+import { NotificationsPage } from '@/features/notifications/pages/NotificationsPage';
 import { RolesPage } from '@/features/users/pages/RolesPage';
 import { UsersPage } from '@/features/users/pages/UsersPage';
 import { ProjectsPage } from '@/features/projects/pages/ProjectsPage';
@@ -40,6 +41,11 @@ export const appRoutes: AppRoute[] = [
         path: '/mis-eventos',
         label: 'Mis eventos',
         element: <MyEventsPage />,
+    },
+    {
+        path: '/notificaciones',
+        label: 'Notificaciones',
+        element: <NotificationsPage />,
     },
     {
         path: '/gestion/eventos',

@@ -5,9 +5,11 @@ import { logger } from '../lib/logger.js';
 import { emitRegistrationChanged } from '../lib/eventBus.js';
 import {
     renderEmail,
+    formatSessionDateTime,
     type RenderableEvent,
 } from '../lib/emailTemplateRender.js';
 import { sendNoReplyEmail } from './noReplyEmail.js';
+import { getActiveUserIds, notifyUsers } from './notification.js';
 
 export type RegistrationFailure =
     | 'not_found'
@@ -50,6 +52,69 @@ const notifyRegistrationChange = async (
     }
 };
 
+const personLabel = (puntoVuela: string | null, name: string): string =>
+    puntoVuela ? `${puntoVuela} (${name})` : name;
+
+const eventSummary = (event: {
+    title: string;
+    startsAt: Date;
+    endsAt: Date;
+    location: string | null;
+}): string =>
+    `${event.title} · ${formatSessionDateTime(event.startsAt, event.endsAt)} · ${event.location ?? 'Sin lugar'}`;
+
+const notifyRegistrationActivity = async (
+    type: 'registration_created' | 'registration_cancelled',
+    event: {
+        id: string;
+        title: string;
+        startsAt: Date;
+        endsAt: Date;
+        location: string | null;
+        createdById: string;
+    },
+    actorId: string,
+    targetUserId: string,
+    registrant: { name: string; puntoVuela: string | null },
+): Promise<void> => {
+    const roleRecipients = await getActiveUserIds({
+        roles: ['admin', 'dt'],
+        excludeUserId: actorId,
+    });
+
+    const recipients = new Set(roleRecipients);
+
+    if (event.createdById !== actorId) {
+        recipients.add(event.createdById);
+    }
+
+    // El propio afectado no va en este lote genérico: si alguien más lo
+    // inscribió/dio de baja, recibe aparte un aviso personalizado.
+    recipients.delete(targetUserId);
+
+    await notifyUsers([...recipients], {
+        type,
+        title:
+            type === 'registration_created'
+                ? 'Nueva inscripción'
+                : 'Baja de inscripción',
+        body: `${personLabel(registrant.puntoVuela, registrant.name)} · ${eventSummary(event)}`,
+        eventId: event.id,
+    });
+
+    if (targetUserId !== actorId) {
+        await notifyUsers([targetUserId], {
+            type,
+            title:
+                type === 'registration_created'
+                    ? 'Te han inscrito en un evento'
+                    : 'Te han dado de baja de un evento',
+            body: eventSummary(event),
+            eventId: event.id,
+        });
+    }
+};
+
 export const registerForEvent = async (
     userId: string,
     eventId: string,
@@ -73,6 +138,7 @@ export const registerForEvent = async (
                     location: true,
                     modality: true,
                     projectId: true,
+                    createdById: true,
                     project: { select: { name: true } },
                 },
             });
@@ -87,7 +153,12 @@ export const registerForEvent = async (
 
             const registrant = await tx.user.findUnique({
                 where: { id: userId },
-                select: { roleId: true, email: true },
+                select: {
+                    roleId: true,
+                    email: true,
+                    name: true,
+                    puntoVuela: true,
+                },
             });
 
             if (registrant?.roleId === 'admin') {
@@ -146,7 +217,13 @@ export const registerForEvent = async (
                 },
             });
 
-            return { registration, event, userEmail: registrant?.email };
+            return {
+                registration,
+                event,
+                userEmail: registrant?.email,
+                registrantName: registrant?.name,
+                registrantPuntoVuela: registrant?.puntoVuela ?? null,
+            };
         });
 
         if (result.userEmail) {
@@ -156,6 +233,24 @@ export const registerForEvent = async (
                 result.userEmail,
             );
         }
+
+        void notifyRegistrationActivity(
+            'registration_created',
+            {
+                id: eventId,
+                title: result.event.title,
+                startsAt: result.event.startsAt,
+                endsAt: result.event.endsAt,
+                location: result.event.location,
+                createdById: result.event.createdById,
+            },
+            opts?.actorId ?? userId,
+            userId,
+            {
+                name: result.registrantName ?? '',
+                puntoVuela: result.registrantPuntoVuela,
+            },
+        );
 
         emitRegistrationChanged(eventId);
         return result.registration;
@@ -183,6 +278,7 @@ export const unregisterFromEvent = async (
             modality: true,
             startsAt: true,
             endsAt: true,
+            createdById: true,
             project: { select: { name: true } },
         },
     });
@@ -211,7 +307,7 @@ export const unregisterFromEvent = async (
 
     const user = await prisma.user.findUnique({
         where: { id: userId },
-        select: { email: true },
+        select: { email: true, name: true, puntoVuela: true },
     });
 
     if (user) {
@@ -219,6 +315,21 @@ export const unregisterFromEvent = async (
             'cancelacion_inscripcion',
             { ...event, projectName: event.project.name },
             user.email,
+        );
+
+        void notifyRegistrationActivity(
+            'registration_cancelled',
+            {
+                id: eventId,
+                title: event.title,
+                startsAt: event.startsAt,
+                endsAt: event.endsAt,
+                location: event.location,
+                createdById: event.createdById,
+            },
+            userId,
+            userId,
+            { name: user?.name ?? '', puntoVuela: user?.puntoVuela ?? null },
         );
     }
 
@@ -235,7 +346,7 @@ export const unregisterRegistration = async (
         where: { id: registrationId, eventId },
         select: {
             userId: true,
-            user: { select: { email: true } },
+            user: { select: { email: true, name: true, puntoVuela: true } },
             event: {
                 select: {
                     endsAt: true,
@@ -243,6 +354,7 @@ export const unregisterRegistration = async (
                     location: true,
                     modality: true,
                     startsAt: true,
+                    createdById: true,
                     project: { select: { name: true } },
                 },
             },
@@ -273,6 +385,24 @@ export const unregisterRegistration = async (
             projectName: registration.event.project.name,
         },
         registration.user.email,
+    );
+
+    void notifyRegistrationActivity(
+        'registration_cancelled',
+        {
+            id: eventId,
+            title: registration.event.title,
+            startsAt: registration.event.startsAt,
+            endsAt: registration.event.endsAt,
+            location: registration.event.location,
+            createdById: registration.event.createdById,
+        },
+        actorId,
+        registration.userId,
+        {
+            name: registration.user.name,
+            puntoVuela: registration.user.puntoVuela,
+        },
     );
 
     emitRegistrationChanged(eventId);
