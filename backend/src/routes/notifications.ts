@@ -2,11 +2,25 @@ import { Router } from 'express';
 import { z } from 'zod';
 import { prisma } from '../lib/prisma.js';
 import { requireAuth } from '../middleware/auth.js';
+import { sendBroadcastNotification } from '../services/notification.js';
 import { notificationBus } from '../lib/eventBus.js';
 
 const idParamsSchema = z.object({ id: z.uuid() });
 const deleteBodySchema = z.strictObject({
     ids: z.array(z.uuid()).min(1).max(1000),
+});
+// Igual que NO_CONTROL_OR_TAGS de events.ts/profile.ts, pero permitiendo \n
+// (el mensaje es multilínea; \n es categoría \p{C} y si no, quedaría bloqueado).
+const NO_CONTROL_OR_TAGS = /^[^\p{C}<>]+$/u;
+const MULTILINE_NO_CONTROL_OR_TAGS = /^(?:[^\p{Cc}<>]|\n)+$/u;
+const broadcastSchema = z.strictObject({
+    title: z.string().trim().min(1).max(120).regex(NO_CONTROL_OR_TAGS),
+    body: z
+        .string()
+        .trim()
+        .min(1)
+        .max(1000)
+        .regex(MULTILINE_NO_CONTROL_OR_TAGS),
 });
 
 export const notificationsRouter = Router();
@@ -159,6 +173,36 @@ notificationsRouter.delete('/', async (req, res) => {
 
     notificationBus.emit(actor.id);
     res.status(204).end();
+});
+
+// Mensaje libre de un dt/admin a todos los activos no-admin.
+notificationsRouter.post('/broadcast', async (req, res) => {
+    const actor = req.user;
+
+    if (!actor) {
+        res.status(401).json({ error: 'Autenticación requerida' });
+        return;
+    }
+
+    if (actor.roleId !== 'dt' && actor.roleId !== 'admin') {
+        res.status(403).json({ error: 'No tienes permiso para esto' });
+        return;
+    }
+
+    const body = broadcastSchema.safeParse(req.body);
+
+    if (!body.success) {
+        res.status(400).json({ error: 'Solicitud no válida' });
+        return;
+    }
+
+    const count = await sendBroadcastNotification(
+        actor.id,
+        body.data.title,
+        body.data.body,
+    );
+
+    res.status(201).json({ count });
 });
 
 // Avisa en tiempo real de notificaciones nuevas, mientras la campanita está abierta.

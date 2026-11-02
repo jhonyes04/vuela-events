@@ -5,6 +5,7 @@ import {
     CalendarPlus,
     CalendarX,
     FolderPlus,
+    Megaphone,
     ShieldCheck,
     UserCheck,
     UserMinus,
@@ -36,6 +37,7 @@ export const NOTIFICATION_TYPE_ICONS: Record<NotificationType, LucideIcon> = {
     role_changed: ShieldCheck,
     maintenance_notice: Wrench,
     event_reminder: AlarmClock,
+    broadcast: Megaphone,
 };
 
 interface NotificationDetailBodyProps {

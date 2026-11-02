@@ -11,6 +11,7 @@ import { PageTitle } from '@/components/PageTitle';
 import { PaginationControls } from '@/components/PaginationControls';
 import { ListErrors } from '@/features/users/components/ListErrors';
 import { NotificationDetailDialog } from '@/features/notifications/components/NotificationDetailDialog';
+import { SendNotificationButton } from '@/features/notifications/components/SendNotificationButton';
 import { useNotificationStream } from '@/features/notifications/hooks/useNotificationStream';
 import { usePagination } from '@/hooks/usePagination';
 import { useSort } from '@/hooks/useSort';
@@ -318,26 +319,29 @@ export const NotificationsPage = () => {
                     </Button>
                 )}
 
-                {selected.size > 0 && (
-                    <Button
-                        variant="destructive"
-                        size="sm"
-                        className="ms-auto"
-                        onClick={() =>
-                            setDeleting({
-                                ids: [...selected],
-                                label:
-                                    selected.size === 1
-                                        ? 'esta notificación'
-                                        : `estas ${selected.size} notificaciones`,
-                                confirText:
-                                    'Eliminar notificaciones seleccionadas',
-                            })
-                        }
-                    >
-                        Eliminar seleccionadas ({selected.size})
-                    </Button>
-                )}
+                <div className="ms-auto flex items-center gap-2">
+                    {selected.size > 0 && (
+                        <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={() =>
+                                setDeleting({
+                                    ids: [...selected],
+                                    label:
+                                        selected.size === 1
+                                            ? 'esta notificación'
+                                            : `estas ${selected.size} notificaciones`,
+                                    confirText:
+                                        'Eliminar notificaciones seleccionadas',
+                                })
+                            }
+                        >
+                            Eliminar seleccionadas ({selected.size})
+                        </Button>
+                    )}
+
+                    <SendNotificationButton />
+                </div>
             </div>
 
             {loading ? (

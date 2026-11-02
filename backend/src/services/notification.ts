@@ -12,7 +12,8 @@ export type NotificationType =
     | 'new_event_in_project'
     | 'new_user_registered'
     | 'role_changed'
-    | 'maintenance_notice';
+    | 'maintenance_notice'
+    | 'broadcast';
 
 const NOTIFICATION_RETENTION_DAYS = 30;
 
@@ -51,18 +52,39 @@ export const notifyUsers = async (
 // Excluye opcionalmente a quien hizo la acción
 export const getActiveUserIds = async (opts?: {
     roles?: string[];
+    excludeRoles?: string[];
     excludeUserId?: string;
 }): Promise<string[]> => {
     const users = await prisma.user.findMany({
         where: {
             active: true,
             ...(opts?.roles && { roleId: { in: opts.roles } }),
+            ...(opts?.excludeRoles && {
+                roleId: { notIn: opts.excludeRoles },
+            }),
             ...(opts?.excludeUserId && { id: { not: opts.excludeUserId } }),
         },
         select: { id: true },
     });
 
     return users.map((user) => user.id);
+};
+
+// Mensaje libre de un dt/admin a todos los activos no-admin. Devuelve a
+// cuántos llegó.
+export const sendBroadcastNotification = async (
+    actorId: string,
+    title: string,
+    body: string,
+): Promise<number> => {
+    const userIds = await getActiveUserIds({
+        excludeRoles: ['admin'],
+        excludeUserId: actorId,
+    });
+
+    await notifyUsers(userIds, { type: 'broadcast', title, body });
+
+    return userIds.length;
 };
 
 // Borrado automático: una notificación de hace más de 30 días (leída o no)

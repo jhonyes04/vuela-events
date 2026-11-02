@@ -10,7 +10,8 @@ export type NotificationType =
     | 'new_project'
     | 'new_user_registered'
     | 'role_changed'
-    | 'maintenance_notice';
+    | 'maintenance_notice'
+    | 'broadcast';
 
 export interface AppNotification {
     id: string;
@@ -46,3 +47,11 @@ export const markAllNotificationsUnread = (): Promise<void> =>
 
 export const deleteNotifications = (ids: string[]): Promise<void> =>
     api.delete('/notifications', { ids });
+
+export const sendBroadcastNotification = (
+    title: string,
+    body: string,
+): Promise<number> =>
+    api
+        .post<{ count: number }>('/notifications/broadcast', { title, body })
+        .then((res) => res.count);
