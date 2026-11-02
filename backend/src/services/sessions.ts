@@ -82,6 +82,14 @@ export const revokeSession = async (sid: string): Promise<void> => {
     }
 };
 
+export const revokeAllSessionsExcept = async (
+    keepSid: string,
+): Promise<void> => {
+    await prisma.$executeRaw`
+        DELETE FROM session WHERE sid != ${keepSid}
+    `;
+};
+
 export interface OnlineUser {
     userId: string;
     name: string;

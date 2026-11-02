@@ -14,6 +14,8 @@ export type NotificationType =
     | 'role_changed'
     | 'maintenance_notice';
 
+const NOTIFICATION_RETENTION_DAYS = 30;
+
 interface NotifyInput {
     type: NotificationType;
     title: string;
@@ -61,4 +63,18 @@ export const getActiveUserIds = async (opts?: {
     });
 
     return users.map((user) => user.id);
+};
+
+// Borrado automático: una notificación de hace más de 30 días (leída o no)
+// ya no aporta, igual criterio que auditoría y log de emails.
+export const pruneOldNotifications = async (): Promise<number> => {
+    const cutoff = new Date(
+        Date.now() - NOTIFICATION_RETENTION_DAYS * 24 * 60 * 60 * 1000,
+    );
+
+    const { count } = await prisma.notification.deleteMany({
+        where: { createdAt: { lt: cutoff } },
+    });
+
+    return count;
 };

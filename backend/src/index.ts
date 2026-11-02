@@ -6,6 +6,7 @@ import { logger } from './lib/logger.js';
 import { pruneOldAuditLogs } from './services/audit.js';
 import { pruneOldEmailLogs } from './services/emailLog.js';
 import { sendDueEventReminders } from './services/eventReminder.js';
+import { pruneOldNotifications } from './services/notification.js';
 
 const app = createApp();
 
@@ -46,6 +47,27 @@ const runEmailLogRetention = () => {
 
 runEmailLogRetention();
 setInterval(runEmailLogRetention, DAY_MS).unref();
+
+const runNotificationRetention = () => {
+    void pruneOldNotifications()
+        .then((count) => {
+            if (count > 0) {
+                logger.info(
+                    { count },
+                    `Notificaciones: ${count} antigua${count === 1 ? '' : 's'} eliminada${count === 1 ? '' : 's'}.`,
+                );
+            }
+        })
+        .catch((e) =>
+            logger.error(
+                { err: e },
+                'No se pudo limpiar las notificaciones',
+            ),
+        );
+};
+
+runNotificationRetention();
+setInterval(runNotificationRetention, DAY_MS).unref();
 
 const FIVE_MIN_MS = 5 * 60 * 1000;
 

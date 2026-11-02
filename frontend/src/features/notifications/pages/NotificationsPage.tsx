@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Bell, Check, RotateCcw, Trash2 } from 'lucide-react';
+import { Bell, Check, Eye, RotateCcw, Trash2 } from 'lucide-react';
 import { OverlayScrollbarsComponent } from 'overlayscrollbars-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -10,6 +10,7 @@ import { IconTooltip } from '@/components/IconTooltip';
 import { PageTitle } from '@/components/PageTitle';
 import { PaginationControls } from '@/components/PaginationControls';
 import { ListErrors } from '@/features/users/components/ListErrors';
+import { NotificationDetailDialog } from '@/features/notifications/components/NotificationDetailDialog';
 import { useNotificationStream } from '@/features/notifications/hooks/useNotificationStream';
 import { usePagination } from '@/hooks/usePagination';
 import { useSort } from '@/hooks/useSort';
@@ -53,6 +54,7 @@ export const NotificationsPage = () => {
     const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
     const [selected, setSelected] = useState<Set<string>>(new Set());
     const [deleting, setDeleting] = useState<Pending | null>(null);
+    const [viewing, setViewing] = useState<AppNotification | null>(null);
 
     const load = async () => {
         setLoading(true);
@@ -208,12 +210,6 @@ export const NotificationsPage = () => {
             render: (n) => n.title,
         },
         {
-            key: 'body',
-            header: 'Detalle',
-            cellClassName: 'text-muted-foreground',
-            render: (n) => n.body ?? '—',
-        },
-        {
             key: 'createdAt',
             header: 'Fecha',
             sortKey: 'createdAt',
@@ -226,6 +222,16 @@ export const NotificationsPage = () => {
             align: 'right',
             render: (n) => (
                 <div className="flex justify-end gap-1">
+                    <IconTooltip label="Ver">
+                        <Button
+                            variant="default"
+                            size="icon"
+                            aria-label="Ver"
+                            onClick={() => setViewing(n)}
+                        >
+                            <Eye className="size-4" />
+                        </Button>
+                    </IconTooltip>
                     <IconTooltip
                         label={n.readAt ? 'Marcar no leída' : 'Marcar leída'}
                     >
@@ -268,6 +274,10 @@ export const NotificationsPage = () => {
     return (
         <section>
             <PageTitle icon={Bell}>Notificaciones</PageTitle>
+
+            <p className="mb-4 text-sm text-muted-foreground">
+                Las notificaciones se eliminan automáticamente a los 30 días.
+            </p>
 
             <ListErrors
                 error={error}
@@ -405,6 +415,11 @@ export const NotificationsPage = () => {
                     }}
                 />
             )}
+
+            <NotificationDetailDialog
+                notification={viewing}
+                onClose={() => setViewing(null)}
+            />
         </section>
     );
 };

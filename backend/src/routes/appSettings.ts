@@ -18,6 +18,7 @@ import {
     startMaintenanceNotice,
     StartMaintenanceNoticeError,
 } from '../services/maintenanceNoticeJob.js';
+import { revokeAllSessionsExcept } from '../services/sessions.js';
 
 const userMenuStyleSchema = z.strictObject({
     userMenuStyle: z.enum(['dropdown', 'sheet']),
@@ -111,6 +112,10 @@ appSettingsRouter.patch(
 
         const result = await setMaintenanceMode(body.data.maintenanceMode);
         invalidateMaintenanceModeCache();
+
+        if (body.data.maintenanceMode) {
+            await revokeAllSessionsExcept(req.sessionID);
+        }
 
         res.json(result);
     },
