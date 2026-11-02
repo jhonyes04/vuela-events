@@ -58,7 +58,7 @@ export const notifyEventCreated = async (
                 active: true,
                 id: { not: excludeUserId },
                 email: { not: { startsWith: 'demo-' } },
-                roleId: 'ail',
+                roleId: { notIn: ['admin', 'dt'] },
                 projectPreferences: { some: { projectId: event.projectId } },
             },
             select: { email: true },

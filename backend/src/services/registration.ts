@@ -122,7 +122,7 @@ export const registerForEvent = async (
                 select: { id: true, eventId: true, createdAt: true },
             });
 
-            if (registrant?.roleId === 'ail') {
+            if (registrant?.roleId !== 'admin' && registrant?.roleId !== 'dt') {
                 await tx.userProjectPreference.upsert({
                     where: {
                         userId_projectId: {
