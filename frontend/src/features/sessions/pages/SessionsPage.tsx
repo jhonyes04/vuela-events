@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Monitor, Trash2 } from 'lucide-react';
 import { OverlayScrollbarsComponent } from 'overlayscrollbars-react';
 import { Badge } from '@/components/ui/badge';
@@ -11,47 +11,23 @@ import { ListErrors } from '@/features/users/components/ListErrors';
 import { PageTitle } from '@/components/PageTitle';
 import { scrollbarOptions } from '@/lib/overlayScrollbarsOptions';
 import { useSort } from '@/hooks/useSort';
-import { ApiError } from '@/lib/api';
+import { useAsyncList } from '@/hooks/useAsyncList';
+import { formatShortDateTime } from '@/lib/dateFormat';
 import {
     listActiveSessions,
     revokeSession,
     type ActiveSession,
 } from '@/features/sessions/lib/sessions';
 
-const dateFormat = new Intl.DateTimeFormat('es-ES', {
-    day: 'numeric',
-    month: 'short',
-    hour: '2-digit',
-    minute: '2-digit',
-});
-
 export const SessionsPage = () => {
-    const [sessions, setSessions] = useState<ActiveSession[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
+    const {
+        items: sessions,
+        setItems: setSessions,
+        loading,
+        error,
+        load,
+    } = useAsyncList(listActiveSessions, 'No se pudo cargar la lista');
     const [revoking, setRevoking] = useState<ActiveSession | null>(null);
-
-    const load = async () => {
-        setLoading(true);
-        setError(null);
-
-        try {
-            setSessions(await listActiveSessions());
-        } catch (e) {
-            setError(
-                e instanceof ApiError
-                    ? e.message
-                    : 'No se pudo cargar la lista',
-            );
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    useEffect(() => {
-        void Promise.resolve().then(load);
-    }, []);
-
     const [search, setSearch] = useState('');
 
     const filtered = sessions.filter((s) => {
@@ -105,7 +81,7 @@ export const SessionsPage = () => {
         {
             key: 'expire',
             header: 'Expira',
-            render: (s) => dateFormat.format(new Date(s.expire)),
+            render: (s) => formatShortDateTime(new Date(s.expire)),
         },
         {
             key: 'actions',

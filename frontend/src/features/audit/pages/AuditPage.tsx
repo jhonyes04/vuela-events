@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { History, Trash2 } from 'lucide-react';
 import { OverlayScrollbarsComponent } from 'overlayscrollbars-react';
 import { Button } from '@/components/ui/button';
@@ -14,7 +14,9 @@ import { usePagination } from '@/hooks/usePagination';
 import { useSort } from '@/hooks/useSort';
 import { scrollbarOptions } from '@/lib/overlayScrollbarsOptions';
 import { DatePicker } from '@/features/datetime/components/DatePicker';
-import { ApiError } from '@/lib/api';
+import { useAsyncList } from '@/hooks/useAsyncList';
+import { useBulkSelection } from '@/hooks/useBulkSelection';
+import { formatDateTime } from '@/lib/dateFormat';
 import {
     actionLabel,
     auditPersonLabel,
@@ -34,51 +36,26 @@ const selectClass =
 
 type SortKey = 'createdAt' | 'action' | 'actor' | 'target';
 
-const dateTimeFormat = new Intl.DateTimeFormat('es-ES', {
-    timeZone: 'Europe/Madrid',
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-});
-
 // Mismo formato 'YYYY-MM-DD' que usa DatePicker, en hora de Madrid.
 const dayKeyFormat = new Intl.DateTimeFormat('en-CA', {
     timeZone: 'Europe/Madrid',
 });
 
 export const AuditPage = () => {
-    const [logs, setLogs] = useState<AuditLogEntry[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
+    const {
+        items: logs,
+        setItems: setLogs,
+        loading,
+        error,
+        load,
+    } = useAsyncList(listAuditLogs, 'No se pudo cargar la lista');
     const [search, setSearch] = useState('');
     const [actionFilter, setActionFilter] = useState('');
     const [from, setFrom] = useState('');
     const [to, setTo] = useState('');
-    const [selected, setSelected] = useState<Set<string>>(new Set());
+    const { selected, toggleOne, toggleAllPaged, removeFromSelection } =
+        useBulkSelection();
     const [deleting, setDeleting] = useState<Pending | null>(null);
-
-    const load = async () => {
-        setLoading(true);
-        setError(null);
-
-        try {
-            setLogs(await listAuditLogs());
-        } catch (e) {
-            setError(
-                e instanceof ApiError
-                    ? e.message
-                    : 'No se pudo cargar la lista',
-            );
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    useEffect(() => {
-        void Promise.resolve().then(load);
-    }, []);
 
     // Solo las acciones que aparecen realmente en lo cargado.
     const actions = [...new Set(logs.map((l) => l.action))].sort((a, b) =>
@@ -135,34 +112,6 @@ export const AuditPage = () => {
     const allPagedSelected =
         paged.length > 0 && paged.every((log) => selected.has(log.id));
 
-    const toggleAllPaged = () => {
-        setSelected((prev) => {
-            const next = new Set(prev);
-
-            if (allPagedSelected) {
-                paged.forEach((log) => next.delete(log.id));
-            } else {
-                paged.forEach((log) => next.add(log.id));
-            }
-
-            return next;
-        });
-    };
-
-    const toggleOne = (id: string) => {
-        setSelected((prev) => {
-            const next = new Set(prev);
-
-            if (next.has(id)) {
-                next.delete(id);
-            } else {
-                next.add(id);
-            }
-
-            return next;
-        });
-    };
-
     const columns: DataTableColumn<AuditLogEntry, SortKey>[] = [
         {
             key: 'select',
@@ -170,7 +119,12 @@ export const AuditPage = () => {
                 <Checkbox
                     aria-label="Seleccionar todos"
                     checked={allPagedSelected}
-                    onCheckedChange={toggleAllPaged}
+                    onCheckedChange={() =>
+                        toggleAllPaged(
+                            paged.map((log) => log.id),
+                            allPagedSelected,
+                        )
+                    }
                 />
             ),
             headerClassName: 'w-10 font-normal',
@@ -187,7 +141,7 @@ export const AuditPage = () => {
             header: 'Fecha',
             sortKey: 'createdAt',
             cellClassName: 'whitespace-nowrap',
-            render: (log) => dateTimeFormat.format(new Date(log.createdAt)),
+            render: (log) => formatDateTime(new Date(log.createdAt)),
         },
         {
             key: 'action',
@@ -377,13 +331,7 @@ export const AuditPage = () => {
                         setLogs((prev) =>
                             prev.filter((l) => !removed.has(l.id)),
                         );
-                        setSelected((prev) => {
-                            const next = new Set(prev);
-
-                            removed.forEach((id) => next.delete(id));
-
-                            return next;
-                        });
+                        removeFromSelection(deleting.ids);
                         setDeleting(null);
                     }}
                 />

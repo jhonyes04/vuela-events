@@ -10,6 +10,7 @@ import { ComboboxField } from '@/components/ComboboxField';
 import { PaginationControls } from '@/components/PaginationControls';
 import { usePagination } from '@/hooks/usePagination';
 import { useSort } from '@/hooks/useSort';
+import { useBulkSelection } from '@/hooks/useBulkSelection';
 import { canManageResource } from '@/lib/ownership';
 import {
     downloadDocument,
@@ -61,7 +62,8 @@ export const ResourcesManagementPage = () => {
     const [editingLink, setEditingLink] = useState<ResourceLink | null>(null);
 
     const [deleting, setDeleting] = useState<Pending | null>(null);
-    const [selected, setSelected] = useState<Set<string>>(new Set());
+    const { selected, toggleOne, toggleAllPaged, removeFromSelection } =
+        useBulkSelection();
     const [search, setSearch] = useState('');
 
     const reload = () => {
@@ -142,34 +144,6 @@ export const ResourcesManagementPage = () => {
         deletablePaged.length > 0 &&
         deletablePaged.every((row) => selected.has(rowKey(row)));
 
-    const toggleAllPaged = () => {
-        setSelected((prev) => {
-            const next = new Set(prev);
-
-            if (allPagedSelected) {
-                deletablePaged.forEach((row) => next.delete(rowKey(row)));
-            } else {
-                deletablePaged.forEach((row) => next.add(rowKey(row)));
-            }
-
-            return next;
-        });
-    };
-
-    const toggleOne = (key: string) => {
-        setSelected((prev) => {
-            const next = new Set(prev);
-
-            if (next.has(key)) {
-                next.delete(key);
-            } else {
-                next.add(key);
-            }
-
-            return next;
-        });
-    };
-
     const openCreateDocument = () => {
         setEditingDocument(null);
         setDocumentFormKey((k) => k + 1);
@@ -206,7 +180,8 @@ export const ResourcesManagementPage = () => {
         user,
         selected,
         allPagedSelected,
-        toggleAllPaged,
+        toggleAllPaged: () =>
+            toggleAllPaged(deletablePaged.map(rowKey), allPagedSelected),
         toggleOne,
         rowKey,
         canDeleteRow,
@@ -352,13 +327,7 @@ export const ResourcesManagementPage = () => {
                             removeLink(row.id);
                         }
                     });
-                    setSelected((prev) => {
-                        const next = new Set(prev);
-
-                        succeeded.forEach((row) => next.delete(rowKey(row)));
-
-                        return next;
-                    });
+                    removeFromSelection(succeeded.map(rowKey));
                     setDeleting(null);
                 }}
             />

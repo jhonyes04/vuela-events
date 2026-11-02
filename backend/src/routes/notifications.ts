@@ -4,15 +4,15 @@ import { prisma } from '../lib/prisma.js';
 import { requireAuth } from '../middleware/auth.js';
 import { sendBroadcastNotification } from '../services/notification.js';
 import { notificationBus } from '../lib/eventBus.js';
+import {
+    NO_CONTROL_OR_TAGS,
+    MULTILINE_NO_CONTROL_OR_TAGS,
+} from '../lib/textValidation.js';
 
 const idParamsSchema = z.object({ id: z.uuid() });
 const deleteBodySchema = z.strictObject({
     ids: z.array(z.uuid()).min(1).max(1000),
 });
-// Igual que NO_CONTROL_OR_TAGS de events.ts/profile.ts, pero permitiendo \n
-// (el mensaje es multilínea; \n es categoría \p{C} y si no, quedaría bloqueado).
-const NO_CONTROL_OR_TAGS = /^[^\p{C}<>]+$/u;
-const MULTILINE_NO_CONTROL_OR_TAGS = /^(?:[^\p{Cc}<>]|\n)+$/u;
 const broadcastSchema = z.strictObject({
     title: z.string().trim().min(1).max(120).regex(NO_CONTROL_OR_TAGS),
     body: z

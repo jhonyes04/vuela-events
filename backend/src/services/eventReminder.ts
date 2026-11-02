@@ -1,6 +1,6 @@
 import { prisma } from '../lib/prisma.js';
 import { notifyUsers } from './notification.js';
-import { formatSessionDateTime } from '../lib/emailTemplateRender.js';
+import { buildEventSummary } from '../lib/emailTemplateRender.js';
 
 const TWO_HOURS_MS = 2 * 60 * 60 * 1000;
 
@@ -32,17 +32,16 @@ export const sendDueEventReminders = async (): Promise<number> => {
 
     if (due.length === 0) return 0;
 
-    for (const registration of due) {
-        await notifyUsers([registration.userId], {
-            type: 'event_reminder',
-            title: 'Recordatorio de evento',
-            body: `${registration.event.title} · ${formatSessionDateTime(
-                registration.event.startsAt,
-                registration.event.endsAt,
-            )} · ${registration.event.location ?? 'Sin lugar'}`,
-            eventId: registration.event.id,
-        });
-    }
+    await Promise.all(
+        due.map((registration) =>
+            notifyUsers([registration.userId], {
+                type: 'event_reminder',
+                title: 'Recordatorio de evento',
+                body: buildEventSummary(registration.event),
+                eventId: registration.event.id,
+            }),
+        ),
+    );
 
     await prisma.registration.updateMany({
         where: { id: { in: due.map((r) => r.id) } },

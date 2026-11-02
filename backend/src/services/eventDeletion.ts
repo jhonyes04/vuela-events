@@ -1,7 +1,10 @@
 import { prisma } from '../lib/prisma.js';
 import { notifyEventCancelled } from './eventNotify.js';
 import { notifyUsers } from './notification.js';
-import { formatSessionDateTime } from '../lib/emailTemplateRender.js';
+import {
+    formatSessionDateTime,
+    buildEventSummary,
+} from '../lib/emailTemplateRender.js';
 import { canManageResource } from '../lib/ownership.js';
 import { emitCalendarChanged } from '../lib/eventBus.js';
 
@@ -116,7 +119,7 @@ export const deleteEvent = async (
             {
                 type: 'event_cancelled',
                 title: 'Evento cancelado',
-                body: `${event.title} · ${formatSessionDateTime(event.startsAt, event.endsAt)} · ${event.location ?? 'Sin lugar'}`,
+                body: buildEventSummary(event),
             },
         );
     }

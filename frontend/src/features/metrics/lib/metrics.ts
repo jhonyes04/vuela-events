@@ -1,4 +1,5 @@
 import { api } from '@/lib/api';
+import { formatShortDateTime } from '@/lib/dateFormat';
 
 export interface SignupMonth {
     month: string;
@@ -92,12 +93,5 @@ export interface MetricsSummary {
 export const getMetrics = (days: number) =>
     api.get<MetricsSummary>(`/metrics?days=${days}`);
 
-const dateTimeFormat = new Intl.DateTimeFormat('es-ES', {
-    day: 'numeric',
-    month: 'short',
-    hour: '2-digit',
-    minute: '2-digit',
-});
-
 export const formatMetricsDateTime = (iso: string): string =>
-    dateTimeFormat.format(new Date(iso));
+    formatShortDateTime(new Date(iso));

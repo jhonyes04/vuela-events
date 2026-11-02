@@ -20,6 +20,7 @@ import { PaginationControls } from '@/components/PaginationControls';
 import { usePagination } from '@/hooks/usePagination';
 import { useSort } from '@/hooks/useSort';
 import { useOwnerFilter } from '@/hooks/useOwnerFilter';
+import { useBulkSelection } from '@/hooks/useBulkSelection';
 import { ListErrors } from '@/features/users/components/ListErrors';
 import { GuideFormDialog } from '@/features/guides/components/GuideFormDialog';
 import { OwnerCell } from '@/components/OwnerCell';
@@ -49,7 +50,8 @@ export const GuidesPage = () => {
     const [formKey, setFormKey] = useState(0);
     const [editing, setEditing] = useState<Guide | null>(null);
     const [deleting, setDeleting] = useState<Pending | null>(null);
-    const [selected, setSelected] = useState<Set<string>>(new Set());
+    const { selected, toggleOne, toggleAllPaged, removeFromSelection } =
+        useBulkSelection();
 
     // Al entrar se refresca, pero la lista en caché se ve mientras tanto.
     useEffect(() => {
@@ -112,34 +114,6 @@ export const GuidesPage = () => {
         deletablePaged.length > 0 &&
         deletablePaged.every((guide) => selected.has(guide.id));
 
-    const toggleAllPaged = () => {
-        setSelected((prev) => {
-            const next = new Set(prev);
-
-            if (allPagedSelected) {
-                deletablePaged.forEach((guide) => next.delete(guide.id));
-            } else {
-                deletablePaged.forEach((guide) => next.add(guide.id));
-            }
-
-            return next;
-        });
-    };
-
-    const toggleOne = (id: string) => {
-        setSelected((prev) => {
-            const next = new Set(prev);
-
-            if (next.has(id)) {
-                next.delete(id);
-            } else {
-                next.add(id);
-            }
-
-            return next;
-        });
-    };
-
     const canSeeOwner = user?.roleId === 'admin' || user?.roleId === 'dt';
 
     const columns: DataTableColumn<Guide, SortKey>[] = [
@@ -149,7 +123,12 @@ export const GuidesPage = () => {
                 <Checkbox
                     aria-label="Seleccionar todos"
                     checked={allPagedSelected}
-                    onCheckedChange={toggleAllPaged}
+                    onCheckedChange={() =>
+                        toggleAllPaged(
+                            deletablePaged.map((guide) => guide.id),
+                            allPagedSelected,
+                        )
+                    }
                 />
             ),
             headerClassName: 'w-10 font-normal',
@@ -420,13 +399,7 @@ export const GuidesPage = () => {
                     }}
                     onDeleted={({ succeeded }) => {
                         succeeded.forEach(remove);
-                        setSelected((prev) => {
-                            const next = new Set(prev);
-
-                            succeeded.forEach((id) => next.delete(id));
-
-                            return next;
-                        });
+                        removeFromSelection(succeeded);
                         setDeleting(null);
                     }}
                 />

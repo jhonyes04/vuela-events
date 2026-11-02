@@ -132,6 +132,7 @@ export const notifyEventCancelled = async (event: EventCancelledInput) => {
 
         if (!assignment?.template) return;
 
+        const template = assignment.template;
         const sessionsByEmail = new Map<string, EventSession[]>();
 
         for (const session of event.sessions) {
@@ -150,26 +151,37 @@ export const notifyEventCancelled = async (event: EventCancelledInput) => {
 
         if (sessionsByEmail.size === 0) return;
 
-        for (const [email, sessions] of sessionsByEmail) {
-            const { subject, body } = renderNotificationEmail(
-                assignment.template,
-                {
-                    proyecto: event.projectName,
-                    evento: event.title,
-                    lugar: event.location ?? '',
-                    fechas: buildFechasBlock(sessions),
-                    motivo: event.reason ?? '',
-                },
-                ['fechas'],
-            );
+        const results = await Promise.allSettled(
+            [...sessionsByEmail].map(([email, sessions]) => {
+                const { subject, body } = renderNotificationEmail(
+                    template,
+                    {
+                        proyecto: event.projectName,
+                        evento: event.title,
+                        lugar: event.location ?? '',
+                        fechas: buildFechasBlock(sessions),
+                        motivo: event.reason ?? '',
+                    },
+                    ['fechas'],
+                );
 
-            await sendNoReplyEmail({
-                to: [email],
-                subject,
-                html: body,
-                slot: 'evento_cancelado',
-            });
-        }
+                return sendNoReplyEmail({
+                    to: [email],
+                    subject,
+                    html: body,
+                    slot: 'evento_cancelado',
+                });
+            }),
+        );
+
+        results
+            .filter((r): r is PromiseRejectedResult => r.status === 'rejected')
+            .forEach((r) =>
+                logger.error(
+                    { err: r.reason },
+                    'No se pudo enviar el aviso de evento_cancelado a un destinatario',
+                ),
+            );
     } catch (e) {
         logger.error(
             { err: e },

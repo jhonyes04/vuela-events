@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { config } from '@/config';
+import { openNotificationStream } from '@/features/notifications/lib/notificationStream';
 
 // Avisa cuando hay notificaciones nuevas para refrescar la campanita.
 // `enabled`: para componentes que montan sin sesión (los menús de usuario,
@@ -11,12 +11,7 @@ export const useNotificationStream = (
     useEffect(() => {
         if (!enabled) return;
 
-        const source = new EventSource(
-            `${config.apiBase}/notifications/stream`,
-            { withCredentials: true },
-        );
-
-        source.onmessage = () => onChange();
+        const source = openNotificationStream(onChange);
 
         return () => source.close();
     }, [onChange, enabled]);

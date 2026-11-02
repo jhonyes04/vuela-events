@@ -20,7 +20,7 @@ import {
 import { createEventSeries } from '../services/eventSeries.js';
 import { notifyEventCreated } from '../services/eventNotify.js';
 import { notifyUsers } from '../services/notification.js';
-import { formatSessionDateTime } from '../lib/emailTemplateRender.js';
+import { buildEventSummary } from '../lib/emailTemplateRender.js';
 import {
     listAttendees,
     listRegistrationCandidates,
@@ -42,10 +42,7 @@ import {
 } from '../lib/documentValidation.js';
 import { canManageResource } from '../lib/ownership.js';
 import { registrationBus, emitCalendarChanged } from '../lib/eventBus.js';
-
-// Sin caracteres de control ni < > : evita que title/location (insertados sin
-// escapar en el HTML de los correos vía {{proyecto}}/{{lugar}}) cuelen markup.
-const NO_CONTROL_OR_TAGS = /^[^\p{C}<>]+$/u;
+import { NO_CONTROL_OR_TAGS } from '../lib/textValidation.js';
 
 const hasFullAttendeeAccess = (actor: { permissions: string[] }): boolean =>
     ['attendees:view', 'attendees:add', 'attendees:delete'].every((code) =>
@@ -743,7 +740,7 @@ eventsRouter.patch(
             {
                 type: 'event_updated',
                 title: 'Evento actualizado',
-                body: `${event.title} · ${formatSessionDateTime(event.startsAt, event.endsAt)} · ${event.location ?? 'Sin lugar'}`,
+                body: buildEventSummary(event),
                 eventId: event.id,
             },
         );

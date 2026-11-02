@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { Bell } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -14,43 +14,31 @@ import { Button } from '@/components/ui/button';
 import { NOTIFICATION_TYPE_ICONS } from '@/features/notifications/components/NotificationDetailDialog';
 import {
     type AppNotification,
-    getUnreadNotificationCount,
-    listNotifications,
     markAllNotificationsRead,
     markNotificationRead,
 } from '@/features/notifications/lib/notifications';
-import { useNotificationStream } from '@/features/notifications/hooks/useNotificationStream';
+import { useNotificationsStore } from '@/features/notifications/store';
 
 export const NotificationBell = () => {
-    const [notifications, setNotifications] = useState<AppNotification[]>([]);
-    const [unreadCount, setUnreadCount] = useState(0);
-
-    const refresh = useCallback(() => {
-        void listNotifications().then((list) =>
-            setNotifications(list.filter((n) => !n.readAt)),
-        );
-        void getUnreadNotificationCount().then(setUnreadCount);
-    }, []);
+    const notifications = useNotificationsStore((s) => s.unread);
+    const unreadCount = useNotificationsStore((s) => s.unreadCount);
+    const ensureStream = useNotificationsStore((s) => s.ensureStream);
+    const markLocalRead = useNotificationsStore((s) => s.markLocalRead);
+    const markAllLocalRead = useNotificationsStore((s) => s.markAllLocalRead);
 
     useEffect(() => {
-        refresh();
-    }, [refresh]);
-
-    useNotificationStream(refresh);
+        ensureStream();
+    }, [ensureStream]);
 
     // Leída = desaparece de la lista al momento, sin esperar la respuesta.
     const handleRead = (notification: AppNotification) => {
-        setNotifications((prev) =>
-            prev.filter((n) => n.id !== notification.id),
-        );
-        setUnreadCount((count) => Math.max(0, count - 1));
+        markLocalRead(notification.id);
 
         void markNotificationRead(notification.id);
     };
 
     const handleReadAll = () => {
-        setNotifications([]);
-        setUnreadCount(0);
+        markAllLocalRead();
 
         void markAllNotificationsRead();
     };

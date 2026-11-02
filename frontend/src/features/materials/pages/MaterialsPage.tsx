@@ -13,6 +13,7 @@ import { PaginationControls } from '@/components/PaginationControls';
 import { usePagination } from '@/hooks/usePagination';
 import { useSort } from '@/hooks/useSort';
 import { useOwnerFilter } from '@/hooks/useOwnerFilter';
+import { useBulkSelection } from '@/hooks/useBulkSelection';
 import { ListErrors } from '@/features/users/components/ListErrors';
 import { MaterialFormDialog } from '@/features/materials/components/MaterialFormDialog';
 import { OwnerCell } from '@/components/OwnerCell';
@@ -45,7 +46,8 @@ export const MaterialsPage = () => {
     const [formKey, setFormKey] = useState(0);
     const [editing, setEditing] = useState<Material | null>(null);
     const [deleting, setDeleting] = useState<Pending | null>(null);
-    const [selected, setSelected] = useState<Set<string>>(new Set());
+    const { selected, toggleOne, toggleAllPaged, removeFromSelection } =
+        useBulkSelection();
     const canSeeOwner = user?.roleId === 'admin' || user?.roleId === 'dt';
 
     // Al entrar se refresca, pero la lista en caché se ve mientras tanto.
@@ -102,34 +104,6 @@ export const MaterialsPage = () => {
         deletablePaged.length > 0 &&
         deletablePaged.every((material) => selected.has(material.id));
 
-    const toggleAllPaged = () => {
-        setSelected((prev) => {
-            const next = new Set(prev);
-
-            if (allPagedSelected) {
-                deletablePaged.forEach((material) => next.delete(material.id));
-            } else {
-                deletablePaged.forEach((material) => next.add(material.id));
-            }
-
-            return next;
-        });
-    };
-
-    const toggleOne = (id: string) => {
-        setSelected((prev) => {
-            const next = new Set(prev);
-
-            if (next.has(id)) {
-                next.delete(id);
-            } else {
-                next.add(id);
-            }
-
-            return next;
-        });
-    };
-
     const columns: DataTableColumn<Material, SortKey>[] = [
         {
             key: 'select',
@@ -137,7 +111,12 @@ export const MaterialsPage = () => {
                 <Checkbox
                     aria-label="Seleccionar todos"
                     checked={allPagedSelected}
-                    onCheckedChange={toggleAllPaged}
+                    onCheckedChange={() =>
+                        toggleAllPaged(
+                            deletablePaged.map((material) => material.id),
+                            allPagedSelected,
+                        )
+                    }
                 />
             ),
             headerClassName: 'w-10 font-normal',
@@ -408,13 +387,7 @@ export const MaterialsPage = () => {
                     }}
                     onDeleted={({ succeeded }) => {
                         succeeded.forEach(remove);
-                        setSelected((prev) => {
-                            const next = new Set(prev);
-
-                            succeeded.forEach((id) => next.delete(id));
-
-                            return next;
-                        });
+                        removeFromSelection(succeeded);
                         setDeleting(null);
                     }}
                 />

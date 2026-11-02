@@ -24,15 +24,13 @@ import {
     setProjectPreferences,
 } from '../services/projectPreferences.js';
 import { DINAMIZADOR_TITLES } from '../lib/authUser.js';
+import { NO_CONTROL_OR_TAGS } from '../lib/textValidation.js';
 
 // Firma la genera cualquier lector de imágenes normal: cabe de sobra en 300KB.
 const MAX_SIGNATURE_BYTES = 300 * 1024;
 const PNG_SIGNATURE = Buffer.from([
     0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a,
 ]);
-
-// Sin caracteres de control ni de formato (\p{C}) y sin < ni >.
-const NO_CONTROL_OR_TAGS = /^[^\p{C}<>]+$/u;
 
 // Recorta y colapsa los espacios internos: "  Ana   García " -> "Ana García".
 const cleaned = (min: number, max: number) =>

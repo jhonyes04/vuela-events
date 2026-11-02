@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { UserPlus, Users, Trash2 } from 'lucide-react';
 import { useAuth } from '@/features/auth/hooks/context';
 import { PageTitle } from '@/components/PageTitle';
@@ -17,7 +17,6 @@ import { ListErrors } from '@/features/users/components/ListErrors';
 import {
     listProjectInterests,
     removeProjectInterestedUser,
-    type ProjectInterests,
 } from '@/features/projects/lib/projects';
 import {
     getProjectColorBorder,
@@ -26,7 +25,7 @@ import {
 import { AddProjectInterestDialog } from '@/features/projects/components/AddProjectInterestDialog';
 import { personLabel } from '@/lib/personLabel';
 import { cn } from '@/lib/utils';
-import { ApiError } from '@/lib/api';
+import { useAsyncList } from '@/hooks/useAsyncList';
 
 interface DeletingTarget {
     projectId: string;
@@ -39,35 +38,18 @@ export const ProjectInterestsPage = () => {
     const canAdd = user?.permissions.includes('projects:edit') ?? false;
     const canDelete = user?.permissions.includes('projects:delete') ?? false;
 
-    const [projects, setProjects] = useState<ProjectInterests[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
+    const {
+        items: projects,
+        setItems: setProjects,
+        loading,
+        error,
+        load,
+    } = useAsyncList(listProjectInterests, 'No se pudo cargar la lista');
     const [addingFor, setAddingFor] = useState<string | null>(null);
     // Selección independiente por proyecto: un usuario puede estar marcado
     // en varios proyectos a la vez, cada uno con su propia selección.
     const [selected, setSelected] = useState<Record<string, Set<string>>>({});
     const [deleting, setDeleting] = useState<DeletingTarget | null>(null);
-
-    const load = async () => {
-        setLoading(true);
-        setError(null);
-
-        try {
-            setProjects(await listProjectInterests());
-        } catch (e) {
-            setError(
-                e instanceof ApiError
-                    ? e.message
-                    : 'No se pudo cargar la lista',
-            );
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    useEffect(() => {
-        void Promise.resolve().then(load);
-    }, []);
 
     const toggle = (projectId: string, userId: string) => {
         setSelected((prev) => {

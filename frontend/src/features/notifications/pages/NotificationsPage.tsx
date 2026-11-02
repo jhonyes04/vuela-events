@@ -12,11 +12,13 @@ import { PaginationControls } from '@/components/PaginationControls';
 import { ListErrors } from '@/features/users/components/ListErrors';
 import { NotificationDetailDialog } from '@/features/notifications/components/NotificationDetailDialog';
 import { SendNotificationButton } from '@/features/notifications/components/SendNotificationButton';
-import { useNotificationStream } from '@/features/notifications/hooks/useNotificationStream';
+import { useNotificationsStore } from '@/features/notifications/store';
 import { usePagination } from '@/hooks/usePagination';
 import { useSort } from '@/hooks/useSort';
 import { scrollbarOptions } from '@/lib/overlayScrollbarsOptions';
-import { ApiError } from '@/lib/api';
+import { useAsyncList } from '@/hooks/useAsyncList';
+import { useBulkSelection } from '@/hooks/useBulkSelection';
+import { formatDateTime } from '@/lib/dateFormat';
 import {
     type AppNotification,
     deleteNotifications,
@@ -39,44 +41,27 @@ const selectClass =
 type SortKey = 'createdAt' | 'title';
 type StatusFilter = 'all' | 'unread' | 'read';
 
-const dateTimeFormat = new Intl.DateTimeFormat('es-ES', {
-    timeZone: 'Europe/Madrid',
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-});
-
 export const NotificationsPage = () => {
-    const [notifications, setNotifications] = useState<AppNotification[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
+    const {
+        items: notifications,
+        setItems: setNotifications,
+        loading,
+        error,
+        load,
+    } = useAsyncList(
+        listNotifications,
+        'No se pudieron cargar las notificaciones',
+    );
     const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
-    const [selected, setSelected] = useState<Set<string>>(new Set());
+    const {
+        selected,
+        setSelected,
+        toggleOne,
+        toggleAllPaged,
+        removeFromSelection,
+    } = useBulkSelection();
     const [deleting, setDeleting] = useState<Pending | null>(null);
     const [viewing, setViewing] = useState<AppNotification | null>(null);
-
-    const load = async () => {
-        setLoading(true);
-        setError(null);
-
-        try {
-            setNotifications(await listNotifications());
-        } catch (e) {
-            setError(
-                e instanceof ApiError
-                    ? e.message
-                    : 'No se pudieron cargar las notificaciones',
-            );
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    useEffect(() => {
-        void Promise.resolve().then(load);
-    }, []);
 
     // Avisa de cambios hechos en la campanita (u otra pestaña): sin esto,
     // marcar/borrar aquí o allí no se enteraba la otra vista.
@@ -93,7 +78,17 @@ export const NotificationsPage = () => {
             .catch(() => {});
     };
 
-    useNotificationStream(refresh);
+    const changeTick = useNotificationsStore((s) => s.changeTick);
+    const ensureStream = useNotificationsStore((s) => s.ensureStream);
+
+    useEffect(() => {
+        ensureStream();
+    }, [ensureStream]);
+
+    useEffect(() => {
+        if (changeTick > 0) refresh();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [changeTick]);
 
     const unreadCount = notifications.filter((n) => !n.readAt).length;
     const readCount = notifications.length - unreadCount;
@@ -118,34 +113,6 @@ export const NotificationsPage = () => {
 
     const allPagedSelected =
         paged.length > 0 && paged.every((n) => selected.has(n.id));
-
-    const toggleAllPaged = () => {
-        setSelected((prev) => {
-            const next = new Set(prev);
-
-            if (allPagedSelected) {
-                paged.forEach((n) => next.delete(n.id));
-            } else {
-                paged.forEach((n) => next.add(n.id));
-            }
-
-            return next;
-        });
-    };
-
-    const toggleOne = (id: string) => {
-        setSelected((prev) => {
-            const next = new Set(prev);
-
-            if (next.has(id)) {
-                next.delete(id);
-            } else {
-                next.add(id);
-            }
-
-            return next;
-        });
-    };
 
     const setReadLocally = (ids: Set<string>, readAt: string | null) => {
         setNotifications((prev) =>
@@ -183,7 +150,12 @@ export const NotificationsPage = () => {
                 <Checkbox
                     aria-label="Seleccionar todas"
                     checked={allPagedSelected}
-                    onCheckedChange={toggleAllPaged}
+                    onCheckedChange={() =>
+                        toggleAllPaged(
+                            paged.map((n) => n.id),
+                            allPagedSelected,
+                        )
+                    }
                 />
             ),
             headerClassName: 'w-10 font-normal',
@@ -215,7 +187,7 @@ export const NotificationsPage = () => {
             header: 'Fecha',
             sortKey: 'createdAt',
             cellClassName: 'whitespace-nowrap',
-            render: (n) => dateTimeFormat.format(new Date(n.createdAt)),
+            render: (n) => formatDateTime(new Date(n.createdAt)),
         },
         {
             key: 'actions',
@@ -408,13 +380,7 @@ export const NotificationsPage = () => {
                         setNotifications((prev) =>
                             prev.filter((n) => !removed.has(n.id)),
                         );
-                        setSelected((prev) => {
-                            const next = new Set(prev);
-
-                            removed.forEach((id) => next.delete(id));
-
-                            return next;
-                        });
+                        removeFromSelection(deleting.ids);
                         setDeleting(null);
                     }}
                 />

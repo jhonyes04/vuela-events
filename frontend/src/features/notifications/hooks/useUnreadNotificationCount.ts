@@ -1,27 +1,15 @@
-import { useCallback, useEffect, useState } from 'react';
-import { getUnreadNotificationCount } from '@/features/notifications/lib/notifications';
-import { useNotificationStream } from '@/features/notifications/hooks/useNotificationStream';
+import { useEffect } from 'react';
+import { useNotificationsStore } from '@/features/notifications/store';
 
 // Reutilizable donde haga falta el contador (campanita, menú de usuario).
 // `enabled`: false mientras no haya sesión (los menús montan sin `user`).
 export const useUnreadNotificationCount = (enabled: boolean): number => {
-    const [count, setCount] = useState(0);
+    const unreadCount = useNotificationsStore((s) => s.unreadCount);
+    const ensureStream = useNotificationsStore((s) => s.ensureStream);
 
-    const refresh = useCallback(() => {
-        if (!enabled) return;
-
-        void getUnreadNotificationCount()
-            .then(setCount)
-            .catch(() => {});
-    }, [enabled]);
-
-    // Mientras enabled es false nadie renderiza este contador (el menú
-    // devuelve null sin user), así que no hace falta resetear el estado aquí.
     useEffect(() => {
-        if (enabled) refresh();
-    }, [enabled, refresh]);
+        if (enabled) ensureStream();
+    }, [enabled, ensureStream]);
 
-    useNotificationStream(refresh, enabled);
-
-    return count;
+    return enabled ? unreadCount : 0;
 };

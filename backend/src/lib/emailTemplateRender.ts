@@ -96,6 +96,16 @@ const buildPlaceholders = (
 export const formatSessionDateTime = (startsAt: Date, endsAt: Date): string =>
     `${dateFormat.format(startsAt)}, de ${timeFormat.format(startsAt)} a ${timeFormat.format(endsAt)}`;
 
+// Para el cuerpo corto de las notificaciones in-app (inscripción, evento
+// actualizado/eliminado): mismo formato en los tres sitios que lo usan.
+export const buildEventSummary = (event: {
+    title: string;
+    startsAt: Date;
+    endsAt: Date;
+    location: string | null;
+}): string =>
+    `${event.title} · ${formatSessionDateTime(event.startsAt, event.endsAt)} · ${event.location ?? 'Sin lugar'}`;
+
 const SUBJECT_PLACEHOLDERS = buildPlaceholders(false);
 const BODY_PLACEHOLDERS = buildPlaceholders(true);
 
@@ -129,8 +139,7 @@ const applyModalityConditionals = (html: string, modality: string): string =>
     html
         .replace(
             /\{\{#presencial\}\}([\s\S]*?)\{\{\/presencial\}\}/g,
-            (_match, inner: string) =>
-                modality === 'presencial' ? inner : '',
+            (_match, inner: string) => (modality === 'presencial' ? inner : ''),
         )
         .replace(
             /\{\{#online\}\}([\s\S]*?)\{\{\/online\}\}/g,
@@ -147,10 +156,7 @@ export const renderEmail = (
         ? stripEmptyMotivoParagraph(template.body)
         : template.body;
     const body = applyModalityConditionals(bodyWithMotivo, event.modality);
-    const subject = applyModalityConditionals(
-        template.subject,
-        event.modality,
-    );
+    const subject = applyModalityConditionals(template.subject, event.modality);
 
     return {
         subject: applyPlaceholders(subject, event, SUBJECT_PLACEHOLDERS),

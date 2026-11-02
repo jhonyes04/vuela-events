@@ -5,7 +5,7 @@ import { logger } from '../lib/logger.js';
 import { emitRegistrationChanged } from '../lib/eventBus.js';
 import {
     renderEmail,
-    formatSessionDateTime,
+    buildEventSummary,
     type RenderableEvent,
 } from '../lib/emailTemplateRender.js';
 import { sendNoReplyEmail } from './noReplyEmail.js';
@@ -55,14 +55,6 @@ const notifyRegistrationChange = async (
 const personLabel = (puntoVuela: string | null, name: string): string =>
     puntoVuela ? `${puntoVuela} (${name})` : name;
 
-const eventSummary = (event: {
-    title: string;
-    startsAt: Date;
-    endsAt: Date;
-    location: string | null;
-}): string =>
-    `${event.title} · ${formatSessionDateTime(event.startsAt, event.endsAt)} · ${event.location ?? 'Sin lugar'}`;
-
 const notifyRegistrationActivity = async (
     type: 'registration_created' | 'registration_cancelled',
     event: {
@@ -98,7 +90,7 @@ const notifyRegistrationActivity = async (
             type === 'registration_created'
                 ? 'Nueva inscripción'
                 : 'Baja de inscripción',
-        body: `${personLabel(registrant.puntoVuela, registrant.name)} · ${eventSummary(event)}`,
+        body: `${personLabel(registrant.puntoVuela, registrant.name)} · ${buildEventSummary(event)}`,
         eventId: event.id,
     });
 
@@ -109,7 +101,7 @@ const notifyRegistrationActivity = async (
                 type === 'registration_created'
                     ? 'Te han inscrito en un evento'
                     : 'Te han dado de baja de un evento',
-            body: eventSummary(event),
+            body: buildEventSummary(event),
             eventId: event.id,
         });
     }
