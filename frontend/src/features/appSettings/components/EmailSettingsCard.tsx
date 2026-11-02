@@ -7,6 +7,7 @@ import {
     updateSmtpConfig,
     updateNoReplySmtpConfig,
     updateTemplateAssignment,
+    SLOT_LABELS,
     type SlotId,
     type SmtpConfig,
     type NoReplySmtpInput,
@@ -18,18 +19,6 @@ import { SmtpConfigCard } from '@/features/appSettings/components/SmtpConfigCard
 import { NoReplySmtpConfigCard } from '@/features/appSettings/components/NoReplySmtpConfigCard';
 import { TemplateAssignmentCard } from '@/features/appSettings/components/TemplateAssignmentCard';
 import type { SmtpSender } from '@/features/appSettings/components/SenderBadge';
-
-const SLOT_LABELS: Record<SlotId, string> = {
-    convocatoria: 'Convocatoria',
-    convocatoria_reunion: 'Convocatoria de Reunión Comarcal',
-    parte_firmas: 'Parte de firmas',
-    inscripcion: 'Inscripción a evento',
-    cancelacion_inscripcion: 'Cancelación de inscripción',
-    proyecto_nuevo: 'Proyecto nuevo',
-    evento_nuevo: 'Evento nuevo de un proyecto',
-    evento_cancelado: 'Evento o serie cancelados',
-    mantenimiento: 'Aviso de mantenimiento',
-};
 
 const SLOT_SENDER: Record<SlotId, SmtpSender> = {
     convocatoria: 'gmail',

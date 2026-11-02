@@ -4,6 +4,7 @@ import { sessionPool } from './middleware/session.js';
 import { createApp } from './app.js';
 import { logger } from './lib/logger.js';
 import { pruneOldAuditLogs } from './services/audit.js';
+import { pruneOldEmailLogs } from './services/emailLog.js';
 
 const app = createApp();
 
@@ -26,6 +27,24 @@ const runAuditRetention = () => {
 
 runAuditRetention();
 setInterval(runAuditRetention, DAY_MS).unref();
+
+const runEmailLogRetention = () => {
+    void pruneOldEmailLogs()
+        .then((count) => {
+            if (count > 0) {
+                logger.info(
+                    { count },
+                    `Log de emails: ${count} registro${count === 1 ? '' : 's'} antiguo${count === 1 ? '' : 's'} eliminado${count === 1 ? '' : 's'}.`,
+                );
+            }
+        })
+        .catch((e) =>
+            logger.error({ err: e }, 'No se pudo limpiar el log de emails'),
+        );
+};
+
+runEmailLogRetention();
+setInterval(runEmailLogRetention, DAY_MS).unref();
 
 const server = app.listen(env.PORT, env.HOST, () => {
     logger.info(`API escuchando en http://${env.HOST}:${env.PORT}`);

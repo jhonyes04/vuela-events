@@ -24,6 +24,7 @@ model User {
     sentReports             SentReport[]    @relation("ReportSender")
     auditAsActor            AuditLog[]      @relation("AuditActor")
     auditAsTarget           AuditLog[]      @relation("AuditTarget")
+    emailLogsSent           EmailLog[]      @relation("EmailLogSender")
 
     emailSignatureImages    EmailSignatureImage[]
     projectPreferences      UserProjectPreference[]

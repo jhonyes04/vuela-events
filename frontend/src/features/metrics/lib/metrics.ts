@@ -61,6 +61,18 @@ export interface Retention {
     percent: number | null;
 }
 
+export interface EmailLogBySlot {
+    slot: string | null;
+    origin: string;
+    ok: number;
+    failed: number;
+}
+
+export interface EmailLog {
+    total: { ok: number; failed: number };
+    bySlot: EmailLogBySlot[];
+}
+
 export interface MetricsSummary {
     windowDays: number;
     incompleteProfiles: number;
@@ -74,6 +86,7 @@ export interface MetricsSummary {
     yearOverYear: YearOverYear;
     interestVsRegistration: ProjectInterestVsRegistration[];
     retention: Retention;
+    emailLog: EmailLog;
 }
 
 export const getMetrics = (days: number) =>

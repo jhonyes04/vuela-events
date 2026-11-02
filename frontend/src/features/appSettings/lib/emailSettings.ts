@@ -11,6 +11,18 @@ export type SlotId =
     | 'evento_cancelado'
     | 'mantenimiento';
 
+export const SLOT_LABELS: Record<SlotId, string> = {
+    convocatoria: 'Convocatoria',
+    convocatoria_reunion: 'Convocatoria de Reunión Comarcal',
+    parte_firmas: 'Parte de firmas',
+    inscripcion: 'Inscripción a evento',
+    cancelacion_inscripcion: 'Cancelación de inscripción',
+    proyecto_nuevo: 'Proyecto nuevo',
+    evento_nuevo: 'Evento nuevo de un proyecto',
+    evento_cancelado: 'Evento o serie cancelados',
+    mantenimiento: 'Aviso de mantenimiento',
+};
+
 export interface SmtpConfig {
     host: string;
     port: number;

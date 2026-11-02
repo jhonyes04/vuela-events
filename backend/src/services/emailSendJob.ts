@@ -4,6 +4,7 @@ import { prisma } from '../lib/prisma.js';
 import { logger } from '../lib/logger.js';
 import { renderEmail } from '../lib/emailTemplateRender.js';
 import { getDecryptedAppPassword } from './profile.js';
+import { recordEmailLog } from './emailLog.js';
 import { deleteReportDraft, getReportDraft } from './reportDrafts.js';
 import { saveSentReport } from './sentReports.js';
 import { type SlotId } from './emailSending.js';
@@ -266,6 +267,7 @@ export const startBulkSend = async (
         smtpPassword,
         subject,
         html,
+        slot: effectiveSlot,
         inlineImages: signature?.inlineImages ?? [],
         attachment,
         recipients,
@@ -284,6 +286,7 @@ const runSendJob = async (
         smtpPassword: string;
         subject: string;
         html: string;
+        slot: string;
         inlineImages: SignatureInlineImage[];
         attachment?: { filename: string; content: Buffer };
         recipients: { registrationId: string; userId: string; email: string }[];
@@ -323,15 +326,32 @@ const runSendJob = async (
                         registrationId: recipient.registrationId,
                         ok: true,
                     });
+                    void recordEmailLog({
+                        to: recipient.email,
+                        subject: ctx.subject,
+                        slot: ctx.slot,
+                        origin: 'user',
+                        senderId: ctx.report.senderId,
+                        ok: true,
+                    });
                 } catch (e) {
+                    const errorMessage =
+                        e instanceof Error ? e.message : 'Error desconocido';
+
                     job.failed += 1;
                     job.results.push({
                         registrationId: recipient.registrationId,
                         ok: false,
-                        error:
-                            e instanceof Error
-                                ? e.message
-                                : 'Error desconocido',
+                        error: errorMessage,
+                    });
+                    void recordEmailLog({
+                        to: recipient.email,
+                        subject: ctx.subject,
+                        slot: ctx.slot,
+                        origin: 'user',
+                        senderId: ctx.report.senderId,
+                        ok: false,
+                        error: errorMessage,
                     });
                 }
             }

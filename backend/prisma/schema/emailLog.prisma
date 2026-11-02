@@ -1,0 +1,16 @@
+model EmailLog {
+    id              String      @id @db.Uuid @default(uuid())
+    sentAt          DateTime    @default(now())
+    to              String      @db.VarChar(255)
+    subject         String      @db.VarChar(200)
+    slot            String?     @db.VarChar(40)
+    origin          String      @db.VarChar(10)
+    senderId        String?     @db.Uuid
+    ok              Boolean
+    error           String?     
+
+    sender          User?       @relation("EmailLogSender", fields: [senderId], references: [id], onDelete: SetNull)
+
+    @@index([sentAt])
+    @@map("email_logs")
+}

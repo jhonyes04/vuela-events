@@ -10,6 +10,7 @@ import { SeriesStatusCard } from '@/features/metrics/components/SeriesStatusCard
 import { IdleProjectsCard } from '@/features/metrics/components/IdleProjectsCard';
 import { YearOverYearCard } from '@/features/metrics/components/YearOverYearCard';
 import { InterestVsRegistrationCard } from '@/features/metrics/components/InterestVsRegistrationCard';
+import { EmailLogCard } from '@/features/metrics/components/EmailLogCard';
 import {
     getMetrics,
     type MetricsSummary,
@@ -98,6 +99,7 @@ export const MetricsPage = () => {
                     field="registrations"
                 />
                 <InterestVsRegistrationCard metrics={metrics} />
+                <EmailLogCard metrics={metrics} />
             </div>
         </section>
     );

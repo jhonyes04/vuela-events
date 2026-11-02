@@ -200,6 +200,7 @@ const notifyProjectCreated = async (
             to: users.map((user) => user.email),
             subject,
             html: body,
+            slot: 'proyecto_nuevo',
         });
     } catch (e) {
         logger.error(

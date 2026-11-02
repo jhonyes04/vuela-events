@@ -44,7 +44,7 @@ const notifyRegistrationChange = async (
 
         const { subject, body } = renderEmail(assignment.template, event);
 
-        await sendNoReplyEmail({ to: [userEmail], subject, html: body });
+        await sendNoReplyEmail({ to: [userEmail], subject, html: body, slot });
     } catch (e) {
         logger.error({ err: e }, `No se pudo enviar el aviso de ${slot}`);
     }

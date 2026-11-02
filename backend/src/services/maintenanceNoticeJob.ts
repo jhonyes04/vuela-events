@@ -163,6 +163,7 @@ const runMaintenanceNoticeJob = async (
             to: ctx.to,
             subject: ctx.subject,
             html: ctx.html,
+            slot: 'mantenimiento',
             onProgress: (result) => {
                 if (result.ok) {
                     job.sent += 1;

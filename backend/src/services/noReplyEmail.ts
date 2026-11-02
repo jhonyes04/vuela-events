@@ -6,6 +6,7 @@ import {
     NOREPLY_LOGO_CID,
 } from '../lib/noReplyEmailTemplate.js';
 import { recordAudit } from './audit.js';
+import { recordEmailLog } from './emailLog.js';
 import { logger } from '../lib/logger.js';
 import { VUELA_EVENTS_LOGO } from '../assets/vuelaEventsLogo.js';
 
@@ -80,6 +81,7 @@ export const sendNoReplyEmail = async (input: {
     to: string[];
     subject: string;
     html: string;
+    slot?: string;
     onProgress?: (result: NoReplySendResult) => void;
 }): Promise<void> => {
     const config = await prisma.noReplySmtpConfig.findUnique({
@@ -117,16 +119,36 @@ export const sendNoReplyEmail = async (input: {
                 });
 
                 input.onProgress?.({ email: to, ok: true });
+
+                void recordEmailLog({
+                    to,
+                    subject: input.subject,
+                    slot: input.slot,
+                    origin: 'system',
+                    ok: true,
+                });
             } catch (e) {
+                const errorMessage =
+                    e instanceof Error ? e.message : 'Error desconocido';
+
                 logger.error(
                     { err: e, to },
                     'No se pudo enviar a un destinatario',
                 );
+
                 input.onProgress?.({
                     email: to,
                     ok: false,
-                    error:
-                        e instanceof Error ? e.message : 'Error desconocido',
+                    error: errorMessage,
+                });
+
+                void recordEmailLog({
+                    to,
+                    subject: input.subject,
+                    slot: input.slot,
+                    origin: 'system',
+                    ok: false,
+                    error: errorMessage,
                 });
             }
         }

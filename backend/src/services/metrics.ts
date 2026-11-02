@@ -39,6 +39,13 @@ interface YoyRow {
     registrations: number;
 }
 
+interface EmailLogRow {
+    slot: string | null;
+    origin: string;
+    ok: number;
+    failed: number;
+}
+
 const percent = (value: number) => Math.round(value * 1000) / 10;
 
 export const getMetrics = async (now: Date = new Date(), days = 30) => {
@@ -227,6 +234,7 @@ export const getMetrics = async (now: Date = new Date(), days = 30) => {
             count(*) FILTER (WHERE cnt >= 2)::int AS repeaters
         FROM per_user
     `;
+
     const retentionRow = retentionRows[0]!;
     const retentionPct =
         retentionRow.totalWithAtLeastOne === 0
@@ -234,6 +242,27 @@ export const getMetrics = async (now: Date = new Date(), days = 30) => {
             : percent(
                   retentionRow.repeaters / retentionRow.totalWithAtLeastOne,
               );
+
+    // --- Avisos: emails enviados/fallidos, desglosado por slot y origen ---
+    const emailLogRows = await prisma.$queryRaw<EmailLogRow[]>`
+        SELECT
+            slot,
+            origin,
+            count(*) FILTER (WHERE ok = true)::int AS ok,
+            count(*) FILTER (WHERE ok = false)::int AS failed
+        FROM email_logs
+        WHERE "sentAt" >= ${windowStart}
+        GROUP BY slot, origin
+        ORDER BY slot, origin
+    `;
+
+    const emailLog = {
+        total: {
+            ok: emailLogRows.reduce((sum, r) => sum + r.ok, 0),
+            failed: emailLogRows.reduce((sum, r) => sum + r.failed, 0),
+        },
+        bySlot: emailLogRows,
+    };
 
     return {
         windowDays: days,
@@ -252,5 +281,6 @@ export const getMetrics = async (now: Date = new Date(), days = 30) => {
             repeaters: retentionRow.repeaters,
             percent: retentionPct,
         },
+        emailLog,
     };
 };

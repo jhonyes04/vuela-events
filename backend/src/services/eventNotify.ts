@@ -82,6 +82,7 @@ export const notifyEventCreated = async (
             to: users.map((user) => user.email),
             subject,
             html: body,
+            slot: 'evento_nuevo',
         });
     } catch (e) {
         logger.error({ err: e }, 'No se pudo enviar el aviso de evento_nuevo');
@@ -146,7 +147,12 @@ export const notifyEventCancelled = async (event: EventCancelledInput) => {
                 ['fechas'],
             );
 
-            await sendNoReplyEmail({ to: [email], subject, html: body });
+            await sendNoReplyEmail({
+                to: [email],
+                subject,
+                html: body,
+                slot: 'evento_cancelado',
+            });
         }
     } catch (e) {
         logger.error(
