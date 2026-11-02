@@ -1,4 +1,6 @@
 import { cn } from '@/lib/utils';
+import { replaceLockedSection } from '@/lib/html';
+import { personLabel } from '@/lib/personLabel';
 import {
     Dialog,
     DialogContent,
@@ -33,6 +35,7 @@ interface ProjectInfoDialogProps {
         resourceLinks: { id: string; title: string; url: string }[];
         documents: { id: string; title: string }[];
     };
+    attendees: { id: string; name: string; puntoVuela: string | null }[];
 }
 
 const instructionsContentClassName = cn(
@@ -50,8 +53,25 @@ export const ProjectInfoDialog = ({
     open,
     onOpenChange,
     project,
-}: ProjectInfoDialogProps) => (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    attendees,
+}: ProjectInfoDialogProps) => {
+    const collaborators = attendees
+        .filter((attendee) => attendee.puntoVuela)
+        .map((attendee) => personLabel(attendee))
+        .sort((a, b) => a.localeCompare(b));
+
+    const openingInstructions = project.openingInstructions
+        ? replaceLockedSection(
+              project.openingInstructions,
+              'Colaboración con otros centros:',
+              collaborators.length > 0
+                  ? collaborators
+                  : 'Sin inscritos de otros centros',
+          )
+        : project.openingInstructions;
+
+    return (
+        <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="sm:max-w-3xl">
             <DialogHeader>
                 <DialogTitle>{project.name}</DialogTitle>
@@ -167,7 +187,7 @@ export const ProjectInfoDialog = ({
                                 <span className="font-bold">
                                     Cómo dar de alta la actividad en Ágora
                                 </span>
-                                {project.openingInstructions && (
+                                {openingInstructions && (
                                     <Card
                                         size="default"
                                         className="max-h-100 min-h-100 overflow-hidden"
@@ -182,7 +202,7 @@ export const ProjectInfoDialog = ({
                                                     instructionsContentClassName
                                                 }
                                                 dangerouslySetInnerHTML={{
-                                                    __html: project.openingInstructions,
+                                                    __html: openingInstructions,
                                                 }}
                                             />
                                         </OverlayScrollbarsComponent>
@@ -224,4 +244,5 @@ export const ProjectInfoDialog = ({
             </Card>
         </DialogContent>
     </Dialog>
-);
+    );
+};

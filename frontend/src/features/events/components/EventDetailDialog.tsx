@@ -323,6 +323,7 @@ const EventDetailBody = ({
                 open={projectDescOpen}
                 onOpenChange={setProjectDescOpen}
                 project={event.project}
+                attendees={attendees}
             />
 
             {canDelete && (
