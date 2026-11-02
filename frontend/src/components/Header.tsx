@@ -76,19 +76,21 @@ export const Header = () => {
                         </nav>
                     )}
 
-                    {user && (
-                        <div className="hidden lg:inline-block ms-auto">
-                            <OnlineAvatars />
-                        </div>
-                    )}
+                    <div className="flex items-center gap-1 ms-auto">
+                        {user && (
+                            <div className="hidden lg:inline-block">
+                                <OnlineAvatars />
+                            </div>
+                        )}
 
-                    {user && <NotificationBell />}
+                        {user && <NotificationBell />}
 
-                    {userMenuStyle === 'sheet' ? (
-                        <UserMenuSheet />
-                    ) : (
-                        <UserMenuDropdown />
-                    )}
+                        {userMenuStyle === 'sheet' ? (
+                            <UserMenuSheet />
+                        ) : (
+                            <UserMenuDropdown />
+                        )}
+                    </div>
                 </div>
 
                 {user && showNav && mainRoutes.length > 0 && (
