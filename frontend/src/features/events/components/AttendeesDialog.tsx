@@ -100,8 +100,7 @@ const AttendeesBody = ({
     };
 
     const allSelected =
-        attendees.length > 0 &&
-        attendees.every((a) => selected.has(a.id));
+        attendees.length > 0 && attendees.every((a) => selected.has(a.id));
 
     const toggleAll = () => {
         invalidateReport();
@@ -356,6 +355,7 @@ const AttendeesBody = ({
                     deletingLabel="Quitando…"
                     errorFallback="No se pudo quitar al participante"
                     successLabel="Participante quitado."
+                    confirmText={deletingAttendee.puntoVuela ?? undefined}
                     onConfirm={() =>
                         adminUnregisterAttendee(event.id, deletingAttendee.id)
                     }

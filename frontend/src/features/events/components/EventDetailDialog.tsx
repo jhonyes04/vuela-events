@@ -373,6 +373,7 @@ const EventDetailBody = ({
                     deletingLabel="Quitando…"
                     errorFallback="No se pudo quitar al participante"
                     successLabel="Participante quitado."
+                    confirmText={deletingAttendee.puntoVuela ?? undefined}
                     onConfirm={() =>
                         adminUnregisterAttendee(event.id, deletingAttendee.id)
                     }

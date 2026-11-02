@@ -188,6 +188,7 @@ export const SessionsPage = () => {
                     deletingLabel="Cerrando…"
                     errorFallback="No se pudo cerrar la sesión"
                     successLabel="Sesión cerrada."
+                    confirmText={revoking.puntoVuela ?? undefined}
                     onConfirm={() => revokeSession(revoking.sid)}
                     onDeleted={() => {
                         setSessions((prev) =>

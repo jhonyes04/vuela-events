@@ -249,6 +249,7 @@ export const ProjectInterestsPage = () => {
                     confirmLabel="Quitar"
                     deletingLabel="Quitando…"
                     errorFallback="No se pudo quitar a los usuarios"
+                    confirmText={deleting.projectName}
                     successLabel={
                         deleting.userIds.length === 1
                             ? 'Usuario quitado.'

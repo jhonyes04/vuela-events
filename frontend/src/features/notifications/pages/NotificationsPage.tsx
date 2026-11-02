@@ -30,7 +30,7 @@ import {
 interface Pending {
     ids: string[];
     label: string;
-    confirText: string;
+    confirmText: string;
 }
 
 const selectClass =
@@ -260,7 +260,7 @@ export const NotificationsPage = () => {
                                 setDeleting({
                                     ids: [n.id],
                                     label: 'esta notificación',
-                                    confirText: n.title,
+                                    confirmText: n.title,
                                 })
                             }
                         >
@@ -331,7 +331,7 @@ export const NotificationsPage = () => {
                                         selected.size === 1
                                             ? 'esta notificación'
                                             : `estas ${selected.size} notificaciones`,
-                                    confirText:
+                                    confirmText:
                                         'Eliminar notificaciones seleccionadas',
                                 })
                             }
@@ -395,7 +395,7 @@ export const NotificationsPage = () => {
                     confirmLabel="Eliminar"
                     deletingLabel="Eliminando…"
                     errorFallback="No se pudo eliminar"
-                    confirmText={deleting.confirText}
+                    confirmText={deleting.confirmText}
                     successLabel={
                         deleting.ids.length === 1
                             ? 'Notificación eliminada.'
