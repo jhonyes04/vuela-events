@@ -19,7 +19,7 @@ const broadcastSchema = z.strictObject({
         .string()
         .trim()
         .min(1)
-        .max(1000)
+        .max(2000)
         .regex(MULTILINE_NO_CONTROL_OR_TAGS),
 });
 
