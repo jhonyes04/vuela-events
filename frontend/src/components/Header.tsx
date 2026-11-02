@@ -82,13 +82,13 @@ export const Header = () => {
                         </div>
                     )}
 
+                    {user && <NotificationBell />}
+
                     {userMenuStyle === 'sheet' ? (
                         <UserMenuSheet />
                     ) : (
                         <UserMenuDropdown />
                     )}
-
-                    {user && <NotificationBell />}
                 </div>
 
                 {user && showNav && mainRoutes.length > 0 && (
