@@ -60,7 +60,7 @@ export const getMetrics = async (now: Date = new Date(), days = 30) => {
     const inactiveAilCount = await prisma.user.count({
         where: {
             active: true,
-            roleId: 'ail',
+            roleId: { notIn: ['admin', 'dt'] },
             registrations: { none: { createdAt: { gte: windowStart } } },
         },
     });
@@ -226,7 +226,7 @@ export const getMetrics = async (now: Date = new Date(), days = 30) => {
             SELECT r."userId", count(*)::int AS cnt
             FROM registrations r
             JOIN users u ON u.id = r."userId"
-            WHERE u."roleId" = 'ail' AND u.active = true
+            WHERE u."roleId" NOT IN ('admin', 'dt') AND u.active = true
             GROUP BY r."userId"
         )
         SELECT

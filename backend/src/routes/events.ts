@@ -388,7 +388,7 @@ eventsRouter.get('/', async (req, res) => {
     // que ya tiene (o tuvo) marcados por estar inscrito en ellos: así nunca
     // desaparece de su calendario algo a lo que ya se apuntó.
     const visibleToAil =
-        actor.roleId === 'ail'
+        actor.roleId !== 'admin' && actor.roleId !== 'dt'
             ? {
                   OR: [
                       {

@@ -247,7 +247,7 @@ export const getStats = async (
         FROM registrations r
         JOIN users u ON u.id = r."userId"
         JOIN events e ON e.id = r."eventId"
-        WHERE u."roleId" = 'ail' AND ${yearFilter}
+        WHERE u."roleId" NOT IN ('admin', 'dt') AND ${yearFilter}
         GROUP BY r."userId"
         ORDER BY cnt DESC
         LIMIT 10
@@ -274,7 +274,7 @@ export const getStats = async (
     >`
         SELECT count(*)::int AS count
         FROM users u
-        WHERE u.active = true AND u."roleId" = 'ail'
+        WHERE u.active = true AND u."roleId" NOT IN ('admin', 'dt')
         AND NOT EXISTS (
             SELECT 1
             FROM registrations r
@@ -307,7 +307,7 @@ export const getStats = async (
             WHERE ${yearFilter}
             GROUP BY r."userId"
         ) rc ON rc."userId" = u.id
-        WHERE u.active = true AND u."roleId" = 'ail'
+        WHERE u.active = true AND u."roleId" NOT IN ('admin', 'dt')
         ORDER BY registrations DESC, u.name ASC, u."lastName" ASC
     `;
 
@@ -334,7 +334,7 @@ export const getStats = async (
         JOIN users u ON u.id = r."userId"
         JOIN events e ON e.id = r."eventId"
         JOIN projects p ON p.id = e."projectId"
-        WHERE u.active = true AND u."roleId" = 'ail' AND ${yearFilter}
+        WHERE u.active = true AND u."roleId" NOT IN ('admin', 'dt') AND ${yearFilter}
         GROUP BY p.id, p.name, p.color, u.id, u.name, u."lastName", u."puntoVuela"
         ORDER BY p.name ASC, registrations DESC, u.name ASC, u."lastName" ASC
     `;
