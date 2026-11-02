@@ -37,13 +37,21 @@ const MaintenanceScheduleFields = ({
     const [from, setFrom] = useState(() => toLocalValue(initialFrom));
     const [to, setTo] = useState(() => toLocalValue(initialTo));
     const [saving, setSaving] = useState(false);
+    const [minDate] = useState(() => new Date());
 
     const handleSave = async () => {
+        const fromIso = from ? new Date(from).toISOString() : null;
+        const toIso = to ? new Date(to).toISOString() : null;
+        const now = new Date().toISOString();
+
+        if (toIso && toIso <= now) {
+            toast.error('El fin debe ser posterior a ahora.');
+            return;
+        }
+
         setSaving(true);
 
         try {
-            const fromIso = from ? new Date(from).toISOString() : null;
-            const toIso = to ? new Date(to).toISOString() : null;
             const result = await saveMaintenanceSchedule(fromIso, toIso);
 
             applySchedule(result.maintenanceFrom, result.maintenanceTo);
@@ -60,8 +68,8 @@ const MaintenanceScheduleFields = ({
     return (
         <div className="grid gap-4 border-t pt-4">
             <p className="text-sm text-muted-foreground">
-                Horario opcional, se muestra como cuenta atrás en la pantalla
-                de mantenimiento.
+                Horario opcional, se muestra como cuenta atrás en la pantalla de
+                mantenimiento.
             </p>
 
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -71,6 +79,7 @@ const MaintenanceScheduleFields = ({
                         id="maintenance-from"
                         value={from}
                         onChange={setFrom}
+                        minDate={minDate}
                     />
                 </div>
 
@@ -80,6 +89,7 @@ const MaintenanceScheduleFields = ({
                         id="maintenance-to"
                         value={to}
                         onChange={setTo}
+                        minDate={minDate}
                     />
                 </div>
             </div>
@@ -103,6 +113,7 @@ export const MaintenanceModeCard = () => {
     const storeFrom = useAppSettingsStore((s) => s.maintenanceFrom);
     const storeTo = useAppSettingsStore((s) => s.maintenanceTo);
     const applyMaintenance = useAppSettingsStore((s) => s.setMaintenanceMode);
+    const applySchedule = useAppSettingsStore((s) => s.setMaintenanceSchedule);
     const [saving, setSaving] = useState(false);
 
     if (!user?.isSuperadmin) return null;
@@ -115,6 +126,14 @@ export const MaintenanceModeCard = () => {
                 await saveMaintenanceMode(!storeMaintenance);
 
             applyMaintenance(maintenanceMode);
+
+            // Al desactivar se limpia el horario: al reactivar no debe
+            // quedar una cuenta atrás de la vez anterior.
+            if (!maintenanceMode) {
+                const schedule = await saveMaintenanceSchedule(null, null);
+                applySchedule(schedule.maintenanceFrom, schedule.maintenanceTo);
+            }
+
             toast.success(
                 maintenanceMode
                     ? 'Modo mantenimiento activado.'

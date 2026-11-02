@@ -49,8 +49,9 @@ export const MaintenancePage = ({
                         Estamos haciendo ajustes.
                     </p>
                     <p className="mx-auto max-w-sm text-sm text-white/70 sm:text-base">
-                        Prueba a recargar la página cuando acabe la cuenta
-                        atrás.
+                        {countdown
+                            ? 'Prueba a recargar la página cuando acabe la cuenta atrás.'
+                            : 'Prueba a recargar la página en unos minutos.'}
                     </p>
                 </div>
 

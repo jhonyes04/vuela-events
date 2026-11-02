@@ -33,6 +33,13 @@ const maintenanceScheduleSchema = z
         maintenanceTo: z.iso.datetime().nullable(),
     })
     .refine(
+        (v) => !v.maintenanceTo || new Date(v.maintenanceTo) > new Date(),
+        {
+            path: ['maintenanceTo'],
+            message: 'El fin debe ser posterior a ahora',
+        },
+    )
+    .refine(
         (v) =>
             !v.maintenanceFrom ||
             !v.maintenanceTo ||
