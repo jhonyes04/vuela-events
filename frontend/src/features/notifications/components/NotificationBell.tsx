@@ -61,7 +61,7 @@ export const NotificationBell = () => {
                     <Button
                         type="button"
                         variant="default"
-                        className="relative rounded-full bg-yellow-200 text-dark border-yellow-400 hover:text-yellow-200"
+                        className="relative rounded-full"
                         size="icon"
                         aria-label="Notificaciones"
                     >
