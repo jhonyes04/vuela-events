@@ -5,6 +5,8 @@ export type UserMenuStyle = 'dropdown' | 'sheet';
 export interface AppSettingsData {
     userMenuStyle: UserMenuStyle;
     maintenanceMode: boolean;
+    maintenanceFrom: string | null;
+    maintenanceTo: string | null;
     projectOpeningSections: string[];
     projectClosingSections: string[];
 }
@@ -21,6 +23,15 @@ export const setMaintenanceMode = (
     maintenanceMode: boolean,
 ): Promise<{ maintenanceMode: boolean }> =>
     api.patch('/app-settings/maintenance-mode', { maintenanceMode });
+
+export const setMaintenanceSchedule = (
+    maintenanceFrom: string | null,
+    maintenanceTo: string | null,
+): Promise<{ maintenanceFrom: string | null; maintenanceTo: string | null }> =>
+    api.patch('/app-settings/maintenance-schedule', {
+        maintenanceFrom,
+        maintenanceTo,
+    });
 
 export const setProjectSections = (
     projectOpeningSections: string[],
@@ -80,5 +91,8 @@ export const getMaintenanceNoticeJobStatus = async (
 };
 
 // Sin autenticar: lo consulta App.tsx antes de saber quién es el usuario.
-export const getMaintenanceStatus = (): Promise<{ maintenanceMode: boolean }> =>
-    api.get('/maintenance-status');
+export const getMaintenanceStatus = (): Promise<{
+    maintenanceMode: boolean;
+    maintenanceFrom: string | null;
+    maintenanceTo: string | null;
+}> => api.get('/maintenance-status');

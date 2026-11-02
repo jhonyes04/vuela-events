@@ -7,12 +7,15 @@ import {
 interface AppSettingsState {
     userMenuStyle: UserMenuStyle;
     maintenanceMode: boolean;
+    maintenanceFrom: string | null;
+    maintenanceTo: string | null;
     projectOpeningSections: string[];
     projectClosingSections: string[];
     loaded: boolean;
     load: () => Promise<void>;
     setUserMenuStyle: (style: UserMenuStyle) => void;
     setMaintenanceMode: (value: boolean) => void;
+    setMaintenanceSchedule: (from: string | null, to: string | null) => void;
     setProjectSections: (opening: string[], closing: string[]) => void;
 }
 
@@ -21,6 +24,8 @@ interface AppSettingsState {
 export const useAppSettingsStore = create<AppSettingsState>((set, get) => ({
     userMenuStyle: 'dropdown',
     maintenanceMode: false,
+    maintenanceFrom: null,
+    maintenanceTo: null,
     projectOpeningSections: [],
     projectClosingSections: [],
     loaded: false,
@@ -31,12 +36,16 @@ export const useAppSettingsStore = create<AppSettingsState>((set, get) => ({
             const {
                 userMenuStyle,
                 maintenanceMode,
+                maintenanceFrom,
+                maintenanceTo,
                 projectOpeningSections,
                 projectClosingSections,
             } = await getAppSettings();
             set({
                 userMenuStyle,
                 maintenanceMode,
+                maintenanceFrom,
+                maintenanceTo,
                 projectOpeningSections,
                 projectClosingSections,
                 loaded: true,
@@ -47,6 +56,8 @@ export const useAppSettingsStore = create<AppSettingsState>((set, get) => ({
     },
     setUserMenuStyle: (userMenuStyle) => set({ userMenuStyle }),
     setMaintenanceMode: (maintenanceMode) => set({ maintenanceMode }),
+    setMaintenanceSchedule: (maintenanceFrom, maintenanceTo) =>
+        set({ maintenanceFrom, maintenanceTo }),
     setProjectSections: (projectOpeningSections, projectClosingSections) =>
         set({ projectOpeningSections, projectClosingSections }),
 }));

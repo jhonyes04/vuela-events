@@ -4,6 +4,8 @@ model AppSettings {
     id                          String          @id @db.VarChar(20)
     userMenuStyle               String          @db.VarChar(20) @default("dropdown")
     maintenanceMode             Boolean         @default(false)
+    maintenanceFrom             DateTime?
+    maintenanceTo               DateTime?
     projectOpeningSections      String[]        @default([])
     projectClosingSections      String[]        @default([])
     updatedAt                   DateTime        @updatedAt

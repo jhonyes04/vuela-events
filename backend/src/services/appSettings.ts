@@ -7,6 +7,8 @@ export type UserMenuStyle = 'dropdown' | 'sheet';
 export interface AppSettingsData {
     userMenuStyle: UserMenuStyle;
     maintenanceMode: boolean;
+    maintenanceFrom: string | null;
+    maintenanceTo: string | null;
     projectOpeningSections: string[];
     projectClosingSections: string[];
 }
@@ -19,8 +21,36 @@ export const getAppSettings = async (): Promise<AppSettingsData> => {
     return {
         userMenuStyle: (settings?.userMenuStyle as UserMenuStyle) ?? 'dropdown',
         maintenanceMode: settings?.maintenanceMode ?? false,
+        maintenanceFrom: settings?.maintenanceFrom?.toISOString() ?? null,
+        maintenanceTo: settings?.maintenanceTo?.toISOString() ?? null,
         projectOpeningSections: settings?.projectOpeningSections ?? [],
         projectClosingSections: settings?.projectClosingSections ?? [],
+    };
+};
+
+export const setMaintenanceSchedule = async (
+    maintenanceFrom: string | null,
+    maintenanceTo: string | null,
+): Promise<{
+    maintenanceFrom: string | null;
+    maintenanceTo: string | null;
+}> => {
+    const settings = await prisma.appSettings.upsert({
+        where: { id: APP_SETTINGS_ID },
+        create: {
+            id: APP_SETTINGS_ID,
+            maintenanceFrom: maintenanceFrom ? new Date(maintenanceFrom) : null,
+            maintenanceTo: maintenanceTo ? new Date(maintenanceTo) : null,
+        },
+        update: {
+            maintenanceFrom: maintenanceFrom ? new Date(maintenanceFrom) : null,
+            maintenanceTo: maintenanceTo ? new Date(maintenanceTo) : null,
+        },
+    });
+
+    return {
+        maintenanceFrom: settings.maintenanceFrom?.toISOString() ?? null,
+        maintenanceTo: settings.maintenanceTo?.toISOString() ?? null,
     };
 };
 

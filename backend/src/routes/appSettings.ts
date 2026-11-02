@@ -11,6 +11,7 @@ import {
     setMaintenanceMode,
     setProjectSections,
     invalidateMaintenanceModeCache,
+    setMaintenanceSchedule,
 } from '../services/appSettings.js';
 import {
     getMaintenanceNoticeJob,
@@ -25,6 +26,22 @@ const userMenuStyleSchema = z.strictObject({
 const maintenanceModeSchema = z.strictObject({
     maintenanceMode: z.boolean(),
 });
+
+const maintenanceScheduleSchema = z
+    .strictObject({
+        maintenanceFrom: z.iso.datetime().nullable(),
+        maintenanceTo: z.iso.datetime().nullable(),
+    })
+    .refine(
+        (v) =>
+            !v.maintenanceFrom ||
+            !v.maintenanceTo ||
+            new Date(v.maintenanceTo) > new Date(v.maintenanceFrom),
+        {
+            path: ['maintenanceTo'],
+            message: 'El fin debe ser posterior al inicio',
+        },
+    );
 
 const projectSectionsSchema = z.strictObject({
     projectOpeningSections: z.array(z.string().trim().min(1)).min(1),
@@ -89,6 +106,26 @@ appSettingsRouter.patch(
         invalidateMaintenanceModeCache();
 
         res.json(result);
+    },
+);
+
+appSettingsRouter.patch(
+    '/maintenance-schedule',
+    requireSuperadmin,
+    async (req, res) => {
+        const body = maintenanceScheduleSchema.safeParse(req.body);
+
+        if (!body.success) {
+            res.status(400).json({ error: 'Solicitud no válida' });
+            return;
+        }
+
+        res.json(
+            await setMaintenanceSchedule(
+                body.data.maintenanceFrom,
+                body.data.maintenanceTo,
+            ),
+        );
     },
 );
 

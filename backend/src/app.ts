@@ -29,7 +29,7 @@ import { appSettingsRouter } from './routes/appSettings.js';
 import { sessionsRouter } from './routes/sessions.js';
 import { apiLimiter } from './middleware/rateLimit.js';
 import { maintenanceGate } from './middleware/maintenance.js';
-import { isMaintenanceModeActive } from './services/appSettings.js';
+import { getAppSettings } from './services/appSettings.js';
 
 export interface AppOptions {
     // Solo para tests: sustituye la verificación real del token de Google.
@@ -86,7 +86,9 @@ export function createApp(options: AppOptions = {}) {
 
     app.use(maintenanceGate);
     app.get('/api/maintenance-status', async (_req, res) => {
-        res.json({ maintenanceMode: await isMaintenanceModeActive() });
+        const { maintenanceMode, maintenanceFrom, maintenanceTo } =
+            await getAppSettings();
+        res.json({ maintenanceMode, maintenanceFrom, maintenanceTo });
     });
 
     app.use('/api/auth', createAuthRouter(options.verifyToken));

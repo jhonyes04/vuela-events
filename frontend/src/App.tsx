@@ -16,12 +16,20 @@ export default function App() {
 
     const { user, loading } = useAuth();
     const [maintenanceMode, setMaintenanceMode] = useState(false);
+    const [maintenanceFrom, setMaintenanceFrom] = useState<string | null>(
+        null,
+    );
+    const [maintenanceTo, setMaintenanceTo] = useState<string | null>(null);
     const [checkingMaintenance, setCheckingMaintenance] = useState(true);
     const [superadminLoginOpen, setSuperadminLoginOpen] = useState(false);
 
     useEffect(() => {
         void getMaintenanceStatus()
-            .then(({ maintenanceMode }) => setMaintenanceMode(maintenanceMode))
+            .then(({ maintenanceMode, maintenanceFrom, maintenanceTo }) => {
+                setMaintenanceMode(maintenanceMode);
+                setMaintenanceFrom(maintenanceFrom);
+                setMaintenanceTo(maintenanceTo);
+            })
             .catch(() => setMaintenanceMode(false))
             .finally(() => setCheckingMaintenance(false));
     }, []);
@@ -46,7 +54,11 @@ export default function App() {
                         // Con o sin sesión: se ve mantenimiento. La estrella
                         // del Footer dispara el login de superadmin (el
                         // backend acepta /api/auth/* siempre).
-                        <MaintenancePage showLogin={superadminLoginOpen} />
+                        <MaintenancePage
+                            showLogin={superadminLoginOpen}
+                            maintenanceFrom={maintenanceFrom}
+                            maintenanceTo={maintenanceTo}
+                        />
                     ) : !user ? (
                         <LoginPage />
                     ) : !user.profileCompleted ? (
