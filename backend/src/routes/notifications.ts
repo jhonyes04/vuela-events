@@ -198,6 +198,7 @@ notificationsRouter.post('/broadcast', async (req, res) => {
 
     const count = await sendBroadcastNotification(
         actor.id,
+        actor.roleId,
         body.data.title,
         body.data.body,
     );

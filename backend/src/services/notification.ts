@@ -70,15 +70,20 @@ export const getActiveUserIds = async (opts?: {
     return users.map((user) => user.id);
 };
 
-// Mensaje libre de un dt/admin a todos los activos no-admin. Devuelve a
-// cuántos llegó.
+// Mensaje libre de un dt/admin. Si lo manda un dt, no llega a otros dt ni a
+// admin (solo a ail/roles personalizados); si lo manda un admin, llega a
+// todos menos admin (dt incluido). Devuelve a cuántos llegó.
 export const sendBroadcastNotification = async (
     actorId: string,
+    actorRoleId: string,
     title: string,
     body: string,
 ): Promise<number> => {
+    const excludeRoles =
+        actorRoleId === 'dt' ? ['dt', 'admin'] : ['admin'];
+
     const userIds = await getActiveUserIds({
-        excludeRoles: ['admin'],
+        excludeRoles,
         excludeUserId: actorId,
     });
 
