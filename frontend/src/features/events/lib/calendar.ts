@@ -63,3 +63,13 @@ export const buildMonthGrid = (
 
     return weeks;
 };
+
+// 'YYYY-MM-01' del mes indicado. `month` puede salirse de 0-11 (p. ej. -1 o
+// 12): Date.UTC lo normaliza, así sirve tanto para construir un mes como
+// para desplazarlo (mes - delta cruza de año sin más).
+export const monthAnchor = (year: number, month: number): string => {
+    const date = new Date(Date.UTC(year, month, 1));
+    const mm = String(date.getUTCMonth() + 1).padStart(2, '0');
+
+    return `${date.getUTCFullYear()}-${mm}-01`;
+};

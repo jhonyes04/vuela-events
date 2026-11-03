@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router';
 import { Bell } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { toast } from 'sonner';
+import { ApiError } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -56,7 +58,13 @@ export const LoginNotificationsDialog = () => {
             return next;
         });
 
-        void markNotificationRead(notification.id);
+        markNotificationRead(notification.id).catch((e: unknown) => {
+            toast.error(
+                e instanceof ApiError
+                    ? e.message
+                    : 'No se pudo guardar como leída',
+            );
+        });
     };
 
     return (

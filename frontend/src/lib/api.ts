@@ -53,8 +53,17 @@ const request = async <T>(
     method: Method,
     path: string,
     body?: unknown,
+    signal?: AbortSignal,
 ): Promise<T> => {
     let res: Response;
+
+    // Sin AbortSignal.any (Safari < 17.4, Firefox < 124): combina el aviso
+    // externo y el timeout a mano con un controller propio.
+    const controller = new AbortController();
+    const onAbort = () => controller.abort();
+    const timeout = setTimeout(() => controller.abort(), 15_000);
+
+    signal?.addEventListener('abort', onAbort);
 
     try {
         res = await fetch(`${config.apiBase}${path}`, {
@@ -65,10 +74,14 @@ const request = async <T>(
                     : { 'Content-Type': 'application/json' },
             body: body === undefined ? undefined : JSON.stringify(body),
             credentials: 'include',
-            signal: AbortSignal.timeout(15_000),
+            signal: controller.signal,
         });
-    } catch {
+    } catch (e) {
+        if (signal?.aborted) throw e;
         throw new ApiError(0, 'No se pudo conectar con el servidor');
+    } finally {
+        clearTimeout(timeout);
+        signal?.removeEventListener('abort', onAbort);
     }
 
     if (res.status === 204) {
@@ -90,7 +103,8 @@ const request = async <T>(
 };
 
 export const api = {
-    get: <T>(path: string) => request<T>('GET', path),
+    get: <T>(path: string, signal?: AbortSignal) =>
+        request<T>('GET', path, undefined, signal),
     post: <T>(path: string, body?: unknown) => request<T>('POST', path, body),
     patch: <T>(path: string, body?: unknown) => request<T>('PATCH', path, body),
     delete: <T = void>(path: string, body?: unknown) =>

@@ -1,10 +1,12 @@
 import { useEffect } from 'react';
 import { Download, FileText } from 'lucide-react';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { IconTooltip } from '@/components/IconTooltip';
 import { ListErrors } from '@/features/users/components/ListErrors';
 import { downloadDocument } from '@/features/resources/lib/documents';
 import { useDocumentsStore } from '@/features/resources/documentsStore';
+import { ApiError } from '@/lib/api';
 
 const formatSize = (bytes: number): string =>
     bytes < 1024 * 1024
@@ -79,10 +81,16 @@ export const DocumentsTab = ({ search }: DocumentsTabProps) => {
                                             size="icon"
                                             aria-label="Descargar"
                                             onClick={() =>
-                                                void downloadDocument(
+                                                downloadDocument(
                                                     document.id,
                                                     document.fileName,
-                                                )
+                                                ).catch((e: unknown) => {
+                                                    toast.error(
+                                                        e instanceof ApiError
+                                                            ? e.message
+                                                            : 'No se pudo descargar el documento',
+                                                    );
+                                                })
                                             }
                                         >
                                             <Download className="size-4" />

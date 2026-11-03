@@ -73,6 +73,11 @@ const monthLabelFormat = new Intl.DateTimeFormat('es-ES', {
     year: 'numeric',
 });
 
+const monthNameFormat = new Intl.DateTimeFormat('es-ES', {
+    timeZone: 'UTC',
+    month: 'long',
+});
+
 const capitalize = (text: string) =>
     text.charAt(0).toUpperCase() + text.slice(1);
 
@@ -123,6 +128,10 @@ export const formatShortDate = (iso: string): string =>
 export const formatMonthLabel = (year: number, month: number): string =>
     capitalize(monthLabelFormat.format(new Date(Date.UTC(year, month, 1))));
 
+// 'Septiembre' (mes 0-11, sin año; para el combobox de mes)
+export const monthName = (month: number): string =>
+    capitalize(monthNameFormat.format(new Date(Date.UTC(2000, month, 1))));
+
 // 'YYYY-MM' del mes indicado
 export const monthKey = (year: number, month: number): string =>
     `${year}-${String(month + 1).padStart(2, '0')}`;
@@ -136,16 +145,25 @@ const monthRange = (year: number, month: number) => ({
 export const listMonthEvents = async (
     year: number,
     month: number,
+    signal: AbortSignal,
 ): Promise<EventItem[]> => {
     const { from, to } = monthRange(year, month);
     const query = new URLSearchParams({ from, to });
 
     const { events } = await api.get<{ events: EventItem[] }>(
         `/events?${query.toString()}`,
+        signal,
     );
     const prefix = monthKey(year, month);
 
     return events.filter((event) => dayKey(event.startsAt).startsWith(prefix));
+};
+
+// Años con al menos un evento visible para el usuario (para el combobox de año).
+export const listEventYears = async (): Promise<number[]> => {
+    const { years } = await api.get<{ years: number[] }>('/events/years');
+
+    return years;
 };
 
 export const groupByDay = (

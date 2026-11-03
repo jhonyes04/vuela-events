@@ -1,6 +1,8 @@
 import { Download } from 'lucide-react';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { downloadEventAttachment, type EventItem } from '@/features/events/lib/events';
+import { ApiError } from '@/lib/api';
 
 interface EventAttachmentsSectionProps {
     eventId: string;
@@ -29,11 +31,17 @@ export const EventAttachmentsSection = ({
                         size="xs"
                         className="gap-1 bg-blue-300 text-black hover:bg-blue-400"
                         onClick={() => {
-                            void downloadEventAttachment(
+                            downloadEventAttachment(
                                 eventId,
                                 attachment.id,
                                 attachment.fileName,
-                            );
+                            ).catch((e: unknown) => {
+                                toast.error(
+                                    e instanceof ApiError
+                                        ? e.message
+                                        : 'No se pudo descargar el adjunto',
+                                );
+                            });
                         }}
                     >
                         <Download className="size-3.5 text-blue-600" />

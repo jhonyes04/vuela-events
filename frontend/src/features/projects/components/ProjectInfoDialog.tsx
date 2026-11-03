@@ -1,6 +1,8 @@
+import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { replaceLockedSection } from '@/lib/html';
 import { personLabel } from '@/lib/personLabel';
+import { ApiError } from '@/lib/api';
 import {
     Dialog,
     DialogContent,
@@ -142,10 +144,16 @@ export const ProjectInfoDialog = ({
                                     size="xs"
                                     className="gap-1 bg-blue-300 text-black hover:bg-blue-400"
                                     onClick={() => {
-                                        void downloadDocument(
+                                        downloadDocument(
                                             document.id,
                                             document.title,
-                                        );
+                                        ).catch((e: unknown) => {
+                                            toast.error(
+                                                e instanceof ApiError
+                                                    ? e.message
+                                                    : 'No se pudo descargar el documento',
+                                            );
+                                        });
                                     }}
                                 >
                                     <Download className="size-3.5 text-blue-600" />

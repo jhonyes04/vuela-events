@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Bell, Check, Eye, RotateCcw, Trash2 } from 'lucide-react';
 import { OverlayScrollbarsComponent } from 'overlayscrollbars-react';
+import { toast } from 'sonner';
+import { ApiError } from '@/lib/api';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -120,14 +122,28 @@ export const NotificationsPage = () => {
         );
     };
 
+    // El cambio ya se aplicó en local (arriba); esto solo avisa si el
+    // guardado en el servidor falla, no lo deshace.
+    const notifyIfFailed = (promise: Promise<void>) => {
+        promise.catch((e: unknown) => {
+            toast.error(
+                e instanceof ApiError
+                    ? e.message
+                    : 'No se pudo guardar el cambio',
+            );
+        });
+    };
+
     const handleToggleRead = (notification: AppNotification) => {
         const readAt = notification.readAt ? null : new Date().toISOString();
 
         setReadLocally(new Set([notification.id]), readAt);
 
-        void (readAt
-            ? markNotificationRead(notification.id)
-            : markNotificationUnread(notification.id));
+        notifyIfFailed(
+            readAt
+                ? markNotificationRead(notification.id)
+                : markNotificationUnread(notification.id),
+        );
     };
 
     const handleMarkAllRead = () => {
@@ -135,12 +151,12 @@ export const NotificationsPage = () => {
             new Set(notifications.map((n) => n.id)),
             new Date().toISOString(),
         );
-        void markAllNotificationsRead();
+        notifyIfFailed(markAllNotificationsRead());
     };
 
     const handleMarkAllUnread = () => {
         setReadLocally(new Set(notifications.map((n) => n.id)), null);
-        void markAllNotificationsUnread();
+        notifyIfFailed(markAllNotificationsUnread());
     };
 
     const columns: DataTableColumn<AppNotification, SortKey>[] = [

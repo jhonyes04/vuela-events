@@ -3,6 +3,8 @@ import { Bell } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { NavLink } from 'react-router';
+import { toast } from 'sonner';
+import { ApiError } from '@/lib/api';
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -30,17 +32,30 @@ export const NotificationBell = () => {
         ensureStream();
     }, [ensureStream]);
 
-    // Leída = desaparece de la lista al momento, sin esperar la respuesta.
+    // Leída = desaparece de la lista al momento, sin esperar la respuesta;
+    // si falla el guardado, se avisa pero no se deshace el cambio local.
     const handleRead = (notification: AppNotification) => {
         markLocalRead(notification.id);
 
-        void markNotificationRead(notification.id);
+        markNotificationRead(notification.id).catch((e: unknown) => {
+            toast.error(
+                e instanceof ApiError
+                    ? e.message
+                    : 'No se pudo guardar como leída',
+            );
+        });
     };
 
     const handleReadAll = () => {
         markAllLocalRead();
 
-        void markAllNotificationsRead();
+        markAllNotificationsRead().catch((e: unknown) => {
+            toast.error(
+                e instanceof ApiError
+                    ? e.message
+                    : 'No se pudo guardar como leídas',
+            );
+        });
     };
 
     return (

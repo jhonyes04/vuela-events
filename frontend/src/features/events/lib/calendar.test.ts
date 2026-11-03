@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildMonthGrid } from './calendar';
+import { buildMonthGrid, monthAnchor } from './calendar';
 
 const keys = (weeks: ReturnType<typeof buildMonthGrid>) =>
     weeks.flat().map((d) => d.key);
@@ -90,6 +90,41 @@ describe('buildMonthGrid', () => {
                 expect(weekday(week[6]!.key)).toBe(0);
             }
         }
+    });
+});
+
+describe('monthAnchor', () => {
+    it('mes normal, sin cruzar de año', () => {
+        expect(monthAnchor(2026, 5)).toBe('2026-06-01');
+    });
+
+    it('diciembre + 1 (mes 12): pasa a enero del año siguiente', () => {
+        expect(monthAnchor(2026, 12)).toBe('2027-01-01');
+    });
+
+    it('enero - 1 (mes -1): pasa a diciembre del año anterior', () => {
+        expect(monthAnchor(2027, -1)).toBe('2026-12-01');
+    });
+
+    it('un año entero de saltos consecutivos no repite ni salta ningún mes', () => {
+        const anchors = Array.from({ length: 12 }, (_, i) =>
+            monthAnchor(2026, i),
+        );
+
+        expect(anchors).toEqual([
+            '2026-01-01',
+            '2026-02-01',
+            '2026-03-01',
+            '2026-04-01',
+            '2026-05-01',
+            '2026-06-01',
+            '2026-07-01',
+            '2026-08-01',
+            '2026-09-01',
+            '2026-10-01',
+            '2026-11-01',
+            '2026-12-01',
+        ]);
     });
 });
 

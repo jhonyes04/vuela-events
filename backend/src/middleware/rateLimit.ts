@@ -1,4 +1,4 @@
-import rateLimit from 'express-rate-limit';
+import rateLimit, { ipKeyGenerator } from 'express-rate-limit';
 
 export const loginLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
@@ -15,4 +15,5 @@ export const apiLimiter = rateLimit({
     legacyHeaders: false,
     message: { error: 'Demasiadas solicitudes. Inténtalo de nuevo más tarde.' },
     skip: (req) => req.path.endsWith('/stream'),
+    keyGenerator: (req) => req.session.userId ?? ipKeyGenerator(req.ip ?? ''),
 });

@@ -432,6 +432,43 @@ eventsRouter.get('/', async (req, res) => {
     res.json({ events });
 });
 
+// Años con al menos un evento visible para el usuario (para el combobox de año).
+eventsRouter.get('/years', async (req, res) => {
+    const actor = req.user;
+
+    if (!actor) {
+        res.status(401).json({ error: 'Autenticación requerida' });
+        return;
+    }
+
+    const visibleToAil =
+        actor.roleId !== 'admin' && actor.roleId !== 'dt'
+            ? {
+                  OR: [
+                      {
+                          project: {
+                              userPreferences: {
+                                  some: { userId: actor.id },
+                              },
+                          },
+                      },
+                      { registrations: { some: { userId: actor.id } } },
+                  ],
+              }
+            : {};
+
+    const rows = await prisma.event.findMany({
+        where: visibleToAil,
+        select: { startsAt: true },
+    });
+
+    const years = [
+        ...new Set(rows.map((r) => r.startsAt.getUTCFullYear())),
+    ].sort((a, b) => a - b);
+
+    res.json({ years });
+});
+
 // Crear eventos: solo admin y dt.
 eventsRouter.post(
     '/',

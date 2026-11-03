@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
     CalendarRange,
     ChevronLeft,
@@ -23,18 +23,26 @@ import {
     AlertTitle,
 } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
+import { ComboboxField } from '@/components/ComboboxField';
+import { FullScreenSpinner } from '@/components/FullScreenSpinner';
 import { PageTitle } from '@/components/PageTitle';
 import { useRangeEvents } from '@/features/events/hooks/useRangeEvents';
 import { useCalendarStream } from '@/features/events/hooks/useCalendarStream';
 import { today, useEventsStore } from '@/features/events/store';
-import { buildMonthGrid } from '@/features/events/lib/calendar';
+import { buildMonthGrid, monthAnchor } from '@/features/events/lib/calendar';
 import {
     dayKey,
-    formatMonthLabel,
+    listEventYears,
     listMonthEvents,
     monthKey,
+    monthName,
     type EventItem,
 } from '@/features/events/lib/events';
+
+const MONTH_OPTIONS = Array.from({ length: 12 }, (_, i) => ({
+    value: String(i),
+    label: monthName(i),
+}));
 
 export function EventsPage() {
     const { user } = useAuth();
@@ -49,7 +57,7 @@ export function EventsPage() {
 
     const { events, loading, error, reload } = useRangeEvents(
         `month:${monthKey(year, monthIndex)}`,
-        () => listMonthEvents(year, monthIndex),
+        (signal) => listMonthEvents(year, monthIndex, signal),
     );
 
     useCalendarStream(reload);
@@ -58,6 +66,22 @@ export function EventsPage() {
     const [selectedId, setSelectedId] = useState<string | null>(null);
     const [snapshot, setSnapshot] = useState<EventItem | null>(null);
     const [createDayKey, setCreateDayKey] = useState<string | null>(null);
+
+    // Años con eventos, para el combobox de año; se incluye el año visible
+    // aunque no tenga eventos aún, para no dejar el combobox sin selección.
+    const [eventYears, setEventYears] = useState<number[]>([]);
+
+    useEffect(() => {
+        listEventYears()
+            .then(setEventYears)
+            .catch(() => setEventYears([]));
+    }, []);
+
+    const yearOptions = (
+        eventYears.includes(year)
+            ? eventYears
+            : [...eventYears, year].sort((a, b) => a - b)
+    ).map((y) => ({ value: String(y), label: String(y) }));
 
     const selectedEvent =
         selectedId === null
@@ -95,10 +119,15 @@ export function EventsPage() {
     };
 
     const shift = (delta: number) => {
-        const next = new Date(Date.UTC(year, monthIndex + delta, 1));
-        const nextMonth = String(next.getUTCMonth() + 1).padStart(2, '0');
+        setAnchor(monthAnchor(year, monthIndex + delta));
+    };
 
-        setAnchor(`${next.getUTCFullYear()}-${nextMonth}-01`);
+    const selectMonth = (newMonth: number) => {
+        setAnchor(monthAnchor(year, newMonth));
+    };
+
+    const selectYear = (newYear: number) => {
+        setAnchor(monthAnchor(newYear, monthIndex));
     };
 
     const todayKey = today();
@@ -126,12 +155,30 @@ export function EventsPage() {
                     <ChevronLeft />
                 </Button>
             </IconTooltip>
-            <span
-                className="min-w-40 text-center font-medium"
-                aria-live="polite"
-            >
-                {formatMonthLabel(year, monthIndex)}
-            </span>
+
+            <div className="flex items-center gap-2" aria-live="polite">
+                <ComboboxField
+                    className="w-32 bg-card"
+                    items={MONTH_OPTIONS}
+                    getValue={(m) => m.value}
+                    getLabel={(m) => m.label}
+                    value={String(monthIndex)}
+                    onValueChange={(v) => selectMonth(Number(v))}
+                    searchable={false}
+                    placeholder="Mes"
+                />
+                <ComboboxField
+                    className="w-24 bg-card"
+                    items={yearOptions}
+                    getValue={(y) => y.value}
+                    getLabel={(y) => y.label}
+                    value={String(year)}
+                    onValueChange={(v) => selectYear(Number(v))}
+                    searchable={false}
+                    placeholder="Año"
+                />
+            </div>
+
             <IconTooltip label={nextLabel}>
                 <Button
                     variant="outline"
@@ -166,7 +213,7 @@ export function EventsPage() {
                 {/* Móvil: controles centrados en su propia fila. */}
                 <div className="flex w-full flex-wrap items-center justify-center gap-2 sm:hidden">
                     {navControls}
-                    {todayButton}
+                    {/* {todayButton} */}
                 </div>
 
                 {/* Escritorio: todo en una sola fila. */}
@@ -190,42 +237,34 @@ export function EventsPage() {
                 </Alert>
             )}
 
-            {loading ? (
-                <p role="status" className="text-muted-foreground">
-                    Cargando eventos…
+            {loading && <FullScreenSpinner label="Cargando eventos…" />}
+
+            <CalendarGrid
+                weeks={weeks}
+                events={events}
+                onSelectEvent={openEvent}
+                onSelectDay={canCreate ? handleSelectDay : undefined}
+            />
+            <CalendarLegend events={events} />
+
+            {!loading && events.length === 0 && !error && (
+                <p className="mt-4 text-muted-foreground">
+                    No hay eventos este mes.
                 </p>
-            ) : (
-                <>
-                    <CalendarGrid
-                        weeks={weeks}
-                        events={events}
-                        onSelectEvent={openEvent}
-                        onSelectDay={canCreate ? handleSelectDay : undefined}
-                    />
-                    <CalendarLegend events={events} />
+            )}
 
-                    {events.length === 0 && !error && (
-                        <p className="mt-4 text-muted-foreground">
-                            No hay eventos este mes.
-                        </p>
-                    )}
-
-                    {events.length > 0 && (
-                        <div className="mt-6 grid grid-cols-1 gap-3 md:grid-cols-3">
-                            {[...events]
-                                .sort((a, b) =>
-                                    a.startsAt.localeCompare(b.startsAt),
-                                )
-                                .map((event) => (
-                                    <EventCard
-                                        key={event.id}
-                                        event={event}
-                                        onOpen={openEvent}
-                                    />
-                                ))}
-                        </div>
-                    )}
-                </>
+            {events.length > 0 && (
+                <div className="mt-6 grid grid-cols-1 gap-3 md:grid-cols-3">
+                    {[...events]
+                        .sort((a, b) => a.startsAt.localeCompare(b.startsAt))
+                        .map((event) => (
+                            <EventCard
+                                key={event.id}
+                                event={event}
+                                onOpen={openEvent}
+                            />
+                        ))}
+                </div>
             )}
 
             <EventDetailDialog

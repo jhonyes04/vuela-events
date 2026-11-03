@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { FolderOpen } from 'lucide-react';
+import { toast } from 'sonner';
 import { useAuth } from '@/features/auth/hooks/context';
+import { ApiError } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { PageTitle } from '@/components/PageTitle';
@@ -170,7 +172,15 @@ export const ResourcesManagementPage = () => {
 
     const view = (row: ResourceRow) => {
         if (row.kind === 'document' && row.document) {
-            void downloadDocument(row.document.id, row.document.fileName);
+            downloadDocument(row.document.id, row.document.fileName).catch(
+                (e: unknown) => {
+                    toast.error(
+                        e instanceof ApiError
+                            ? e.message
+                            : 'No se pudo descargar el documento',
+                    );
+                },
+            );
         } else if (row.kind === 'link' && row.link) {
             window.open(row.link.url, '_blank', 'noopener,noreferrer');
         }

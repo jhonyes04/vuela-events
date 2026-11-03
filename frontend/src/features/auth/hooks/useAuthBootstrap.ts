@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { api, setUnauthorizedHandler, type User } from '@/lib/api';
+import { api, setUnauthorizedHandler, ApiError, type User } from '@/lib/api';
 import { useAuthStore } from '@/features/auth/store';
 
 // Arranque de la sesión: se llama una sola vez, en <App />.
@@ -28,8 +28,10 @@ export const useAuthBootstrap = () => {
             .then((res) => {
                 if (!cancelled) setUser(res.user);
             })
-            .catch(() => {
-                if (!cancelled) setUser(null);
+            .catch((e: unknown) => {
+                if (cancelled) return;
+
+                if (e instanceof ApiError && e.status === 401) setUser(null);
             })
             .finally(() => {
                 if (!cancelled) setLoading(false);

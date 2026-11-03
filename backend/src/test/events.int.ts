@@ -287,4 +287,84 @@ describe('eventos: permisos y validación', () => {
         assert.equal(all.body.events.length, 2);
         assert.equal(invalid.status, 400);
     });
+
+    it('GET /events/years: sin sesión, 401', async () => {
+        const res = await api(server.baseUrl, 'GET', '/api/events/years');
+
+        assert.equal(res.status, 401);
+    });
+
+    it('GET /events/years: devuelve los años distintos con eventos, ordenados y sin duplicados', async () => {
+        const admin = await createUser('admin');
+
+        await prisma.event.createMany({
+            data: [
+                {
+                    title: 'A',
+                    startsAt: new Date('2031-03-01T10:00:00.000Z'),
+                    endsAt: new Date('2031-03-01T12:00:00.000Z'),
+                    createdById: admin.id,
+                    projectId,
+                    guideId: projectGuideId,
+                },
+                {
+                    title: 'B',
+                    startsAt: new Date('2031-09-01T10:00:00.000Z'),
+                    endsAt: new Date('2031-09-01T12:00:00.000Z'),
+                    createdById: admin.id,
+                    projectId,
+                    guideId: projectGuideId,
+                },
+                {
+                    title: 'C',
+                    startsAt: new Date('2029-01-01T10:00:00.000Z'),
+                    endsAt: new Date('2029-01-01T12:00:00.000Z'),
+                    createdById: admin.id,
+                    projectId,
+                    guideId: projectGuideId,
+                },
+            ],
+        });
+
+        const res = await get(admin.id, '/api/events/years');
+
+        assert.equal(res.status, 200);
+        assert.deepEqual(res.body.years, [2029, 2031]);
+    });
+
+    it('GET /events/years: ail solo ve años de proyectos marcados como interés o donde está inscrito', async () => {
+        const ail = await createUser('ail');
+        const otro = await createProject();
+
+        await prisma.userProjectPreference.create({
+            data: { userId: ail.id, projectId },
+        });
+
+        await prisma.event.create({
+            data: {
+                title: 'Visible',
+                startsAt: new Date('2032-05-01T10:00:00.000Z'),
+                endsAt: new Date('2032-05-01T12:00:00.000Z'),
+                createdById: ail.id,
+                projectId,
+                guideId: projectGuideId,
+            },
+        });
+
+        await prisma.event.create({
+            data: {
+                title: 'Oculto',
+                startsAt: new Date('2033-05-01T10:00:00.000Z'),
+                endsAt: new Date('2033-05-01T12:00:00.000Z'),
+                createdById: ail.id,
+                projectId: otro.id,
+                guideId: otro.guideId,
+            },
+        });
+
+        const res = await get(ail.id, '/api/events/years');
+
+        assert.equal(res.status, 200);
+        assert.deepEqual(res.body.years, [2032]);
+    });
 });
