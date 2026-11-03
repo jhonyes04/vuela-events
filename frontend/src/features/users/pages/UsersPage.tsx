@@ -1,9 +1,17 @@
-import { useEffect, useState } from 'react';
-import { Pencil, Trash2, UserCog, UserCheck, UserX } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import {
+    Pencil,
+    Search,
+    Trash2,
+    UserCog,
+    UserCheck,
+    UserX,
+} from 'lucide-react';
 import { OverlayScrollbarsComponent } from 'overlayscrollbars-react';
 import { toast } from 'sonner';
 import { useAuth } from '@/features/auth/hooks/context';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { ConfirmDeleteDialog } from '@/components/ConfirmDeleteDialog';
 import { DataTable, type DataTableColumn } from '@/components/DataTable';
 import { IconTooltip } from '@/components/IconTooltip';
@@ -35,6 +43,9 @@ interface AdminUser {
 const selectClass =
     'h-8 rounded-lg border border-input bg-transparent px-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50';
 
+const normalize = (value: string) =>
+    value.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+
 export const UsersPage = () => {
     const { user: me } = useAuth();
     const [users, setUsers] = useState<AdminUser[]>([]);
@@ -45,6 +56,24 @@ export const UsersPage = () => {
     const [busyId, setBusyId] = useState<string | null>(null);
     const [editing, setEditing] = useState<AdminUser | null>(null);
     const [deleting, setDeleting] = useState<AdminUser | null>(null);
+    const [search, setSearch] = useState('');
+    const [statusFilter, setStatusFilter] = useState<
+        'all' | 'active' | 'inactive'
+    >('all');
+
+    const filteredUsers = useMemo(() => {
+        const term = normalize(search.trim());
+
+        return users.filter((u) => {
+            if (statusFilter === 'active' && !u.active) return false;
+            if (statusFilter === 'inactive' && u.active) return false;
+            if (!term) return true;
+
+            return [u.name, u.lastName, u.puntoVuela ?? ''].some((field) =>
+                normalize(field).includes(term),
+            );
+        });
+    }, [users, search, statusFilter]);
 
     const {
         sorted: sortedUsers,
@@ -54,7 +83,7 @@ export const UsersPage = () => {
         AdminUser,
         'puntoVuela' | 'lastName' | 'email' | 'role' | 'active'
     >(
-        users,
+        filteredUsers,
         {
             puntoVuela: (a, b) =>
                 (a.puntoVuela ?? '').localeCompare(b.puntoVuela ?? ''),
@@ -257,6 +286,33 @@ export const UsersPage = () => {
         <section>
             <PageTitle icon={UserCog}>Gestionar Usuarios</PageTitle>
 
+            <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center">
+                <div className="relative bg-card w-full sm:w-100">
+                    <Search className="absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                    <Input
+                        type="text"
+                        placeholder="Buscar por nombre, apellidos o Punto Vuela…"
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
+                        className="pl-8"
+                    />
+                </div>
+
+                <select
+                    className={`${selectClass} !bg-card`}
+                    value={statusFilter}
+                    onChange={(e) =>
+                        setStatusFilter(
+                            e.target.value as 'all' | 'active' | 'inactive',
+                        )
+                    }
+                >
+                    <option value="all">Todos</option>
+                    <option value="active">Activos</option>
+                    <option value="inactive">Inactivos</option>
+                </select>
+            </div>
+
             <ListErrors
                 error={error}
                 actionError={null}
@@ -301,7 +357,7 @@ export const UsersPage = () => {
                 onOpenChange={(open) => !open && setEditing(null)}
                 user={editing}
                 roles={roles}
-                onSaved={() => void load()}
+                onSaved={() => void load(true)}
             />
 
             {deleting && (
