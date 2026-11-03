@@ -162,7 +162,7 @@ export const generateAttendanceReport = async (
 
     return {
         pdf,
-        filename: `${fileDateFormat.format(event.startsAt)} Acta de asistencia ${event.title}.pdf`,
+        filename: `${fileDateFormat.format(event.startsAt)} Acta de asistencia ${event.title} ${event.location}.pdf`,
     };
 };
 
