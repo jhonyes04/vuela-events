@@ -11,6 +11,7 @@ import { OverlayScrollbarsComponent } from 'overlayscrollbars-react';
 import { toast } from 'sonner';
 import { useAuth } from '@/features/auth/hooks/context';
 import { Button } from '@/components/ui/button';
+import { ComboboxField } from '@/components/ComboboxField';
 import { Input } from '@/components/ui/input';
 import { ConfirmDeleteDialog } from '@/components/ConfirmDeleteDialog';
 import { DataTable, type DataTableColumn } from '@/components/DataTable';
@@ -40,11 +41,14 @@ interface AdminUser {
     role: { id: string; name: string };
 }
 
-const selectClass =
-    'h-8 rounded-lg border border-input bg-transparent px-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50';
-
 const normalize = (value: string) =>
     value.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+
+const STATUS_OPTIONS = [
+    { value: 'all', label: 'Todos' },
+    { value: 'active', label: 'Activos' },
+    { value: 'inactive', label: 'Inactivos' },
+] as const;
 
 export const UsersPage = () => {
     const { user: me } = useAuth();
@@ -130,18 +134,16 @@ export const UsersPage = () => {
                 const busy = busyId === u.id;
 
                 return (
-                    <select
-                        className={selectClass}
+                    <ComboboxField
+                        className="w-36 bg-transparent"
+                        items={roles}
+                        getValue={(r) => r.id}
+                        getLabel={(r) => r.name}
                         value={u.role.id}
                         disabled={isSelf || busy}
-                        onChange={(e) => void changeRole(u.id, e.target.value)}
-                    >
-                        {roles.map((r) => (
-                            <option key={r.id} value={r.id}>
-                                {r.name}
-                            </option>
-                        ))}
-                    </select>
+                        onValueChange={(v) => void changeRole(u.id, v)}
+                        searchable={false}
+                    />
                 );
             },
         },
@@ -298,19 +300,18 @@ export const UsersPage = () => {
                     />
                 </div>
 
-                <select
-                    className={`${selectClass} !bg-card`}
+                <ComboboxField
+                    className="w-full bg-card sm:w-40"
+                    items={STATUS_OPTIONS}
+                    getValue={(s) => s.value}
+                    getLabel={(s) => s.label}
                     value={statusFilter}
-                    onChange={(e) =>
-                        setStatusFilter(
-                            e.target.value as 'all' | 'active' | 'inactive',
-                        )
+                    onValueChange={(v) =>
+                        setStatusFilter(v as 'all' | 'active' | 'inactive')
                     }
-                >
-                    <option value="all">Todos</option>
-                    <option value="active">Activos</option>
-                    <option value="inactive">Inactivos</option>
-                </select>
+                    searchable={false}
+                    placeholder="Estado"
+                />
             </div>
 
             <ListErrors

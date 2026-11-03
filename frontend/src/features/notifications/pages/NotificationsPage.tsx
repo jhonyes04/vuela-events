@@ -6,6 +6,7 @@ import { ApiError } from '@/lib/api';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
+import { ComboboxField } from '@/components/ComboboxField';
 import { ConfirmDeleteDialog } from '@/components/ConfirmDeleteDialog';
 import { DataTable, type DataTableColumn } from '@/components/DataTable';
 import { IconTooltip } from '@/components/IconTooltip';
@@ -37,11 +38,14 @@ interface Pending {
     confirmText: string;
 }
 
-const selectClass =
-    'h-8 rounded-lg border border-input bg-card px-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50';
-
 type SortKey = 'createdAt' | 'title';
 type StatusFilter = 'all' | 'unread' | 'read';
+
+const STATUS_OPTIONS = [
+    { value: 'all', label: 'Todas' },
+    { value: 'unread', label: 'Pendientes' },
+    { value: 'read', label: 'Leídas' },
+] as const;
 
 export const NotificationsPage = () => {
     const {
@@ -275,17 +279,18 @@ export const NotificationsPage = () => {
             />
 
             <div className="mb-4 flex flex-wrap items-center gap-2">
-                <select
-                    className={selectClass}
+                <ComboboxField
+                    className="w-full bg-card sm:w-40"
+                    items={STATUS_OPTIONS}
+                    getValue={(s) => s.value}
+                    getLabel={(s) => s.label}
                     value={statusFilter}
-                    onChange={(e) =>
-                        setStatusFilter(e.target.value as StatusFilter)
+                    onValueChange={(v) =>
+                        setStatusFilter(v as StatusFilter)
                     }
-                >
-                    <option value="all">Todas</option>
-                    <option value="unread">Pendientes</option>
-                    <option value="read">Leídas</option>
-                </select>
+                    searchable={false}
+                    placeholder="Estado"
+                />
 
                 {unreadCount > 0 && (
                     <Button

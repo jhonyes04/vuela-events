@@ -3,6 +3,7 @@ import { History, Trash2 } from 'lucide-react';
 import { OverlayScrollbarsComponent } from 'overlayscrollbars-react';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
+import { ComboboxField } from '@/components/ComboboxField';
 import { Input } from '@/components/ui/input';
 import { ConfirmDeleteDialog } from '@/components/ConfirmDeleteDialog';
 import { DataTable, type DataTableColumn } from '@/components/DataTable';
@@ -31,9 +32,6 @@ interface Pending {
     confirmText?: string;
 }
 
-const selectClass =
-    'h-8 rounded-lg border border-input bg-card px-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50';
-
 type SortKey = 'createdAt' | 'action' | 'actor' | 'target';
 
 // Mismo formato 'YYYY-MM-DD' que usa DatePicker, en hora de Madrid.
@@ -61,6 +59,10 @@ export const AuditPage = () => {
     const actions = [...new Set(logs.map((l) => l.action))].sort((a, b) =>
         actionLabel(a).localeCompare(actionLabel(b)),
     );
+    const actionOptions = [
+        { value: '', label: 'Todas las acciones' },
+        ...actions.map((a) => ({ value: a, label: actionLabel(a) })),
+    ];
 
     const filtered = logs.filter((log) => {
         if (actionFilter && log.action !== actionFilter) return false;
@@ -212,18 +214,16 @@ export const AuditPage = () => {
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
                 />
-                <select
-                    className={selectClass}
+                <ComboboxField
+                    className="w-full bg-card sm:w-56"
+                    items={actionOptions}
+                    getValue={(a) => a.value}
+                    getLabel={(a) => a.label}
                     value={actionFilter}
-                    onChange={(e) => setActionFilter(e.target.value)}
-                >
-                    <option value="">Todas las acciones</option>
-                    {actions.map((a) => (
-                        <option key={a} value={a}>
-                            {actionLabel(a)}
-                        </option>
-                    ))}
-                </select>
+                    onValueChange={setActionFilter}
+                    searchable={false}
+                    placeholder="Acción"
+                />
                 <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
                     Desde
                     <DatePicker value={from} onChange={setFrom} />
