@@ -64,7 +64,7 @@ export const EventsSection = ({ section, stats }: EventsSectionProps) => (
                 description="Pasados, en curso y próximos."
                 empty={stats.totals.events === 0}
             >
-                <StatusDonut stats={stats} />
+                <StatusDonut eventsByStatus={stats.eventsByStatus} />
             </ChartCard>
         )}
 

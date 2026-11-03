@@ -16,7 +16,11 @@ export const SECTIONS = [
         group: 'Inscripciones',
     },
     { id: 'occupancy', label: 'Ocupación', group: 'Ocupación' },
-    { id: 'users-all', label: 'Todos los participantes', group: 'Participantes' },
+    {
+        id: 'users-all',
+        label: 'Todos los participantes',
+        group: 'Participantes',
+    },
     {
         id: 'users-interest-project',
         label: 'Participantes por proyecto',
@@ -32,7 +36,11 @@ export const SECTIONS = [
         label: 'Participaciones por participante',
         group: 'Participantes',
     },
-    { id: 'users-top', label: 'Participantes más activos', group: 'Participantes' },
+    {
+        id: 'users-top',
+        label: 'Participantes más activos',
+        group: 'Participantes',
+    },
     { id: 'attended-month', label: 'Atendidos por mes', group: 'Atendidos' },
     {
         id: 'attended-quarter',

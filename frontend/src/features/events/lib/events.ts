@@ -83,7 +83,7 @@ const capitalize = (text: string) =>
 
 // Formato requerido por Google Calendar: 'YYYYMMDDTHHmmssZ'
 const toGoogleCalendarStamp = (iso: string): string =>
-    iso.replace(/\.\d{3}/, '');
+    iso.replace(/\.\d{3}/, '').replace(/[-:]/g, '');
 
 // Link para añadir el evento a Google Calendar del usuario
 export const googleCalendarUrl = (event: EventItem): string => {

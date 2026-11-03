@@ -15,21 +15,25 @@ const STATUS_CONFIG = {
 } satisfies ChartConfig;
 
 // Donut con el total en el centro y leyenda con porcentajes.
-export const StatusDonut = ({ stats }: { stats: StatsSummary }) => {
+export const StatusDonut = ({
+    eventsByStatus,
+}: {
+    eventsByStatus: StatsSummary['eventsByStatus'];
+}) => {
     const items = [
         {
             key: 'past',
-            value: stats.eventsByStatus.past,
+            value: eventsByStatus.past,
             dot: 'bg-[var(--chart-4)]',
         },
         {
             key: 'ongoing',
-            value: stats.eventsByStatus.ongoing,
+            value: eventsByStatus.ongoing,
             dot: 'bg-[var(--chart-2)]',
         },
         {
             key: 'future',
-            value: stats.eventsByStatus.future,
+            value: eventsByStatus.future,
             dot: 'bg-[var(--chart-1)]',
         },
     ] as const;

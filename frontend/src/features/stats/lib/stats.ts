@@ -93,9 +93,7 @@ export interface StatsSummary {
 }
 
 export const getStats = (year: number | null) =>
-    api.get<StatsSummary>(
-        year === null ? '/stats' : `/stats?year=${year}`,
-    );
+    api.get<StatsSummary>(year === null ? '/stats' : `/stats?year=${year}`);
 
 const dateFormat = new Intl.DateTimeFormat('es-ES', {
     day: 'numeric',

@@ -102,6 +102,11 @@ const regCountsCte = Prisma.sql`
     )
 `;
 
+// Proyectos "Reunión comarcal": sus eventos quedan fuera de todas las
+// estadísticas.
+const meetingFilter = Prisma.sql`e."projectId" IN (SELECT id FROM projects WHERE "isMeeting" = true)`;
+const notMeetingFilter = Prisma.sql`NOT (${meetingFilter})`;
+
 export const getStats = async (
     now: Date = new Date(),
     year: number | null = null,
@@ -123,12 +128,12 @@ export const getStats = async (
 
     const totalsRows = await prisma.$queryRaw<TotalsRow[]>`
         SELECT
-            (SELECT count(*)::int FROM events e WHERE ${yearFilter}) AS "eventsTotal",
-            (SELECT count(*)::int FROM registrations r JOIN events e ON e.id = r."eventId" WHERE ${yearFilter}) AS "registrationsTotal",
-            (SELECT coalesce(sum(e."participantsCount"), 0)::int FROM events e WHERE ${yearFilter}) AS "attendedTotal",
-            (SELECT count(*)::int FROM events e WHERE e."endsAt" <= ${now} AND ${yearFilter}) AS "past",
-            (SELECT count(*)::int FROM events e WHERE e."startsAt" <= ${now} AND e."endsAt" > ${now} AND ${yearFilter}) AS "ongoing",
-            (SELECT count(*)::int FROM events e WHERE e."startsAt" > ${now} AND ${yearFilter}) AS "future"
+            (SELECT count(*)::int FROM events e WHERE ${yearFilter} AND ${notMeetingFilter}) AS "eventsTotal",
+            (SELECT count(*)::int FROM registrations r JOIN events e ON e.id = r."eventId" WHERE ${yearFilter} AND ${notMeetingFilter}) AS "registrationsTotal",
+            (SELECT coalesce(sum(e."participantsCount"), 0)::int FROM events e WHERE ${yearFilter} AND ${notMeetingFilter}) AS "attendedTotal",
+            (SELECT count(*)::int FROM events e WHERE e."endsAt" <= ${now} AND ${yearFilter} AND ${notMeetingFilter}) AS "past",
+            (SELECT count(*)::int FROM events e WHERE e."startsAt" <= ${now} AND e."endsAt" > ${now} AND ${yearFilter} AND ${notMeetingFilter}) AS "ongoing",
+            (SELECT count(*)::int FROM events e WHERE e."startsAt" > ${now} AND ${yearFilter} AND ${notMeetingFilter}) AS "future"
     `;
     // Agregado puro sin GROUP BY: devuelve siempre exactamente una fila.
     const totalsRow = totalsRows[0]!;
@@ -142,7 +147,7 @@ export const getStats = async (
             coalesce(sum(e."participantsCount"), 0)::int AS attended
         FROM events e
         LEFT JOIN reg_counts rc ON rc."eventId" = e.id
-        WHERE ${yearFilter}
+        WHERE ${yearFilter} AND ${notMeetingFilter}
         GROUP BY 1
         ORDER BY 1
     `;
@@ -175,6 +180,7 @@ export const getStats = async (
         FROM projects c
         LEFT JOIN events e ON e."projectId" = c.id AND ${yearFilter}
         LEFT JOIN reg_counts rc ON rc."eventId" = e.id
+        WHERE c."isMeeting" = false
         GROUP BY c.id, c.name, c.color
         ORDER BY events DESC
     `;
@@ -187,7 +193,7 @@ export const getStats = async (
             count(*) FILTER (WHERE coalesce(rc.cnt, 0) >= e.capacity)::int AS "fullEvents"
         FROM events e
         LEFT JOIN reg_counts rc ON rc."eventId" = e.id
-        WHERE e.capacity IS NOT NULL AND e.capacity > 0 AND ${yearFilter}
+        WHERE e.capacity IS NOT NULL AND e.capacity > 0 AND ${yearFilter} AND ${notMeetingFilter}
     `;
     const occupancyRow = occupancyRows[0]!;
 
@@ -200,7 +206,7 @@ export const getStats = async (
             avg(coalesce(rc.cnt, 0)::float8 / e.capacity) AS "avgRate"
         FROM events e
         LEFT JOIN reg_counts rc ON rc."eventId" = e.id
-        WHERE e.capacity IS NOT NULL AND e.capacity > 0 AND ${yearFilter}
+        WHERE e.capacity IS NOT NULL AND e.capacity > 0 AND ${yearFilter} AND ${notMeetingFilter}
         GROUP BY 1
         ORDER BY 1
     `;
@@ -215,7 +221,7 @@ export const getStats = async (
         SELECT e.id, e.title, e."startsAt", coalesce(rc.cnt, 0)::int AS registrations, e.capacity
         FROM events e
         LEFT JOIN reg_counts rc ON rc."eventId" = e.id
-        WHERE e.capacity IS NOT NULL AND e.capacity > 0 AND e."endsAt" > ${now} AND ${yearFilter}
+        WHERE e.capacity IS NOT NULL AND e.capacity > 0 AND e."endsAt" > ${now} AND ${yearFilter} AND ${notMeetingFilter}
         ORDER BY e."endsAt" ASC
         LIMIT 10
     `;
@@ -225,7 +231,7 @@ export const getStats = async (
     >`
         SELECT count(*)::int AS count
         FROM events e
-        WHERE e."endsAt" <= ${now} AND e."participantsCount" IS NULL AND ${yearFilter}
+        WHERE e."endsAt" <= ${now} AND e."participantsCount" IS NULL AND ${yearFilter} AND ${notMeetingFilter}
     `;
     const finishedWithoutAttendedCount =
         finishedWithoutAttendedCountRows[0]!.count;
@@ -235,7 +241,7 @@ export const getStats = async (
     >`
         SELECT e.id, e.title, e."startsAt"
         FROM events e
-        WHERE e."endsAt" <= ${now} AND e."participantsCount" IS NULL AND ${yearFilter}
+        WHERE e."endsAt" <= ${now} AND e."participantsCount" IS NULL AND ${yearFilter} AND ${notMeetingFilter}
         ORDER BY e."startsAt" DESC
         LIMIT 20
     `;
@@ -247,7 +253,7 @@ export const getStats = async (
         FROM registrations r
         JOIN users u ON u.id = r."userId"
         JOIN events e ON e.id = r."eventId"
-        WHERE u."roleId" NOT IN ('admin', 'dt') AND ${yearFilter}
+        WHERE u."roleId" NOT IN ('admin', 'dt') AND ${yearFilter} AND ${notMeetingFilter}
         GROUP BY r."userId"
         ORDER BY cnt DESC
         LIMIT 10
@@ -279,7 +285,7 @@ export const getStats = async (
             SELECT 1
             FROM registrations r
             JOIN events e ON e.id = r."eventId"
-            WHERE r."userId" = u.id AND ${yearFilter}
+            WHERE r."userId" = u.id AND ${yearFilter} AND ${notMeetingFilter}
         )
     `;
     const usersWithoutRegistrations = usersWithoutRegistrationsRows[0]!.count;
@@ -304,7 +310,7 @@ export const getStats = async (
             SELECT r."userId", count(*)::int AS cnt
             FROM registrations r
             JOIN events e ON e.id = r."eventId"
-            WHERE ${yearFilter}
+            WHERE ${yearFilter} AND ${notMeetingFilter}
             GROUP BY r."userId"
         ) rc ON rc."userId" = u.id
         WHERE u.active = true AND u."roleId" NOT IN ('admin', 'dt')
@@ -334,7 +340,7 @@ export const getStats = async (
         JOIN users u ON u.id = r."userId"
         JOIN events e ON e.id = r."eventId"
         JOIN projects p ON p.id = e."projectId"
-        WHERE u.active = true AND u."roleId" NOT IN ('admin', 'dt') AND ${yearFilter}
+        WHERE u.active = true AND u."roleId" NOT IN ('admin', 'dt') AND ${yearFilter} AND p."isMeeting" = false
         GROUP BY p.id, p.name, p.color, u.id, u.name, u."lastName", u."puntoVuela"
         ORDER BY p.name ASC, registrations DESC, u.name ASC, u."lastName" ASC
     `;
