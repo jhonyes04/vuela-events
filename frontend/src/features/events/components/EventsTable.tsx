@@ -38,8 +38,8 @@ type TimeFilter = 'all' | 'past' | 'future';
 const TIME_FILTERS: TimeFilter[] = ['all', 'future', 'past'];
 const TIME_FILTER_LABELS: Record<TimeFilter, string> = {
     all: 'Todos',
-    future: 'Futuros',
-    past: 'Pasados',
+    future: 'Pendientes',
+    past: 'Finalizados',
 };
 
 const MONTH_OPTIONS = [

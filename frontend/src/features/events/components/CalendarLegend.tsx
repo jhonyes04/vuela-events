@@ -30,9 +30,6 @@ export const CalendarLegend = ({ events }: CalendarLegendProps) => {
             aria-label="Leyenda"
             className="mt-4 flex flex-wrap items-center gap-2 rounded-xl bg-card p-3 ring-1 ring-foreground/10"
         >
-            <span className="text-xs font-medium text-muted-foreground">
-                Leyenda:
-            </span>
             {projects.map((project) => {
                 const chip = getProjectColorChip(project.color);
 
