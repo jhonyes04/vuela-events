@@ -57,6 +57,7 @@ export const TemplateAssignmentCard = ({
                         getLabel={(t) => t.name}
                         value={templateId ?? ''}
                         onValueChange={(v) => onAssignmentChange(slot, v)}
+                        searchable={false}
                         placeholder="Sin asignar"
                     />
                 </div>

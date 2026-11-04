@@ -317,6 +317,7 @@ export const EventsTable = ({
                     }}
                     value={projectFilter}
                     onValueChange={setProjectFilter}
+                    searchable={false}
                     placeholder="Todos los proyectos"
                 />
                 <ComboboxField

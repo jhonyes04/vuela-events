@@ -57,7 +57,7 @@ export const ComboboxField = <T,>({
         >
             <ComboboxInput
                 id={id}
-                className={className}
+                className={`${className} ${searchable ? '' : '[&_input]:cursor-pointer'}`}
                 disabled={disabled}
                 readOnly={!searchable}
                 placeholder={placeholder}
@@ -75,6 +75,7 @@ export const ComboboxField = <T,>({
                         <ComboboxItem
                             key={getValue(item)}
                             value={getValue(item)}
+                            className="cursor-pointer"
                         >
                             {getIndicator?.(item)}
                             {getLabel(item)}
