@@ -18,7 +18,7 @@ import { cn } from '@/lib/utils';
 import {
     attendanceLabel,
     dayKey,
-    formatMonthLabel,
+    monthName,
     formatShortDate,
     formatTime,
     hasEnded,
@@ -42,12 +42,13 @@ const TIME_FILTER_LABELS: Record<TimeFilter, string> = {
     past: 'Pasados',
 };
 
-// 'YYYY-MM' -> 'Septiembre de 2026'
-const monthLabelFrom = (key: string): string => {
-    const [year, month] = key.split('-').map(Number);
-
-    return formatMonthLabel(year!, month! - 1);
-};
+const MONTH_OPTIONS = [
+    { value: '', label: 'Todos los meses' },
+    ...Array.from({ length: 12 }, (_, i) => ({
+        value: String(i),
+        label: monthName(i),
+    })),
+];
 
 interface ProjectFilterOption {
     id: string;
@@ -99,15 +100,22 @@ export const EventsTable = ({
     const [search, setSearch] = useState('');
     const [projectFilter, setProjectFilter] = useState('');
     const [monthFilter, setMonthFilter] = useState('');
+    const [yearFilter, setYearFilter] = useState('');
     const [timeFilter, setTimeFilter] = useState<TimeFilter>(defaultTimeFilter);
 
     // Opciones de los filtros: solo los proyectos/meses que aparecen en la lista.
     const projects = [
         ...new Map(events.map((e) => [e.project.id, e.project])).values(),
     ].sort((a, b) => a.name.localeCompare(b.name));
-    const months = [
-        ...new Set(events.map((e) => dayKey(e.startsAt).slice(0, 7))),
-    ].sort((a, b) => b.localeCompare(a));
+
+    const years = [
+        ...new Set(events.map((e) => Number(dayKey(e.startsAt).slice(0, 4)))),
+    ].sort((a, b) => b - a);
+
+    const yearsOptions = [
+        { value: '', label: 'Todos los años' },
+        ...years.map((year) => ({ value: String(year), label: String(year) })),
+    ];
 
     const projectOptions: ProjectFilterOption[] = [
         { id: '', name: 'Todos los proyectos', color: null },
@@ -119,9 +127,15 @@ export const EventsTable = ({
             return false;
         }
 
-        if (monthFilter && dayKey(event.startsAt).slice(0, 7) !== monthFilter) {
+        if (
+            monthFilter &&
+            Number(dayKey(event.startsAt).slice(5, 7)) - 1 !==
+                Number(monthFilter)
+        )
             return false;
-        }
+
+        if (yearFilter && dayKey(event.startsAt).slice(0, 4) !== yearFilter)
+            return false;
 
         if (timeFilter === 'past' && !hasEnded(event)) return false;
         if (timeFilter === 'future' && hasEnded(event)) return false;
@@ -307,17 +321,26 @@ export const EventsTable = ({
                 />
                 <ComboboxField
                     className="w-[calc(50%-0.25rem)] sm:w-40 bg-card"
-                    items={['', ...months]}
-                    getValue={(key) => key}
-                    getLabel={(key) =>
-                        key === '' ? 'Todos los meses' : monthLabelFrom(key)
-                    }
+                    items={MONTH_OPTIONS}
+                    getValue={(o) => o.value}
+                    getLabel={(o) => o.label}
                     value={monthFilter}
                     onValueChange={setMonthFilter}
+                    searchable={false}
                     placeholder="Todos los meses"
                 />
                 <ComboboxField
-                    className="w-[calc(50%-0.25rem)] sm:w-32 bg-card"
+                    className="w-[calc(50%-0.25rem)] sm:w-40 bg-card"
+                    items={yearsOptions}
+                    getValue={(o) => o.value}
+                    getLabel={(o) => o.label}
+                    value={yearFilter}
+                    onValueChange={setYearFilter}
+                    searchable={false}
+                    placeholder="Todos los años"
+                />
+                <ComboboxField
+                    className="w-full sm:w-32 bg-card"
                     items={TIME_FILTERS}
                     getValue={(t) => t}
                     getLabel={(t) => TIME_FILTER_LABELS[t]}
