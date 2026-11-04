@@ -6,7 +6,7 @@ import {
 } from '@/components/ui/tooltip';
 
 interface IconTooltipProps {
-    label: string;
+    label: string | null;
     // El botón de solo icono, ya con su propio aria-label.
     children: ReactElement;
 }

@@ -2,6 +2,7 @@ import { api } from '@/lib/api';
 
 export interface OnlineUser {
     userId: string;
+    puntoVuela: string | null;
     name: string;
     lastName: string;
     avatarConfigured: boolean;

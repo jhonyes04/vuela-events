@@ -92,6 +92,7 @@ export const revokeAllSessionsExcept = async (
 
 export interface OnlineUser {
     userId: string;
+    puntoVuela: string | null;
     name: string;
     lastName: string;
     avatarConfigured: boolean;
@@ -101,6 +102,7 @@ export const listOnlineUsers = async (): Promise<OnlineUser[]> => {
     const rows = await prisma.$queryRaw<
         {
             userId: string;
+            puntoVuela: string | null;
             name: string;
             lastName: string;
             avatarConfigured: boolean;
@@ -108,6 +110,7 @@ export const listOnlineUsers = async (): Promise<OnlineUser[]> => {
     >`
         SELECT DISTINCT ON (u.id)
             u.id AS "userId",
+            u."puntoVuela",
             u.name,
             u."lastName",
             (u."avatarImage" IS NOT NULL) AS "avatarConfigured"

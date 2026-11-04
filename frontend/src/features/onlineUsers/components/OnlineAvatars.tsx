@@ -1,3 +1,4 @@
+import { IconTooltip } from '@/components/IconTooltip';
 import {
     Avatar,
     AvatarFallback,
@@ -47,9 +48,11 @@ export const OnlineAvatars = () => {
     return (
         <AvatarGroup className="bg-yellow-200 border border-yellow-400 rounded-full p-2">
             {visible.map((user) => (
-                <Avatar key={user.userId} size="sm">
-                    <UserAvatarImage user={user} />
-                </Avatar>
+                <IconTooltip key={user.userId} label={user.puntoVuela}>
+                    <Avatar size="sm" className="cursor-pointer">
+                        <UserAvatarImage user={user} />
+                    </Avatar>
+                </IconTooltip>
             ))}
             {extra > 0 && (
                 <HoverCard>

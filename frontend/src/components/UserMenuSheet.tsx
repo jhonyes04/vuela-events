@@ -133,7 +133,7 @@ export const UserMenuSheet = () => {
                         <UserAvatar user={user} />
                         <div className="hidden max-w-56 text-right text-sm leading-tight sm:block">
                             <p className="truncate font-medium text-brand-ink">
-                                {user.name} {user.lastName}
+                                {user.puntoVuela} ({user.name})
                             </p>
                             <p className="truncate text-brand-ink/80">
                                 {user.roleName}
