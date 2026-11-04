@@ -8,12 +8,22 @@ export const loginLimiter = rateLimit({
     message: { error: 'Demasiados intentos. Inténtolo de nuevo más tarde.' },
 });
 
-export const apiLimiter = rateLimit({
+export const writeLimiter = rateLimit({
     windowMs: 60 * 1000,
     limit: 120,
     standardHeaders: 'draft-7',
     legacyHeaders: false,
     message: { error: 'Demasiadas solicitudes. Inténtalo de nuevo más tarde.' },
-    skip: (req) => req.path.endsWith('/stream'),
+    skip: (req) => req.method === 'GET',
+    keyGenerator: (req) => req.session.userId ?? ipKeyGenerator(req.ip ?? ''),
+});
+
+export const readLimiter = rateLimit({
+    windowMs: 60 * 1000,
+    limit: 300,
+    standardHeaders: 'draft-7',
+    legacyHeaders: false,
+    message: { error: 'Demasiadas solicitudes. Inténtalo de nuevo más tarde.' },
+    skip: (req) => req.method !== 'GET' || req.path.endsWith('/stream'),
     keyGenerator: (req) => req.session.userId ?? ipKeyGenerator(req.ip ?? ''),
 });

@@ -28,7 +28,7 @@ import { metricsRouter } from './routes/metrics.js';
 import { appSettingsRouter } from './routes/appSettings.js';
 import { sessionsRouter } from './routes/sessions.js';
 import { notificationsRouter } from './routes/notifications.js';
-import { apiLimiter } from './middleware/rateLimit.js';
+import { readLimiter, writeLimiter } from './middleware/rateLimit.js';
 import { maintenanceGate } from './middleware/maintenance.js';
 import { getAppSettings } from './services/appSettings.js';
 
@@ -79,7 +79,8 @@ export function createApp(options: AppOptions = {}) {
 
     app.use(sessionMiddleware);
 
-    app.use('/api', apiLimiter);
+    app.use('/api', readLimiter);
+    app.use('/api', writeLimiter);
     app.use('/api', (_req, res, next) => {
         res.set('Cache-Control', 'no-store');
         next();
