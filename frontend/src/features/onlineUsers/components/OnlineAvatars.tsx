@@ -48,7 +48,10 @@ export const OnlineAvatars = () => {
     return (
         <AvatarGroup className="bg-yellow-200 border border-yellow-400 rounded-full p-2">
             {visible.map((user) => (
-                <IconTooltip key={user.userId} label={user.puntoVuela}>
+                <IconTooltip
+                    key={user.userId}
+                    label={`${user.puntoVuela} (${user.name})`}
+                >
                     <Avatar size="sm" className="cursor-pointer">
                         <UserAvatarImage user={user} />
                     </Avatar>
@@ -67,7 +70,9 @@ export const OnlineAvatars = () => {
                                     key={user.userId}
                                     className="flex items-center gap-2"
                                 >
-                                    <IconTooltip label={user.puntoVuela}>
+                                    <IconTooltip
+                                        label={`${user.puntoVuela} (${user.name})`}
+                                    >
                                         <Avatar
                                             size="sm"
                                             className="cursor-pointer"
