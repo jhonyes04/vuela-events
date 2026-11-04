@@ -158,7 +158,7 @@ export const EventsManagementPage = () => {
 
     return (
         <section>
-            <div className="mb-2 flex flex-wrap items-center justify-between gap-3">
+            <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
                 <PageTitle icon={CalendarRange} className="mb-0">
                     Gestionar Eventos
                 </PageTitle>
@@ -325,8 +325,7 @@ export const EventsManagementPage = () => {
                     deletingLabel="Eliminando…"
                     errorFallback="No se pudo eliminar el evento"
                     textField={{
-                        label:
-                            'Motivo (opcional, se incluye en el aviso a los inscritos)',
+                        label: 'Motivo (opcional, se incluye en el aviso a los inscritos)',
                         value: motivo,
                         onChange: setMotivo,
                         placeholder: 'Por qué se cancela...',
