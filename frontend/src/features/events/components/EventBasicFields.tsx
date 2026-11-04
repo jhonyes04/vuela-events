@@ -96,6 +96,7 @@ export function EventBasicFields({
                     onValueChange={(v) =>
                         onChange('modality')({ target: { value: v } })
                     }
+                    searchable={false}
                     placeholder="Selecciona la modalidad"
                 />
             </Field>
@@ -122,6 +123,7 @@ export function EventBasicFields({
                     value={values.projectId}
                     onValueChange={onProjectChange}
                     placeholder="Selecciona un proyecto"
+                    searchable={false}
                     emptyMessage="No hay proyectos"
                 />
             </Field>
@@ -134,6 +136,7 @@ export function EventBasicFields({
                     getLabel={(guide) => guide.name}
                     value={guideValue}
                     onValueChange={onGuideChange}
+                    searchable={false}
                     placeholder="Selecciona una guía"
                     emptyMessage="No hay guías"
                 />
