@@ -57,6 +57,7 @@ export const OnlineAvatars = () => {
             {extra > 0 && (
                 <HoverCard>
                     <HoverCardTrigger
+                        className="cursor-pointer"
                         render={<AvatarGroupCount>+{extra}</AvatarGroupCount>}
                     />
                     <HoverCardContent className="w-auto bg-yellow-200 border-yellow-400 rounded-full">
@@ -66,9 +67,11 @@ export const OnlineAvatars = () => {
                                     key={user.userId}
                                     className="flex items-center gap-2"
                                 >
-                                    <Avatar size="sm">
-                                        <UserAvatarImage user={user} />
-                                    </Avatar>
+                                    <IconTooltip label={user.puntoVuela}>
+                                        <Avatar size="sm">
+                                            <UserAvatarImage user={user} />
+                                        </Avatar>
+                                    </IconTooltip>
                                 </li>
                             ))}
                         </ul>
