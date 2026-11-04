@@ -788,7 +788,7 @@ eventsRouter.patch(
 
 // Participantes externos atendidos: se rellena aparte, una vez terminado el
 // evento (no forma parte del formulario de crear/editar). Tras el fin lo puede
-// hacer cualquier persona autenticada; antes, solo quien puede editar eventos.
+// hacer quien esté inscrito o quien pueda editar eventos; antes, solo este último.
 eventsRouter.patch('/:id/participants-count', async (req, res) => {
     const actor = req.user;
 
@@ -822,6 +822,20 @@ eventsRouter.patch('/:id/participants-count', async (req, res) => {
             error: 'El evento todavía no ha finalizado',
         });
         return;
+    }
+
+    if (!canEdit) {
+        const registration = await prisma.registration.findUnique({
+            where: {
+                eventId_userId: { eventId: params.data.id, userId: actor.id },
+            },
+            select: { userId: true },
+        });
+
+        if (!registration) {
+            res.status(403).json({ error: 'No autorizado' });
+            return;
+        }
     }
 
     const event = await prisma.event.update({

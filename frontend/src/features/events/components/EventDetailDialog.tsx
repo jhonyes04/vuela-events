@@ -92,6 +92,7 @@ const EventDetailBody = ({
     const full = isFull(event);
     const isDt = user?.roleId === ROLE_IDS.DT;
     const isAdmin = user?.roleId === ROLE_IDS.ADMIN;
+    const canSetParticipants = isAdmin || isDt || event.registered;
     // Un DT puede inscribirse aunque esté completo: no ocupa plaza.
     const blockedByCapacity = full && !isDt && !event.registered;
     const colorStyle = ended
@@ -288,6 +289,7 @@ const EventDetailBody = ({
                         ended={ended}
                         isAdmin={isAdmin}
                         canDelete={canDelete}
+                        canSetParticipants={canSetParticipants}
                         blockedByCapacity={blockedByCapacity}
                         onDeleteClick={() => setConfirmOpen(true)}
                         onDeleteSeriesClick={() => setSeriesConfirmOpen(true)}

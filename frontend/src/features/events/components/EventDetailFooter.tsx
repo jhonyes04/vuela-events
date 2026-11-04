@@ -11,6 +11,7 @@ interface EventDetailFooterProps {
     ended: boolean;
     isAdmin: boolean;
     canDelete: boolean;
+    canSetParticipants: boolean;
     blockedByCapacity: boolean;
     onDeleteClick: () => void;
     onDeleteSeriesClick: () => void;
@@ -26,6 +27,7 @@ export const EventDetailFooter = ({
     ended,
     isAdmin,
     canDelete,
+    canSetParticipants,
     blockedByCapacity,
     onDeleteClick,
     onDeleteSeriesClick,
@@ -68,7 +70,7 @@ export const EventDetailFooter = ({
             </a>
         )}
 
-        {ended && (
+        {ended && canSetParticipants && (
             <Button
                 variant="default"
                 className="bg-green-800"
