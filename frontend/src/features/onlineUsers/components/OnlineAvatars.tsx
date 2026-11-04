@@ -68,7 +68,10 @@ export const OnlineAvatars = () => {
                                     className="flex items-center gap-2"
                                 >
                                     <IconTooltip label={user.puntoVuela}>
-                                        <Avatar size="sm">
+                                        <Avatar
+                                            size="sm"
+                                            className="cursor-pointer"
+                                        >
                                             <UserAvatarImage user={user} />
                                         </Avatar>
                                     </IconTooltip>
