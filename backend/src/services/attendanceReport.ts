@@ -96,6 +96,7 @@ export const generateAttendanceReport = async (
             title: true,
             subtitle: true,
             location: true,
+            modality: true,
             startsAt: true,
             endsAt: true,
         },
@@ -171,6 +172,7 @@ interface RenderInput {
         title: string;
         subtitle: string | null;
         location: string | null;
+        modality: string | null;
         startsAt: Date;
         endsAt: Date;
     };
@@ -240,6 +242,15 @@ const renderPdf = ({
             .text('LUGAR: ', { continued: true })
             .font('Helvetica')
             .text(event.location ?? '');
+        doc.font('Helvetica-Bold')
+            .text('MODALIDAD: ', { continued: true })
+            .font('Helvetica')
+            .text(
+                event.modality
+                    ? event.modality.charAt(0).toUpperCase() +
+                          event.modality.slice(1).toLowerCase()
+                    : '',
+            );
         doc.font('Helvetica-Bold')
             .text('FECHA: ', { continued: true })
             .font('Helvetica')
