@@ -3,7 +3,7 @@ import { FolderKanban, Pencil, Trash2 } from 'lucide-react';
 import { OverlayScrollbarsComponent } from 'overlayscrollbars-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { SearchInput } from '@/components/SearchInput';
 import { OwnerFilterField } from '@/components/OwnerFilterField';
 import { ConfirmDeleteDialog } from '@/components/ConfirmDeleteDialog';
 import { DataTable, type DataTableColumn } from '@/components/DataTable';
@@ -248,11 +248,10 @@ export const ProjectsPage = () => {
             />
 
             <div className="mb-4 flex flex-wrap items-center gap-2">
-                <Input
-                    placeholder="Buscar por nombre o guía…"
-                    className="bg-card w-full sm:w-56"
+                <SearchInput
                     value={search}
-                    onChange={(e) => setSearch(e.target.value)}
+                    onChange={setSearch}
+                    placeholder="Buscar por nombre o guía…"
                 />
                 {canSeeOwner && (
                     <OwnerFilterField

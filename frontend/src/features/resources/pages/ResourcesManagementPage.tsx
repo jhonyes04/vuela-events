@@ -4,7 +4,7 @@ import { toast } from 'sonner';
 import { useAuth } from '@/features/auth/hooks/context';
 import { ApiError } from '@/lib/api';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { SearchInput } from '@/components/SearchInput';
 import { PageTitle } from '@/components/PageTitle';
 import { ListErrors } from '@/features/users/components/ListErrors';
 import { DataTable } from '@/components/DataTable';
@@ -226,11 +226,10 @@ export const ResourcesManagementPage = () => {
             <ListErrors error={error} actionError={null} onRetry={reload} />
 
             <div className="mb-4 flex flex-wrap items-center gap-2">
-                <Input
-                    placeholder="Buscar por título…"
-                    className="bg-card w-full sm:w-56"
+                <SearchInput
                     value={search}
-                    onChange={(e) => setSearch(e.target.value)}
+                    onChange={setSearch}
+                    placeholder="Buscar por título…"
                 />
                 <ComboboxField
                     className="w-full sm:w-40 bg-card"

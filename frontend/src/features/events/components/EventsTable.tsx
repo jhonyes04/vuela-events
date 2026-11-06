@@ -2,7 +2,7 @@ import { useEffect, useState, type ReactNode } from 'react';
 import { OverlayScrollbarsComponent } from 'overlayscrollbars-react';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Input } from '@/components/ui/input';
+import { SearchInput } from '@/components/SearchInput';
 import { ComboboxField } from '@/components/ComboboxField';
 import { DataTable, type DataTableColumn } from '@/components/DataTable';
 import { ListErrors } from '@/features/users/components/ListErrors';
@@ -289,11 +289,10 @@ export const EventsTable = ({
             <ListErrors error={error} actionError={null} onRetry={onRetry} />
 
             <div className="mb-4 flex flex-wrap items-center gap-2">
-                <Input
-                    placeholder={searchPlaceholder}
-                    className="bg-card w-full sm:w-56"
+                <SearchInput
                     value={search}
-                    onChange={(e) => setSearch(e.target.value)}
+                    onChange={setSearch}
+                    placeholder={searchPlaceholder}
                 />
                 <ComboboxField
                     className="w-full sm:w-48 bg-card"

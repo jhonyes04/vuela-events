@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
     Pencil,
-    Search,
     Trash2,
     UserCog,
     UserCheck,
@@ -12,7 +11,7 @@ import { toast } from 'sonner';
 import { useAuth } from '@/features/auth/hooks/context';
 import { Button } from '@/components/ui/button';
 import { ComboboxField } from '@/components/ComboboxField';
-import { Input } from '@/components/ui/input';
+import { SearchInput } from '@/components/SearchInput';
 import { ConfirmDeleteDialog } from '@/components/ConfirmDeleteDialog';
 import { DataTable, type DataTableColumn } from '@/components/DataTable';
 import { IconTooltip } from '@/components/IconTooltip';
@@ -289,16 +288,11 @@ export const UsersPage = () => {
             <PageTitle icon={UserCog}>Gestionar Usuarios</PageTitle>
 
             <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center">
-                <div className="relative bg-card w-full sm:w-100">
-                    <Search className="absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-                    <Input
-                        type="text"
-                        placeholder="Buscar por nombre, apellidos o Punto Vuela…"
-                        value={search}
-                        onChange={(e) => setSearch(e.target.value)}
-                        className="pl-8"
-                    />
-                </div>
+                <SearchInput
+                    value={search}
+                    onChange={setSearch}
+                    placeholder="Buscar por nombre, apellidos o Punto Vuela…"
+                />
 
                 <ComboboxField
                     className="w-full bg-card sm:w-40"

@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Mail, Pencil, Trash2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { SearchInput } from '@/components/SearchInput';
 import { IconTooltip } from '@/components/IconTooltip';
 import { ConfirmDeleteDialog } from '@/components/ConfirmDeleteDialog';
 import { PageTitle } from '@/components/PageTitle';
@@ -184,11 +184,10 @@ export const EmailTemplatesPage = () => {
             </div>
 
             <div className="mb-4">
-                <Input
-                    placeholder="Buscar por nombre o asunto…"
-                    className="bg-card w-64"
+                <SearchInput
                     value={search}
-                    onChange={(e) => setSearch(e.target.value)}
+                    onChange={setSearch}
+                    placeholder="Buscar por nombre o asunto…"
                 />
             </div>
 

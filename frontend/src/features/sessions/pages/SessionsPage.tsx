@@ -3,7 +3,7 @@ import { Monitor, Trash2 } from 'lucide-react';
 import { OverlayScrollbarsComponent } from 'overlayscrollbars-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { SearchInput } from '@/components/SearchInput';
 import { ConfirmDeleteDialog } from '@/components/ConfirmDeleteDialog';
 import { DataTable, type DataTableColumn } from '@/components/DataTable';
 import { IconTooltip } from '@/components/IconTooltip';
@@ -120,11 +120,10 @@ export const SessionsPage = () => {
             />
 
             <div className="mb-4">
-                <Input
-                    placeholder="Buscar por nombre o correo…"
-                    className="w-full sm:w-56 bg-card"
+                <SearchInput
                     value={search}
-                    onChange={(e) => setSearch(e.target.value)}
+                    onChange={setSearch}
+                    placeholder="Buscar por nombre o correo…"
                 />
             </div>
 

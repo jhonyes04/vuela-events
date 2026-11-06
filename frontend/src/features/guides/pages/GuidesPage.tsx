@@ -10,7 +10,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Input } from '@/components/ui/input';
+import { SearchInput } from '@/components/SearchInput';
 import { OwnerFilterField } from '@/components/OwnerFilterField';
 import { IconTooltip } from '@/components/IconTooltip';
 import { ConfirmDeleteDialog } from '@/components/ConfirmDeleteDialog';
@@ -275,11 +275,10 @@ export const GuidesPage = () => {
             </div>
 
             <div className="mb-4 flex flex-wrap items-center gap-2">
-                <Input
-                    placeholder="Buscar por nombre o URL…"
-                    className="w-full sm:w-64 bg-card"
+                <SearchInput
                     value={search}
-                    onChange={(e) => setSearch(e.target.value)}
+                    onChange={setSearch}
+                    placeholder="Buscar por nombre o URL…"
                 />
                 {canSeeOwner && (
                     <OwnerFilterField

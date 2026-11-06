@@ -4,7 +4,7 @@ import { Separator } from '@/components/ui/separator';
 import { ResourceLinksTab } from '@/features/resources/components/ResourceLinksTab';
 import { DocumentsTab } from '@/features/resources/components/DocumentsTab';
 import { PageTitle } from '@/components/PageTitle';
-import { Input } from '@/components/ui/input';
+import { SearchInput } from '@/components/SearchInput';
 import { useState } from 'react';
 
 export const ResourcesPage = () => {
@@ -15,11 +15,10 @@ export const ResourcesPage = () => {
             <PageTitle icon={FolderOpen}>Recursos</PageTitle>
 
             <div className="mb-4">
-                <Input
-                    placeholder="Buscar…"
-                    className="bg-card w-full sm:w-56"
+                <SearchInput
                     value={search}
-                    onChange={(e) => setSearch(e.target.value)}
+                    onChange={setSearch}
+                    placeholder="Buscar…"
                 />
             </div>
 

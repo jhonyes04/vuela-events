@@ -10,7 +10,7 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
+import { SearchInput } from '@/components/SearchInput';
 // import { projectChipClass } from '@/features/projects/lib/colors';
 import {
     adminRegisterUser,
@@ -113,10 +113,11 @@ const AddParticipantsBody = ({
                 </DialogDescription>
             </DialogHeader>
 
-            <Input
-                placeholder="Buscar por nombre…"
+            <SearchInput
                 value={query}
-                onChange={(e) => setQuery(e.target.value)}
+                onChange={setQuery}
+                placeholder="Buscar por nombre…"
+                className="w-full sm:w-full"
             />
 
             {loading ? (

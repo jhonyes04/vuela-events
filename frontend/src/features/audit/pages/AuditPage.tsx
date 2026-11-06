@@ -4,7 +4,7 @@ import { OverlayScrollbarsComponent } from 'overlayscrollbars-react';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ComboboxField } from '@/components/ComboboxField';
-import { Input } from '@/components/ui/input';
+import { SearchInput } from '@/components/SearchInput';
 import { ConfirmDeleteDialog } from '@/components/ConfirmDeleteDialog';
 import { DataTable, type DataTableColumn } from '@/components/DataTable';
 import { IconTooltip } from '@/components/IconTooltip';
@@ -208,11 +208,10 @@ export const AuditPage = () => {
             />
 
             <div className="mb-4 flex flex-wrap items-center gap-2">
-                <Input
-                    placeholder="Buscar por nombre o correo…"
-                    className="bg-card w-56"
+                <SearchInput
                     value={search}
-                    onChange={(e) => setSearch(e.target.value)}
+                    onChange={setSearch}
+                    placeholder="Buscar por nombre o correo…"
                 />
                 <ComboboxField
                     className="w-full bg-card sm:w-56"
