@@ -1,0 +1,77 @@
+model Survey {
+    id              String          @id @db.Uuid @default(uuid())
+    title           String          @db.VarChar(200)
+    status          String          @db.VarChar(20 )@default("draft") //draft | active | closed
+    createdById     String          @db.Uuid
+    createdAt       DateTime        @default(now())
+    activatedAt     DateTime?
+    closedAt        DateTime?
+
+    createdBy       User            @relation(fields: [createdById], references: [id], onDelete: Restrict)
+
+    questions       SurveyQuestion[]
+    responses       SurveyResponse[]
+    participants    SurveyParticipation[]
+
+    @@map("surveys")
+}
+
+model SurveyQuestion {
+    id              String          @id @db.Uuid @default(uuid())
+    surveyId        String          @db.Uuid
+    order           Int
+    prompt          String          @db.VarChar(300)
+    description     String?         @db.VarChar(300)
+    type            String          @db.VarChar(20) // choice | text
+    allowMultiple   Boolean         @default(false)
+    required        Boolean         @default(true)
+    choices         Json?
+
+    survey          Survey          @relation(fields: [surveyId], references: [id], onDelete: Cascade)
+
+    answers         SurveyAnswer[]
+
+    @@unique([surveyId, order])
+    @@map("survey_questions")
+}
+
+// Respuesta anónima no lleva userId
+model SurveyResponse {
+    id              String          @id @db.Uuid @default(uuid())
+    surveyId        String          @db.Uuid
+    submittedAt     DateTime        @default(now())
+
+    survey          Survey          @relation(fields: [surveyId], references: [id], onDelete: Cascade)
+
+    answers         SurveyAnswer[]
+
+    @@map("survey_responses")
+}
+
+model SurveyAnswer {
+    id              String          @id @db.Uuid @default(uuid())
+    responseId      String          @db.Uuid
+    questionId      String          @db.Uuid
+    value           String          @db.Text
+
+    response        SurveyResponse  @relation(fields: [responseId], references: [id], onDelete: Cascade)
+    question        SurveyQuestion  @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+    @@unique([responseId, questionId])
+    @@map("survey_answers")
+}
+
+// Sólo controla quién ya contestó
+// No cruza identidad con contenido
+model SurveyParticipation {
+    id              String          @id @db.Uuid @default(uuid())
+    surveyId        String          @db.Uuid
+    userId          String          @db.Uuid
+    respondedAt     DateTime        @default(now())
+
+    survey          Survey          @relation(fields: [surveyId], references: [id], onDelete: Cascade)
+    user            User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+    @@unique([surveyId, userId])
+    @@map("survey_participations")
+}

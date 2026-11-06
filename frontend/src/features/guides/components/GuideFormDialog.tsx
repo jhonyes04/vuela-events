@@ -15,6 +15,7 @@ import { Label } from '@/components/ui/label';
 import { OwnerField } from '@/components/OwnerField';
 import { useAuth } from '@/features/auth/hooks/context';
 import { ApiError } from '@/lib/api';
+import { listOwnerCandidates } from '@/lib/ownerCandidates';
 import {
     createGuide,
     updateGuide,
@@ -113,6 +114,7 @@ const GuideFormBody = ({ guide, onSaved, onClose }: GuideFormBodyProps) => {
                         onValueChange={setOwnerId}
                         disabled={submitting}
                         currentOwner={guide?.createdBy ?? null}
+                        fetchCandidates={listOwnerCandidates}
                     />
                 )}
 

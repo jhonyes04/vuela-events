@@ -28,6 +28,7 @@ import { metricsRouter } from './routes/metrics.js';
 import { appSettingsRouter } from './routes/appSettings.js';
 import { sessionsRouter } from './routes/sessions.js';
 import { notificationsRouter } from './routes/notifications.js';
+import { surveysRouter } from './routes/surveys.js';
 import { readLimiter, writeLimiter } from './middleware/rateLimit.js';
 import { maintenanceGate } from './middleware/maintenance.js';
 import { getAppSettings } from './services/appSettings.js';
@@ -106,6 +107,7 @@ export function createApp(options: AppOptions = {}) {
     app.use('/api/email-settings', emailSettingsRouter);
     app.use('/api/email-sends', emailSendsRouter);
     app.use('/api/notifications', notificationsRouter);
+    app.use('/api/surveys', surveysRouter);
     app.use('/api/events', eventsRouter);
     app.use('/api/audit', auditRouter);
     app.use('/api/stats', statsRouter);

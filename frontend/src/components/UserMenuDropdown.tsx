@@ -1,10 +1,11 @@
-import { Fragment } from 'react';
+import { Fragment, useEffect } from 'react';
 import { ChevronDown } from 'lucide-react';
 import { NavLink } from 'react-router';
 import { useAuth } from '@/features/auth/hooks/context';
 import { ROLE_IDS } from '@/features/users/lib/roles';
 import { Badge } from '@/components/ui/badge';
 import { useUnreadNotificationCount } from '@/features/notifications/hooks/useUnreadNotificationCount';
+import { usePendingSurveyStore } from '@/features/surveys/store';
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -27,6 +28,15 @@ import {
 export const UserMenuDropdown = () => {
     const { user, logout } = useAuth();
     const unreadCount = useUnreadNotificationCount(!!user);
+    const pendingSurvey = usePendingSurveyStore((s) => s.survey);
+    const ensurePendingSurveyStream = usePendingSurveyStore(
+        (s) => s.ensureStream,
+    );
+    const openSurveyDialog = usePendingSurveyStore((s) => s.openDialog);
+
+    useEffect(() => {
+        if (user) ensurePendingSurveyStream();
+    }, [user, ensurePendingSurveyStream]);
 
     if (!user) return null;
 
@@ -94,6 +104,20 @@ export const UserMenuDropdown = () => {
                         </NavLink>
                     }
                 />
+                {pendingSurvey && (
+                    <DropdownMenuItem
+                        className="cursor-pointer"
+                        onClick={openSurveyDialog}
+                    >
+                        Encuesta pendiente
+                        <Badge
+                            variant="default"
+                            className="bg-red-600 ml-auto"
+                        >
+                            Nueva
+                        </Badge>
+                    </DropdownMenuItem>
+                )}
                 {(gestionRoutes.length > 0 ||
                     adminRoutes.length > 0 ||
                     user.roleId === ROLE_IDS.AIL) && <DropdownMenuSeparator />}

@@ -16,6 +16,7 @@ import { Label } from '@/components/ui/label';
 import { OwnerField } from '@/components/OwnerField';
 import { useAuth } from '@/features/auth/hooks/context';
 import { ApiError } from '@/lib/api';
+import { listOwnerCandidates } from '@/lib/ownerCandidates';
 import {
     createProject,
     updateProject,
@@ -254,6 +255,7 @@ const ProjectFormBody = ({
                             onValueChange={setOwnerId}
                             disabled={submitting}
                             currentOwner={project?.createdBy ?? null}
+                            fetchCandidates={listOwnerCandidates}
                         />
                     )}
 

@@ -13,7 +13,8 @@ export type NotificationType =
     | 'new_user_registered'
     | 'role_changed'
     | 'maintenance_notice'
-    | 'broadcast';
+    | 'broadcast'
+    | 'new_survey';
 
 const NOTIFICATION_RETENTION_DAYS = 30;
 
@@ -48,6 +49,14 @@ export const notifyUsers = async (
     }
 };
 
+// Avisa en vivo sin crear notificación (no todo lo que cambia en tiempo real
+// merece quedar en el historial, p. ej. que una encuesta se ha cerrado).
+export const pingUsers = (userIds: string[]): void => {
+    for (const userId of userIds) {
+        notificationBus.emit(userId);
+    }
+};
+
 // Resuelve destinatarios activos por rol (o todos los activos si no se pasa roles)
 // Excluye opcionalmente a quien hizo la acción
 export const getActiveUserIds = async (opts?: {
@@ -79,8 +88,7 @@ export const sendBroadcastNotification = async (
     title: string,
     body: string,
 ): Promise<number> => {
-    const excludeRoles =
-        actorRoleId === 'dt' ? ['dt', 'admin'] : ['admin'];
+    const excludeRoles = actorRoleId === 'dt' ? ['dt', 'admin'] : ['admin'];
 
     const userIds = await getActiveUserIds({
         excludeRoles,

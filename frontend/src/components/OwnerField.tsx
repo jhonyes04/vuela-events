@@ -2,10 +2,6 @@ import { useEffect, useState } from 'react';
 import { Label } from '@/components/ui/label';
 import { ComboboxField } from '@/components/ComboboxField';
 import { personLabel } from '@/lib/personLabel';
-import {
-    listOwnerCandidates,
-    type OwnerCandidate,
-} from '@/lib/ownerCandidates';
 
 interface OwnerFieldOwner {
     id: string;
@@ -20,6 +16,12 @@ interface OwnerFieldProps {
     // El propietario real actual del item: se muestra siempre, aunque no
     // sea un candidato seleccionable (p. ej. es admin y quien edita es dt).
     currentOwner?: OwnerFieldOwner | null;
+    // Quiénes pueden ser propietario: distinto según el recurso (p. ej.
+    // "no admin" para materiales/proyectos/guías, "con cierto permiso" para
+    // encuestas), así que lo decide quien usa el campo, no el campo mismo.
+    fetchCandidates: () => Promise<OwnerFieldOwner[]>;
+    placeholder?: string;
+    emptyMessage?: string;
 }
 
 // Solo se usa cuando quien edita tiene el permiso: deja fijar al propietario
@@ -29,18 +31,21 @@ export const OwnerField = ({
     onValueChange,
     disabled,
     currentOwner,
+    fetchCandidates,
+    placeholder = 'Tú mismo',
+    emptyMessage = 'No hay usuarios disponibles',
 }: OwnerFieldProps) => {
     // null mientras carga: el combobox no se monta hasta tener los
     // candidatos, para no mostrar el id en bruto si el actual no resuelve.
-    const [candidates, setCandidates] = useState<OwnerCandidate[] | null>(
+    const [candidates, setCandidates] = useState<OwnerFieldOwner[] | null>(
         null,
     );
 
     useEffect(() => {
-        listOwnerCandidates()
+        fetchCandidates()
             .then(setCandidates)
             .catch(() => setCandidates([]));
-    }, []);
+    }, [fetchCandidates]);
 
     if (candidates === null) {
         return (
@@ -69,8 +74,8 @@ export const OwnerField = ({
                 getLabel={(candidate) => personLabel(candidate)}
                 value={value}
                 onValueChange={onValueChange}
-                placeholder="Tú mismo"
-                emptyMessage="No hay usuarios disponibles"
+                placeholder={placeholder}
+                emptyMessage={emptyMessage}
             />
         </div>
     );

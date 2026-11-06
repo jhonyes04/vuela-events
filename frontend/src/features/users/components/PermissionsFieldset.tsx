@@ -14,6 +14,7 @@ import {
     type LucideIcon,
     PackageOpen,
     Gauge,
+    ClipboardList,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -49,6 +50,7 @@ const CATEGORY_STYLES: Record<string, CategoryStyle> = {
     sessions: { label: 'Sesiones', icon: Monitor },
     settings: { label: 'Configuración', icon: SlidersHorizontal },
     stats: { label: 'Estadísticas', icon: BarChart3 },
+    surveys: { label: 'Encuestas', icon: ClipboardList },
     users: { label: 'Usuarios', icon: Users },
 };
 

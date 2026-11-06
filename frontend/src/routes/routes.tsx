@@ -18,6 +18,7 @@ import { MaterialsPage } from '@/features/materials/pages/MaterialsPage';
 import { AppSettingsPage } from '@/features/appSettings/pages/AppSettingsPage';
 import { SessionsPage } from '@/features/sessions/pages/SessionsPage';
 import { MetricsPage } from '@/features/metrics/pages/MetricsPage';
+import { SurveysPage } from '@/features/surveys/pages/SurveysPage';
 
 export interface AppRoute {
     path: string;
@@ -117,6 +118,7 @@ export const appRoutes: AppRoute[] = [
         ],
         group: 'gestion',
     },
+
     {
         path: '/gestion/intereses',
         label: 'Usuarios por proyecto',
@@ -134,6 +136,13 @@ export const appRoutes: AppRoute[] = [
             'email:edit',
             'email:delete',
         ],
+        group: 'gestion',
+    },
+    {
+        path: '/gestion/encuestas',
+        label: 'Encuestas',
+        element: <SurveysPage />,
+        permissions: ['surveys:manage'],
         group: 'gestion',
     },
     {

@@ -15,6 +15,7 @@ import { Label } from '@/components/ui/label';
 import { OwnerField } from '@/components/OwnerField';
 import { useAuth } from '@/features/auth/hooks/context';
 import { ApiError } from '@/lib/api';
+import { listOwnerCandidates } from '@/lib/ownerCandidates';
 import {
     createMaterial,
     updateMaterial,
@@ -115,6 +116,7 @@ const MaterialFormBody = ({
                         onValueChange={setOwnerId}
                         disabled={submitting}
                         currentOwner={material?.createdBy ?? null}
+                        fetchCandidates={listOwnerCandidates}
                     />
                 )}
 

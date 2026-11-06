@@ -64,6 +64,7 @@ const PERMISSIONS: { id: string; description: string }[] = [
     { id: 'settings:manage', description: 'Gestionar ajustes globales de la app' },
     { id: 'sessions:manage', description: 'Gestionar sesiones'},
     { id: 'ownership:manage', description: 'Cambiar el propietario de proyectos, guías y materiales' },
+    {id: 'surveys:manage', description: 'Gestionar encuestas'}
 ];
 
 // Permisos que cada rol tiene hoy, acumulados de todas las migraciones
@@ -110,6 +111,7 @@ const ROLE_PERMISSIONS: Record<string, string[]> = {
         'settings:manage',
         'sessions:manage',
         'ownership:manage',
+        'surveys:manage'
     ],
     // Todo menos gestión de usuarios y de roles.
     dt: [
@@ -145,6 +147,7 @@ const ROLE_PERMISSIONS: Record<string, string[]> = {
         'email:send',
         'stats:view',
         'ownership:manage',
+        'surveys:manage'
     ],
     ail: [
         'resources:view',

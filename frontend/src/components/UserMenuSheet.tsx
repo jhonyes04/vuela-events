@@ -20,11 +20,14 @@ import {
     XIcon,
     type LucideIcon,
     Gauge,
+    ClipboardList,
 } from 'lucide-react';
+import { useEffect } from 'react';
 import { NavLink } from 'react-router';
 import { OverlayScrollbarsComponent } from 'overlayscrollbars-react';
 import { useAuth } from '@/features/auth/hooks/context';
 import { ROLE_IDS } from '@/features/users/lib/roles';
+import { usePendingSurveyStore } from '@/features/surveys/store';
 import { Button } from '@/components/ui/button';
 import {
     Sheet,
@@ -44,11 +47,12 @@ import { appRoutes, canAccess, type AppRoute } from '@/routes/routes';
 const ROUTE_ICONS: Record<string, LucideIcon> = {
     '/gestion/eventos': Calendar,
     '/gestion/proyectos': FolderKanban,
-    '/gestion/intereses': Users,
     '/gestion/guias': BookOpen,
     '/gestion/recursos': FolderOpen,
     '/gestion/materiales': PackageOpen,
+    '/gestion/intereses': Users,
     '/gestion/plantillas-correo': Mail,
+    '/gestion/encuestas': ClipboardList,
     '/estadisticas': BarChart3,
     '/admin/usuarios': UserCog,
     '/admin/roles': ShieldCheck,
@@ -105,6 +109,15 @@ const RouteGroup = ({ label, routes }: RouteGroupProps) => {
 export const UserMenuSheet = () => {
     const { user, logout } = useAuth();
     const unreadCount = useUnreadNotificationCount(!!user);
+    const pendingSurvey = usePendingSurveyStore((s) => s.survey);
+    const ensurePendingSurveyStream = usePendingSurveyStore(
+        (s) => s.ensureStream,
+    );
+    const openSurveyDialog = usePendingSurveyStore((s) => s.openDialog);
+
+    useEffect(() => {
+        if (user) ensurePendingSurveyStream();
+    }, [user, ensurePendingSurveyStream]);
 
     if (!user) return null;
 
@@ -217,6 +230,29 @@ export const UserMenuSheet = () => {
                                         </NavLink>
                                     }
                                 />
+                                {pendingSurvey && (
+                                    <SheetClose
+                                        nativeButton={false}
+                                        render={
+                                            <button
+                                                type="button"
+                                                className={navClass({
+                                                    isActive: false,
+                                                })}
+                                                onClick={openSurveyDialog}
+                                            >
+                                                <ClipboardList className="size-4" />
+                                                Encuesta pendiente
+                                                <Badge
+                                                    variant="default"
+                                                    className="bg-red-600 ml-auto"
+                                                >
+                                                    Nueva
+                                                </Badge>
+                                            </button>
+                                        }
+                                    />
+                                )}
                             </div>
 
                             <RouteGroup
