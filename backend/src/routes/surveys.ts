@@ -58,6 +58,8 @@ const surveySchema = z.strictObject({
     title: z.string().trim().min(1).max(200).regex(NO_CONTROL_OR_TAGS),
     questions: z.array(questionSchema).min(1).max(30),
     ownerId: z.uuid().optional(),
+    scheduledStartAt: z.iso.datetime().optional(),
+    scheduledEndAt: z.iso.datetime().optional(),
 });
 
 const answerSchema = z.strictObject({
@@ -80,11 +82,15 @@ const surveyErrors = {
     not_draft: [409, 'La encuesta ya no está en borrador'],
     not_active: [409, 'La encuesta no está activa'],
     already_active: [409, 'La encuesta ya está activa'],
-    survey_active: [409, 'No se puede eliminar una encuesta activa, ciérrala antes'],
+    survey_active: [
+        409,
+        'No se puede eliminar una encuesta activa, ciérrala antes',
+    ],
     no_questions: [400, 'La encuesta no tiene preguntas'],
     already_answered: [409, 'Ya has respondido esta encuesta'],
     invalid_answers: [400, 'Respuestas no válidas'],
     owner_not_found: [400, 'Propietario no válido'],
+    invalid_schedule: [400, 'Fechas programadas no válidas'],
 } as const;
 
 export const surveysRouter = Router();
@@ -238,6 +244,12 @@ surveysRouter.post(
                 body.data.title,
                 body.data.questions,
                 body.data.ownerId,
+                body.data.scheduledStartAt
+                    ? new Date(body.data.scheduledStartAt)
+                    : undefined,
+                body.data.scheduledEndAt
+                    ? new Date(body.data.scheduledEndAt)
+                    : undefined,
             );
 
             res.status(201).json({ survey });
@@ -280,6 +292,12 @@ surveysRouter.patch(
                 body.data.title,
                 body.data.questions,
                 body.data.ownerId,
+                body.data.scheduledStartAt
+                    ? new Date(body.data.scheduledStartAt)
+                    : undefined,
+                body.data.scheduledEndAt
+                    ? new Date(body.data.scheduledEndAt)
+                    : undefined,
             );
 
             res.status(204).end();

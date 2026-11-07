@@ -12,6 +12,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { OwnerField } from '@/components/OwnerField';
+import { DateTimePicker } from '@/features/datetime/components/DateTimePicker';
 import { ApiError } from '@/lib/api';
 import { useAuth } from '@/features/auth/hooks/context';
 import { SurveyQuestionCard } from '@/features/surveys/components/SurveyQuestionCard';
@@ -29,6 +30,15 @@ import {
     type SurveyDetail,
 } from '@/features/surveys/lib/surveys';
 
+const toLocaleValue = (iso: string | null | undefined): string => {
+    if (!iso) return '';
+
+    const date = new Date(iso);
+    const pad = (n: number) => String(n).padStart(2, '0');
+
+    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+};
+
 interface SurveyFormBodyProps {
     survey: SurveyDetail | null;
     onSaved: () => void;
@@ -41,6 +51,13 @@ const SurveyFormBody = ({ survey, onSaved, onClose }: SurveyFormBodyProps) => {
     const [ownerId, setOwnerId] = useState(
         survey?.createdBy.id ?? user?.id ?? '',
     );
+    const [scheduledStartAt, setScheduledStartAt] = useState(() =>
+        toLocaleValue(survey?.scheduledStartAt),
+    );
+    const [scheduledEndAt, setScheduledEndAt] = useState(() =>
+        toLocaleValue(survey?.scheduledEndAt),
+    );
+    const [minDate] = useState(() => new Date());
     const [questions, setQuestions] = useState<DraftQuestion[]>(
         survey?.questions.map(toDraftQuestion) ?? [newQuestion()],
     );
@@ -129,6 +146,18 @@ const SurveyFormBody = ({ survey, onSaved, onClose }: SurveyFormBodyProps) => {
             return;
         }
 
+        const startIso = scheduledStartAt
+            ? new Date(scheduledStartAt).toISOString()
+            : undefined;
+        const endIso = scheduledEndAt
+            ? new Date(scheduledEndAt).toISOString()
+            : undefined;
+
+        if (startIso && endIso && endIso <= startIso) {
+            toast.error('El fin programado debe ser posterior al inicio');
+            return;
+        }
+
         setSubmitting(true);
 
         try {
@@ -140,9 +169,17 @@ const SurveyFormBody = ({ survey, onSaved, onClose }: SurveyFormBodyProps) => {
                     title,
                     input,
                     ownerId || undefined,
+                    startIso,
+                    endIso,
                 );
             } else {
-                await createSurvey(title, input, ownerId || undefined);
+                await createSurvey(
+                    title,
+                    input,
+                    ownerId || undefined,
+                    startIso,
+                    endIso,
+                );
             }
 
             toast.success(
@@ -235,6 +272,31 @@ const SurveyFormBody = ({ survey, onSaved, onClose }: SurveyFormBodyProps) => {
                         fetchCandidates={listAssignableUsers}
                         emptyMessage="No hay usuarios con permiso de encuestas"
                     />
+                </div>
+
+                <div className="grid gap-4 border-t py-4 sm:grid-cols-2">
+                    <div className="grid gap-1.5">
+                        <Label htmlFor="survey-start">
+                            Inicio programado (opcional)
+                        </Label>
+                        <DateTimePicker
+                            id="survey-start"
+                            value={scheduledStartAt}
+                            onChange={setScheduledStartAt}
+                            minDate={minDate}
+                        />
+                    </div>
+                    <div className="grid gap-1.5">
+                        <Label htmlFor="survey-end">
+                            Fin programado (opcional)
+                        </Label>
+                        <DateTimePicker
+                            id="survey-end"
+                            value={scheduledEndAt}
+                            onChange={setScheduledEndAt}
+                            minDate={minDate}
+                        />
+                    </div>
                 </div>
             </form>
 

@@ -29,6 +29,7 @@ import { usePendingSurveyStore } from '@/features/surveys/store';
 import {
     getPendingSurvey,
     submitSurveyResponse,
+    type PendingSurvey,
     type SurveyAnswerInput,
 } from '@/features/surveys/lib/surveys';
 
@@ -41,6 +42,18 @@ export const PendingSurveyDialog = () => {
     const closeDialog = usePendingSurveyStore((s) => s.closeDialog);
     const clear = usePendingSurveyStore((s) => s.clear);
     const [submitting, setSubmitting] = useState(false);
+    const [displayedSurvey, setDisplayedSurvey] =
+        useState<PendingSurvey | null>(null);
+
+    useEffect(() => {
+        void Promise.resolve().then(() => {
+            if (open) {
+                setDisplayedSurvey((prev) => prev ?? survey);
+            } else {
+                setDisplayedSurvey(null);
+            }
+        });
+    }, [open, survey]);
 
     // Mantiene el estado de la encuesta pendiente al día (para el menú),
     // sin que esto por sí solo abra el diálogo.
@@ -63,9 +76,9 @@ export const PendingSurveyDialog = () => {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [user]);
 
-    if (!survey) return null;
+    if (!displayedSurvey) return null;
 
-    const items = survey.questions.map((question) => ({
+    const items = displayedSurvey.questions.map((question) => ({
         name: question.id,
         required: question.required,
         choices: question.choices?.map((choice) => ({ value: choice.value })),
@@ -77,20 +90,24 @@ export const PendingSurveyDialog = () => {
 
         try {
             const formData = new FormData(e.currentTarget as HTMLFormElement);
-            const answers: SurveyAnswerInput[] = survey.questions.flatMap(
-                (question) => {
+            const answers: SurveyAnswerInput[] =
+                displayedSurvey.questions.flatMap((question) => {
                     const values = formData
                         .getAll(question.id)
                         .map(String)
                         .filter((value) => value.trim());
 
                     return values.length > 0
-                        ? [{ questionId: question.id, value: values.join(', ') }]
+                        ? [
+                              {
+                                  questionId: question.id,
+                                  value: values.join(', '),
+                              },
+                          ]
                         : [];
-                },
-            );
+                });
 
-            await submitSurveyResponse(survey.id, answers);
+            await submitSurveyResponse(displayedSurvey.id, answers);
 
             toast.success('¡Gracias por tu respuesta!');
             clear();
@@ -109,7 +126,7 @@ export const PendingSurveyDialog = () => {
         <Dialog open={open} onOpenChange={(o) => !o && closeDialog()}>
             <DialogContent className="sm:max-w-lg">
                 <DialogHeader>
-                    <DialogTitle>{survey.title}</DialogTitle>
+                    <DialogTitle>{displayedSurvey.title}</DialogTitle>
                 </DialogHeader>
 
                 <Questionnaire
@@ -118,7 +135,7 @@ export const PendingSurveyDialog = () => {
                 >
                     <QuestionnaireProgress />
 
-                    {survey.questions.map((question) => (
+                    {displayedSurvey.questions.map((question) => (
                         <QuestionnaireItem
                             key={question.id}
                             name={question.id}

@@ -20,6 +20,7 @@ import { SearchInput } from '@/components/SearchInput';
 import { PaginationControls } from '@/components/PaginationControls';
 import { useSort } from '@/hooks/useSort';
 import { usePagination } from '@/hooks/usePagination';
+import { useNotificationStream } from '@/features/notifications/hooks/useNotificationStream';
 import { SurveyFormDialog } from '@/features/surveys/components/SurveyFormDialog';
 import { SurveyResultsDialog } from '@/features/surveys/components/SurveyResultsDialog';
 import {
@@ -117,6 +118,10 @@ export const SurveysPage = () => {
     useEffect(() => {
         void Promise.resolve().then(() => load());
     }, [load]);
+
+    // Activar/cerrar (manual o por el job) avisa en vivo: la lista se
+    // refresca sola, sin recargar la página.
+    useNotificationStream(load);
 
     const openCreate = () => {
         setEditing(null);

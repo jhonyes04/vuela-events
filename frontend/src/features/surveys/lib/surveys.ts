@@ -41,6 +41,8 @@ export interface Survey {
     createdAt: string;
     activatedAt: string | null;
     closedAt: string | null;
+    scheduledStartAt: string | null;
+    scheduledEndAt: string | null;
     createdBy: SurveyOwner;
     responsesCount: number;
 }
@@ -87,11 +89,15 @@ export const createSurvey = async (
     title: string,
     questions: SurveyQuestionInput[],
     ownerId?: string,
+    scheduledStartAt?: string,
+    scheduledEndAt?: string,
 ): Promise<Survey> => {
     const { survey } = await api.post<{ survey: RawSurvey }>('/surveys', {
         title,
         questions,
         ...(ownerId && { ownerId }),
+        ...(scheduledStartAt && { scheduledStartAt }),
+        ...(scheduledEndAt && { scheduledEndAt }),
     });
 
     return flattenSurvey(survey);
@@ -102,11 +108,15 @@ export const updateSurvey = async (
     title: string,
     questions: SurveyQuestionInput[],
     ownerId?: string,
+    scheduledStartAt?: string,
+    scheduledEndAt?: string,
 ): Promise<void> =>
     api.patch(`/surveys/${id}`, {
         title,
         questions,
         ...(ownerId && { ownerId }),
+        ...(scheduledStartAt && { scheduledStartAt }),
+        ...(scheduledEndAt && { scheduledEndAt }),
     });
 
 export interface AssignableUser {

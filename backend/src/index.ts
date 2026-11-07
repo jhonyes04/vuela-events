@@ -7,6 +7,7 @@ import { pruneOldAuditLogs } from './services/audit.js';
 import { pruneOldEmailLogs } from './services/emailLog.js';
 import { sendDueEventReminders } from './services/eventReminder.js';
 import { pruneOldNotifications } from './services/notification.js';
+import { runScheduleSurveys } from './services/survey.js';
 
 const app = createApp();
 
@@ -59,10 +60,7 @@ const runNotificationRetention = () => {
             }
         })
         .catch((e) =>
-            logger.error(
-                { err: e },
-                'No se pudo limpiar las notificaciones',
-            ),
+            logger.error({ err: e }, 'No se pudo limpiar las notificaciones'),
         );
 };
 
@@ -91,6 +89,27 @@ const runEventReminders = () => {
 
 runEventReminders();
 setInterval(runEventReminders, FIVE_MIN_MS).unref();
+
+const runScheduledSurveys = () => {
+    void runScheduleSurveys()
+        .then(({ activated, closed }) => {
+            if (activated > 0 || closed > 0) {
+                logger.info(
+                    { activated, closed },
+                    `Encuestas programadas: ${activated} activada${activated === 1 ? '' : 's'}, ${closed} cerrada${closed === 1 ? '' : 's'}.`,
+                );
+            }
+        })
+        .catch((e) =>
+            logger.error(
+                { err: e },
+                'No se pudo procesar las encuestas programadas',
+            ),
+        );
+};
+
+runScheduledSurveys();
+setInterval(runScheduledSurveys, FIVE_MIN_MS).unref();
 
 const server = app.listen(env.PORT, env.HOST, () => {
     logger.info(`API escuchando en http://${env.HOST}:${env.PORT}`);

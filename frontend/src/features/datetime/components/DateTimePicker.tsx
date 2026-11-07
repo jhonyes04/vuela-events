@@ -53,7 +53,6 @@ export const DateTimePicker = ({
                 <InputGroupInput
                     id={id}
                     type="datetime-local"
-                    step={900}
                     min={
                         minDate ? `${formatDateKey(minDate)}T00:00` : undefined
                     }

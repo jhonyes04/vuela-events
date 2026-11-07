@@ -1,8 +1,18 @@
 import { Prisma } from '../generated/prisma/client.js';
 import { prisma } from '../lib/prisma.js';
+import { logger } from '../lib/logger.js';
 import { recordAudit } from './audit.js';
 import { getActiveUserIds, notifyUsers, pingUsers } from './notification.js';
 import type { AuthUser } from '../lib/authUser.js';
+
+const surveyDateTimeFormat = new Intl.DateTimeFormat('es-ES', {
+    timeZone: 'Europe/Madrid',
+    day: 'numeric',
+    month: 'long',
+    hour: '2-digit',
+    minute: '2-digit',
+    hourCycle: 'h23',
+});
 
 export type SurveyFailure =
     | 'not_found'
@@ -14,7 +24,8 @@ export type SurveyFailure =
     | 'no_questions'
     | 'already_answered'
     | 'invalid_answers'
-    | 'owner_not_found';
+    | 'owner_not_found'
+    | 'invalid_schedule';
 
 export class SurveyError extends Error {
     readonly reason: SurveyFailure;
@@ -54,6 +65,8 @@ const surveySelect = {
     createdAt: true,
     activatedAt: true,
     closedAt: true,
+    scheduledStartAt: true,
+    scheduledEndAt: true,
     createdBy: { select: { id: true, name: true, puntoVuela: true } },
     _count: { select: { responses: true } },
 } as const;
@@ -122,6 +135,25 @@ const assignableUserIsValid = async (id: string): Promise<boolean> => {
     return count > 0;
 };
 
+export const validateSchedule = (
+    scheduleStartAt?: Date,
+    scheduleEndAt?: Date,
+): void => {
+    const now = new Date();
+
+    if (scheduleStartAt && scheduleStartAt < now) {
+        throw new SurveyError('invalid_schedule');
+    }
+
+    if (
+        scheduleEndAt &&
+        (scheduleEndAt <= now ||
+            (scheduleStartAt && scheduleEndAt <= scheduleStartAt))
+    ) {
+        throw new SurveyError('invalid_schedule');
+    }
+};
+
 export const listSurveys = () =>
     prisma.survey.findMany({
         orderBy: { createdAt: 'desc' },
@@ -149,6 +181,8 @@ export const createSurvey = async (
     title: string,
     questions: SurveyQuestionInput[],
     ownerId?: string,
+    scheduleStartAt?: Date,
+    scheduleEndAt?: Date,
 ) => {
     const createdById = ownerId ?? actor.id;
 
@@ -156,10 +190,14 @@ export const createSurvey = async (
         throw new SurveyError('owner_not_found');
     }
 
+    validateSchedule(scheduleStartAt, scheduleEndAt);
+
     const survey = await prisma.survey.create({
         data: {
             title,
             createdById,
+            scheduledStartAt: scheduleStartAt,
+            scheduledEndAt: scheduleEndAt,
             questions: { create: toQuestionCreateInput(questions) },
         },
         select: surveySelect,
@@ -180,6 +218,8 @@ export const updateSurvey = async (
     title: string,
     questions: SurveyQuestionInput[],
     ownerId?: string,
+    scheduleStartAt?: Date,
+    scheduleEndAt?: Date,
 ) => {
     const survey = await prisma.survey.findUnique({ where: { id } });
 
@@ -195,12 +235,16 @@ export const updateSurvey = async (
         throw new SurveyError('owner_not_found');
     }
 
+    validateSchedule(scheduleStartAt, scheduleEndAt);
+
     await prisma.$transaction([
         prisma.surveyQuestion.deleteMany({ where: { surveyId: id } }),
         prisma.survey.update({
             where: { id },
             data: {
                 title,
+                scheduledStartAt: scheduleStartAt ?? null,
+                scheduledEndAt: scheduleEndAt ?? null,
                 ...(ownerId && { createdById: ownerId }),
                 questions: { create: toQuestionCreateInput(questions) },
             },
@@ -216,7 +260,7 @@ export const updateSurvey = async (
 };
 
 export const activateSurvey = async (
-    actor: Pick<AuthUser, 'id'>,
+    actor: Pick<AuthUser, 'id'> | undefined,
     id: string,
 ) => {
     const survey = await prisma.survey.findUnique({
@@ -239,10 +283,23 @@ export const activateSurvey = async (
     // Reabrir una cerrada no cuenta como lanzamiento: solo se avisa a quien
     // todavía no ha contestado, no a quien ya participó.
     const isReopen = survey.status === 'closed';
+    const now = new Date();
+
+    // Una fecha programada que ya pasó no tiene sentido tras activar/reabrir
+    // a mano: si no se limpia, el job la volvería a tocar en el próximo tick.
+    const clearStart =
+        survey.scheduledStartAt && survey.scheduledStartAt <= now;
+    const clearEnd = survey.scheduledEndAt && survey.scheduledEndAt <= now;
 
     await prisma.survey.update({
         where: { id },
-        data: { status: 'active', activatedAt: new Date(), closedAt: null },
+        data: {
+            status: 'active',
+            activatedAt: now,
+            closedAt: null,
+            ...(clearStart && { scheduledStartAt: null }),
+            ...(clearEnd && { scheduledEndAt: null }),
+        },
     });
 
     let userIds = await getActiveUserIds({ excludeRoles: ['dt', 'admin'] });
@@ -257,22 +314,33 @@ export const activateSurvey = async (
         userIds = userIds.filter((userId) => !answeredIds.has(userId));
     }
 
+    const effectiveEndAt = clearEnd ? null : survey.scheduledEndAt;
+
     await notifyUsers(userIds, {
         type: 'new_survey',
         title: isReopen
             ? 'La encuesta sigue abierta'
             : 'Nueva encuesta disponible',
-        body: survey.title,
+        body: effectiveEndAt
+            ? `${survey.title} (disponible hasta el ${surveyDateTimeFormat.format(effectiveEndAt)})`
+            : survey.title,
     });
+
+    // Para que el listado admin se refresque solo (manual o por el job).
+    const managerIds = (await listAssignableUsers()).map((u) => u.id);
+    pingUsers(managerIds);
 
     await recordAudit({
         action: isReopen ? 'survey_reopened' : 'survey_activated',
-        actorId: actor.id,
+        actorId: actor?.id,
         newValue: survey.title.slice(0, 100),
     });
 };
 
-export const closeSurvey = async (actor: Pick<AuthUser, 'id'>, id: string) => {
+export const closeSurvey = async (
+    actor: Pick<AuthUser, 'id'> | undefined,
+    id: string,
+) => {
     const survey = await prisma.survey.findUnique({ where: { id } });
 
     if (!survey) {
@@ -285,7 +353,11 @@ export const closeSurvey = async (actor: Pick<AuthUser, 'id'>, id: string) => {
 
     await prisma.survey.update({
         where: { id },
-        data: { status: 'closed', closedAt: new Date() },
+        data: {
+            status: 'closed',
+            closedAt: new Date(),
+            closedBySchedule: actor === undefined,
+        },
     });
 
     // Para que desaparezca del menú en vivo a quien la tenía pendiente.
@@ -304,9 +376,13 @@ export const closeSurvey = async (actor: Pick<AuthUser, 'id'>, id: string) => {
         ),
     );
 
+    // Para que el listado admin se refresque solo (manual o por el job).
+    const managerIds = (await listAssignableUsers()).map((u) => u.id);
+    pingUsers(managerIds);
+
     await recordAudit({
         action: 'survey_closed',
-        actorId: actor.id,
+        actorId: actor?.id,
         newValue: survey.title.slice(0, 100),
     });
 };
@@ -371,6 +447,8 @@ export const submitSurveyResponse = async (
         select: {
             status: true,
             createdById: true,
+            closedAt: true,
+            closedBySchedule: true,
             questions: { select: { id: true, required: true } },
         },
     });
@@ -379,7 +457,14 @@ export const submitSurveyResponse = async (
         throw new SurveyError('not_found');
     }
 
-    if (survey.status !== 'active') {
+    const GRACE_MS = 10 * 60 * 1000;
+    const withinGrace =
+        survey.status === 'closed' &&
+        survey.closedBySchedule &&
+        survey.closedAt !== null &&
+        Date.now() - survey.closedAt.getTime() <= GRACE_MS;
+
+    if (survey.status !== 'active' && !withinGrace) {
         throw new SurveyError('not_active');
     }
 
@@ -495,9 +580,8 @@ export const getSurveyResults = async (id: string): Promise<SurveyResults> => {
             }
 
             const choices =
-                (question.choices as unknown as
-                    | SurveyChoiceInput[]
-                    | null) ?? [];
+                (question.choices as unknown as SurveyChoiceInput[] | null) ??
+                [];
             const tally = new Map(choices.map((choice) => [choice.value, 0]));
 
             for (const answer of question.answers) {
@@ -530,4 +614,47 @@ export const getSurveyResults = async (id: string): Promise<SurveyResults> => {
         responsesCount: survey._count.responses,
         questions,
     };
+};
+
+// Activa/cierra solas las que tengan fecha programada vencida. Sin actor:
+// recordAudit queda sin actorId (acción del sistema, no de una persona).
+export const runScheduleSurveys = async (): Promise<{
+    activated: number;
+    closed: number;
+}> => {
+    const now = new Date();
+
+    const toActivate = await prisma.survey.findMany({
+        where: { status: 'draft', scheduledStartAt: { lte: now } },
+        select: { id: true },
+    });
+
+    for (const { id } of toActivate) {
+        try {
+            await activateSurvey(undefined, id);
+        } catch (e) {
+            logger.error(
+                { err: e, surveyId: id },
+                'No se pudo activar la encuesta programada',
+            );
+        }
+    }
+
+    const toClose = await prisma.survey.findMany({
+        where: { status: 'active', scheduledEndAt: { lte: now } },
+        select: { id: true },
+    });
+
+    for (const { id } of toClose) {
+        try {
+            await closeSurvey(undefined, id);
+        } catch (e) {
+            logger.error(
+                { err: e, surveyId: id },
+                'No se pudo cerrar la encuesta programada',
+            );
+        }
+    }
+
+    return { activated: toActivate.length, closed: toClose.length };
 };
