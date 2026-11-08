@@ -27,7 +27,6 @@ import { useAuth } from '@/features/auth/hooks/context';
 import { ApiError } from '@/lib/api';
 import { usePendingSurveyStore } from '@/features/surveys/store';
 import {
-    getPendingSurvey,
     submitSurveyResponse,
     type PendingSurvey,
     type SurveyAnswerInput,
@@ -38,7 +37,6 @@ export const PendingSurveyDialog = () => {
     const survey = usePendingSurveyStore((s) => s.survey);
     const open = usePendingSurveyStore((s) => s.open);
     const ensureStream = usePendingSurveyStore((s) => s.ensureStream);
-    const openDialog = usePendingSurveyStore((s) => s.openDialog);
     const closeDialog = usePendingSurveyStore((s) => s.closeDialog);
     const clear = usePendingSurveyStore((s) => s.clear);
     const [submitting, setSubmitting] = useState(false);
@@ -62,19 +60,6 @@ export const PendingSurveyDialog = () => {
 
         ensureStream();
     }, [user, ensureStream]);
-
-    // Solo al entrar: si ya hay una pendiente sin hacer, se abre una vez.
-    // Después solo se abre al pulsar la opción del menú.
-    useEffect(() => {
-        if (!user || user.roleId === 'admin') return;
-
-        getPendingSurvey()
-            .then((pending) => {
-                if (pending) openDialog();
-            })
-            .catch(() => {});
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [user]);
 
     if (!displayedSurvey) return null;
 
