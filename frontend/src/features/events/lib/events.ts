@@ -432,7 +432,7 @@ export const attendanceLabel = (event: EventItem): string => {
         return `${taken} ${taken === 1 ? 'inscrito' : 'inscritos'}`;
     }
 
-    return `${taken} de ${event.capacity} plazas`;
+    return `${taken} de ${Math.max(taken, event.capacity)} plazas`;
 };
 
 export interface Attendee {
