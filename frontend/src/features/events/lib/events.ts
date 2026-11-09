@@ -350,6 +350,7 @@ export interface EventUpdateInput {
     endsAt: string;
     attachments: EventAttachmentInput[];
     removedAttachmentIds: string[];
+    applyToSeries: string[];
 }
 
 // El servidor no devuelve "registered" (no aplica fuera de la vista del

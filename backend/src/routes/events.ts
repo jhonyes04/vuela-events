@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { z } from 'zod';
 import { prisma } from '../lib/prisma.js';
+import type { Prisma } from '../generated/prisma/client.js';
 import {
     requireAuth,
     requireCompleteProfile,
@@ -77,6 +78,16 @@ const eventFields = {
         .max(5)
         .default([]),
 };
+
+const SERIES_PROPAGATABLE_FIELDS = [
+    'title',
+    'subtitle',
+    'location',
+    'modality',
+    'guideId',
+    'materialIds',
+    'capacity',
+] as const;
 
 // El proyecto debe existir y estar activo: uno inactivo no admite eventos nuevos.
 const isActiveProject = async (projectId: string): Promise<boolean> => {
@@ -182,6 +193,8 @@ const updateEventSchema = z
         endsAt: z.iso.datetime(),
         // Adjuntos ya subidos que se quitan en esta edición.
         removedAttachmentIds: z.array(z.uuid()).default([]),
+        // Campo que, si el evento pertenece a una serie, se propapagan también a las sesiones futuras
+        applyToSeries: z.array(z.enum(SERIES_PROPAGATABLE_FIELDS)).default([]),
     })
     .refine((e) => new Date(e.endsAt) > new Date(e.startsAt), {
         path: ['endsAt'],
@@ -626,6 +639,7 @@ eventsRouter.patch(
             materialIds,
             attachments,
             removedAttachmentIds,
+            applyToSeries,
         } = body.data;
 
         if (!(await isActiveProject(projectId))) {
@@ -653,6 +667,7 @@ eventsRouter.patch(
                 id: true,
                 startsAt: true,
                 createdById: true,
+                seriesId: true,
                 attachments: { select: { id: true } },
             },
         });
@@ -711,23 +726,52 @@ eventsRouter.patch(
             return;
         }
 
-        const [, , , , event] = await prisma.$transaction([
-            prisma.eventMaterial.deleteMany({
+        const seriesAffectedIds =
+            exists.seriesId && applyToSeries.length > 0
+                ? (
+                      await prisma.event.findMany({
+                          where: {
+                              seriesId: exists.seriesId,
+                              id: { not: params.data.id },
+                              endsAt: { gte: new Date() },
+                          },
+                          select: { id: true },
+                      })
+                  ).map((e) => e.id)
+                : [];
+
+        const propagateMaterials = applyToSeries.includes('materialIds');
+
+        const seriesUpdateData: Prisma.EventUncheckedUpdateManyInput = {};
+        if (applyToSeries.includes('title')) seriesUpdateData.title = title;
+        if (applyToSeries.includes('subtitle'))
+            seriesUpdateData.subtitle = subtitle;
+        if (applyToSeries.includes('location'))
+            seriesUpdateData.location = location;
+        if (applyToSeries.includes('modality'))
+            seriesUpdateData.modality = modality;
+        if (applyToSeries.includes('guideId'))
+            seriesUpdateData.guideId = guideResolution.guideId;
+        if (applyToSeries.includes('capacity'))
+            seriesUpdateData.capacity = capacity;
+
+        const event = await prisma.$transaction(async (tx) => {
+            await tx.eventMaterial.deleteMany({
                 where: { eventId: params.data.id },
-            }),
-            prisma.eventMaterial.createMany({
+            });
+            await tx.eventMaterial.createMany({
                 data: materialIds.map((materialId) => ({
                     eventId: params.data.id,
                     materialId,
                 })),
-            }),
-            prisma.eventAttachment.deleteMany({
+            });
+            await tx.eventAttachment.deleteMany({
                 where: {
                     eventId: params.data.id,
                     id: { in: removedAttachmentIds },
                 },
-            }),
-            prisma.eventAttachment.createMany({
+            });
+            await tx.eventAttachment.createMany({
                 data: decodedAttachments.map((attachment) => ({
                     eventId: params.data.id,
                     fileName: attachment.fileName,
@@ -735,8 +779,9 @@ eventsRouter.patch(
                     size: attachment.data.length,
                     data: new Uint8Array(attachment.data),
                 })),
-            }),
-            prisma.event.update({
+            });
+
+            const updated = await tx.event.update({
                 where: { id: params.data.id },
                 data: {
                     title,
@@ -751,8 +796,33 @@ eventsRouter.patch(
                     guideId: guideResolution.guideId,
                 },
                 select: eventSelect,
-            }),
-        ]);
+            });
+
+            if (seriesAffectedIds.length > 0) {
+                if (Object.keys(seriesUpdateData).length > 0) {
+                    await tx.event.updateMany({
+                        where: { id: { in: seriesAffectedIds } },
+                        data: seriesUpdateData,
+                    });
+                }
+
+                if (propagateMaterials) {
+                    await tx.eventMaterial.deleteMany({
+                        where: { eventId: { in: seriesAffectedIds } },
+                    });
+                    await tx.eventMaterial.createMany({
+                        data: seriesAffectedIds.flatMap((eventId) =>
+                            materialIds.map((materialId) => ({
+                                eventId,
+                                materialId,
+                            })),
+                        ),
+                    });
+                }
+            }
+
+            return updated;
+        });
 
         await recordAudit({
             action: 'event_updated',

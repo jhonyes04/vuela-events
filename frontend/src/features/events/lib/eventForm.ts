@@ -27,6 +27,57 @@ export type TextField = Exclude<
     'recurring' | 'weekdays' | 'materialIds'
 >;
 
+// Campos que, al editar una sesión de una serie, se pueden propagar también
+// a las sesiones futuras de esa misma serie.
+export const SERIES_PROPAGATABLE_FIELDS = [
+    'title',
+    'subtitle',
+    'location',
+    'modality',
+    'guideId',
+    'materialIds',
+    'capacity',
+] as const;
+
+export type SeriesField = (typeof SERIES_PROPAGATABLE_FIELDS)[number];
+
+export const SERIES_FIELD_LABELS: Record<SeriesField, string> = {
+    title: 'Título',
+    subtitle: 'Subtítulo',
+    location: 'Lugar',
+    modality: 'Modalidad',
+    guideId: 'Guía',
+    materialIds: 'Materiales',
+    capacity: 'Aforo',
+};
+
+// Compara los valores editados contra el evento original y devuelve qué
+// campos propagables cambiaron realmente.
+export const getChangedSeriesFields = (
+    event: EventItem,
+    values: FormValues,
+    guideId: string,
+): SeriesField[] => {
+    const sameMaterials =
+        values.materialIds.length === event.materials.length &&
+        values.materialIds.every((id) =>
+            event.materials.some((material) => material.id === id),
+        );
+    const newCapacity = values.capacity ? Number(values.capacity) : undefined;
+
+    const changed: Record<SeriesField, boolean> = {
+        title: values.title !== event.title,
+        subtitle: (values.subtitle || '') !== (event.subtitle ?? ''),
+        location: values.location !== (event.location ?? ''),
+        modality: values.modality !== event.modality,
+        guideId: guideId !== (event.guide?.id ?? ''),
+        materialIds: !sameMaterials,
+        capacity: newCapacity !== (event.capacity ?? undefined),
+    };
+
+    return SERIES_PROPAGATABLE_FIELDS.filter((field) => changed[field]);
+};
+
 export const EMPTY_FORM_VALUES: FormValues = {
     title: '',
     subtitle: '',

@@ -22,6 +22,7 @@ import { EventMaterialsField } from '@/features/events/components/EventMaterials
 import { EventAttachmentsField } from '@/features/events/components/EventAttachmentsField';
 import { RecurringEventFields } from '@/features/events/components/RecurringEventFields';
 import { SingleSessionFields } from '@/features/events/components/SingleSessionFields';
+import { UpdateSeriesFieldsDialog } from '@/features/events/components/UpdateSeriesFieldsDialog';
 import { api, ApiError } from '@/lib/api';
 import { useProjectsStore } from '@/features/projects/store';
 import { useMaterialsStore } from '@/features/materials/store';
@@ -33,11 +34,14 @@ import {
     previewRecurrence,
     updateEventById,
     type EventItem,
+    type EventUpdateInput,
 } from '@/features/events/lib/events';
 import {
     EMPTY_FORM_VALUES,
+    getChangedSeriesFields,
     valuesFromEvent,
     type FormValues,
+    type SeriesField,
     type TextField,
 } from '@/features/events/lib/eventForm';
 
@@ -81,6 +85,11 @@ function EventFormBody({
     const [keptAttachments, setKeptAttachments] = useState(
         event?.attachments ?? [],
     );
+    // Cambios a una sesión de serie que aún no se confirmó si propagar.
+    const [pendingEdit, setPendingEdit] = useState<{
+        payload: Omit<EventUpdateInput, 'applyToSeries'>;
+        changed: SeriesField[];
+    } | null>(null);
 
     const projects = useProjectsStore((s) => s.items);
     const loadProjects = useProjectsStore((s) => s.load);
@@ -127,6 +136,30 @@ function EventFormBody({
             : `${preview.count} sesiones`
         : '';
 
+    const saveEdit = async (
+        payload: Omit<EventUpdateInput, 'applyToSeries'>,
+        applyToSeries: SeriesField[],
+    ) => {
+        if (!event) return;
+
+        setSubmitting(true);
+        try {
+            await updateEventById(event.id, { ...payload, applyToSeries });
+
+            toast.success('Evento actualizado.');
+            onSaved?.();
+            onClose();
+        } catch (err) {
+            toast.error(
+                err instanceof ApiError
+                    ? err.message
+                    : 'No se pudo guardar el evento',
+            );
+        } finally {
+            setSubmitting(false);
+        }
+    };
+
     const handleSubmit = async (e: SubmitEvent) => {
         e.preventDefault();
 
@@ -160,58 +193,60 @@ function EventFormBody({
             materialIds: values.materialIds,
         };
 
-        try {
-            if (event) {
-                const startsAt = madridLocalToIso(values.startsAt);
-                const endsAt = madridLocalToIso(values.endsAt);
+        if (event) {
+            const startsAt = madridLocalToIso(values.startsAt);
+            const endsAt = madridLocalToIso(values.endsAt);
 
-                if (new Date(endsAt) <= new Date(startsAt)) {
-                    toast.error(
-                        'La fecha de fin debe ser posterior a la de inicio',
-                    );
-                    return;
-                }
-
-                const todayKey = dayKey(new Date().toISOString());
-                const newDay = dayKey(startsAt);
-                const originalDay = dayKey(event.startsAt);
-
-                if (
-                    !canBackdate &&
-                    newDay < todayKey &&
-                    newDay !== originalDay
-                ) {
-                    toast.error('No se pueden crear eventos en días pasados');
-                    return;
-                }
-
-                const newAttachments = await Promise.all(
-                    attachmentFiles.map(async (file) => {
-                        const { contentType, dataBase64 } =
-                            await readFileAsBase64(file);
-                        return { fileName: file.name, contentType, dataBase64 };
-                    }),
+            if (new Date(endsAt) <= new Date(startsAt)) {
+                toast.error(
+                    'La fecha de fin debe ser posterior a la de inicio',
                 );
-                const keptIds = new Set(keptAttachments.map((a) => a.id));
-                const removedAttachmentIds = event.attachments
-                    .filter((a) => !keptIds.has(a.id))
-                    .map((a) => a.id);
-
-                setSubmitting(true);
-                await updateEventById(event.id, {
-                    ...common,
-                    startsAt,
-                    endsAt,
-                    attachments: newAttachments,
-                    removedAttachmentIds,
-                });
-
-                toast.success('Evento actualizado.');
-                onSaved?.();
-                onClose();
                 return;
             }
 
+            const todayKey = dayKey(new Date().toISOString());
+            const newDay = dayKey(startsAt);
+            const originalDay = dayKey(event.startsAt);
+
+            if (!canBackdate && newDay < todayKey && newDay !== originalDay) {
+                toast.error('No se pueden crear eventos en días pasados');
+                return;
+            }
+
+            const newAttachments = await Promise.all(
+                attachmentFiles.map(async (file) => {
+                    const { contentType, dataBase64 } =
+                        await readFileAsBase64(file);
+                    return { fileName: file.name, contentType, dataBase64 };
+                }),
+            );
+            const keptIds = new Set(keptAttachments.map((a) => a.id));
+            const removedAttachmentIds = event.attachments
+                .filter((a) => !keptIds.has(a.id))
+                .map((a) => a.id);
+
+            const payload: Omit<EventUpdateInput, 'applyToSeries'> = {
+                ...common,
+                startsAt,
+                endsAt,
+                attachments: newAttachments,
+                removedAttachmentIds,
+            };
+
+            const changed = event.seriesId
+                ? getChangedSeriesFields(event, values, guideId)
+                : [];
+
+            if (changed.length > 0) {
+                setPendingEdit({ payload, changed });
+                return;
+            }
+
+            await saveEdit(payload, []);
+            return;
+        }
+
+        try {
             if (values.recurring) {
                 if (values.endTime <= values.startTime) {
                     toast.error(
@@ -295,9 +330,7 @@ function EventFormBody({
             toast.error(
                 err instanceof ApiError
                     ? err.message
-                    : isEdit
-                      ? 'No se pudo guardar el evento'
-                      : 'No se pudo crear el evento',
+                    : 'No se pudo crear el evento',
             );
         } finally {
             setSubmitting(false);
@@ -305,156 +338,180 @@ function EventFormBody({
     };
 
     return (
-        <DialogContent className="sm:max-w-xl">
-            <DialogHeader>
-                <DialogTitle>
-                    {isEdit ? 'Editar evento' : 'Crear evento'}
-                </DialogTitle>
-                <DialogDescription>
-                    Las horas son de Madrid. Los campos con * son obligatorios.
-                </DialogDescription>
-            </DialogHeader>
+        <>
+            <DialogContent className="sm:max-w-xl">
+                <DialogHeader>
+                    <DialogTitle>
+                        {isEdit ? 'Editar evento' : 'Crear evento'}
+                    </DialogTitle>
+                    <DialogDescription>
+                        Las horas son de Madrid. Los campos con * son
+                        obligatorios.
+                    </DialogDescription>
+                </DialogHeader>
 
-            <form
-                id={fieldId('form')}
-                onSubmit={(e) => void handleSubmit(e)}
-                className="grid gap-4"
-            >
-                <EventBasicFields
-                    fieldId={fieldId}
-                    values={values}
-                    onChange={set}
-                    onProjectChange={(projectId) => {
-                        const project = activeProjects.find(
-                            (p) => p.id === projectId,
-                        );
-                        const guides = project?.guides ?? [];
+                <form
+                    id={fieldId('form')}
+                    onSubmit={(e) => void handleSubmit(e)}
+                    className="grid gap-4"
+                >
+                    <EventBasicFields
+                        fieldId={fieldId}
+                        values={values}
+                        onChange={set}
+                        onProjectChange={(projectId) => {
+                            const project = activeProjects.find(
+                                (p) => p.id === projectId,
+                            );
+                            const guides = project?.guides ?? [];
 
-                        setValues((value) => ({
-                            ...value,
-                            projectId,
-                            guideId: guides.length === 1 ? guides[0]!.id : '',
-                        }));
-                    }}
-                    onGuideChange={(guideId) =>
-                        setValues((value) => ({ ...value, guideId }))
-                    }
-                    activeProjects={activeProjects}
-                />
+                            setValues((value) => ({
+                                ...value,
+                                projectId,
+                                guideId:
+                                    guides.length === 1 ? guides[0]!.id : '',
+                            }));
+                        }}
+                        onGuideChange={(guideId) =>
+                            setValues((value) => ({ ...value, guideId }))
+                        }
+                        activeProjects={activeProjects}
+                    />
 
-                {!isEdit && (
-                    <label className="flex cursor-pointer items-center gap-2 text-sm font-medium">
-                        <Checkbox
-                            checked={values.recurring}
-                            onCheckedChange={(checked) =>
-                                setValues((v) => ({
-                                    ...v,
-                                    recurring: checked,
-                                }))
-                            }
+                    {!isEdit && (
+                        <label className="flex cursor-pointer items-center gap-2 text-sm font-medium">
+                            <Checkbox
+                                checked={values.recurring}
+                                onCheckedChange={(checked) =>
+                                    setValues((v) => ({
+                                        ...v,
+                                        recurring: checked,
+                                    }))
+                                }
+                            />
+                            Repetir cada semana
+                        </label>
+                    )}
+
+                    {values.recurring ? (
+                        <RecurringEventFields
+                            fieldId={fieldId}
+                            values={values}
+                            setValues={setValues}
+                            onChangeText={set}
+                            preview={preview}
+                            sessionsLabel={sessionsLabel}
+                            minDate={minDate}
                         />
-                        Repetir cada semana
-                    </label>
-                )}
+                    ) : (
+                        <SingleSessionFields
+                            fieldId={fieldId}
+                            values={values}
+                            setValues={setValues}
+                            minDate={minDate}
+                        />
+                    )}
 
-                {values.recurring ? (
-                    <RecurringEventFields
+                    <EventMaterialsField
                         fieldId={fieldId}
-                        values={values}
-                        setValues={setValues}
-                        onChangeText={set}
-                        preview={preview}
-                        sessionsLabel={sessionsLabel}
-                        minDate={minDate}
+                        activeMaterials={activeMaterials}
+                        materialIds={values.materialIds}
+                        onChange={(ids) =>
+                            setValues((v) => ({ ...v, materialIds: ids }))
+                        }
                     />
-                ) : (
-                    <SingleSessionFields
-                        fieldId={fieldId}
-                        values={values}
-                        setValues={setValues}
-                        minDate={minDate}
-                    />
-                )}
 
-                <EventMaterialsField
-                    fieldId={fieldId}
-                    activeMaterials={activeMaterials}
-                    materialIds={values.materialIds}
-                    onChange={(ids) =>
-                        setValues((v) => ({ ...v, materialIds: ids }))
-                    }
-                />
-
-                <Field
-                    id={fieldId('capacity')}
-                    label={
-                        values.recurring
-                            ? 'Aforo de cada sesión (opcional)'
-                            : 'Aforo (opcional)'
-                    }
-                >
-                    <Input
+                    <Field
                         id={fieldId('capacity')}
-                        type="number"
-                        min={1}
-                        max={100000}
-                        step={1}
-                        value={values.capacity}
-                        onChange={set('capacity')}
-                    />
-                </Field>
-                <Field
-                    id={fieldId('description')}
-                    label="Descripción (opcional)"
-                >
-                    <Textarea
+                        label={
+                            values.recurring
+                                ? 'Aforo de cada sesión (opcional)'
+                                : 'Aforo (opcional)'
+                        }
+                    >
+                        <Input
+                            id={fieldId('capacity')}
+                            type="number"
+                            min={1}
+                            max={100000}
+                            step={1}
+                            value={values.capacity}
+                            onChange={set('capacity')}
+                        />
+                    </Field>
+                    <Field
                         id={fieldId('description')}
-                        maxLength={2000}
-                        value={values.description}
-                        onChange={set('description')}
-                    />
-                </Field>
+                        label="Descripción (opcional)"
+                    >
+                        <Textarea
+                            id={fieldId('description')}
+                            maxLength={2000}
+                            value={values.description}
+                            onChange={set('description')}
+                        />
+                    </Field>
 
-                {!values.recurring && (
-                    <EventAttachmentsField
-                        fieldId={fieldId}
-                        keptAttachments={keptAttachments}
-                        setKeptAttachments={setKeptAttachments}
-                        attachmentFiles={attachmentFiles}
-                        setAttachmentFiles={setAttachmentFiles}
-                    />
-                )}
-            </form>
+                    {!values.recurring && (
+                        <EventAttachmentsField
+                            fieldId={fieldId}
+                            keptAttachments={keptAttachments}
+                            setKeptAttachments={setKeptAttachments}
+                            attachmentFiles={attachmentFiles}
+                            setAttachmentFiles={setAttachmentFiles}
+                        />
+                    )}
+                </form>
 
-            <DialogFooter>
-                <Button
-                    type="button"
-                    variant="outline"
-                    onClick={onClose}
-                    disabled={submitting}
-                >
-                    Cancelar
-                </Button>
-                <Button
-                    type="submit"
-                    form={fieldId('form')}
-                    disabled={submitting}
-                >
-                    {isEdit
-                        ? submitting
-                            ? 'Guardando…'
-                            : 'Guardar'
-                        : submitting
-                          ? 'Creando…'
-                          : values.recurring &&
-                              preview &&
-                              preview.count > 0 &&
-                              !preview.overLimit
-                            ? `Crear ${sessionsLabel}`
-                            : 'Crear evento'}
-                </Button>
-            </DialogFooter>
-        </DialogContent>
+                <DialogFooter>
+                    <Button
+                        type="button"
+                        variant="outline"
+                        onClick={onClose}
+                        disabled={submitting}
+                    >
+                        Cancelar
+                    </Button>
+                    <Button
+                        type="submit"
+                        form={fieldId('form')}
+                        disabled={submitting}
+                    >
+                        {isEdit
+                            ? submitting
+                                ? 'Guardando…'
+                                : 'Guardar'
+                            : submitting
+                              ? 'Creando…'
+                              : values.recurring &&
+                                  preview &&
+                                  preview.count > 0 &&
+                                  !preview.overLimit
+                                ? `Crear ${sessionsLabel}`
+                                : 'Crear evento'}
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+
+            {event && (
+                <UpdateSeriesFieldsDialog
+                    key={pendingEdit?.changed.join(',') ?? 'none'}
+                    open={pendingEdit !== null}
+                    changedFields={pendingEdit?.changed ?? []}
+                    submitting={submitting}
+                    onCancel={() => setPendingEdit(null)}
+                    onSkip={() => {
+                        if (!pendingEdit) return;
+                        void saveEdit(pendingEdit.payload, []);
+                        setPendingEdit(null);
+                    }}
+                    onConfirm={(fields) => {
+                        if (!pendingEdit) return;
+                        void saveEdit(pendingEdit.payload, fields);
+                        setPendingEdit(null);
+                    }}
+                />
+            )}
+        </>
     );
 }
 
