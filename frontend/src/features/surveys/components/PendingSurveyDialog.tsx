@@ -118,7 +118,13 @@ export const PendingSurveyDialog = () => {
                     items={items}
                     onSubmit={(e) => void handleSubmit(e)}
                 >
-                    <QuestionnaireProgress />
+                    <QuestionnaireProgress
+                        render={(props, { current, total }) => (
+                            <div
+                                {...props}
+                            >{`Pregunta ${current} de ${total}`}</div>
+                        )}
+                    />
 
                     {displayedSurvey.questions.map((question) => (
                         <QuestionnaireItem

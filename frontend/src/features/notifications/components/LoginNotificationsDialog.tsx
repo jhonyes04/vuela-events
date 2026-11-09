@@ -16,6 +16,7 @@ import {
 } from '@/components/ui/dialog';
 import { NOTIFICATION_TYPE_ICONS } from '@/features/notifications/components/NotificationDetailDialog';
 import { useAuth } from '@/features/auth/hooks/context';
+import { usePendingSurveyStore } from '@/features/surveys/store';
 import {
     type AppNotification,
     listNotifications,
@@ -29,6 +30,9 @@ export const LoginNotificationsDialog = () => {
     const navigate = useNavigate();
     const [pending, setPending] = useState<AppNotification[]>([]);
     const [open, setOpen] = useState(false);
+
+    const openSurveyDialog = usePendingSurveyStore((s) => s.openDialog);
+    const ensureSurveyStream = usePendingSurveyStore((s) => s.ensureStream);
 
     useEffect(() => {
         if (!user) return;
@@ -65,6 +69,11 @@ export const LoginNotificationsDialog = () => {
                     : 'No se pudo guardar como leída',
             );
         });
+
+        if (notification.type === 'new_survey') {
+            ensureSurveyStream();
+            openSurveyDialog();
+        }
     };
 
     return (
@@ -82,8 +91,7 @@ export const LoginNotificationsDialog = () => {
                 <div className="grid max-h-96 gap-2 overflow-y-auto">
                     {pending.map((notification) => {
                         const Icon =
-                            NOTIFICATION_TYPE_ICONS[notification.type] ??
-                            Bell;
+                            NOTIFICATION_TYPE_ICONS[notification.type] ?? Bell;
 
                         return (
                             <div

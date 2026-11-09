@@ -11,7 +11,8 @@ export type NotificationType =
     | 'new_user_registered'
     | 'role_changed'
     | 'maintenance_notice'
-    | 'broadcast';
+    | 'broadcast'
+    | 'new_survey';
 
 export interface AppNotification {
     id: string;

@@ -16,6 +16,7 @@ import { ListErrors } from '@/features/users/components/ListErrors';
 import { NotificationDetailDialog } from '@/features/notifications/components/NotificationDetailDialog';
 import { SendNotificationButton } from '@/features/notifications/components/SendNotificationButton';
 import { useNotificationsStore } from '@/features/notifications/store';
+import { usePendingSurveyStore } from '@/features/surveys/store';
 import { usePagination } from '@/hooks/usePagination';
 import { useSort } from '@/hooks/useSort';
 import { scrollbarOptions } from '@/lib/overlayScrollbarsOptions';
@@ -68,6 +69,8 @@ export const NotificationsPage = () => {
     } = useBulkSelection();
     const [deleting, setDeleting] = useState<Pending | null>(null);
     const [viewing, setViewing] = useState<AppNotification | null>(null);
+    const openSurveyDialog = usePendingSurveyStore((s) => s.openDialog);
+    const ensureSurveyStream = usePendingSurveyStore((s) => s.ensureStream);
 
     // Avisa de cambios hechos en la campanita (u otra pestaña): sin esto,
     // marcar/borrar aquí o allí no se enteraba la otra vista.
@@ -150,6 +153,26 @@ export const NotificationsPage = () => {
         );
     };
 
+    const handleView = (notification: AppNotification) => {
+        if (notification.type === 'new_survey') {
+            ensureSurveyStream();
+            openSurveyDialog();
+
+            if (!notification.readAt) {
+                setReadLocally(
+                    new Set([notification.id]),
+                    new Date().toISOString(),
+                );
+
+                notifyIfFailed(markNotificationRead(notification.id));
+            }
+
+            return;
+        }
+
+        setViewing(notification);
+    };
+
     const handleMarkAllRead = () => {
         setReadLocally(
             new Set(notifications.map((n) => n.id)),
@@ -220,7 +243,7 @@ export const NotificationsPage = () => {
                             variant="default"
                             size="icon"
                             aria-label="Ver"
-                            onClick={() => setViewing(n)}
+                            onClick={() => handleView(n)}
                         >
                             <Eye className="size-4" />
                         </Button>
@@ -285,9 +308,7 @@ export const NotificationsPage = () => {
                     getValue={(s) => s.value}
                     getLabel={(s) => s.label}
                     value={statusFilter}
-                    onValueChange={(v) =>
-                        setStatusFilter(v as StatusFilter)
-                    }
+                    onValueChange={(v) => setStatusFilter(v as StatusFilter)}
                     searchable={false}
                     placeholder="Estado"
                 />

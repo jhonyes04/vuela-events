@@ -236,9 +236,12 @@ export const UserMenuSheet = () => {
                                         render={
                                             <button
                                                 type="button"
-                                                className={navClass({
-                                                    isActive: false,
-                                                })}
+                                                className={cn(
+                                                    navClass({
+                                                        isActive: false,
+                                                    }),
+                                                    'cursor-pointer',
+                                                )}
                                                 onClick={openSurveyDialog}
                                             >
                                                 <ClipboardList className="size-4" />

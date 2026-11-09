@@ -4,6 +4,7 @@ import {
     CalendarClock,
     CalendarPlus,
     CalendarX,
+    ClipboardList,
     FolderPlus,
     Megaphone,
     ShieldCheck,
@@ -38,6 +39,7 @@ export const NOTIFICATION_TYPE_ICONS: Record<NotificationType, LucideIcon> = {
     maintenance_notice: Wrench,
     event_reminder: AlarmClock,
     broadcast: Megaphone,
+    new_survey: ClipboardList,
 };
 
 interface NotificationDetailBodyProps {
