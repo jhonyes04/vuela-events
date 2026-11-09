@@ -63,7 +63,7 @@ export const DataTable = <T, K extends string>({
                             <button
                                 type="button"
                                 onClick={() => onSort?.(col.sortKey!)}
-                                className="flex items-center gap-1 hover:text-foreground"
+                                className="flex items-center gap-1 cursor-pointer hover:text-foreground"
                             >
                                 {col.header}
                                 {sort?.key === col.sortKey &&

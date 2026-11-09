@@ -43,17 +43,21 @@ export const SessionsPage = () => {
 
     const { sorted, sort, toggleSort } = useSort<
         ActiveSession,
-        'user' | 'email'
+        'user' | 'email' | 'expire'
     >(
         filtered,
         {
             user: (a, b) => a.userName.localeCompare(b.userName),
             email: (a, b) => a.userEmail.localeCompare(b.userEmail),
+            expire: (a, b) => a.expire.localeCompare(b.expire),
         },
-        { key: 'user', dir: 'asc' },
+        { key: 'expire', dir: 'asc' },
     );
 
-    const columns: DataTableColumn<ActiveSession, 'user' | 'email'>[] = [
+    const columns: DataTableColumn<
+        ActiveSession,
+        'user' | 'email' | 'expire'
+    >[] = [
         {
             key: 'user',
             header: 'Usuario',
@@ -81,6 +85,7 @@ export const SessionsPage = () => {
         {
             key: 'expire',
             header: 'Expira',
+            sortKey: 'expire',
             render: (s) => formatShortDateTime(new Date(s.expire)),
         },
         {
