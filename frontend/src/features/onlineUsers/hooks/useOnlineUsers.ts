@@ -1,10 +1,9 @@
 import { useEffect, useState } from 'react';
 import {
     listOnlineUsers,
+    openOnlineUsersStream,
     type OnlineUser,
 } from '@/features/onlineUsers/lib/onlineUsers';
-
-const POLL_INTERVAL_MS = 30_000;
 
 export const useOnlineUsers = (): OnlineUser[] => {
     const [users, setUsers] = useState<OnlineUser[]>([]);
@@ -18,16 +17,17 @@ export const useOnlineUsers = (): OnlineUser[] => {
                     if (!cancelled) setUsers(res);
                 })
                 .catch(() => {
-                    // Si falla, se mantiene la última lista conocida.
+                    // Si falla, se mantiene la última lista conocida
                 });
         };
 
         load();
-        const id = setInterval(load, POLL_INTERVAL_MS);
+
+        const source = openOnlineUsersStream(load);
 
         return () => {
             cancelled = true;
-            clearInterval(id);
+            source.close();
         };
     }, []);
 

@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { z } from 'zod';
 import { requireAuth, requirePermission } from '../middleware/auth.js';
+import { emitOnlineUsers, onlineUsersBus } from '../lib/eventBus.js';
 import {
     listActiveSessions,
     listOnlineUsers,
@@ -14,6 +15,21 @@ export const sessionsRouter = Router();
 
 sessionsRouter.get('/online', requireAuth, async (_req, res) => {
     res.json({ users: await listOnlineUsers() });
+});
+
+sessionsRouter.get('/online/stream', requireAuth, (req, res) => {
+    res.set({ 'Content-Type': 'text/event-stream', Connection: 'keep-alive' });
+    res.flushHeaders();
+
+    const onChange = () => res.write('data: changed\n\n');
+    onlineUsersBus.on('online', onChange);
+
+    const ping = setInterval(() => res.write(': ping\n\n'), 25000);
+
+    req.on('close', () => {
+        clearInterval(ping);
+        onlineUsersBus.off('online', onChange);
+    });
 });
 
 sessionsRouter.use(requireAuth, requirePermission('sessions:manage'));
@@ -40,6 +56,8 @@ sessionsRouter.delete('/:sid', async (req, res) => {
 
     try {
         await revokeSession(params.data.sid);
+        emitOnlineUsers();
+
         res.status(204).end();
     } catch (e) {
         if (e instanceof SessionError) {

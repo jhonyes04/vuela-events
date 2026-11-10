@@ -22,3 +22,13 @@ export const emitRegistrationChanged = (eventId: string): void => {
 // (canal = userId).
 export const notificationBus = new EventEmitter();
 notificationBus.setMaxListeners(0);
+
+// Avisa en tiempo real quién está online
+export const onlineUsersBus = new EventEmitter();
+onlineUsersBus.setMaxListeners(0);
+
+const ONLINE_USERS_CHANNEL = 'online';
+
+export const emitOnlineUsers = (): void => {
+    onlineUsersBus.emit(ONLINE_USERS_CHANNEL);
+};

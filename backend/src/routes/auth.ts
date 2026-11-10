@@ -10,6 +10,7 @@ import {
 import { requireAuth } from '../middleware/auth.js';
 import { loginLimiter } from '../middleware/rateLimit.js';
 import { SESSION_COOKIE } from '../middleware/session.js';
+import { emitOnlineUsers } from '../lib/eventBus.js';
 import { findOrCreateUser, LoginFailureError } from '../services/users.js';
 import { recordAudit } from '../services/audit.js';
 import { logger } from '../lib/logger.js';
@@ -84,6 +85,7 @@ export const createAuthRouter = (
             await saveSession(req);
 
             await recordAudit({ action: 'login_success', actorId: user.id });
+            emitOnlineUsers();
 
             res.json({ user });
         } catch (e) {
@@ -150,6 +152,8 @@ export const createAuthRouter = (
                 secure: isProd,
                 sameSite: 'lax',
             });
+
+            emitOnlineUsers();
 
             res.status(204).end();
         });
