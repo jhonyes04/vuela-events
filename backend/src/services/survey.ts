@@ -518,6 +518,7 @@ export const submitSurveyResponse = async (
 export interface SurveyResultChoiceCount {
     value: string;
     label: string;
+    description?: string;
     count: number;
 }
 
@@ -600,6 +601,7 @@ export const getSurveyResults = async (id: string): Promise<SurveyResults> => {
                 counts: choices.map((choice) => ({
                     value: choice.value,
                     label: choice.label,
+                    description: choice.description,
                     count: tally.get(choice.value) ?? 0,
                 })),
                 answers: null,

@@ -158,6 +158,7 @@ export const submitSurveyResponse = async (
 export interface SurveyResultChoiceCount {
     value: string;
     label: string;
+    description?: string;
     count: number;
 }
 

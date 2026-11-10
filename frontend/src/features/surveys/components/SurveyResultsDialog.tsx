@@ -108,6 +108,15 @@ export const SurveyResultsDialog = ({
                                                 >
                                                     <ProgressLabel>
                                                         {choice.label}
+                                                        {choice.description && (
+                                                            <span className="text-muted-foreground">
+                                                                {' '}
+                                                                —{' '}
+                                                                {
+                                                                    choice.description
+                                                                }
+                                                            </span>
+                                                        )}
                                                     </ProgressLabel>
                                                     <ProgressValue>
                                                         {() =>
