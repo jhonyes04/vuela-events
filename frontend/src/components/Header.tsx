@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { CalendarRange, FolderOpen, type LucideIcon } from 'lucide-react';
-import { NavLink } from 'react-router';
+import { Link, NavLink } from 'react-router';
 import { useAuth } from '@/features/auth/hooks/context';
 import logo from '@/assets/logo.svg';
 import { cn } from '@/lib/utils';
@@ -48,10 +48,16 @@ export const Header = () => {
         <header className="sticky top-0 z-40 bg-brand-yellow text-brand-ink shadow-sm">
             <div className="mx-auto max-w-6xl px-4 py-2">
                 <div className="flex items-center gap-3">
-                    <span className="flex items-center gap-2 text-xl font-semibold tracking-tight">
-                        <img src={logo} alt="" className="size-7 rounded-md" />
-                        Vuela Events
-                    </span>
+                    <Link to="/">
+                        <span className="flex items-center gap-2 text-xl font-semibold tracking-tight">
+                            <img
+                                src={logo}
+                                alt=""
+                                className="size-7 rounded-md"
+                            />
+                            Vuela Events
+                        </span>
+                    </Link>
 
                     {user && showNav && (
                         <nav
