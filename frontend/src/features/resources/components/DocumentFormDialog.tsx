@@ -20,6 +20,8 @@ import {
     type Document,
 } from '@/features/resources/lib/documents';
 
+const MAX_DOCUMENT_BYTES = 5 * 1024 * 1024;
+
 interface DocumentFormBodyProps {
     document: Document | null;
     onSaved: (document: Document) => void;
@@ -90,7 +92,7 @@ const DocumentFormBody = ({
                 </DialogTitle>
                 <DialogDescription>
                     PDF, Word, Excel u OpenDocument (.odt/.ods/.odp), máximo
-                    10MB.
+                    5MB.
                 </DialogDescription>
             </DialogHeader>
 
@@ -120,9 +122,18 @@ const DocumentFormBody = ({
                         type="file"
                         required={!document}
                         accept=".pdf,.docx,.xlsx,.odt,.ods,.odp"
-                        onChange={(e) =>
-                            setFile(e.target.files?.[0] ?? null)
-                        }
+                        onChange={(e) => {
+                            const selected = e.target.files?.[0] ?? null;
+
+                            if (selected && selected.size > MAX_DOCUMENT_BYTES) {
+                                toast.error('El documento debe pesar menos de 5MB');
+                                e.target.value = '';
+                                setFile(null);
+                                return;
+                            }
+
+                            setFile(selected);
+                        }}
                     />
                     {document && (
                         <p className="text-xs text-muted-foreground">

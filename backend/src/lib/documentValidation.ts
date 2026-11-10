@@ -20,7 +20,7 @@ export const documentContentTypeSchema = z.enum(
     Object.keys(ALLOWED_DOCUMENT_TYPES) as [string, ...string[]],
 );
 
-export const MAX_DOCUMENT_BYTES = 10 * 1024 * 1024;
+export const MAX_DOCUMENT_BYTES = 5 * 1024 * 1024;
 
 const PDF_SIGNATURE = Buffer.from('%PDF-', 'ascii');
 // .docx/.xlsx (OOXML) y .odt/.ods/.odp (OpenDocument) son todos ZIP: la firma

@@ -100,7 +100,7 @@ documentRouter.post(
 
         if (data === null || data === 'invalid') {
             res.status(400).json({
-                error: 'El archivo debe ser PDF, Word, Excel u OpenDocument (.odt/.ods/.odp) de menos de 10MB',
+                error: 'El archivo debe ser PDF, Word, Excel u OpenDocument (.odt/.ods/.odp) de menos de 5MB',
             });
             return;
         }
@@ -156,7 +156,7 @@ documentRouter.patch(
 
         if (data === 'invalid') {
             res.status(400).json({
-                error: 'El archivo debe ser PDF, Word, Excel u OpenDocument (.odt/.ods/.odp) de menos de 10MB',
+                error: 'El archivo debe ser PDF, Word, Excel u OpenDocument (.odt/.ods/.odp) de menos de 5MB',
             });
             return;
         }

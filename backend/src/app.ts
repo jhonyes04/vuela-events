@@ -130,6 +130,13 @@ export function createApp(options: AppOptions = {}) {
                     ? Number(err.status)
                     : 500;
 
+            if (status === 413) {
+                res.status(413).json({
+                    error: 'El archivo es demasiado grande',
+                });
+                return;
+            }
+
             if (status >= 400 && status < 500) {
                 res.status(status).json({ error: 'Solicitud no válida' });
                 return;
