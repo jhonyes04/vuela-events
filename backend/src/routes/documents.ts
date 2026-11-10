@@ -6,6 +6,7 @@ import {
     matchesDocumentType,
     documentContentTypeSchema,
 } from '../lib/documentValidation.js';
+import { isFileSafe } from '../lib/antivirus.js';
 import {
     DocumentManageError,
     createDocument,
@@ -117,6 +118,13 @@ documentRouter.post(
             return;
         }
 
+        if (!(await isFileSafe(data))) {
+            res.status(400).json({
+                error: 'El archivo no pasó el análisis antivirus',
+            });
+            return;
+        }
+
         try {
             const doc = await createDocument(
                 actor.id,
@@ -162,6 +170,13 @@ documentRouter.patch(
         if (data === 'invalid') {
             res.status(400).json({
                 error: 'El archivo debe ser PDF, Word, Excel u OpenDocument (.odt/.ods/.odp) de menos de 10MB',
+            });
+            return;
+        }
+
+        if (data && !(await isFileSafe(data))) {
+            res.status(400).json({
+                error: 'El archivo no pasó el análisis antivirus',
             });
             return;
         }

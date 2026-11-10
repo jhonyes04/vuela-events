@@ -24,6 +24,8 @@ const envSchema = z
         FRONTEND_ORIGIN: z.url(),
         SUPERADMIN_EMAIL: z.email().toLowerCase().optional(),
         TRUST_PROXY_HOPS: z.coerce.number().int().min(0).max(5).default(0),
+        CLAMAV_HOST: z.string().trim().min(1).default('clamav'),
+        CLAMAV_PORT: z.coerce.number().int().min(1).max(65535).default(3310),
     })
     .superRefine((env, ctx) => {
         if (env.NODE_ENV !== 'production') {
