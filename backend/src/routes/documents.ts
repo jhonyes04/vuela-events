@@ -3,10 +3,9 @@ import { z } from 'zod';
 import { requireAuth, requirePermission } from '../middleware/auth.js';
 import {
     MAX_DOCUMENT_BYTES,
-    matchesDocumentType,
+    decodeAndValidateFile,
     documentContentTypeSchema,
 } from '../lib/documentValidation.js';
-import { isFileSafe } from '../lib/antivirus.js';
 import {
     DocumentManageError,
     createDocument,
@@ -43,31 +42,19 @@ const documentManageErrors = {
     ],
 } as const;
 
-// Decodifica y valida el archivo (tamaño + firma de bytes); null si no venía ninguno.
+// Decodifica y valida el archivo (tamaño + firma de bytes + antivirus); null si no venía ninguno.
 const decodeDocumentFile = (
     contentType: string | undefined,
     dataBase64: string | undefined,
-): Buffer | null | 'invalid' => {
-    if (contentType === undefined && dataBase64 === undefined) return null;
-    if (contentType === undefined || dataBase64 === undefined) return 'invalid';
-
-    let data: Buffer;
-
-    try {
-        data = Buffer.from(dataBase64, 'base64');
-    } catch {
-        return 'invalid';
+): Promise<Buffer | null | 'invalid' | 'infected'> => {
+    if (contentType === undefined && dataBase64 === undefined) {
+        return Promise.resolve(null);
+    }
+    if (contentType === undefined || dataBase64 === undefined) {
+        return Promise.resolve('invalid');
     }
 
-    if (
-        data.length === 0 ||
-        data.length > MAX_DOCUMENT_BYTES ||
-        !matchesDocumentType(data, contentType)
-    ) {
-        return 'invalid';
-    }
-
-    return data;
+    return decodeAndValidateFile(contentType, dataBase64, MAX_DOCUMENT_BYTES);
 };
 
 export const documentRouter = Router();
@@ -106,7 +93,7 @@ documentRouter.post(
             return;
         }
 
-        const data = decodeDocumentFile(
+        const data = await decodeDocumentFile(
             body.data.contentType,
             body.data.dataBase64,
         );
@@ -118,7 +105,7 @@ documentRouter.post(
             return;
         }
 
-        if (!(await isFileSafe(data))) {
+        if (data === 'infected') {
             res.status(400).json({
                 error: 'El archivo no pasó el análisis antivirus',
             });
@@ -162,7 +149,7 @@ documentRouter.patch(
             return;
         }
 
-        const data = decodeDocumentFile(
+        const data = await decodeDocumentFile(
             body.data.contentType,
             body.data.dataBase64,
         );
@@ -174,7 +161,7 @@ documentRouter.patch(
             return;
         }
 
-        if (data && !(await isFileSafe(data))) {
+        if (data === 'infected') {
             res.status(400).json({
                 error: 'El archivo no pasó el análisis antivirus',
             });

@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { isFileSafe } from './antivirus.js';
 
 export const ALLOWED_DOCUMENT_TYPES = {
     'application/pdf': 'PDF',
@@ -48,4 +49,35 @@ export const matchesDocumentType = (
     }
 
     return false;
+};
+
+export type DecodedFile = Buffer | 'invalid' | 'infected';
+
+// Decodifica base64, valida tamaño + firma de bytes y escanea con ClamAV.
+export const decodeAndValidateFile = async (
+    contentType: string,
+    dataBase64: string,
+    maxBytes: number,
+): Promise<DecodedFile> => {
+    let data: Buffer;
+
+    try {
+        data = Buffer.from(dataBase64, 'base64');
+    } catch {
+        return 'invalid';
+    }
+
+    if (
+        data.length === 0 ||
+        data.length > maxBytes ||
+        !matchesDocumentType(data, contentType)
+    ) {
+        return 'invalid';
+    }
+
+    if (!(await isFileSafe(data))) {
+        return 'infected';
+    }
+
+    return data;
 };

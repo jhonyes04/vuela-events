@@ -38,7 +38,7 @@ import { createReportDraft } from '../services/reportDrafts.js';
 import { recordAudit } from '../services/audit.js';
 import { getEventAttachmentFile } from '../services/eventAttachments.js';
 import {
-    matchesDocumentType,
+    decodeAndValidateFile,
     documentContentTypeSchema,
 } from '../lib/documentValidation.js';
 import { canManageResource } from '../lib/ownership.js';
@@ -141,34 +141,33 @@ type AttachmentInput = {
     dataBase64: string;
 };
 
-// Decodifica y valida cada adjunto (tamaño + firma de bytes); null si alguno falla.
-const decodeAttachments = (
+// Decodifica y valida cada adjunto (tamaño + firma de bytes + antivirus);
+// 'invalid'/'infected' si alguno falla, parándose en el primero.
+const decodeAttachments = async (
     attachments: AttachmentInput[],
-): { fileName: string; contentType: string; data: Buffer }[] | null => {
+): Promise<
+    | { fileName: string; contentType: string; data: Buffer }[]
+    | 'invalid'
+    | 'infected'
+> => {
     const decoded: { fileName: string; contentType: string; data: Buffer }[] =
         [];
 
     for (const attachment of attachments) {
-        let data: Buffer;
+        const result = await decodeAndValidateFile(
+            attachment.contentType,
+            attachment.dataBase64,
+            MAX_EVENT_ATTACHMENT_BYTES,
+        );
 
-        try {
-            data = Buffer.from(attachment.dataBase64, 'base64');
-        } catch {
-            return null;
-        }
-
-        if (
-            data.length === 0 ||
-            data.length > MAX_EVENT_ATTACHMENT_BYTES ||
-            !matchesDocumentType(data, attachment.contentType)
-        ) {
-            return null;
+        if (result === 'invalid' || result === 'infected') {
+            return result;
         }
 
         decoded.push({
             fileName: attachment.fileName,
             contentType: attachment.contentType,
-            data,
+            data: result,
         });
     }
 
@@ -546,11 +545,18 @@ eventsRouter.post(
             return;
         }
 
-        const decodedAttachments = decodeAttachments(attachments);
+        const decodedAttachments = await decodeAttachments(attachments);
 
-        if (decodedAttachments === null) {
+        if (decodedAttachments === 'invalid') {
             res.status(400).json({
                 error: 'Algún adjunto no es válido: debe ser PDF, Word, Excel u OpenDocument de menos de 1MB',
+            });
+            return;
+        }
+
+        if (decodedAttachments === 'infected') {
+            res.status(400).json({
+                error: 'Algún adjunto no pasó el análisis antivirus',
             });
             return;
         }
@@ -695,11 +701,18 @@ eventsRouter.patch(
             .map((a) => a.id)
             .filter((id) => !removedAttachmentIds.includes(id));
 
-        const decodedAttachments = decodeAttachments(attachments);
+        const decodedAttachments = await decodeAttachments(attachments);
 
-        if (decodedAttachments === null) {
+        if (decodedAttachments === 'invalid') {
             res.status(400).json({
                 error: 'Algún adjunto no es válido: debe ser PDF, Word, Excel u OpenDocument de menos de 1MB',
+            });
+            return;
+        }
+
+        if (decodedAttachments === 'infected') {
+            res.status(400).json({
+                error: 'Algún adjunto no pasó el análisis antivirus',
             });
             return;
         }
