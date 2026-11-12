@@ -271,6 +271,7 @@ export const getMetrics = async (now: Date = new Date(), days = 30) => {
             puntoVuela: string | null;
             name: string;
             avgSeconds: number;
+            totalSeconds: number;
             sessionCount: number;
         }[]
     >`
@@ -279,12 +280,13 @@ export const getMetrics = async (now: Date = new Date(), days = 30) => {
             u.name,
             u."puntoVuela",
             avg(a."newValue"::int) AS "avgSeconds",
+            sum(a."newValue"::int)::int AS "totalSeconds",
             count(*)::int AS "sessionCount"
         FROM audit_logs a
         JOIN users u ON u.id = a."actorId"
         WHERE a.action = 'logout_success' AND a."createdAt" >= ${windowStart}
         GROUP BY a."actorId", u.name, u."puntoVuela"
-        ORDER BY "avgSeconds" DESC
+        ORDER BY "totalSeconds" DESC
     `;
 
     const sessionDurationByUser = sessionDurationRows.map((r) => ({
@@ -292,6 +294,7 @@ export const getMetrics = async (now: Date = new Date(), days = 30) => {
         userName: r.name.trim(),
         puntoVuela: r.puntoVuela,
         avgMinutes: Math.round(r.avgSeconds / 60),
+        totalMinutes: Math.round(r.totalSeconds / 60),
         sessionCount: r.sessionCount,
     }));
 

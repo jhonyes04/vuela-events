@@ -79,6 +79,7 @@ export interface SessionDurationByUser {
     userName: string;
     puntoVuela: string | null;
     avgMinutes: number;
+    totalMinutes: number;
     sessionCount: number;
 }
 
@@ -104,3 +105,17 @@ export const getMetrics = (days: number) =>
 
 export const formatMetricsDateTime = (iso: string): string =>
     formatShortDateTime(new Date(iso));
+
+export const formatDurationDhm = (minutes: number): string => {
+    const d = Math.floor(minutes / 1440);
+    const h = Math.floor((minutes % 1440) / 60);
+    const m = minutes % 60;
+
+    const parts = [
+        d > 0 ? `${d}d` : null,
+        h > 0 ? `${h}h` : null,
+        m > 0 || (d === 0 && h === 0) ? `${m}min` : null,
+    ].filter(Boolean);
+
+    return parts.join(' ');
+};
