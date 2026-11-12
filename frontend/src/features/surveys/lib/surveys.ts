@@ -125,6 +125,16 @@ export const updateSurvey = async (
         showOnLogin,
     });
 
+export const updateSurveyActiveSettings = async (
+    id: string,
+    scheduledEndAt?: string,
+    showOnLogin?: boolean,
+): Promise<void> =>
+    api.patch(`/surveys/${id}/settings`, {
+        ...(scheduledEndAt && { scheduledEndAt }),
+        showOnLogin,
+    });
+
 export interface AssignableUser {
     id: string;
     name: string;

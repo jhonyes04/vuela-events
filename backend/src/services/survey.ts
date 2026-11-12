@@ -264,6 +264,43 @@ export const updateSurvey = async (
     });
 };
 
+// Sólo para encuestas activas
+export const updateSurveyActiveSettings = async (
+    actor: Pick<AuthUser, 'id'>,
+    id: string,
+    scheduledEndAt?: Date,
+    showOnLogin = false,
+) => {
+    const survey = await prisma.survey.findUnique({ where: { id } });
+
+    if (!survey) {
+        throw new SurveyError('not_found');
+    }
+
+    if (survey.status !== 'active') {
+        throw new SurveyError('not_active');
+    }
+
+    if (scheduledEndAt && scheduledEndAt <= new Date()) {
+        throw new SurveyError('invalid_schedule');
+    }
+
+    await prisma.survey.update({
+        where: { id },
+        data: {
+            scheduledEndAt: scheduledEndAt ?? null,
+            showOnLogin,
+        },
+    });
+
+    await recordAudit({
+        action: 'survey_updated',
+        actorId: actor.id,
+        oldValue: survey.title.slice(0, 100),
+        newValue: survey.title.slice(0, 100),
+    });
+};
+
 export const activateSurvey = async (
     actor: Pick<AuthUser, 'id'> | undefined,
     id: string,

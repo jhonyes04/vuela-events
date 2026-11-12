@@ -18,6 +18,7 @@ import {
     listSurveys,
     submitSurveyResponse,
     updateSurvey,
+    updateSurveyActiveSettings,
 } from '../services/survey.js';
 
 const idParamsSchema = z.object({ id: z.uuid() });
@@ -59,6 +60,11 @@ const surveySchema = z.strictObject({
     questions: z.array(questionSchema).min(1).max(30),
     ownerId: z.uuid().optional(),
     scheduledStartAt: z.iso.datetime().optional(),
+    scheduledEndAt: z.iso.datetime().optional(),
+    showOnLogin: z.boolean().optional(),
+});
+
+const activeSettingsSchema = z.strictObject({
     scheduledEndAt: z.iso.datetime().optional(),
     showOnLogin: z.boolean().optional(),
 });
@@ -297,6 +303,49 @@ surveysRouter.patch(
                 body.data.scheduledStartAt
                     ? new Date(body.data.scheduledStartAt)
                     : undefined,
+                body.data.scheduledEndAt
+                    ? new Date(body.data.scheduledEndAt)
+                    : undefined,
+                body.data.showOnLogin,
+            );
+
+            res.status(204).end();
+        } catch (e) {
+            if (e instanceof SurveyError) {
+                const [status, error] = surveyErrors[e.reason];
+
+                res.status(status).json({ error });
+                return;
+            }
+
+            throw e;
+        }
+    },
+);
+
+surveysRouter.patch(
+    '/:id/settings',
+    requirePermission('surveys:manage'),
+    async (req, res) => {
+        const actor = req.user;
+
+        if (!actor) {
+            res.status(401).json({ error: 'Autenticación requerida' });
+            return;
+        }
+
+        const params = idParamsSchema.safeParse(req.params);
+        const body = activeSettingsSchema.safeParse(req.body);
+
+        if (!params.success || !body.success) {
+            res.status(400).json({ error: 'Solicitud no válida' });
+            return;
+        }
+
+        try {
+            await updateSurveyActiveSettings(
+                actor,
+                params.data.id,
                 body.data.scheduledEndAt
                     ? new Date(body.data.scheduledEndAt)
                     : undefined,

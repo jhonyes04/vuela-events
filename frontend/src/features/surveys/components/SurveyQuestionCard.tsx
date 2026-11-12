@@ -19,12 +19,17 @@ interface SurveyQuestionCardProps {
     isFirst: boolean;
     isLast: boolean;
     canRemove: boolean;
+    disabled?: boolean;
     onUpdate: (patch: Partial<DraftQuestion>) => void;
     onRemove: () => void;
     onMoveUp: () => void;
     onMoveDown: () => void;
     onAddChoice: () => void;
-    onUpdateChoice: (choiceKey: string, label: string, description: string) => void;
+    onUpdateChoice: (
+        choiceKey: string,
+        label: string,
+        description: string,
+    ) => void;
     onRemoveChoice: (choiceKey: string) => void;
 }
 
@@ -34,6 +39,7 @@ export const SurveyQuestionCard = ({
     isFirst,
     isLast,
     canRemove,
+    disabled = false,
     onUpdate,
     onRemove,
     onMoveUp,
@@ -54,7 +60,7 @@ export const SurveyQuestionCard = ({
                         variant="outline"
                         size="icon"
                         aria-label="Subir pregunta"
-                        disabled={isFirst}
+                        disabled={isFirst || disabled}
                         onClick={onMoveUp}
                     >
                         <ChevronUp className="size-4" />
@@ -66,7 +72,7 @@ export const SurveyQuestionCard = ({
                         variant="outline"
                         size="icon"
                         aria-label="Bajar pregunta"
-                        disabled={isLast}
+                        disabled={isLast || disabled}
                         onClick={onMoveDown}
                     >
                         <ChevronDown className="size-4" />
@@ -78,7 +84,7 @@ export const SurveyQuestionCard = ({
                         variant="destructive"
                         size="icon"
                         aria-label="Eliminar pregunta"
-                        disabled={!canRemove}
+                        disabled={!canRemove || disabled}
                         onClick={onRemove}
                     >
                         <Trash2 className="size-4" />
@@ -94,6 +100,7 @@ export const SurveyQuestionCard = ({
                 maxLength={300}
                 value={question.prompt}
                 onChange={(e) => onUpdate({ prompt: e.target.value })}
+                disabled={disabled}
             />
         </div>
 
@@ -103,6 +110,7 @@ export const SurveyQuestionCard = ({
                 maxLength={300}
                 value={question.description}
                 onChange={(e) => onUpdate({ description: e.target.value })}
+                disabled={disabled}
             />
         </div>
 
@@ -119,6 +127,7 @@ export const SurveyQuestionCard = ({
                         onUpdate({ kind: value as QuestionKind })
                     }
                     searchable={false}
+                    disabled={disabled}
                 />
             </div>
 
@@ -127,6 +136,7 @@ export const SurveyQuestionCard = ({
                     type="button"
                     variant="secondary"
                     size="sm"
+                    disabled={disabled}
                     onClick={() =>
                         onUpdate({ kind: 'single', choices: scaleChoices() })
                     }
@@ -141,6 +151,7 @@ export const SurveyQuestionCard = ({
                     onCheckedChange={(checked) =>
                         onUpdate({ required: checked === true })
                     }
+                    disabled={disabled}
                 />
                 Obligatoria
             </label>
@@ -165,6 +176,7 @@ export const SurveyQuestionCard = ({
                                     choice.description,
                                 )
                             }
+                            disabled={disabled}
                         />
                         <Input
                             placeholder="Descripción (opcional)"
@@ -177,6 +189,7 @@ export const SurveyQuestionCard = ({
                                     e.target.value,
                                 )
                             }
+                            disabled={disabled}
                         />
                         <IconTooltip label="Eliminar opción">
                             <Button
@@ -184,7 +197,9 @@ export const SurveyQuestionCard = ({
                                 variant="destructive"
                                 size="icon"
                                 aria-label="Eliminar opción"
-                                disabled={question.choices.length <= 2}
+                                disabled={
+                                    question.choices.length <= 2 || disabled
+                                }
                                 onClick={() => onRemoveChoice(choice.key)}
                             >
                                 <Trash2 className="size-4" />
@@ -197,6 +212,7 @@ export const SurveyQuestionCard = ({
                     variant="secondary"
                     size="sm"
                     className="w-fit"
+                    disabled={disabled}
                     onClick={onAddChoice}
                 >
                     <Plus className="size-4" />

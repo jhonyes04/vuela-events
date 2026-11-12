@@ -133,9 +133,11 @@ export const PendingSurveyDialog = () => {
                     onSubmit={(e) => void handleSubmit(e)}
                 >
                     <QuestionnaireProgress
+                        aria-label="Progreso de la encuesta"
                         render={(props, { current, total }) => (
                             <div
                                 {...props}
+                                aria-valuetext={`Pregunta ${current} de ${total}`}
                             >{`Pregunta ${current} de ${total}`}</div>
                         )}
                     />
@@ -178,7 +180,11 @@ export const PendingSurveyDialog = () => {
                                 <QuestionnaireInput placeholder="Tu respuesta" />
                             )}
 
-                            <QuestionnaireError />
+                            <QuestionnaireError>
+                                {question.required
+                                    ? 'Elige una respuesta para continuar'
+                                    : 'Elige una respuesta o salta esta pregunta'}
+                            </QuestionnaireError>
                         </QuestionnaireItem>
                     ))}
 

@@ -228,7 +228,7 @@ export const SurveysPage = () => {
             cellClassName: 'flex justify-end gap-2',
             render: (survey) => (
                 <>
-                    {survey.status === 'draft' && (
+                    {survey.status !== 'closed' && (
                         <IconTooltip label="Editar">
                             <Button
                                 variant="secondary"

@@ -23,6 +23,7 @@ interface DateTimePickerProps {
     onChange: (value: string) => void;
     // Sin restricción si no se pasa.
     minDate?: Date;
+    disabled?: boolean;
 }
 
 export const DateTimePicker = ({
@@ -30,6 +31,7 @@ export const DateTimePicker = ({
     value,
     onChange,
     minDate,
+    disabled,
 }: DateTimePickerProps) => {
     const [open, setOpen] = useState(false);
     const datePart = value.split('T')[0] ?? '';
@@ -59,6 +61,7 @@ export const DateTimePicker = ({
                     className="[&::-webkit-calendar-picker-indicator]:hidden"
                     value={value}
                     onChange={(e) => onChange(e.target.value)}
+                    disabled={disabled}
                 />
                 <InputGroupAddon align="inline-end">
                     <PopoverTrigger
@@ -68,6 +71,7 @@ export const DateTimePicker = ({
                                 variant="ghost"
                                 size="icon-xs"
                                 aria-label="Abrir calendario"
+                                disabled={disabled}
                             >
                                 <CalendarIcon />
                             </InputGroupButton>

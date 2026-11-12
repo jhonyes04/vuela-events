@@ -28,6 +28,7 @@ import {
     createSurvey,
     listAssignableUsers,
     updateSurvey,
+    updateSurveyActiveSettings,
     type SurveyDetail,
 } from '@/features/surveys/lib/surveys';
 
@@ -66,6 +67,7 @@ const SurveyFormBody = ({ survey, onSaved, onClose }: SurveyFormBodyProps) => {
         survey?.questions.map(toDraftQuestion) ?? [newQuestion()],
     );
     const [submitting, setSubmitting] = useState(false);
+    const isActive = survey?.status === 'active';
 
     const updateQuestion = (key: string, patch: Partial<DraftQuestion>) =>
         setQuestions((qs) =>
@@ -131,6 +133,36 @@ const SurveyFormBody = ({ survey, onSaved, onClose }: SurveyFormBodyProps) => {
     const handleSubmit = async (e: SubmitEvent) => {
         e.preventDefault();
 
+        const endIso = scheduledEndAt
+            ? new Date(scheduledEndAt).toISOString()
+            : undefined;
+
+        if (survey && isActive) {
+            setSubmitting(true);
+
+            try {
+                await updateSurveyActiveSettings(
+                    survey.id,
+                    endIso,
+                    showOnLogin,
+                );
+
+                toast.success('Encuesta actualizada');
+                onSaved();
+                onClose();
+            } catch (error) {
+                toast.error(
+                    error instanceof ApiError
+                        ? error.message
+                        : 'No se pudo guardar la encuesta',
+                );
+            } finally {
+                setSubmitting(false);
+            }
+
+            return;
+        }
+
         if (questions.length === 0) {
             toast.error('Añade al menos una pregunta');
             return;
@@ -152,9 +184,6 @@ const SurveyFormBody = ({ survey, onSaved, onClose }: SurveyFormBodyProps) => {
 
         const startIso = scheduledStartAt
             ? new Date(scheduledStartAt).toISOString()
-            : undefined;
-        const endIso = scheduledEndAt
-            ? new Date(scheduledEndAt).toISOString()
             : undefined;
 
         if (startIso && endIso && endIso <= startIso) {
@@ -226,6 +255,7 @@ const SurveyFormBody = ({ survey, onSaved, onClose }: SurveyFormBodyProps) => {
                         maxLength={200}
                         value={title}
                         onChange={(e) => setTitle(e.target.value)}
+                        disabled={isActive}
                     />
                 </div>
 
@@ -238,6 +268,7 @@ const SurveyFormBody = ({ survey, onSaved, onClose }: SurveyFormBodyProps) => {
                             isFirst={index === 0}
                             isLast={index === questions.length - 1}
                             canRemove={questions.length > 1}
+                            disabled={isActive}
                             onUpdate={(patch) =>
                                 updateQuestion(question.key, patch)
                             }
@@ -264,21 +295,12 @@ const SurveyFormBody = ({ survey, onSaved, onClose }: SurveyFormBodyProps) => {
                     type="button"
                     variant="secondary"
                     className="w-fit ms-auto"
+                    disabled={isActive}
                     onClick={() => setQuestions((qs) => [...qs, newQuestion()])}
                 >
                     <Plus className="size-4" />
                     Añadir pregunta
                 </Button>
-
-                <div className="border-t py-4">
-                    <OwnerField
-                        value={ownerId}
-                        onValueChange={setOwnerId}
-                        disabled={submitting}
-                        fetchCandidates={listAssignableUsers}
-                        emptyMessage="No hay usuarios con permiso de encuestas"
-                    />
-                </div>
 
                 <Label className="flex items-center gap-2 text-sm border-t pt-4">
                     <Checkbox
@@ -301,6 +323,7 @@ const SurveyFormBody = ({ survey, onSaved, onClose }: SurveyFormBodyProps) => {
                             value={scheduledStartAt}
                             onChange={setScheduledStartAt}
                             minDate={minDate}
+                            disabled={isActive}
                         />
                     </div>
                     <div className="grid gap-1.5">
@@ -314,6 +337,16 @@ const SurveyFormBody = ({ survey, onSaved, onClose }: SurveyFormBodyProps) => {
                             minDate={minDate}
                         />
                     </div>
+                </div>
+
+                <div className="border-t py-4">
+                    <OwnerField
+                        value={ownerId}
+                        onValueChange={setOwnerId}
+                        disabled={submitting || isActive}
+                        fetchCandidates={listAssignableUsers}
+                        emptyMessage="No hay usuarios con permiso de encuestas"
+                    />
                 </div>
             </form>
 
