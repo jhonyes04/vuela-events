@@ -30,7 +30,12 @@ import type {
     CapturedImage,
     KpiImages,
 } from '@/features/stats/lib/statsReportImages';
-import { getStats, type StatsSummary } from '@/features/stats/lib/stats';
+import {
+    EVENT_STATUS_LABELS,
+    getStats,
+    type EventStatusFilter,
+    type StatsSummary,
+} from '@/features/stats/lib/stats';
 import {
     GROUP_ORDER,
     SECTIONS,
@@ -56,6 +61,7 @@ export const StatsPage = () => {
 
     const [yearId, setYearId] = useState('all');
     const year = yearId === 'all' ? null : Number(yearId);
+    const [status, setStatus] = useState<EventStatusFilter>('finished');
 
     const handleCaptured = useCallback(
         (
@@ -63,13 +69,15 @@ export const StatsPage = () => {
             kpiImages: KpiImages | null,
         ) => {
             setCaptureSections(null);
-            void generateFromImages(year, images, kpiImages).then((ok) => {
-                setWorking(false);
+            void generateFromImages(year, status, images, kpiImages).then(
+                (ok) => {
+                    setWorking(false);
 
-                if (ok) setPreviewOpen(true);
-            });
+                    if (ok) setPreviewOpen(true);
+                },
+            );
         },
-        [generateFromImages, year],
+        [generateFromImages, year, status],
     );
 
     const handleCaptureError = useCallback((message: string) => {
@@ -80,23 +88,26 @@ export const StatsPage = () => {
 
     const groupSections = SECTIONS.filter((s) => s.group === group);
 
-    // Al cambiar de tipo, el subtipo vuelve a su primera vista.
+    // Al cambiar de tipo, el subtipo vuelve a su primera vista y el estado
+    // vuelve a su valor por defecto para ese tipo (Ocupación: pendientes,
+    // el resto: finalizados).
     const changeGroup = (value: GroupId) => {
         const first = SECTIONS.find((s) => s.group === value);
 
         setGroup(value);
+        setStatus(value === 'Ocupación' ? 'pending' : 'finished');
 
         if (first) setSection(first.id);
     };
 
-    const loadStats = (y: number | null) =>
-        getStats(y)
+    const loadStats = (y: number | null, s: EventStatusFilter) =>
+        getStats(y, s)
             .then(setStats)
             .catch(() => setFailed(true));
 
     useEffect(() => {
-        void loadStats(year);
-    }, [year]);
+        void loadStats(year, status);
+    }, [year, status]);
 
     if (failed) {
         return (
@@ -131,7 +142,9 @@ export const StatsPage = () => {
                                 <Button
                                     variant="default"
                                     size="icon-sm"
-                                    onClick={() => void loadStats(year)}
+                                    onClick={() =>
+                                        void loadStats(year, status)
+                                    }
                                 >
                                     <RefreshCw className="size-4" />
                                 </Button>
@@ -153,7 +166,7 @@ export const StatsPage = () => {
                         </div>
                     </div>
 
-                    <div className="grid w-full grid-cols-1 gap-3 sm:w-[min(44rem,100%)] sm:grid-cols-[8rem_10rem_1fr] ms-auto">
+                    <div className="grid w-full grid-cols-1 gap-3 sm:w-[min(54rem,100%)] sm:grid-cols-[8rem_9rem_10rem_1fr] ms-auto">
                         <div className="grid gap-1.5">
                             <Label
                                 htmlFor="stats-year"
@@ -175,6 +188,29 @@ export const StatsPage = () => {
                                 getLabel={(y) => y.label}
                                 value={yearId}
                                 onValueChange={setYearId}
+                                searchable={false}
+                            />
+                        </div>
+
+                        <div className="grid gap-1.5">
+                            <Label
+                                htmlFor="stats-status"
+                                className="text-xs font-bold text-black"
+                            >
+                                Estado
+                            </Label>
+                            <ComboboxField
+                                id="stats-status"
+                                className="w-full bg-card"
+                                items={Object.entries(EVENT_STATUS_LABELS).map(
+                                    ([id, label]) => ({ id, label }),
+                                )}
+                                getValue={(s) => s.id}
+                                getLabel={(s) => s.label}
+                                value={status}
+                                onValueChange={(v) =>
+                                    setStatus(v as EventStatusFilter)
+                                }
                                 searchable={false}
                             />
                         </div>
@@ -276,7 +312,7 @@ export const StatsPage = () => {
                     {group === 'Pendientes' && (
                         <PendingSection
                             stats={stats}
-                            onSaved={() => void loadStats(year)}
+                            onSaved={() => void loadStats(year, status)}
                         />
                     )}
                 </div>

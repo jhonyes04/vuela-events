@@ -1,4 +1,4 @@
-import { getStats } from './stats.js';
+import { getStats, type EventStatusFilter } from './stats.js';
 import { PUNTOS_VUELA_LOGO, PUNTOS_VUELA_LOGO_RATIO } from '../assets/logos.js';
 
 // Mismos ids que el diálogo de selección del frontend
@@ -106,6 +106,12 @@ export const placeImageAt = (
     return imgH;
 };
 
+export const EVENT_STATUS_LABELS: Record<EventStatusFilter, string> = {
+    all: 'Todos',
+    finished: 'Finalizados',
+    pending: 'Pendientes',
+};
+
 const TZ = 'Europe/Madrid';
 
 const generatedAtFormat = new Intl.DateTimeFormat('es-ES', {
@@ -162,6 +168,7 @@ export interface KpiImages {
 export const drawReportHeader = (
     doc: PDFKit.PDFDocument,
     year: number | null,
+    status: EventStatusFilter,
     now: Date,
     kpiImages?: KpiImages,
 ) => {
@@ -181,6 +188,7 @@ export const drawReportHeader = (
         .text('Estadísticas Vuela Events');
     doc.font('Helvetica').fontSize(10).fillColor('#444');
     doc.text(`Período: ${yearLabel}`);
+    doc.text(`Estado: ${EVENT_STATUS_LABELS[status]}`);
     doc.text(`Generado: ${generatedAtFormat.format(now)}`);
     doc.fillColor('black');
     doc.moveDown(0.5);

@@ -1,7 +1,7 @@
 import { ChartCard } from '@/features/stats/components/ChartCard';
 import { HorizontalBars } from '@/features/stats/components/StatsChartKit';
 import { valueConfig } from '@/features/stats/lib/chartHelpers';
-import type { StatsSummary } from '@/features/stats/lib/stats';
+import { statusDescription, type StatsSummary } from '@/features/stats/lib/stats';
 import type { SectionId } from '@/features/stats/lib/sections';
 
 interface UsersSectionProps {
@@ -14,7 +14,7 @@ export const UsersSection = ({ section, stats }: UsersSectionProps) => (
         {section === 'users-top' && (
             <ChartCard
                 title="Participantes más activos"
-                description="Por número de inscripciones."
+                description={`Por número de inscripciones. ${statusDescription(stats.status)}`}
                 empty={stats.topUsers.length === 0}
             >
                 <HorizontalBars
@@ -39,7 +39,7 @@ export const UsersSection = ({ section, stats }: UsersSectionProps) => (
         {section === 'users-all' && (
             <ChartCard
                 title="Todos los participantes"
-                description="Ranking completo por número de inscripciones."
+                description={`Ranking completo por número de inscripciones. ${statusDescription(stats.status)}`}
                 empty={stats.registrationsByUser.length === 0}
             >
                 <HorizontalBars

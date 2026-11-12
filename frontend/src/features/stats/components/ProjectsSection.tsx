@@ -4,7 +4,7 @@ import {
     StackedHorizontalBars,
 } from '@/features/stats/components/StatsChartKit';
 import { valueConfig } from '@/features/stats/lib/chartHelpers';
-import type { StatsSummary } from '@/features/stats/lib/stats';
+import { statusDescription, type StatsSummary } from '@/features/stats/lib/stats';
 import type { SectionId } from '@/features/stats/lib/sections';
 
 interface ProjectsSectionProps {
@@ -17,7 +17,7 @@ export const ProjectsSection = ({ section, stats }: ProjectsSectionProps) => (
         {section === 'project-participants' && (
             <ChartCard
                 title="Participantes por proyecto"
-                description="Participantes AIL activos con alguna inscripción en el proyecto."
+                description={`Participantes AIL activos con alguna inscripción en el proyecto. ${statusDescription(stats.status)}`}
                 empty={stats.participationsByProject.length === 0}
             >
                 <HorizontalBars
@@ -36,7 +36,7 @@ export const ProjectsSection = ({ section, stats }: ProjectsSectionProps) => (
         {section === 'project-user-participations' && (
             <ChartCard
                 title="Participaciones por participante"
-                description="Cada barra es un Punto Vuela; los colores son los proyectos."
+                description={`Cada barra es un Punto Vuela; los colores son los proyectos. ${statusDescription(stats.status)}`}
                 empty={stats.participationsByUser.rows.length === 0}
             >
                 <StackedHorizontalBars

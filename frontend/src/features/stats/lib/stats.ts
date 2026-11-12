@@ -1,5 +1,13 @@
 import { api } from '@/lib/api';
 
+export type EventStatusFilter = 'all' | 'finished' | 'pending';
+
+export const EVENT_STATUS_LABELS: Record<EventStatusFilter, string> = {
+    all: 'Todos',
+    finished: 'Finalizados',
+    pending: 'Pendientes',
+};
+
 export interface SeriesPoint {
     key: string;
     count: number;
@@ -45,6 +53,7 @@ export interface UserParticipationSummary {
 
 export interface StatsSummary {
     availableYears: number[];
+    status: EventStatusFilter;
     totals: { events: number; registrations: number; attended: number };
     eventsByStatus: { past: number; ongoing: number; future: number };
     eventsByMonth: SeriesPoint[];
@@ -92,8 +101,25 @@ export interface StatsSummary {
     };
 }
 
-export const getStats = (year: number | null) =>
-    api.get<StatsSummary>(year === null ? '/stats' : `/stats?year=${year}`);
+export const getStats = (year: number | null, status: EventStatusFilter) => {
+    const params = new URLSearchParams({ status });
+
+    if (year !== null) params.set('year', String(year));
+
+    return api.get<StatsSummary>(`/stats?${params.toString()}`);
+};
+
+// Texto que aclara, en cada tarjeta, a qué eventos corresponden los datos.
+export const statusDescription = (status: EventStatusFilter): string => {
+    switch (status) {
+        case 'all':
+            return 'Incluye eventos finalizados, en curso y próximos.';
+        case 'finished':
+            return 'Solo eventos ya finalizados.';
+        case 'pending':
+            return 'Solo eventos pendientes (en curso o próximos).';
+    }
+};
 
 const dateFormat = new Intl.DateTimeFormat('es-ES', {
     day: 'numeric',

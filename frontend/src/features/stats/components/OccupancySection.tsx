@@ -1,7 +1,11 @@
 import { ChartCard } from '@/features/stats/components/ChartCard';
 import { OccupancyBars } from '@/features/stats/components/StatsChartKit';
 import { percentOf } from '@/features/stats/lib/chartHelpers';
-import { formatStatsDate, type StatsSummary } from '@/features/stats/lib/stats';
+import {
+    formatStatsDate,
+    statusDescription,
+    type StatsSummary,
+} from '@/features/stats/lib/stats';
 
 interface OccupancySectionProps {
     stats: StatsSummary;
@@ -10,7 +14,7 @@ interface OccupancySectionProps {
 export const OccupancySection = ({ stats }: OccupancySectionProps) => (
     <ChartCard
         title="Ocupación"
-        description="Inscritos frente al aforo, primero los que antes finalizan. Los finalizados no se muestran."
+        description={`Inscritos frente al aforo. ${statusDescription(stats.status)}`}
         empty={stats.occupancyEvents.length === 0}
     >
         <OccupancyBars

@@ -8,6 +8,7 @@ import { countConfig, valueConfig } from '@/features/stats/lib/chartHelpers';
 import {
     monthLabel,
     quarterLabel,
+    statusDescription,
     type StatsSummary,
 } from '@/features/stats/lib/stats';
 import type { SectionId } from '@/features/stats/lib/sections';
@@ -22,6 +23,7 @@ export const EventsSection = ({ section, stats }: EventsSectionProps) => (
         {section === 'events-month' && (
             <ChartCard
                 title="Eventos por mes"
+                description={statusDescription(stats.status)}
                 empty={stats.eventsByMonth.length === 0}
             >
                 <BarSeries
@@ -35,6 +37,7 @@ export const EventsSection = ({ section, stats }: EventsSectionProps) => (
         {section === 'events-quarter' && (
             <ChartCard
                 title="Eventos por trimestre"
+                description={statusDescription(stats.status)}
                 empty={stats.eventsByQuarter.length === 0}
             >
                 <BarSeries
@@ -48,6 +51,7 @@ export const EventsSection = ({ section, stats }: EventsSectionProps) => (
         {section === 'events-year' && (
             <ChartCard
                 title="Eventos por año"
+                description={statusDescription(stats.status)}
                 empty={stats.eventsByYear.length === 0}
             >
                 <BarSeries
@@ -71,6 +75,7 @@ export const EventsSection = ({ section, stats }: EventsSectionProps) => (
         {section === 'events-project' && (
             <ChartCard
                 title="Eventos por proyecto"
+                description={statusDescription(stats.status)}
                 empty={stats.eventsByProject.length === 0}
             >
                 <HorizontalBars

@@ -1,6 +1,7 @@
 import PDFDocument from 'pdfkit';
 import {
     drawReportHeader,
+    EVENT_STATUS_LABELS,
     GROUP_OF,
     imageHeightAt,
     placeImageAt,
@@ -10,12 +11,14 @@ import {
     type KpiImages,
     type PrintSectionId,
 } from './statsReportShared.js';
+import type { EventStatusFilter } from './stats.js';
 
 export type { CapturedImage, KpiImages } from './statsReportShared.js';
 
 export interface GenerateStatsReportFromImagesInput {
     now: Date;
     year: number | null;
+    status: EventStatusFilter;
     images: Partial<Record<PrintSectionId, CapturedImage>>;
     // Capturas de las cards de Eventos/Atendidos; opcionales por
     // compatibilidad, pero siempre se envían desde StatsCaptureView.
@@ -65,10 +68,11 @@ export const generateStatsReportFromImages = async (
     const pdf = await renderPdf(input);
     const yearLabel =
         input.year === null ? 'todos los años' : String(input.year);
+    const statusLabel = EVENT_STATUS_LABELS[input.status];
 
     return {
         pdf,
-        filename: `Estadísticas Vuela Events (${yearLabel}).pdf`,
+        filename: `Estadísticas Vuela Events (${yearLabel}, ${statusLabel}).pdf`,
     };
 };
 
@@ -97,7 +101,7 @@ const renderPdf = (
                 : undefined,
         };
 
-        drawReportHeader(doc, input.year, input.now, kpiImages);
+        drawReportHeader(doc, input.year, input.status, input.now, kpiImages);
 
         let currentGroup: string | null = null;
 

@@ -7,6 +7,7 @@ import {
     type KpiImages,
 } from '@/features/stats/lib/statsReportImages';
 import type { SectionId } from '@/features/stats/lib/sections';
+import type { EventStatusFilter } from '@/features/stats/lib/stats';
 
 export interface StatsReportDraft {
     url: string;
@@ -34,6 +35,7 @@ export const useStatsReportDraft = () => {
     const generateFromImages = useCallback(
         async (
             year: number | null,
+            status: EventStatusFilter,
             images: Partial<Record<SectionId, CapturedImage>>,
             kpiImages: KpiImages | null,
         ): Promise<boolean> => {
@@ -42,6 +44,7 @@ export const useStatsReportDraft = () => {
             try {
                 const report = await generateStatsReportPdfFromImages(
                     year,
+                    status,
                     images,
                     kpiImages,
                 );

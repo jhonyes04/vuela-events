@@ -10,7 +10,12 @@ export const statsRouter = Router();
 // Solo lectura agregada: admin y dt (permiso stats:view).
 statsRouter.use(requireAuth, requirePermission('stats:view'));
 
-const querySchema = z.object({ year: z.coerce.number().int().optional() });
+const statusSchema = z.enum(['all', 'finished', 'pending']);
+
+const querySchema = z.object({
+    year: z.coerce.number().int().optional(),
+    status: statusSchema.optional(),
+});
 
 statsRouter.get('/', async (req, res) => {
     const query = querySchema.safeParse(req.query);
@@ -20,7 +25,9 @@ statsRouter.get('/', async (req, res) => {
         return;
     }
 
-    res.json(await getStats(new Date(), query.data.year ?? null));
+    res.json(
+        await getStats(new Date(), query.data.year ?? null, query.data.status),
+    );
 });
 
 const capturedImageSchema = z.object({
@@ -33,6 +40,7 @@ const capturedImageSchema = z.object({
 
 const pdfImagesBodySchema = z.object({
     year: z.number().int().nullable(),
+    status: statusSchema,
     images: z.partialRecord(z.enum(PRINT_SECTION_IDS), capturedImageSchema),
     kpiImages: z
         .object({
@@ -55,6 +63,7 @@ statsRouter.post('/pdf-images', async (req, res) => {
     const { pdf, filename } = await generateStatsReportFromImages({
         now: new Date(),
         year: body.data.year,
+        status: body.data.status,
         images: body.data.images,
         kpiImages: body.data.kpiImages,
     });

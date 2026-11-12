@@ -4,7 +4,11 @@ import {
     HorizontalBars,
 } from '@/features/stats/components/StatsChartKit';
 import { countConfig, valueConfig } from '@/features/stats/lib/chartHelpers';
-import { monthLabel, type StatsSummary } from '@/features/stats/lib/stats';
+import {
+    monthLabel,
+    statusDescription,
+    type StatsSummary,
+} from '@/features/stats/lib/stats';
 import type { SectionId } from '@/features/stats/lib/sections';
 
 interface RegistrationsSectionProps {
@@ -20,6 +24,7 @@ export const RegistrationsSection = ({
         {section === 'reg-month' && (
             <ChartCard
                 title="Inscripciones por mes"
+                description={statusDescription(stats.status)}
                 empty={stats.registrationsByMonth.length === 0}
             >
                 <BarSeries
@@ -33,6 +38,7 @@ export const RegistrationsSection = ({
         {section === 'reg-project' && (
             <ChartCard
                 title="Inscripciones por proyecto"
+                description={statusDescription(stats.status)}
                 empty={stats.registrationsByProject.length === 0}
             >
                 <HorizontalBars

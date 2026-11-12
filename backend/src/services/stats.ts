@@ -107,9 +107,12 @@ const regCountsCte = Prisma.sql`
 const meetingFilter = Prisma.sql`e."projectId" IN (SELECT id FROM projects WHERE "isMeeting" = true)`;
 const notMeetingFilter = Prisma.sql`NOT (${meetingFilter})`;
 
+export type EventStatusFilter = 'all' | 'finished' | 'pending';
+
 export const getStats = async (
     now: Date = new Date(),
     year: number | null = null,
+    status: EventStatusFilter = 'finished',
 ) => {
     // Mismo criterio de zona horaria que el resto del fichero: el año se
     // calcula en hora de Madrid, no en UTC.
@@ -119,8 +122,15 @@ export const getStats = async (
             : Prisma.sql`to_char(e."startsAt" AT TIME ZONE 'UTC' AT TIME ZONE 'Europe/Madrid', 'YYYY') = ${String(year)}`;
 
     // Las estadísticas (no las listas de acción tipo "próximos eventos" o
-    // "finalizados sin atendidos") solo deben contar eventos ya finalizados.
-    const pastFilter = Prisma.sql`e."endsAt" <= ${now}`;
+    // "finalizados sin atendidos", que ya tienen su propio criterio fijo)
+    // filtran por el estado elegido: todos, solo finalizados o solo
+    // pendientes (en curso o futuros).
+    const pastFilter =
+        status === 'all'
+            ? Prisma.sql`true`
+            : status === 'finished'
+              ? Prisma.sql`e."endsAt" <= ${now}`
+              : Prisma.sql`e."endsAt" > ${now}`;
 
     const yearRows = await prisma.$queryRaw<{ year: number }[]>`
         SELECT DISTINCT
@@ -220,13 +230,17 @@ export const getStats = async (
         count: row.avgRate === null ? 0 : percent(row.avgRate),
     }));
 
+    // Pendientes: antes termina, primero. Finalizados: más reciente, primero.
+    const occupancyOrder =
+        status === 'finished' ? Prisma.sql`DESC` : Prisma.sql`ASC`;
+
     const occupancyEventRows = await prisma.$queryRaw<OccupancyEventRow[]>`
         ${regCountsCte}
         SELECT e.id, e.title, e."startsAt", coalesce(rc.cnt, 0)::int AS registrations, e.capacity
         FROM events e
         LEFT JOIN reg_counts rc ON rc."eventId" = e.id
-        WHERE e.capacity IS NOT NULL AND e.capacity > 0 AND e."endsAt" > ${now} AND ${yearFilter} AND ${notMeetingFilter}
-        ORDER BY e."endsAt" ASC
+        WHERE e.capacity IS NOT NULL AND e.capacity > 0 AND ${yearFilter} AND ${notMeetingFilter} AND ${pastFilter}
+        ORDER BY e."endsAt" ${occupancyOrder}
         LIMIT 10
     `;
 
@@ -452,6 +466,7 @@ export const getStats = async (
 
     return {
         availableYears,
+        status,
         totals: {
             events: totalsRow.eventsTotal,
             registrations: totalsRow.registrationsTotal,

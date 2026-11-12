@@ -1,5 +1,6 @@
 import { requestFile } from '@/lib/api';
 import type { SectionId } from '@/features/stats/lib/sections';
+import type { EventStatusFilter } from '@/features/stats/lib/stats';
 
 export interface CapturedImage {
     dataUrl: string;
@@ -19,6 +20,7 @@ export interface GeneratedStatsReport {
 
 export const generateStatsReportPdfFromImages = async (
     year: number | null,
+    status: EventStatusFilter,
     images: Partial<Record<SectionId, CapturedImage>>,
     kpiImages: KpiImages | null,
 ): Promise<GeneratedStatsReport> => {
@@ -26,7 +28,7 @@ export const generateStatsReportPdfFromImages = async (
         'POST',
         '/stats/pdf-images',
         'estadisticas.pdf',
-        { year, images, kpiImages: kpiImages ?? undefined },
+        { year, status, images, kpiImages: kpiImages ?? undefined },
     );
 
     return { filename, blob };
