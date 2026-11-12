@@ -37,9 +37,11 @@ export const PendingSurveyDialog = () => {
     const survey = usePendingSurveyStore((s) => s.survey);
     const open = usePendingSurveyStore((s) => s.open);
     const ensureStream = usePendingSurveyStore((s) => s.ensureStream);
+    const openDialog = usePendingSurveyStore((s) => s.openDialog);
     const closeDialog = usePendingSurveyStore((s) => s.closeDialog);
     const clear = usePendingSurveyStore((s) => s.clear);
     const [submitting, setSubmitting] = useState(false);
+    const [autoOpenedId, setAutoOpenedId] = useState<string | null>(null);
     const [displayedSurvey, setDisplayedSurvey] =
         useState<PendingSurvey | null>(null);
 
@@ -60,6 +62,18 @@ export const PendingSurveyDialog = () => {
 
         ensureStream();
     }, [user, ensureStream]);
+
+    // Abre el diálogo solo la primera vez que llega esta encuesta en concreto,
+    // solo si está marcada para mostrarse al iniciar sesión
+    useEffect(() => {
+        if (!survey || !survey?.showOnLogin || autoOpenedId === survey.id)
+            return;
+
+        void Promise.resolve().then(() => {
+            setAutoOpenedId(survey.id);
+            openDialog();
+        });
+    }, [survey, autoOpenedId, openDialog]);
 
     if (!displayedSurvey) return null;
 

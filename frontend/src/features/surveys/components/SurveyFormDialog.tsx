@@ -9,6 +9,7 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { OwnerField } from '@/components/OwnerField';
@@ -56,6 +57,9 @@ const SurveyFormBody = ({ survey, onSaved, onClose }: SurveyFormBodyProps) => {
     );
     const [scheduledEndAt, setScheduledEndAt] = useState(() =>
         toLocaleValue(survey?.scheduledEndAt),
+    );
+    const [showOnLogin, setShowOnLogin] = useState(
+        survey?.showOnLogin ?? false,
     );
     const [minDate] = useState(() => new Date());
     const [questions, setQuestions] = useState<DraftQuestion[]>(
@@ -171,6 +175,7 @@ const SurveyFormBody = ({ survey, onSaved, onClose }: SurveyFormBodyProps) => {
                     ownerId || undefined,
                     startIso,
                     endIso,
+                    showOnLogin,
                 );
             } else {
                 await createSurvey(
@@ -179,6 +184,7 @@ const SurveyFormBody = ({ survey, onSaved, onClose }: SurveyFormBodyProps) => {
                     ownerId || undefined,
                     startIso,
                     endIso,
+                    showOnLogin,
                 );
             }
 
@@ -273,6 +279,17 @@ const SurveyFormBody = ({ survey, onSaved, onClose }: SurveyFormBodyProps) => {
                         emptyMessage="No hay usuarios con permiso de encuestas"
                     />
                 </div>
+
+                <Label className="flex items-center gap-2 text-sm border-t pt-4">
+                    <Checkbox
+                        checked={showOnLogin}
+                        onCheckedChange={(checked) =>
+                            setShowOnLogin(checked === true)
+                        }
+                    />
+                    Mostrar automáticamente al iniciar sesión a quien no la haya
+                    hecho
+                </Label>
 
                 <div className="grid gap-4 border-t py-4 sm:grid-cols-2">
                     <div className="grid gap-1.5">

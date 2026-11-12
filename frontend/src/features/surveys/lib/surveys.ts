@@ -43,6 +43,7 @@ export interface Survey {
     closedAt: string | null;
     scheduledStartAt: string | null;
     scheduledEndAt: string | null;
+    showOnLogin: boolean;
     createdBy: SurveyOwner;
     responsesCount: number;
 }
@@ -54,6 +55,7 @@ export interface SurveyDetail extends Survey {
 export interface PendingSurvey {
     id: string;
     title: string;
+    showOnLogin: boolean;
     questions: SurveyQuestion[];
 }
 
@@ -91,6 +93,7 @@ export const createSurvey = async (
     ownerId?: string,
     scheduledStartAt?: string,
     scheduledEndAt?: string,
+    showOnLogin?: boolean,
 ): Promise<Survey> => {
     const { survey } = await api.post<{ survey: RawSurvey }>('/surveys', {
         title,
@@ -98,6 +101,7 @@ export const createSurvey = async (
         ...(ownerId && { ownerId }),
         ...(scheduledStartAt && { scheduledStartAt }),
         ...(scheduledEndAt && { scheduledEndAt }),
+        showOnLogin,
     });
 
     return flattenSurvey(survey);
@@ -110,6 +114,7 @@ export const updateSurvey = async (
     ownerId?: string,
     scheduledStartAt?: string,
     scheduledEndAt?: string,
+    showOnLogin?: boolean,
 ): Promise<void> =>
     api.patch(`/surveys/${id}`, {
         title,
@@ -117,6 +122,7 @@ export const updateSurvey = async (
         ...(ownerId && { ownerId }),
         ...(scheduledStartAt && { scheduledStartAt }),
         ...(scheduledEndAt && { scheduledEndAt }),
+        showOnLogin,
     });
 
 export interface AssignableUser {

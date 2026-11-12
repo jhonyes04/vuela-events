@@ -9,6 +9,7 @@ model Survey {
     scheduledStartAt    DateTime?
     scheduledEndAt      DateTime?
     closedBySchedule    Boolean         @default(false)
+    showOnLogin         Boolean         @default(false)
 
     createdBy           User            @relation(fields: [createdById], references: [id], onDelete: Restrict)
 

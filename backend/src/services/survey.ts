@@ -67,6 +67,7 @@ const surveySelect = {
     closedAt: true,
     scheduledStartAt: true,
     scheduledEndAt: true,
+    showOnLogin: true,
     createdBy: { select: { id: true, name: true, puntoVuela: true } },
     _count: { select: { responses: true } },
 } as const;
@@ -183,6 +184,7 @@ export const createSurvey = async (
     ownerId?: string,
     scheduleStartAt?: Date,
     scheduleEndAt?: Date,
+    showOnLogin = false,
 ) => {
     const createdById = ownerId ?? actor.id;
 
@@ -198,6 +200,7 @@ export const createSurvey = async (
             createdById,
             scheduledStartAt: scheduleStartAt,
             scheduledEndAt: scheduleEndAt,
+            showOnLogin,
             questions: { create: toQuestionCreateInput(questions) },
         },
         select: surveySelect,
@@ -220,6 +223,7 @@ export const updateSurvey = async (
     ownerId?: string,
     scheduleStartAt?: Date,
     scheduleEndAt?: Date,
+    showOnLogin = false,
 ) => {
     const survey = await prisma.survey.findUnique({ where: { id } });
 
@@ -245,6 +249,7 @@ export const updateSurvey = async (
                 title,
                 scheduledStartAt: scheduleStartAt ?? null,
                 scheduledEndAt: scheduleEndAt ?? null,
+                showOnLogin,
                 ...(ownerId && { createdById: ownerId }),
                 questions: { create: toQuestionCreateInput(questions) },
             },
@@ -316,15 +321,17 @@ export const activateSurvey = async (
 
     const effectiveEndAt = clearEnd ? null : survey.scheduledEndAt;
 
-    await notifyUsers(userIds, {
-        type: 'new_survey',
-        title: isReopen
-            ? 'La encuesta sigue abierta'
-            : 'Nueva encuesta disponible',
-        body: effectiveEndAt
-            ? `${survey.title} (disponible hasta el ${surveyDateTimeFormat.format(effectiveEndAt)})`
-            : survey.title,
-    });
+    if (!survey.showOnLogin) {
+        await notifyUsers(userIds, {
+            type: 'new_survey',
+            title: isReopen
+                ? 'La encuesta sigue abierta'
+                : 'Nueva encuesta disponible',
+            body: effectiveEndAt
+                ? `${survey.title} (disponible hasta el ${surveyDateTimeFormat.format(effectiveEndAt)})`
+                : survey.title,
+        });
+    }
 
     // Para que el listado admin se refresque solo (manual o por el job).
     const managerIds = (await listAssignableUsers()).map((u) => u.id);
@@ -427,6 +434,7 @@ export const getPendingSurveyForUser = async (
         select: {
             id: true,
             title: true,
+            showOnLogin: true,
             questions: { orderBy: { order: 'asc' }, select: questionSelect },
         },
     });

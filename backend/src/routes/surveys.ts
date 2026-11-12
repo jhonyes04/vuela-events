@@ -60,6 +60,7 @@ const surveySchema = z.strictObject({
     ownerId: z.uuid().optional(),
     scheduledStartAt: z.iso.datetime().optional(),
     scheduledEndAt: z.iso.datetime().optional(),
+    showOnLogin: z.boolean().optional(),
 });
 
 const answerSchema = z.strictObject({
@@ -250,6 +251,7 @@ surveysRouter.post(
                 body.data.scheduledEndAt
                     ? new Date(body.data.scheduledEndAt)
                     : undefined,
+                body.data.showOnLogin,
             );
 
             res.status(201).json({ survey });
@@ -298,6 +300,7 @@ surveysRouter.patch(
                 body.data.scheduledEndAt
                     ? new Date(body.data.scheduledEndAt)
                     : undefined,
+                body.data.showOnLogin,
             );
 
             res.status(204).end();
