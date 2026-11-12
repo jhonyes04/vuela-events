@@ -43,20 +43,21 @@ export const SessionsPage = () => {
 
     const { sorted, sort, toggleSort } = useSort<
         ActiveSession,
-        'user' | 'email' | 'expire'
+        'user' | 'email' | 'expire' | 'loginAt'
     >(
         filtered,
         {
             user: (a, b) => a.userName.localeCompare(b.userName),
             email: (a, b) => a.userEmail.localeCompare(b.userEmail),
             expire: (a, b) => a.expire.localeCompare(b.expire),
+            loginAt: (a, b) => (a.loginAt ?? '').localeCompare(b.loginAt ?? ''),
         },
         { key: 'expire', dir: 'asc' },
     );
 
     const columns: DataTableColumn<
         ActiveSession,
-        'user' | 'email' | 'expire'
+        'user' | 'email' | 'expire' | 'loginAt'
     >[] = [
         {
             key: 'user',
@@ -81,6 +82,13 @@ export const SessionsPage = () => {
             headerClassName: 'hidden sm:inline-block',
             cellClassName: 'hidden sm:inline-block breack-al',
             render: (s) => s.userEmail,
+        },
+        {
+            key: 'loginAt',
+            header: 'Inicio',
+            sortKey: 'loginAt',
+            render: (s) =>
+                s.loginAt ? formatShortDateTime(new Date(s.loginAt)) : '—',
         },
         {
             key: 'expire',

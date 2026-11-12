@@ -22,6 +22,7 @@ export interface ActiveSession {
     puntoVuela: string | null;
     userEmail: string;
     expire: Date;
+    loginAt: Date | null;
     current: boolean;
 }
 
@@ -39,6 +40,7 @@ export const listActiveSessions = async (
             puntoVuela: string | null;
             email: string;
             expire: Date;
+            loginAt: string | null;
         }[]
     >`
         SELECT
@@ -48,7 +50,8 @@ export const listActiveSessions = async (
             u."lastName",
             u."puntoVuela",
             u.email,
-            s.expire
+            s.expire,
+            s.sess ->> 'loginAt' AS "loginAt"
         FROM session s
         JOIN users u ON u.id = (s.sess ->> 'userId')::uuid
         WHERE s.expire > now() AND s.sess ->> 'userId' IS NOT NULL
@@ -63,6 +66,7 @@ export const listActiveSessions = async (
         puntoVuela: row.puntoVuela,
         userEmail: row.email,
         expire: row.expire,
+        loginAt: row.loginAt ? new Date(row.loginAt) : null,
         current: row.sid === currentSid,
     }));
 };

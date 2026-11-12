@@ -11,6 +11,7 @@ import { IdleProjectsCard } from '@/features/metrics/components/IdleProjectsCard
 import { YearOverYearCard } from '@/features/metrics/components/YearOverYearCard';
 import { InterestVsRegistrationCard } from '@/features/metrics/components/InterestVsRegistrationCard';
 import { EmailLogCard } from '@/features/metrics/components/EmailLogCard';
+import { SessionDurationByUserCard } from '@/features/metrics/components/SessionDurationByUserCard';
 import {
     getMetrics,
     type MetricsSummary,
@@ -100,6 +101,7 @@ export const MetricsPage = () => {
                 />
                 <InterestVsRegistrationCard metrics={metrics} />
                 <EmailLogCard metrics={metrics} />
+                <SessionDurationByUserCard metrics={metrics} />
             </div>
         </section>
     );

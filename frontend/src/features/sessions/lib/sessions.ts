@@ -7,6 +7,7 @@ export interface ActiveSession {
     puntoVuela: string | null;
     userEmail: string;
     expire: string;
+    loginAt: string | null;
     current: boolean;
 }
 

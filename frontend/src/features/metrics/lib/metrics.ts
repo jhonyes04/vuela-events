@@ -74,6 +74,14 @@ export interface EmailLog {
     bySlot: EmailLogBySlot[];
 }
 
+export interface SessionDurationByUser {
+    userId: string;
+    userName: string;
+    puntoVuela: string | null;
+    avgMinutes: number;
+    sessionCount: number;
+}
+
 export interface MetricsSummary {
     windowDays: number;
     incompleteProfiles: number;
@@ -88,6 +96,7 @@ export interface MetricsSummary {
     interestVsRegistration: ProjectInterestVsRegistration[];
     retention: Retention;
     emailLog: EmailLog;
+    sessionDurationByUser: SessionDurationByUser[];
 }
 
 export const getMetrics = (days: number) =>

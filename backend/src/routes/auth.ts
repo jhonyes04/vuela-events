@@ -82,6 +82,7 @@ export const createAuthRouter = (
             // Nueva sesión en cada login: evita fijación de sesión.
             await regenerateSession(req);
             req.session.userId = user.id;
+            req.session.loginAt = new Date().toISOString();
             await saveSession(req);
 
             await recordAudit({ action: 'login_success', actorId: user.id });
@@ -141,6 +142,9 @@ export const createAuthRouter = (
     });
 
     authRouter.post('/logout', (req, res, next) => {
+        const userId = req.session.userId;
+        const loginAt = req.session.loginAt;
+
         req.session.destroy((err) => {
             if (err) {
                 next(err);
@@ -152,6 +156,18 @@ export const createAuthRouter = (
                 secure: isProd,
                 sameSite: 'lax',
             });
+
+            if (userId && loginAt) {
+                const durationSec = Math.round(
+                    (Date.now() - new Date(loginAt).getTime()) / 1000,
+                );
+
+                void recordAudit({
+                    action: 'logout_success',
+                    actorId: userId,
+                    newValue: String(durationSec),
+                });
+            }
 
             emitOnlineUsers();
 

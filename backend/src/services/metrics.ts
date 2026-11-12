@@ -264,6 +264,37 @@ export const getMetrics = async (now: Date = new Date(), days = 30) => {
         bySlot: emailLogRows,
     };
 
+    // --- Usuarios: duracón media de sesión por usuario ---
+    const sessionDurationRows = await prisma.$queryRaw<
+        {
+            userId: string;
+            puntoVuela: string | null;
+            name: string;
+            avgSeconds: number;
+            sessionCount: number;
+        }[]
+    >`
+        SELECT 
+            a."actorId" AS "userId",
+            u.name,
+            u."puntoVuela",
+            avg(a."newValue"::int) AS "avgSeconds",
+            count(*)::int AS "sessionCount"
+        FROM audit_logs a
+        JOIN users u ON u.id = a."actorId"
+        WHERE a.action = 'logout_success' AND a."createdAt" >= ${windowStart}
+        GROUP BY a."actorId", u.name, u."puntoVuela"
+        ORDER BY "avgSeconds" DESC
+    `;
+
+    const sessionDurationByUser = sessionDurationRows.map((r) => ({
+        userId: r.userId,
+        userName: r.name.trim(),
+        puntoVuela: r.puntoVuela,
+        avgMinutes: Math.round(r.avgSeconds / 60),
+        sessionCount: r.sessionCount,
+    }));
+
     return {
         windowDays: days,
         incompleteProfiles,
@@ -282,5 +313,6 @@ export const getMetrics = async (now: Date = new Date(), days = 30) => {
             percent: retentionPct,
         },
         emailLog,
+        sessionDurationByUser,
     };
 };
